@@ -6,7 +6,7 @@ Baseline: Onion `07505ea58c7bba698d6b9220ff43946a43cac76b`, audited 2026-08-15.
 
 | Input | Baseline reference | Pin status | Required action |
 |---|---|---|---|
-| Miyoo toolchain container | `aemiii91/miyoomini-toolchain:latest` | Mutable | Resolve an approved version and image digest; record compiler/binutils metadata. |
+| Miyoo toolchain container | OCI index `sha256:e5123590ad75d27f0f4c91196e3119a255cad45f3ae15243e29a8e0a2ec50132` (Linux/amd64 manifest `sha256:a8da1021449c80c0ccb75e263f1dfc75b5a004278fefa8a54151e55698a352f4`) | Pinned | Record compiler/binutils metadata when the image is first run. |
 | SearchFilter submodule | `fc95ef8a3e67b54046fd03228df5b922f7bde834` | Commit-pinned | Record license and recursive dependencies in `build/dependencies.lock`. |
 | Terminal submodule | `b8d6f98ed0d4f95542dd0acb7ec683482d0a4029` | Commit-pinned | Record license and build provenance. |
 | DinguxCommander submodule | `7314f86cc1b5d1c75607120e9c2760261f69b67b` | Commit-pinned | Record license and build provenance. |
@@ -16,9 +16,9 @@ Baseline: Onion `07505ea58c7bba698d6b9220ff43946a43cac76b`, audited 2026-08-15.
 
 ## GitHub Actions
 
-The inherited workflows use `actions/checkout@v3`, `tj-actions/changed-files@v37`, and `stefanzweifel/git-auto-commit-action@v4.1.2`. All are movable tags. Pin each action to a reviewed full commit SHA and document permissions before relying on CI.
+The inherited workflows referenced movable tags. The bootstrap pinning change resolves them to full commit SHAs while retaining version comments. Permissions still require a separate least-privilege review.
 
-Build, pre-release, and tagged-release jobs also use the mutable toolchain image. The release scripts resolve a moving latest release and theme content from moving `main`, so the baseline is not reproducible.
+Build, pre-release, and tagged-release jobs now use the pinned toolchain index digest. The release scripts still resolve a moving latest release and theme content from moving `main`, so the complete baseline is not yet reproducible.
 
 ## Bundled binaries
 
@@ -26,4 +26,4 @@ The inherited history and tree contain large prebuilt emulator/core binaries, in
 
 ## Lock-file requirements
 
-`build/dependencies.lock` should ultimately record the toolchain digest, submodule commits, RetroArch and core source revisions, theme/package revisions, downloaded artifact hashes, license identifiers, and provenance URLs. This document is the audit input; it is not itself a machine lock file.
+`build/dependencies.lock` now records the resolved toolchain, submodule, and Action identifiers plus explicit unresolved fields. It must expand to cover RetroArch and core source revisions, theme/package revisions, downloaded artifact hashes, license identifiers, and provenance URLs before release builds are considered locked.

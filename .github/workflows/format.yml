@@ -9,7 +9,7 @@ jobs:
     if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@0717577d45739eb3c851188b29f50ed6c0b2194e # v2
         with:
           # check out HEAD on the branch
           ref: ${{ github.head_ref }}
@@ -18,7 +18,7 @@ jobs:
           fetch-depth: 2
       - name: Get all src files that have changed
         id: changed-files
-        uses: tj-actions/changed-files@v37
+        uses: tj-actions/changed-files@2106eb4457dd2aba4d37c8cdd16acba5d18739b9 # v37
         with:
           files_yaml: |
             src:
@@ -41,7 +41,7 @@ jobs:
           done
       # commit the changes (if there are any)
       - name: Commit changes
-        uses: stefanzweifel/git-auto-commit-action@v4.1.2
+        uses: stefanzweifel/git-auto-commit-action@dd055f6225757c369f948744463f63ac1bd4c277 # v4.1.2
         with:
           commit_message: 🎨 apply clang-format changes
           branch: ${{ github.head_ref }}
