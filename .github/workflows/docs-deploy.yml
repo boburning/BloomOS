@@ -14,13 +14,13 @@ jobs:
       run:
         working-directory: 'website'
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@a37ce9120846195fa4ece8f58b268e6043cb2f26 # v3
+      - uses: actions/setup-node@3235b876344d2a9aa001b8d1453c930bba69e610 # v3
         with:
           node-version: 18
           cache: yarn
           cache-dependency-path: '**/yarn.lock'
-      - uses: webfactory/ssh-agent@v0.5.0
+      - uses: webfactory/ssh-agent@6b2f2c5354ff41f1edbbf7a17ea9b6178c89be9f # v0.5.0
         with:
           ssh-private-key: ${{ secrets.GH_PAGES_DEPLOY }}
       - name: Deploy to GitHub Pages

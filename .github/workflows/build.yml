@@ -11,11 +11,11 @@ jobs:
     name: Check build
     runs-on: ubuntu-latest
     container:
-      image: aemiii91/miyoomini-toolchain:latest
+      image: aemiii91/miyoomini-toolchain@sha256:e5123590ad75d27f0f4c91196e3119a255cad45f3ae15243e29a8e0a2ec50132
       options: --user root
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@a37ce9120846195fa4ece8f58b268e6043cb2f26 # v3
       with:
         submodules: recursive
     - name: Build

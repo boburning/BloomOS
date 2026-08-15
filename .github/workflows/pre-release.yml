@@ -15,11 +15,11 @@ jobs:
     name: Pre-release
     runs-on: ubuntu-latest
     container:
-      image: aemiii91/miyoomini-toolchain:latest
+      image: aemiii91/miyoomini-toolchain@sha256:e5123590ad75d27f0f4c91196e3119a255cad45f3ae15243e29a8e0a2ec50132
       options: --user root
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@a37ce9120846195fa4ece8f58b268e6043cb2f26 # v3
       with:
         fetch-depth: 0
         submodules: recursive
@@ -38,7 +38,7 @@ jobs:
       run: |
         source /root/.bashrc
         VERSION_OVERRIDE=${{ env.BUILD_VERSION }}-${{ env.SHA_SHORT }} make release
-    - uses: marvinpinto/action-automatic-releases@latest
+    - uses: marvinpinto/action-automatic-releases@d68defdd11f9dcc7f52f35c1b7c236ee7513bcc1 # latest resolved 2026-08-15
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
         automatic_release_tag: latest
