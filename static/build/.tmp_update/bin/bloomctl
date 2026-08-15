@@ -1,0 +1,116 @@
+#!/bin/sh
+
+set -u
+
+BLOOM_ROOT="${BLOOM_ROOT:-}"
+
+path() {
+    printf '%s%s' "$BLOOM_ROOT" "$1"
+}
+
+read_first_line() {
+    target="$(path "$1")"
+    if [ -r "$target" ]; then
+        IFS= read -r value <"$target" || true
+        printf '%s' "${value:-}"
+    fi
+}
+
+json_string() {
+    printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g; s/[^[:print:]]/?/g'
+}
+
+bool_for_path() {
+    if [ -e "$(path "$1")" ]; then
+        printf 'true'
+    else
+        printf 'false'
+    fi
+}
+
+detect_model() {
+    raw_model="$(read_first_line /tmp/deviceModel)"
+    hall_path="/sys/devices/soc0/soc/soc:hall-mh248/hallvalue"
+
+    case "$raw_model" in
+        285) printf 'mini_flip' ;;
+        354) printf 'mini_plus' ;;
+        283) printf 'mini' ;;
+        *)
+            if [ -e "$(path "$hall_path")" ]; then
+                printf 'mini_flip'
+            elif [ -e "$(path /customer/app/axp_test)" ]; then
+                printf 'mini_plus'
+            else
+                printf 'unknown'
+            fi
+            ;;
+    esac
+}
+
+detect_display() {
+    geometry="$(read_first_line /sys/class/graphics/fb0/virtual_size)"
+    case "$geometry" in
+        *,*)
+            display_width="${geometry%%,*}"
+            display_height="${geometry#*,}"
+            ;;
+        *)
+            display_width="unknown"
+            display_height="unknown"
+            ;;
+    esac
+}
+
+print_info_json() {
+    model="$(detect_model)"
+    raw_model="$(read_first_line /tmp/deviceModel)"
+    serial="$(read_first_line /tmp/deviceSN)"
+    version="$(read_first_line /mnt/SDCARD/.tmp_update/onionVersion/version.txt)"
+    firmware="$(read_first_line /tmp/bloom-firmware-version)"
+    display_width=unknown
+    display_height=unknown
+    detect_display
+
+    has_wifi="$(bool_for_path /sys/class/net/wlan0)"
+    has_lid="$(bool_for_path /sys/devices/soc0/soc/soc:hall-mh248/hallvalue)"
+    developer_mode="$(bool_for_path /mnt/SDCARD/.bloom-dev)"
+
+    printf '{\n'
+    printf '  "schema": 1,\n'
+    printf '  "product": "BloomOS",\n'
+    printf '  "version": "%s",\n' "$(json_string "${version:-unknown}")"
+    printf '  "model": "%s",\n' "$(json_string "$model")"
+    printf '  "model_id": "%s",\n' "$(json_string "${raw_model:-unknown}")"
+    printf '  "hardware_revision": "unknown",\n'
+    printf '  "serial": "%s",\n' "$(json_string "${serial:-unknown}")"
+    printf '  "firmware": "%s",\n' "$(json_string "${firmware:-unknown}")"
+    printf '  "display": {"width": "%s", "height": "%s"},\n' \
+        "$(json_string "$display_width")" "$(json_string "$display_height")"
+    printf '  "capabilities": {"wifi": %s, "lid": %s},\n' "$has_wifi" "$has_lid"
+    printf '  "developer_mode": %s\n' "$developer_mode"
+    printf '}\n'
+}
+
+print_info_text() {
+    model="$(detect_model)"
+    version="$(read_first_line /mnt/SDCARD/.tmp_update/onionVersion/version.txt)"
+    printf 'BloomOS %s\n' "${version:-unknown}"
+    printf 'Model: %s\n' "$model"
+    printf 'Hardware revision: unknown\n'
+}
+
+usage() {
+    printf 'Usage: bloomctl info [--json]\n' >&2
+}
+
+case "${1:-}" in
+    info)
+        case "${2:-}" in
+            '') print_info_text ;;
+            --json) print_info_json ;;
+            *) usage; exit 2 ;;
+        esac
+        ;;
+    *) usage; exit 2 ;;
+esac
