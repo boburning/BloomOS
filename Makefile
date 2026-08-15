@@ -279,3 +279,7 @@ static-analysis: external-libs
 
 format:
 	@find ./src -regex '.*\.\(c\|h\|cpp\|hpp\)' -exec clang-format -style=file -i {} \;
+
+test-shell:
+	docker build --tag bloom-shell-test:local $(ROOT_DIR)/test/shell
+	docker run --rm --volume "$(ROOT_DIR):/workspace:ro" bloom-shell-test:local /workspace/test/shell

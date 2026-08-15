@@ -26,7 +26,7 @@ jobs:
         sudo ln -s /usr/lib/libgtest.a /usr/local/lib/libgtest.a
         sudo ln -s /usr/lib/libgtest_main.a /usr/local/lib/libgtest_main.a
     - name: Checkout repository
-      uses: actions/checkout@a37ce9120846195fa4ece8f58b268e6043cb2f26 # v3
+      uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       with:
         submodules: recursive
     - name: Run static analysis

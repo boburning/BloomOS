@@ -1,0 +1,23 @@
+name: Shell integration tests
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/shell-test.yml'
+      - 'Makefile'
+      - 'src/**/*.sh'
+      - 'static/**/*.sh'
+      - 'test/shell/**'
+  merge_group:
+
+permissions:
+  contents: read
+
+jobs:
+  shell-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Build and run shell tests
+        run: make test-shell

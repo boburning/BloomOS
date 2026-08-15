@@ -16,10 +16,16 @@ resolved_at = "2026-08-15"
 "third-party/RetroArch-patch" = "f9e959f7445d2ba0a4dd6279da41a095163767f2"
 
 [github_actions]
-"actions/checkout@v3" = "a37ce9120846195fa4ece8f58b268e6043cb2f26"
-"actions/setup-node@v3" = "3235b876344d2a9aa001b8d1453c930bba69e610"
+"actions/checkout@v4" = "11d5960a326750d5838078e36cf38b85af677262"
+"actions/setup-node@v4" = "49933ea5288caeca8642d1e84afbd3f7d6820020"
 "webfactory/ssh-agent@v0.5.0" = "6b2f2c5354ff41f1edbbf7a17ea9b6178c89be9f"
 "marvinpinto/action-automatic-releases@latest" = "d68defdd11f9dcc7f52f35c1b7c236ee7513bcc1"
+
+[shell_tests]
+image = "docker.io/library/alpine"
+index_digest = "sha256:4bcff63911fcb4448bd4fdacec207030997caf25e9bea4045fa6c8c44de311d1"
+linux_amd64_digest = "sha256:eafc1edb577d2e9b458664a15f23ea1c370214193226069eb22921169fc7e43f"
+bats_core_package = "1.12.0-r0"
 
 [retroarch]
 package_version = "1.22.2-1"
@@ -35,4 +41,5 @@ unresolved = [
   "RetroArch and emulator/core source-to-binary mapping",
   "theme revision and artifact checksums",
   "bundled binary provenance, licenses, and SHA-256 values",
+  "immutable Alpine package repository snapshot for shell-test dependencies",
 ]
