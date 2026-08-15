@@ -36,3 +36,9 @@ jobs:
       shell: bash
       run: |
         GTEST_INCLUDE_DIR=/usr/src/gtest/include make test
+    - name: Test with AddressSanitizer
+      shell: bash
+      env:
+        ASAN_OPTIONS: detect_leaks=1:halt_on_error=1:strict_string_checks=1
+      run: |
+        GTEST_INCLUDE_DIR=/usr/src/gtest/include SANITIZE=1 make test

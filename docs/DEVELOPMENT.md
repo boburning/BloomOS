@@ -16,6 +16,13 @@ Build environment, dependency pinning, deployment tools, and smoke-test commands
 
 Run `make test-shell` with Docker available. The BATS harness mounts the repository read-only and creates a disposable fake `/mnt/SDCARD` tree for each test. Never point shell integration tests at a real SD card or user save directory.
 
+Native unit tests run normally and under AddressSanitizer in pull requests. To
+reproduce the sanitizer pass on Linux:
+
+```sh
+GTEST_INCLUDE_DIR=/usr/src/gtest/include SANITIZE=1 make test
+```
+
 ## Developer mode bootstrap
 
 Developer mode is requested by creating `/mnt/SDCARD/.bloom-dev`. The initial implementation only reports the flag through `bloomctl info --json`; it does not yet enable SSH or change production behavior.
