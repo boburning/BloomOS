@@ -1,0 +1,16 @@
+# Copy this file to tools/targets.toml. The local file is ignored by Git.
+# Use absolute identity_file paths; private keys must never be committed.
+
+[targets.bloom-plus]
+host = "192.0.2.10"
+user = "root"
+port = 22
+identity_file = "/home/you/.ssh/bloom_plus"
+expected_model = "mini_plus"
+
+[targets.bloom-flip]
+host = "192.0.2.11"
+user = "root"
+port = 22
+identity_file = "/home/you/.ssh/bloom_flip"
+expected_model = "mini_flip"

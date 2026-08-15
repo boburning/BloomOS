@@ -11,6 +11,10 @@ cache/
 /.build_cached
 /static/configs/Saves/GuestProfile/
 
+# Local device targets can contain LAN addresses and key paths.
+/tools/targets.toml
+/artifacts/device-logs/
+
 src/batmon/batmon
 src/bootScreen/bootScreen
 src/chargingState/chargingState
