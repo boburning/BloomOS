@@ -42,7 +42,11 @@ CFLAGS := $(CFLAGS) -I../include -I../src/common -I$(GTEST_INCLUDE_DIR)
 endif
 
 ifeq ($(SANITIZE),1)
+ifeq ($(TEST),1)
+CFILES := $(CFILES) ../src/common/utils/asan.c
+else
 CFILES := $(CFILES) ../common/utils/asan.c
+endif
 CFLAGS := $(CFLAGS) -fno-omit-frame-pointer -fsanitize=address -static-libasan
 LDFLAGS := -fsanitize=address -static-libasan $(LDFLAGS)
 endif
