@@ -3,6 +3,8 @@
 *.sh text eol=lf
 *.bash text eol=lf
 *.bats text eol=lf
+tools/bloom-device text eol=lf
+tools/*.sh text eol=lf
 *.txt text eol=lf
 *.port text eol=lf
 *.notfound text eol=lf

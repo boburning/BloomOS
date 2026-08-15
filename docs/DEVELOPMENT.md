@@ -20,4 +20,22 @@ Run `make test-shell` with Docker available. The BATS harness mounts the reposit
 
 Developer mode is requested by creating `/mnt/SDCARD/.bloom-dev`. The initial implementation only reports the flag through `bloomctl info --json`; it does not yet enable SSH or change production behavior.
 
+## Wi-Fi device harness
+
+Copy `tools/targets.example.toml` to the ignored `tools/targets.toml` and replace
+the documentation-only addresses and key paths. Hosts must already be present in
+the user's SSH `known_hosts`; the harness deliberately refuses password prompts
+and unknown host keys.
+
+```sh
+tools/bloom-device info bloom-plus
+tools/run-smoke-tests.sh bloom-plus
+tools/collect-logs.sh bloom-plus
+```
+
+The first smoke check is intentionally read-only. Diagnostic collection writes
+`device.json` and `runtime.log` under the ignored `artifacts/device-logs/`
+directory unless an explicit output path is supplied. Device activation and SSH
+enablement are not part of this change.
+
 `bloomctl info` is deliberately conservative. It reports observable capabilities and leaves the original Mini hardware revision unknown until a reliable V1–V4 detection method is established. Tests may set `BLOOM_ROOT` to a disposable fake root; production callers must leave it unset.
