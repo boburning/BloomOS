@@ -1,8 +1,33 @@
 # Miyoo Mini Flip Audit
 
-Status: not yet performed. This audit will examine current public Flip adaptations in Onion forks and patches, Allium, spruceOS or sprigUI, MinUI, RAOfflineProxy, emulator projects, and other relevant community work.
+Snapshot date: 2026-08-15. Findings are source-derived and unverified on the user's physical Flip until the developer harness exists.
 
-| Source | Commit/PR | Problem | Hardware assumption | Implementation | Bloom applicability | Common or Flip-only | Test procedure | License | Decision |
-|---|---|---|---|---|---|---|---|---|---|
+## Current prior art
 
-Every discovered issue must be incorporated, superseded by a general architecture solution, rejected with rationale, or documented as unnecessary.
+| Source | Problem solved and implementation | Hardware assumptions | Bloom applicability | Test procedure | License status | Decision |
+|---|---|---|---|---|---|---|
+| [Allium](https://github.com/goweiwen/Allium) `main` | Models MY283/MY285/MY354 behind one platform interface; detects MY285 using `/dev/input/event1`; exposes Wi-Fi/lid capabilities; polls `/sys/devices/soc0/soc/soc:hall-mh248/hallvalue`; reads framebuffer timing; uses MY354 battery behavior for MY285. | MY285 has `event1`, hall sensor path, Wi-Fi, compatible AXP battery interface, and `poweroff`; input keys arrive on `event0`. | High architectural value. Exact paths and polarity need hardware confirmation. Detection by one device node is too weak as the sole Bloom identity signal. | Capture `/dev/input`, sysfs hall values open/closed, framebuffer timing, battery/charge readings, suspend/wake, and shutdown on each device. | GitHub does not identify a repository license; code cannot be copied until clarified. | Use as behavioral prior art only; independently implement and test capability discovery. |
+| [sprigUI](https://github.com/spruceUI/sprigUI) `development` | Dedicated Mini Flip variables report 750×560, Wi-Fi, AXP battery/charging, `poweroff`, and shared-memory controls for volume, brightness, keymap, mute, display tuning, and audio fix. | Mini Flip is 750×560 and shares Plus-style power/battery commands; firmware shared-memory indexes are stable. | High for inventory and test cases; shared-memory writes need version/capability guards. The width conflicts with Allium's 752×560 handling. | Read initial values, change one bounded setting, restore it, and compare across firmware revisions; measure native output instead of assuming 750 pixels. | GitHub does not identify a repository license; copied code or assets are blocked pending clarification. | Record interfaces; do not copy implementation or assets. |
+| [MinUI](https://github.com/shauninman/MinUI) `main` | Multi-platform build has separate Miyoo platform/key-monitor code, multiple evdev inputs, raw shoulder/volume/power mappings, sysfs battery/LED/rumble, CPU profiles, and rotated/native display handling. | Event numbering and raw key codes are firmware-specific; sysfs LED, battery, vibrator, and CPU controls exist. | Valuable low-level reference, especially for input/display/power test matrices. Some platform files retain TODOs or misleading comments and must not be copied blindly. | Enumerate evdev names/codes, verify both shoulders/volume/power, measure display orientation, battery, LEDs, rumble, clocks, sleep, and restore behavior. | GitHub does not identify a repository license; inspect file notices and obtain permission before copying. | Reproduce facts on hardware; implement through BloomPlatform. |
+| [sprigUI README](https://github.com/spruceUI/sprigUI) | Documents quick sleep/wake, save-and-shutdown, force close, wireless development services, and a required Miyoo firmware fix for swapped shoulder mappings on new units. | Firmware revision affects shoulder mapping; Wi-Fi development services are available. | High test-planning value. Bloom must not inherit universal default credentials or always-on wireless ADB. | Record firmware, test every shoulder before and after supported firmware, exercise bounded save/shutdown/resume, and verify production services remain off. | Documentation visible; repository license still unresolved. | Add firmware/keymap gate and secure developer-mode requirements. |
+| Onion PR [#1883](https://github.com/OnionUI/Onion/pull/1883) | Adds MY285-era device model, battery, keymap, MainUI binaries, runtime, and installer changes as part of a v4.5 merge. | Mixed branch assumes specific MainUI and firmware artifacts. | Relevant commit mine, unsafe wholesale merge. | Review commits individually and run the complete three-device matrix for any selected behavior. | Onion GPL-3.0, but bundled binary provenance still requires review. | Extract problems and tests; reimplement through the platform abstraction. |
+| [RAOfflineProxy](https://github.com/misantronic/RAOfflineProxy) `main` | Contains a current Linux/Onion integration, local proxy/cache, pending-award storage, corruption handling, and tests. No Mini Flip-specific platform patch was found. | Python/runtime and RetroArch integration are available on the target OS; network/auth behavior is independent of the lid/platform layer. | Relevant to BloomOS 1.2 offline achievements, not the Flip baseline. | Later test cache integrity, credential redaction, offline award reconciliation, and network loss on Plus/Flip. | GitHub does not identify a repository license; copying or bundling is blocked pending clarification. | Move to the 1.2 component audit; no Flip patch to port. |
+
+## Confirmed investigation targets
+
+- Device identity must use multiple signals and expose capabilities, not rely solely on `/dev/input/event1`.
+- Mini Flip width is inconsistent in current prior art: sprigUI reports 750×560 while Allium has explicit 752×560 persistence fixes. Query and record active/physical framebuffer geometry, pitch, timing, and firmware rather than hard-coding either value.
+- Lid should be a first-class open/closed event sourced from the hall sensor, with polarity and debounce verified.
+- Input-event numbering, raw key codes, and shoulder mappings may vary by firmware.
+- Plus-like AXP battery/charging and `poweroff` behavior are plausible, not yet Bloom-verified.
+- Shared-memory display/audio controls are firmware interfaces and need guarded adapters plus restoration tests.
+- Production networking services must remain disabled unless explicitly enabled; never inherit community default passwords.
+
+## Still to inspect
+
+- Remaining exact Flip adaptations and commit history in MinUI and Onion forks; Allium's MY285 history already identifies device detection, lid, 752×560 persistence/race fixes, and USB-audio detection.
+- Community Onion Flip builds and emulator-specific patches.
+- Audio routing, USB behavior, Wi-Fi/RTC interaction, suspend, low-battery shutdown, save flush, and lid behavior during games and apps.
+- License/provenance for any binary, library, firmware shim, asset, or code considered for inclusion.
+
+No source from a repository with unresolved licensing may be copied into BloomOS.
