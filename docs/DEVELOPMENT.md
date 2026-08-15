@@ -11,3 +11,7 @@ Use `origin` for the BloomOS repository and `upstream` for `https://github.com/O
 Develop and cross-compile on the host; handhelds are deployment and test targets. Keep changes cohesive, run relevant host tests, and record physical-device results for hardware-sensitive work. Never test destructive migration logic against the only copy of real user data.
 
 Build environment, dependency pinning, deployment tools, and smoke-test commands will be documented as they are established in Phase 1.
+
+## Shell tests
+
+Run `make test-shell` with Docker available. The BATS harness mounts the repository read-only and creates a disposable fake `/mnt/SDCARD` tree for each test. Never point shell integration tests at a real SD card or user save directory.
