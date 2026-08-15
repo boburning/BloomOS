@@ -4,7 +4,7 @@
 
 1. Repository bootstrap, attribution, upstream and Flip audits, and dependency inventory.
 2. Pinned build environment, CI, host and shell tests, reproducible packaging, and developer harness.
-3. One-build baseline across Mini V2, Plus, and Flip.
+3. One-build baseline across Mini V1–V4, Plus, and Flip, with maintainer validation on V2/Plus/Flip and recorded external evidence for revisions not locally owned.
 4. High-confidence correctness fixes and a capability-based platform abstraction.
 5. Structured launch and session lifecycle, canonical game identity, activity correctness, and save safety.
 6. Regression hardening, physical test matrix, migration safety, recovery, and release tooling.

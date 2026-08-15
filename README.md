@@ -1,6 +1,6 @@
 # BloomOS
 
-BloomOS is a maintained, community-led continuation of Onion for the Miyoo Mini family. It aims to preserve Onion's fast, appliance-like experience while improving maintainability, testing, recovery, and support for the Miyoo Mini V2, Miyoo Mini Plus, and Miyoo Mini Flip.
+BloomOS is a maintained, community-led continuation of Onion for the Miyoo Mini family. It aims to preserve Onion's fast, appliance-like experience while improving maintainability, testing, recovery, and support for every original Miyoo Mini revision (V1–V4), the Miyoo Mini Plus, and the Miyoo Mini Flip.
 
 > [!IMPORTANT]
 > BloomOS is at the repository-bootstrap stage and is not yet a release for end users.
@@ -8,7 +8,7 @@ BloomOS is a maintained, community-led continuation of Onion for the Miyoo Mini 
 ## Project principles
 
 - Preserve Onion compatibility wherever technically reasonable.
-- Treat Mini V2, Plus, and Flip as first-class targets in one codebase.
+- Treat the original Mini family, Plus, and Flip as first-class targets in one codebase.
 - Protect saves and make migrations recoverable.
 - Keep normal use offline-first and free of mandatory paid infrastructure.
 - Collect no telemetry by default.
