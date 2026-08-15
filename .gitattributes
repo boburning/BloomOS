@@ -1,6 +1,8 @@
 # Set the default behavior, in case people don't have core.autocrlf set.
 * text=auto
 *.sh text eol=lf
+*.bash text eol=lf
+*.bats text eol=lf
 *.txt text eol=lf
 *.port text eol=lf
 *.notfound text eol=lf
@@ -12,5 +14,6 @@ static/dist/miyoo/app/.tmp_update/updater text eol=lf
 static/dist/miyoo/app/MainUI text eol=lf
 static/dist/miyoo354/app/MainUI text eol=lf
 static/build/.tmp_update/bin/shutdown text eol=lf
+static/build/.tmp_update/bin/bloomctl text eol=lf
 static/configs/.tmp_update/config/passwd text eol=lf
 static/configs/.tmp_update/config/group text eol=lf

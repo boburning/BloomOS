@@ -8,6 +8,7 @@ setup_bloom_fixture() {
         "$MOCK_BIN" \
         "$SDCARD/.tmp_update/bin" \
         "$SDCARD/.tmp_update/config" \
+        "$SDCARD/.tmp_update/onionVersion" \
         "$SDCARD/App/PackageManager/data" \
         "$SDCARD/Emu" \
         "$SDCARD/RApp" \
