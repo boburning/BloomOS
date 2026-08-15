@@ -6,6 +6,9 @@ on:
       - '**/README.md'
       - 'website/'
 
+permissions:
+  contents: read
+
 jobs:
   build:
     name: Check build

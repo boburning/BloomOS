@@ -17,11 +17,8 @@ resolved_at = "2026-08-15"
 
 [github_actions]
 "actions/checkout@v3" = "a37ce9120846195fa4ece8f58b268e6043cb2f26"
-"actions/checkout@v2" = "0717577d45739eb3c851188b29f50ed6c0b2194e"
 "actions/setup-node@v3" = "3235b876344d2a9aa001b8d1453c930bba69e610"
 "webfactory/ssh-agent@v0.5.0" = "6b2f2c5354ff41f1edbbf7a17ea9b6178c89be9f"
-"tj-actions/changed-files@v37" = "2106eb4457dd2aba4d37c8cdd16acba5d18739b9"
-"stefanzweifel/git-auto-commit-action@v4.1.2" = "dd055f6225757c369f948744463f63ac1bd4c277"
 "marvinpinto/action-automatic-releases@latest" = "d68defdd11f9dcc7f52f35c1b7c236ee7513bcc1"
 
 [retroarch]

@@ -16,7 +16,7 @@ Baseline: Onion `07505ea58c7bba698d6b9220ff43946a43cac76b`, audited 2026-08-15.
 
 ## GitHub Actions
 
-The inherited workflows referenced movable tags. The bootstrap pinning change resolves them to full commit SHAs while retaining version comments. Permissions still require a separate least-privilege review.
+The inherited workflows referenced movable tags. Bloom resolves retained Actions to full commit SHAs with version comments. The formatting workflow no longer uses third-party changed-file or auto-commit Actions and never writes to contributor branches. Ordinary jobs declare `contents: read`; only release publication jobs receive job-scoped `contents: write`.
 
 Build, pre-release, and tagged-release jobs now use the pinned toolchain index digest. The release scripts still resolve a moving latest release and theme content from moving `main`, so the complete baseline is not yet reproducible.
 
