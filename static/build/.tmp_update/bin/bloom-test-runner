@@ -1,0 +1,43 @@
+#!/bin/sh
+set -u
+
+SD_ROOT="${BLOOM_ROOT:-/mnt/SDCARD}"
+TEST_ROOT="$SD_ROOT/BloomTest"
+REQUEST="$TEST_ROOT/request.json"
+RESULTS="$TEST_ROOT/results"
+BLOOMCTL="$SD_ROOT/.tmp_update/bin/bloomctl"
+
+fail() { printf 'bloom-test-runner: %s\n' "$*" >&2; exit 1; }
+
+[ -e "$SD_ROOT/.bloom-dev" ] || fail "developer mode is not enabled"
+[ -f "$REQUEST" ] || fail "test request not found"
+grep -Eq '"safe_only"[[:space:]]*:[[:space:]]*true' "$REQUEST" || fail "unsafe request refused"
+[ ! -e "$RESULTS/test-results.json" ] || exit 0
+mkdir -p "$RESULTS"
+
+"$BLOOMCTL" info --json >"$RESULTS/device.json" || fail "device inspection failed"
+{
+    printf 'virtual_size='
+    cat /sys/class/graphics/fb0/virtual_size 2>/dev/null || printf 'unknown\n'
+} >"$RESULTS/display.txt"
+{
+    printf 'battery_capacity='
+    cat /sys/class/power_supply/battery/capacity 2>/dev/null || printf 'unknown\n'
+} >"$RESULTS/battery.txt"
+{
+    for event in /dev/input/event*; do
+        [ -e "$event" ] || continue
+        printf '%s\n' "$event"
+    done
+} >"$RESULTS/input.txt"
+dmesg >"$RESULTS/boot.log" 2>&1 || true
+
+cat >"$RESULTS/test-results.json" <<'EOF'
+{
+  "schema": 1,
+  "status": "collected",
+  "safe_only": true,
+  "hardware_revision": "manual_confirmation_required",
+  "destructive_tests": false
+}
+EOF

@@ -38,4 +38,30 @@ The first smoke check is intentionally read-only. Diagnostic collection writes
 directory unless an explicit output path is supplied. Device activation and SSH
 enablement are not part of this change.
 
+## Original Mini SD-card tests
+
+All original Miyoo Mini revisions use the same guarded SD-card protocol. While
+the card is mounted on the host, prepare a request with the known revision:
+
+```sh
+tools/bloom-mini-test prepare /path/to/sd-root v2
+```
+
+The accepted revisions are `v1`, `v2`, `v3`, and `v4`. The command refuses a
+directory without an Onion-compatible `.tmp_update` tree, enables the explicit
+`.bloom-dev` flag, and creates only safe inventory tests under `BloomTest/`.
+`bloom-test-runner` is idempotent and refuses any request that is not marked
+`safe_only`. It does not infer the hardware revision; the result deliberately
+requires manual confirmation until a reliable signal is established.
+
+After the runner has executed on the handheld and the card is back in the host:
+
+```sh
+tools/bloom-mini-test consume /path/to/sd-root
+```
+
+This copies the request and results into the ignored `artifacts/mini-tests/`
+directory. Boot integration is intentionally deferred until the runner has been
+manually validated on the maintainer's V2.
+
 `bloomctl info` is deliberately conservative. It reports observable capabilities and leaves the original Mini hardware revision unknown until a reliable V1–V4 detection method is established. Tests may set `BLOOM_ROOT` to a disposable fake root; production callers must leave it unset.

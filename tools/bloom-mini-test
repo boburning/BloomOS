@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+    cat <<'EOF'
+Usage:
+  bloom-mini-test prepare <sd-root> <v1|v2|v3|v4>
+  bloom-mini-test consume <sd-root> [output-directory]
+EOF
+}
+
+die() { printf 'bloom-mini-test: %s\n' "$*" >&2; exit 1; }
+
+validate_sd_root() {
+    SD_ROOT="$(cd -- "$1" 2>/dev/null && pwd)" || die "SD root not found: $1"
+    [[ -d "$SD_ROOT/.tmp_update" ]] || die "refusing non-Bloom/Onion SD root: $SD_ROOT"
+}
+
+prepare() {
+    local revision="$2" request_id test_root
+    validate_sd_root "$1"
+    case "$revision" in v1|v2|v3|v4) ;; *) die "revision must be v1, v2, v3, or v4" ;; esac
+    test_root="$SD_ROOT/BloomTest"
+    [[ ! -e "$test_root/request.json" ]] || die "request already exists; consume or remove it first"
+    mkdir -p -- "$test_root/payload" "$test_root/results"
+    : >"$SD_ROOT/.bloom-dev"
+    request_id="mini-${revision}-$(date -u +%Y%m%dT%H%M%SZ)"
+    printf '{\n  "schema": 1,\n  "request_id": "%s",\n  "expected_family": "mini",\n  "expected_revision": "%s",\n  "safe_only": true,\n  "tests": ["identity", "display", "battery", "input-inventory"]\n}\n' \
+        "$request_id" "$revision" >"$test_root/request.json"
+    printf 'Prepared %s for original Miyoo Mini %s at %s\n' "$request_id" "$revision" "$test_root"
+}
+
+consume() {
+    local test_root output_dir
+    validate_sd_root "$1"
+    test_root="$SD_ROOT/BloomTest"
+    [[ -f "$test_root/results/test-results.json" ]] || die "completed results not found"
+    output_dir="${2:-artifacts/mini-tests/$(date -u +%Y%m%dT%H%M%SZ)}"
+    [[ ! -e "$output_dir" ]] || die "output already exists: $output_dir"
+    mkdir -p -- "$output_dir"
+    cp -R -- "$test_root/request.json" "$test_root/results" "$output_dir/"
+    printf 'Mini test results copied to %s\n' "$output_dir"
+}
+
+[[ $# -ge 2 ]] || { usage >&2; exit 2; }
+case "$1" in
+    prepare) [[ $# -eq 3 ]] || die "prepare requires SD root and revision"; prepare "$2" "$3" ;;
+    consume) [[ $# -le 3 ]] || die "consume accepts at most one output directory"; consume "$2" "${3:-}" ;;
+    *) usage >&2; exit 2 ;;
+esac
