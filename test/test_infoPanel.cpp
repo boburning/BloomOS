@@ -41,12 +41,7 @@ TEST(test_infoPanel, cacheTest)
 	for (int i = 0; i < images_paths_count; i++)
 	{
 		images_paths[i] = new char[STR_MAX];
-
-		strcat(images_paths[i], "./infoPanel_test_data/page");
-        char index_str[10];
-        sprintf(index_str, "%d", i);
-        strcat(images_paths[i], index_str);
-        strcat(images_paths[i], ".png");
+		snprintf(images_paths[i], STR_MAX, "./infoPanel_test_data/page%d.png", i);
 	}
 
     char* drawn_image_path = NULL;
@@ -75,4 +70,6 @@ TEST(test_infoPanel, cacheTest)
         delete[] images_paths[i];
     }
     delete[] images_paths;
+    cleanImagesCache();
+    SDL_FreeSurface(screen);
 }

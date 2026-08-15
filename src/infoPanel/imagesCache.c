@@ -202,4 +202,7 @@ void cleanImagesCache()
         SDL_FreeSurface(g_image_cache_current);
     if (g_image_cache_next)
         SDL_FreeSurface(g_image_cache_next);
+    g_image_cache_prev = NULL;
+    g_image_cache_current = NULL;
+    g_image_cache_next = NULL;
 }
