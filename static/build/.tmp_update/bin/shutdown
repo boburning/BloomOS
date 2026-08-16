@@ -50,6 +50,11 @@ if [ "$0" = "/tmp/_shutdown" ]; then
 	umount /mnt/SDCARD/RetroArch/retroarch
 	umount /customer/lib/libgamename.so
 	swapoff /mnt/SDCARD/cachefile
+	sync
+	# Force FAT through a clean read-only transition before hardware poweroff.
+	# This occurs only after settings and bind-mounted consumers are quiesced.
+	mount -o remount,ro /mnt/SDCARD
+	sync
 	umount -r /mnt/SDCARD
 	umount /mnt/SDCARD
 

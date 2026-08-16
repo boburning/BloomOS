@@ -105,10 +105,10 @@ void action_resetMainUI(void *pt)
     system("rm -f /mnt/SDCARD/system.json");
 
     char cmd_str[80];
-    sprintf(cmd_str, "cp /mnt/SDCARD/.tmp_update/res/miyoo%d_system.json /mnt/SDCARD/system.json", DEVICE_ID);
+    sprintf(cmd_str, "cp /mnt/SDCARD/.tmp_update/res/miyoo%d_system.json /mnt/SDCARD/system.json", COMPAT_DEVICE_ID());
     system(cmd_str);
 
-    if (DEVICE_ID == MIYOO354) {
+    if (HAS_AXP()) {
         system("rm -f /appconfigs/wpa_supplicant.conf");
         system("cp /mnt/SDCARD/.tmp_update/res/wpa_supplicant.reset /appconfigs/wpa_supplicant.conf");
     }

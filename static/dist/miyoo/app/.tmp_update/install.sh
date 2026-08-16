@@ -15,6 +15,7 @@ export PATH="$sysdir/bin:$PATH"
 unset LD_PRELOAD
 
 MODEL_MM=283
+MODEL_MMF=285
 MODEL_MMP=354
 
 install_ra=1
@@ -38,7 +39,7 @@ main() {
     check_install_ra
 
     # Start the battery monitor
-    if [ $DEVICE_ID -eq MODEL_MM ]; then
+    if [ "$DEVICE_ID" -eq "$MODEL_MM" ]; then
         # init charger detection
         gpiodir=/sys/devices/gpiochip0/gpio
         if [ ! -f $gpiodir/gpio59/direction ]; then
@@ -142,7 +143,8 @@ cleanup() {
 DEVICE_ID=0
 
 check_device_model() {
-    DEVICE_ID=$([ -f /customer/app/axp_test ] && echo $MODEL_MMP || echo $MODEL_MM)
+    DEVICE_ID="$(bloom-detect-model model)"
+    COMPAT_DEVICE_ID="$(bloom-detect-model compatibility-id)"
     echo -n "$DEVICE_ID" > /tmp/deviceModel
 }
 
@@ -300,7 +302,7 @@ run_installation() {
 
     if [ $system_only -ne 1 ]; then
         if [ $reset_configs -eq 1 ]; then
-            cp -f $sysdir/res/miyoo${DEVICE_ID}_system.json /mnt/SDCARD/system.json
+            cp -f $sysdir/res/miyoo${COMPAT_DEVICE_ID}_system.json /mnt/SDCARD/system.json
         fi
 
         # Start the battery monitor
@@ -347,7 +349,7 @@ run_installation() {
     #                                           Exit                                        #
     #########################################################################################
 
-    if [ $DEVICE_ID -eq MODEL_MM ]; then
+    if [ "$DEVICE_ID" -eq "$MODEL_MM" ]; then
         echo "$verb2 complete!" >> /tmp/.update_msg
         touch $sysdir/.waitConfirm
         touch $sysdir/.installed
@@ -359,7 +361,7 @@ run_installation() {
     installUI &
     sleep 1
 
-    if [ $DEVICE_ID -eq MODEL_MM ]; then
+    if [ "$DEVICE_ID" -eq "$MODEL_MM" ]; then
         counter=10
 
         while [ -f $sysdir/.waitConfirm ] && [ $counter -ge 0 ]; do

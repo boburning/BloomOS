@@ -16,6 +16,11 @@ grep -Eq '"safe_only"[[:space:]]*:[[:space:]]*true' "$REQUEST" || fail "unsafe r
 [ ! -e "$RESULTS/test-results.json" ] || exit 0
 mkdir -p "$RESULTS"
 
+if command -v fw_printenv >/dev/null 2>&1; then
+    firmware="$(fw_printenv miyoo_version 2>/dev/null | sed 's/^[^=]*=//' || true)"
+    [ -z "$firmware" ] || printf '%s\n' "$firmware" >"$ROOT/tmp/bloom-firmware-version"
+fi
+
 "$BLOOMCTL" info --json >"$RESULTS/device.json" || fail "device inspection failed"
 {
     geometry="$(cat "$ROOT/sys/class/graphics/fb0/virtual_size" 2>/dev/null || true)"
@@ -70,6 +75,27 @@ fi
         printf '%s\n' "$event"
     done
 } >"$RESULTS/input.txt"
+{
+    hall="$ROOT/sys/devices/soc0/soc/soc:hall-mh248/hallvalue"
+    if [ -r "$hall" ]; then
+        printf 'hall_sensor=present\n'
+        printf 'lid_state_raw='
+        cat "$hall"
+    else
+        printf 'hall_sensor=absent\n'
+    fi
+    if [ -e "$ROOT/customer/app/axp_test" ]; then
+        printf 'axp=present\n'
+    else
+        printf 'axp=absent\n'
+    fi
+    event_count=0
+    for event in "$ROOT"/dev/input/event*; do
+        [ -e "$event" ] || continue
+        event_count=$((event_count + 1))
+    done
+    printf 'input_event_count=%s\n' "$event_count"
+} >"$RESULTS/platform.txt"
 if [ -n "$ROOT" ]; then
     printf 'fixture boot log\n' >"$RESULTS/boot.log"
 else

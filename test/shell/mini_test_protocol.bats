@@ -89,6 +89,35 @@ EOF
     grep -F 'battery_capacity=72' "$SDCARD/BloomTest/results/battery.txt"
 }
 
+@test "device runner records read-only Flip capability signals" {
+    hall="$BLOOM_TEST_ROOT/sys/devices/soc0/soc/soc:hall-mh248"
+    mkdir -p \
+        "$hall" \
+        "$BLOOM_TEST_ROOT/sys/class/graphics/fb0" \
+        "$BLOOM_TEST_ROOT/customer/app" \
+        "$BLOOM_TEST_ROOT/dev/input" \
+        "$BLOOM_TEST_ROOT/tmp" \
+        "$SDCARD/BloomTest/results"
+    : >"$SDCARD/.bloom-dev"
+    : >"$BLOOM_TEST_ROOT/customer/app/axp_test"
+    : >"$BLOOM_TEST_ROOT/dev/input/event0"
+    : >"$BLOOM_TEST_ROOT/dev/input/event1"
+    printf '285\n' >"$BLOOM_TEST_ROOT/tmp/deviceModel"
+    printf '1\n' >"$hall/hallvalue"
+    printf '752,1120\n' >"$BLOOM_TEST_ROOT/sys/class/graphics/fb0/virtual_size"
+    printf '%s\n' '{"safe_only": true}' >"$SDCARD/BloomTest/request.json"
+    cp /workspace/static/build/.tmp_update/bin/bloomctl "$SDCARD/.tmp_update/bin/bloomctl"
+
+    run env BLOOM_ROOT="$BLOOM_TEST_ROOT" "$RUNNER"
+
+    [ "$status" -eq 0 ] || { printf '%s\n' "$output"; false; }
+    grep -F '"model": "mini_flip"' "$SDCARD/BloomTest/results/device.json"
+    grep -F '"height": "560"' "$SDCARD/BloomTest/results/device.json"
+    grep -F 'hall_sensor=present' "$SDCARD/BloomTest/results/platform.txt"
+    grep -F 'lid_state_raw=1' "$SDCARD/BloomTest/results/platform.txt"
+    grep -F 'input_event_count=2' "$SDCARD/BloomTest/results/platform.txt"
+}
+
 @test "device runner falls back to original Mini batmon output" {
     mkdir -p \
         "$BLOOM_TEST_ROOT/sys/class/graphics/fb0" \
