@@ -2,7 +2,10 @@
 .vscode/
 *.o
 /src/**/*.log
-/build/
+!/build/
+/build/*
+!/build/dependencies.lock
+!/build/themes.sha256
 /build_test/
 /release/
 /dist/

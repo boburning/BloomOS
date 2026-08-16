@@ -1,37 +1,43 @@
 #!/bin/bash
 
-mkdir -p cache
-cd cache
+set -euo pipefail
 
-wget -O featured.txt https://raw.githubusercontent.com/OnionUI/Themes/main/.github/data/featured.txt > /dev/null 2>&1
-featured=`cat ./featured.txt`
-rm -f ./featured.txt
+readonly THEMES_REVISION="b01198352e8927c3c5b9a828f73177bc81745954"
+readonly ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+readonly LOCK_FILE="$ROOT_DIR/build/themes.sha256"
+readonly CACHE_DIR="$ROOT_DIR/cache/themes/$THEMES_REVISION"
+readonly DIST_DIR="$ROOT_DIR/dist/Themes"
+readonly BASE_URL="https://raw.githubusercontent.com/OnionUI/Themes/$THEMES_REVISION/release"
 
-readarray -t themes <<< "$featured"
+mkdir -p "$CACHE_DIR" "$DIST_DIR"
 
-f() { themes=("${BASH_ARGV[@]}"); }
+while IFS= read -r entry || [[ -n "$entry" ]]; do
+    [[ -z "$entry" || "$entry" == \#* ]] && continue
 
-shopt -s extdebug
-f "${themes[@]}"
-shopt -u extdebug
+    expected_hash="${entry%%  *}"
+    filename="${entry#*  }"
+    zipfile="$CACHE_DIR/$filename"
 
-mkdir -p ../dist/Themes
-
-for element in "${themes[@]}"
-do
-    zipfile="$element.zip"
-
-    if [[ ! -f "$zipfile" ]]
-    then
-        echo "-- downloading theme: $element"
-        wget -O "$zipfile" "https://github.com/OnionUI/Themes/raw/main/release/$element.zip" -q --show-progress
+    if [[ -f "$zipfile" ]] && ! printf '%s  %s\n' "$expected_hash" "$zipfile" | sha256sum --check --status; then
+        rm -f "$zipfile"
     fi
 
-    if [ "$element" == "Silky by DiMo" ]; then
-        echo "-- extracting theme: $element"
-        unzip -oq "$zipfile" -d ../dist/Themes
+    if [[ ! -f "$zipfile" ]]; then
+        echo "-- downloading pinned theme: ${filename%.zip}"
+        wget -q --show-progress -O "$zipfile" "$BASE_URL/$filename"
+    fi
+
+    printf '%s  %s\n' "$expected_hash" "$zipfile" | sha256sum --check --status || {
+        echo "Theme checksum verification failed: $filename" >&2
+        rm -f "$zipfile"
+        exit 1
+    }
+
+    if [[ "$filename" == "Silky by DiMo.zip" ]]; then
+        echo "-- extracting theme: ${filename%.zip}"
+        unzip -oq "$zipfile" -d "$DIST_DIR"
     else
-        echo "-- copying theme: $element"
-        cp "$zipfile" ../dist/Themes
+        echo "-- copying theme: ${filename%.zip}"
+        cp "$zipfile" "$DIST_DIR"
     fi
-done
+done <"$LOCK_FILE"

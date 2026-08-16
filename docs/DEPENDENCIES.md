@@ -12,13 +12,13 @@ Baseline: Onion `07505ea58c7bba698d6b9220ff43946a43cac76b`, audited 2026-08-15.
 | DinguxCommander submodule | `7314f86cc1b5d1c75607120e9c2760261f69b67b` | Commit-pinned | Record license and build provenance. |
 | RetroArch-patch submodule | `f9e959f7445d2ba0a4dd6279da41a095163767f2` | Commit-pinned | Relate this patch commit to the bundled RetroArch/core revisions and licenses. |
 | RetroArch package marker | `RA_SUBVERSION=1.22.2-1` | Label only | Map to exact source commits, patches, binary hashes, and state-compatibility notes. |
-| Themes download | `OnionUI/Themes` moving `main` files | Mutable | Replace with a commit or release plus SHA-256 manifest. |
+| Themes download | `OnionUI/Themes` commit `b01198352e8927c3c5b9a828f73177bc81745954` | Commit and SHA-256 pinned | Review and intentionally update `build/themes.sha256` when changing the curated theme set. |
 
 ## GitHub Actions
 
 The inherited workflows referenced movable tags. Bloom resolves retained Actions to full commit SHAs with version comments. The formatting workflow no longer uses third-party changed-file or auto-commit Actions and never writes to contributor branches. Ordinary jobs declare `contents: read`; only release publication jobs receive job-scoped `contents: write`.
 
-Build, pre-release, and tagged-release jobs now use the pinned toolchain index digest. The release scripts still resolve a moving latest release and theme content from moving `main`, so the complete baseline is not yet reproducible.
+Build, pre-release, and tagged-release jobs now use the pinned toolchain index digest. Theme downloads are commit-pinned and checksum-verified. The release scripts still resolve a moving latest release in the inherited patch workflow, so the complete baseline is not yet reproducible.
 
 ## Bundled binaries
 
