@@ -1,0 +1,24 @@
+#!/bin/sh
+set -u
+
+ROOT="${BLOOM_ROOT:-}"
+
+if [ -e "$ROOT/sys/devices/soc0/soc/soc:hall-mh248/hallvalue" ]; then
+    model=285
+elif command -v axp >/dev/null 2>&1 && axp 0 >/dev/null 2>&1; then
+    model=354
+else
+    model=283
+fi
+
+case "${1:-model}" in
+    model) printf '%s\n' "$model" ;;
+    compatibility-id)
+        if [ "$model" -eq 285 ]; then
+            printf '354\n'
+        else
+            printf '%s\n' "$model"
+        fi
+        ;;
+    *) printf 'Usage: bloom-detect-model [model|compatibility-id]\n' >&2; exit 2 ;;
+esac

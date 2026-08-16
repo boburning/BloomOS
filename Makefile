@@ -157,6 +157,7 @@ core: $(CACHE)/.setup
 	@cp $(BIN_DIR)/gameNameList $(INSTALLER_DIR)/bin/
 	@cp $(BIN_DIR)/playActivity $(INSTALLER_DIR)/bin/
 	@cp $(BIN_DIR)/7z $(INSTALLER_DIR)/bin/
+	@cp $(BUILD_DIR)/.tmp_update/bin/bloom-detect-model $(INSTALLER_DIR)/bin/
 # Overrider miyoo libraries
 	@cp $(BIN_DIR)/libgamename.so $(BUILD_DIR)/miyoo/lib/
 

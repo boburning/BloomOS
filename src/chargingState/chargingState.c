@@ -199,7 +199,7 @@ int main(void)
 
         if (!suspended) {
             if (ticks - display_timer >= DISPLAY_TIMEOUT) {
-                if (DEVICE_ID == MIYOO354) {
+                if (HAS_AXP()) {
                     quit = true;
                     turn_off = true;
                     break;
@@ -252,7 +252,7 @@ int main(void)
     if (turn_off) {
 #ifdef PLATFORM_MIYOOMINI
         display_setScreen(false);
-        system("bloom-shutdown; sleep 10");
+        system("shutdown; sleep 10");
 #endif
     }
     else {

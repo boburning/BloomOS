@@ -8,13 +8,15 @@ logfile=$(basename "$0" .sh)
 . $sysdir/script/log.sh
 
 MODEL_MM=283
+MODEL_MMF=285
 MODEL_MMP=354
 screen_resolution="640x480"
 
 main() {
-    # Set model ID
-    axp 0 > /dev/null
-    export DEVICE_ID=$([ $? -eq 0 ] && echo $MODEL_MMP || echo $MODEL_MM)
+    # Detect the physical model. The Flip hall sensor is a stronger identity
+    # signal than generic input nodes shared by firmware variants.
+    export DEVICE_ID="$(bloom-detect-model model)"
+    COMPAT_DEVICE_ID="$(bloom-detect-model compatibility-id)"
     echo -n "$DEVICE_ID" > /tmp/deviceModel
 
     SERIAL_NUMBER=$(read_uuid)
@@ -50,7 +52,7 @@ main() {
     # Check is charging
     if [ $DEVICE_ID -eq $MODEL_MM ]; then
         is_charging=$(cat /sys/devices/gpiochip0/gpio/gpio59/value)
-    elif [ $DEVICE_ID -eq $MODEL_MMP ]; then
+    elif [ $DEVICE_ID -eq $MODEL_MMF ] || [ $DEVICE_ID -eq $MODEL_MMP ]; then
         axp_status="0x$(axp 0 | cut -d':' -f2)"
         is_charging=$([ $(($axp_status & 0x4)) -eq 4 ] && echo 1 || echo 0)
     fi
@@ -105,7 +107,7 @@ main() {
         rm -f "$sysdir/cmd_to_run.sh" 2> /dev/null
     fi
 
-    if [ $DEVICE_ID -eq $MODEL_MMP ] && [ -f /mnt/SDCARD/RetroArch/retroarch_miyoo354 ]; then
+    if { [ $DEVICE_ID -eq $MODEL_MMF ] || [ $DEVICE_ID -eq $MODEL_MMP ]; } && [ -f /mnt/SDCARD/RetroArch/retroarch_miyoo354 ]; then
         # Mount miyoo354 RA version
         mount -o bind /mnt/SDCARD/RetroArch/retroarch_miyoo354 /mnt/SDCARD/RetroArch/retroarch
     fi
@@ -662,7 +664,7 @@ check_off_order() {
 
         bootScreen "$1" &
         sleep 1 # Allow the bootScreen to be displayed
-        bloom-shutdown
+        shutdown
     fi
 }
 
@@ -694,7 +696,7 @@ mainui_target=$miyoodir/app/MainUI
 
 mount_main_ui() {
     mainui_mode=$([ -f $sysdir/config/.showExpert ] && echo "expert" || echo "clean")
-    mainui_srcname="MainUI-$DEVICE_ID-$mainui_mode"
+    mainui_srcname="MainUI-$COMPAT_DEVICE_ID-$mainui_mode"
     mainui_mount=$(basename "$(cat /proc/self/mountinfo | grep $mainui_target | cut -d' ' -f4)")
 
     if [ "$mainui_mount" != "$mainui_srcname" ]; then
@@ -787,7 +789,7 @@ init_system() {
     ip addr add 127.0.0.1/8 dev lo
     ifconfig lo up
 
-    if [ $DEVICE_ID -eq $MODEL_MMP ] && [ -f $sysdir/config/.lcdvolt ]; then
+    if { [ $DEVICE_ID -eq $MODEL_MMF ] || [ $DEVICE_ID -eq $MODEL_MMP ]; } && [ -f $sysdir/config/.lcdvolt ]; then
         $sysdir/script/lcdvolt.sh 2> /dev/null
     fi
 
@@ -826,7 +828,7 @@ load_settings() {
         if [ -f /appconfigs/system.json ]; then
             cp -f /appconfigs/system.json /mnt/SDCARD/system.json
         else
-            cp -f $sysdir/res/miyoo${DEVICE_ID}_system.json /mnt/SDCARD/system.json
+            cp -f $sysdir/res/miyoo${COMPAT_DEVICE_ID}_system.json /mnt/SDCARD/system.json
         fi
     fi
 
