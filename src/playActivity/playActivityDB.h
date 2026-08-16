@@ -10,10 +10,10 @@
 #include <string.h>
 #include <sys/stat.h>
 
+#include "database/sqlite_config.h"
 #include "utils/file.h"
 #include "utils/log.h"
 #include "utils/str.h"
-#include "database/sqlite_config.h"
 
 #include "./cacheDB.h"
 
