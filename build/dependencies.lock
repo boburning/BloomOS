@@ -27,6 +27,7 @@ image = "docker.io/library/alpine"
 index_digest = "sha256:4bcff63911fcb4448bd4fdacec207030997caf25e9bea4045fa6c8c44de311d1"
 linux_amd64_digest = "sha256:eafc1edb577d2e9b458664a15f23ea1c370214193226069eb22921169fc7e43f"
 bats_core_package = "1.12.0-r0"
+python3_package = "3.12.14-r0"
 
 [retroarch]
 package_version = "1.22.2-1"

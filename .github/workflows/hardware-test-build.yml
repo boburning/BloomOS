@@ -23,15 +23,13 @@ jobs:
         run: |
           source /root/.bashrc
           short_sha="${GITHUB_SHA::8}"
-          TARGET=BloomOS VERSION_OVERRIDE="0.1.0-dev-${short_sha}" make release
-          sha256sum release/*.zip > release/SHA256SUMS
+          VERSION_OVERRIDE="0.1.0-dev-${short_sha}" CHANNEL=development make release
       - name: Upload test artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: bloom-os-hardware-test-${{ github.sha }}
           path: |
-            release/*.zip
-            release/SHA256SUMS
+            release/0.1.0-dev-*/*
           compression-level: 0
           retention-days: 7
           if-no-files-found: error
