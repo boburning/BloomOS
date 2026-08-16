@@ -24,6 +24,11 @@ main() {
     check_installer
     clear_logs
 
+    # Run explicit, safe-only hardware inventory requests in developer mode.
+    if [ -f /mnt/SDCARD/.bloom-dev ] && [ -f /mnt/SDCARD/BloomTest/request.json ] && [ -x "$sysdir/bin/bloom-test-runner" ]; then
+        bloom-test-runner >> "$sysdir/logs/bloom-test-runner.log" 2>&1 || log "Bloom hardware test request failed"
+    fi
+
     init_system
     update_time
 

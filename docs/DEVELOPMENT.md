@@ -73,7 +73,8 @@ tools/bloom-mini-test consume /path/to/sd-root
 ```
 
 This copies the request and results into the ignored `artifacts/mini-tests/`
-directory. Boot integration is intentionally deferred until the runner has been
-manually validated on the maintainer's V2.
+directory. At boot, the runtime invokes the idempotent runner only when both
+`.bloom-dev` and `BloomTest/request.json` are present. The runner accepts only
+requests explicitly marked `safe_only`.
 
 `bloomctl info` is deliberately conservative. It reports observable capabilities and leaves the original Mini hardware revision unknown until a reliable V1–V4 detection method is established. Tests may set `BLOOM_ROOT` to a disposable fake root; production callers must leave it unset.
