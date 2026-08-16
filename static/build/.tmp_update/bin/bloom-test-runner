@@ -21,10 +21,31 @@ mkdir -p "$RESULTS"
     printf 'virtual_size='
     cat "$ROOT/sys/class/graphics/fb0/virtual_size" 2>/dev/null || printf 'unknown\n'
 } >"$RESULTS/display.txt"
-{
-    printf 'battery_capacity='
-    cat "$ROOT/sys/class/power_supply/battery/capacity" 2>/dev/null || printf 'unknown\n'
-} >"$RESULTS/battery.txt"
+BATTERY_CAPACITY="$ROOT/sys/class/power_supply/battery/capacity"
+BATMON_PERCENT="$ROOT/tmp/percBat"
+AXP_RESULT="$ROOT/tmp/.axp_result"
+if [ -r "$BATTERY_CAPACITY" ]; then
+    {
+        printf 'battery_source=sysfs\n'
+        printf 'battery_capacity='
+        cat "$BATTERY_CAPACITY"
+    } >"$RESULTS/battery.txt"
+elif [ -r "$BATMON_PERCENT" ]; then
+    {
+        printf 'battery_source=batmon\n'
+        printf 'battery_capacity='
+        cat "$BATMON_PERCENT"
+    } >"$RESULTS/battery.txt"
+elif [ -r "$AXP_RESULT" ]; then
+    {
+        printf 'battery_source=axp_cache\n'
+        printf 'battery_raw='
+        cat "$AXP_RESULT"
+        printf '\n'
+    } >"$RESULTS/battery.txt"
+else
+    printf 'battery_source=unavailable\nbattery_capacity=unknown\n' >"$RESULTS/battery.txt"
+fi
 {
     for event in "$ROOT"/dev/input/event*; do
         [ -e "$event" ] || continue
