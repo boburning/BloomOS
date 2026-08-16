@@ -61,8 +61,11 @@ teardown() { teardown_bloom_fixture; }
     grep -F 'battery_capacity=75' "$SDCARD/BloomTest/results/battery.txt"
 
     first_hash="$(sha256sum "$SDCARD/BloomTest/results/test-results.json")"
+    mkdir -p "$BLOOM_TEST_ROOT/appconfigs"
+    printf '%s\n' 'remount_ro_final=0' >"$BLOOM_TEST_ROOT/appconfigs/bloom-shutdown.log"
     env BLOOM_ROOT="$BLOOM_TEST_ROOT" "$RUNNER"
     [ "$first_hash" = "$(sha256sum "$SDCARD/BloomTest/results/test-results.json")" ]
+    grep -F 'remount_ro_final=0' "$SDCARD/BloomTest/results/previous-shutdown.txt"
 }
 
 @test "device runner carries forward developer shutdown telemetry" {

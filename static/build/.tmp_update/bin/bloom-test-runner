@@ -13,7 +13,12 @@ fail() { printf 'bloom-test-runner: %s\n' "$*" >&2; exit 1; }
 [ -e "$SD_ROOT/.bloom-dev" ] || fail "developer mode is not enabled"
 [ -f "$REQUEST" ] || fail "test request not found"
 grep -Eq '"safe_only"[[:space:]]*:[[:space:]]*true' "$REQUEST" || fail "unsafe request refused"
-[ ! -e "$RESULTS/test-results.json" ] || exit 0
+if [ -e "$RESULTS/test-results.json" ]; then
+    if [ -f "$ROOT/appconfigs/bloom-shutdown.log" ]; then
+        cp "$ROOT/appconfigs/bloom-shutdown.log" "$RESULTS/previous-shutdown.txt"
+    fi
+    exit 0
+fi
 mkdir -p "$RESULTS"
 
 if command -v fw_printenv >/dev/null 2>&1; then
