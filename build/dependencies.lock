@@ -8,12 +8,23 @@ image = "docker.io/aemiii91/miyoomini-toolchain"
 index_digest = "sha256:e5123590ad75d27f0f4c91196e3119a255cad45f3ae15243e29a8e0a2ec50132"
 linux_amd64_digest = "sha256:a8da1021449c80c0ccb75e263f1dfc75b5a004278fefa8a54151e55698a352f4"
 resolved_at = "2026-08-15"
+host_architecture = "linux/amd64"
+gcc = "GNU Toolchain for the A-profile Architecture 8.3-2019.03 (arm-rel-8.36), GCC 8.3.0"
+gxx = "GNU Toolchain for the A-profile Architecture 8.3-2019.03 (arm-rel-8.36), G++ 8.3.0"
+binutils_ld = "GNU ld 2.32.0.20190321"
+binutils_as = "GNU assembler 2.32.0.20190321"
+python = "3.7.3"
+p7zip = "16.02"
+info_zip = "3.0"
 
 [submodules]
 "third-party/SearchFilter" = "fc95ef8a3e67b54046fd03228df5b922f7bde834"
 "third-party/Terminal" = "b8d6f98ed0d4f95542dd0acb7ec683482d0a4029"
 "third-party/DinguxCommander" = "7314f86cc1b5d1c75607120e9c2760261f69b67b"
 "third-party/RetroArch-patch" = "f9e959f7445d2ba0a4dd6279da41a095163767f2"
+"third-party/RetroArch-patch/submodules/RetroArch" = "69a4f0ea1e8aaf442ae4858f2e7f2b31a1776576"
+"third-party/SearchFilter/include/pugixml" = "2639dfd053221d3e8c9e9ff013e58699d9c1af15"
+"third-party/SearchFilter/include/sqlite3" = "a050cf6e5787d8dd341f7c0038247a3206ba6cf1"
 
 [github_actions]
 "actions/checkout@v7.0.1" = "3d3c42e5aac5ba805825da76410c181273ba90b1"
@@ -31,7 +42,8 @@ python3_package = "3.12.14-r0"
 
 [retroarch]
 package_version = "1.22.2-1"
-source_revision = "UNRESOLVED"
+source_revision = "69a4f0ea1e8aaf442ae4858f2e7f2b31a1776576"
+patch_revision = "f9e959f7445d2ba0a4dd6279da41a095163767f2"
 
 [themes]
 source = "https://github.com/OnionUI/Themes"
@@ -40,7 +52,6 @@ artifact_checksums = "build/themes.sha256"
 
 [audit]
 unresolved = [
-  "compiler and binutils versions inside the pinned toolchain",
   "RetroArch and emulator/core source-to-binary mapping",
   "bundled binary provenance, licenses, and SHA-256 values",
   "immutable Alpine package repository snapshot for shell-test dependencies",
