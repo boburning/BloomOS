@@ -101,6 +101,9 @@ if [ -n "$ROOT" ]; then
 else
     dmesg >"$RESULTS/boot.log" 2>&1 || true
 fi
+if [ -f "$ROOT/appconfigs/bloom-shutdown.log" ]; then
+    cp "$ROOT/appconfigs/bloom-shutdown.log" "$RESULTS/previous-shutdown.txt"
+fi
 
 cat >"$RESULTS/test-results.json" <<'EOF'
 {
