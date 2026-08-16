@@ -56,13 +56,37 @@ teardown() { teardown_bloom_fixture; }
 
     [ "$status" -eq 0 ] || { printf '%s\n' "$output"; false; }
     grep -F '"status": "collected"' "$SDCARD/BloomTest/results/test-results.json"
-    grep -F 'virtual_size=640,480' "$SDCARD/BloomTest/results/display.txt"
+    grep -F 'physical_size=640,480' "$SDCARD/BloomTest/results/display.txt"
     grep -F 'battery_source=sysfs' "$SDCARD/BloomTest/results/battery.txt"
     grep -F 'battery_capacity=75' "$SDCARD/BloomTest/results/battery.txt"
 
     first_hash="$(sha256sum "$SDCARD/BloomTest/results/test-results.json")"
     env BLOOM_ROOT="$BLOOM_TEST_ROOT" "$RUNNER"
     [ "$first_hash" = "$(sha256sum "$SDCARD/BloomTest/results/test-results.json")" ]
+}
+
+@test "device runner normalizes a triple-buffered display and reads Plus battery data" {
+    mkdir -p \
+        "$BLOOM_TEST_ROOT/sys/class/graphics/fb0" \
+        "$BLOOM_TEST_ROOT/customer/app" \
+        "$SDCARD/BloomTest/results"
+    : >"$SDCARD/.bloom-dev"
+    printf '%s\n' '{"safe_only": true}' >"$SDCARD/BloomTest/request.json"
+    printf '%s\n' '640,1440' >"$BLOOM_TEST_ROOT/sys/class/graphics/fb0/virtual_size"
+    cat >"$BLOOM_TEST_ROOT/customer/app/axp_test" <<'EOF'
+#!/bin/sh
+printf '%s\n' '{"battery":72, "voltage":3910, "charging":0}'
+EOF
+    chmod +x "$BLOOM_TEST_ROOT/customer/app/axp_test"
+    cp /workspace/static/build/.tmp_update/bin/bloomctl "$SDCARD/.tmp_update/bin/bloomctl"
+
+    run env BLOOM_ROOT="$BLOOM_TEST_ROOT" "$RUNNER"
+
+    [ "$status" -eq 0 ] || { printf '%s\n' "$output"; false; }
+    grep -F 'physical_size=640,480' "$SDCARD/BloomTest/results/display.txt"
+    grep -F 'framebuffer_virtual_size=640,1440' "$SDCARD/BloomTest/results/display.txt"
+    grep -F 'battery_source=axp_live' "$SDCARD/BloomTest/results/battery.txt"
+    grep -F 'battery_capacity=72' "$SDCARD/BloomTest/results/battery.txt"
 }
 
 @test "device runner falls back to original Mini batmon output" {

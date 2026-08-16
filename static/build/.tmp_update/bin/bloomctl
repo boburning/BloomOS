@@ -54,6 +54,20 @@ detect_display() {
         *,*)
             display_width="${geometry%%,*}"
             display_height="${geometry#*,}"
+            # The Miyoo framebuffer reports its backing buffer, which is
+            # commonly two or three visible frames tall. Report the physical
+            # panel rather than the buffer allocation.
+            if [ "$display_height" -gt 800 ] 2>/dev/null; then
+                if [ $((display_height % 3)) -eq 0 ] &&
+                    [ $((display_height / 3)) -ge 400 ] &&
+                    [ $((display_height / 3)) -le 600 ]; then
+                    display_height=$((display_height / 3))
+                elif [ $((display_height % 2)) -eq 0 ] &&
+                    [ $((display_height / 2)) -ge 400 ] &&
+                    [ $((display_height / 2)) -le 600 ]; then
+                    display_height=$((display_height / 2))
+                fi
+            fi
             ;;
         *)
             display_width="unknown"
@@ -72,7 +86,10 @@ print_info_json() {
     display_height=unknown
     detect_display
 
-    has_wifi="$(bool_for_path /sys/class/net/wlan0)"
+    case "$model" in
+        mini_plus|mini_flip) has_wifi=true ;;
+        *) has_wifi="$(bool_for_path /sys/class/net/wlan0)" ;;
+    esac
     has_lid="$(bool_for_path /sys/devices/soc0/soc/soc:hall-mh248/hallvalue)"
     developer_mode="$(bool_for_path /mnt/SDCARD/.bloom-dev)"
 
