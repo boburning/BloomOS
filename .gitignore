@@ -19,6 +19,7 @@ cache/
 /tools/targets.toml
 /artifacts/device-logs/
 /artifacts/mini-tests/
+/artifacts/backups/
 
 src/batmon/batmon
 src/bootScreen/bootScreen
