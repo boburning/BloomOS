@@ -34,7 +34,7 @@ run_info() {
 
 @test "reports Plus capabilities from observable paths" {
     printf '354\n' >"$BLOOM_ROOT/tmp/deviceModel"
-    mkdir -p "$BLOOM_ROOT/sys/class/net/wlan0"
+    printf '640,1440\n' >"$BLOOM_ROOT/sys/class/graphics/fb0/virtual_size"
 
     run_info
 
@@ -42,6 +42,7 @@ run_info() {
     printf '%s' "$output" | grep -F '"model": "mini_plus"'
     printf '%s' "$output" | grep -F '"wifi": true'
     printf '%s' "$output" | grep -F '"lid": false'
+    printf '%s' "$output" | grep -F '"height": "480"'
 }
 
 @test "detects Flip from the hall sensor when legacy model data is absent" {

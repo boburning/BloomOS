@@ -189,7 +189,7 @@ void force_shutdown(void)
     system_clock_get();
     system_clock_save();
     sync();
-    system("shutdown");
+    system("bloom-shutdown");
     while (1)
         pause();
     exit(0);
