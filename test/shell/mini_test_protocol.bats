@@ -54,7 +54,7 @@ teardown() { teardown_bloom_fixture; }
 
     run env BLOOM_ROOT="$BLOOM_TEST_ROOT" "$RUNNER"
 
-    [ "$status" -eq 0 ]
+    [ "$status" -eq 0 ] || { printf '%s\n' "$output"; false; }
     grep -F '"status": "collected"' "$SDCARD/BloomTest/results/test-results.json"
     grep -F 'virtual_size=640,480' "$SDCARD/BloomTest/results/display.txt"
     grep -F 'battery_capacity=75' "$SDCARD/BloomTest/results/battery.txt"
