@@ -65,6 +65,22 @@ teardown() { teardown_bloom_fixture; }
     [ "$first_hash" = "$(sha256sum "$SDCARD/BloomTest/results/test-results.json")" ]
 }
 
+@test "device runner carries forward developer shutdown telemetry" {
+    mkdir -p \
+        "$BLOOM_TEST_ROOT/appconfigs" \
+        "$SDCARD/.tmp_update/bin" \
+        "$SDCARD/BloomTest/results"
+    : >"$SDCARD/.bloom-dev"
+    printf '%s\n' '{"safe_only": true}' >"$SDCARD/BloomTest/request.json"
+    printf '%s\n' 'remount_ro_final=0' >"$BLOOM_TEST_ROOT/appconfigs/bloom-shutdown.log"
+    cp /workspace/static/build/.tmp_update/bin/bloomctl "$SDCARD/.tmp_update/bin/bloomctl"
+
+    run env BLOOM_ROOT="$BLOOM_TEST_ROOT" "$RUNNER"
+
+    [ "$status" -eq 0 ] || { printf '%s\n' "$output"; false; }
+    grep -F 'remount_ro_final=0' "$SDCARD/BloomTest/results/previous-shutdown.txt"
+}
+
 @test "device runner normalizes a triple-buffered display and reads Plus battery data" {
     mkdir -p \
         "$BLOOM_TEST_ROOT/sys/class/graphics/fb0" \

@@ -23,7 +23,34 @@ kill_hooked_tasks() {
 	done
 }
 
+SHUTDOWN_LOG_ENABLED=0
+
+shutdown_log() {
+	if [ "$SHUTDOWN_LOG_ENABLED" = "1" ]; then
+		printf '%s\n' "$*" >> /appconfigs/bloom-shutdown.log
+	fi
+}
+
+remount_sd_read_only() {
+	mount -o remount,ro /mnt/SDCARD
+	rc=$?
+	shutdown_log "remount_ro_attempt_1=$rc"
+	if [ $rc -ne 0 ]; then
+		kill_hooked_tasks -9
+		sync
+		mount -o remount,ro /mnt/SDCARD
+		rc=$?
+		shutdown_log "remount_ro_attempt_2=$rc"
+	fi
+	return $rc
+}
+
 if [ "$0" = "/tmp/_shutdown" ]; then
+	if [ -f /mnt/SDCARD/.bloom-dev ]; then
+		SHUTDOWN_LOG_ENABLED=1
+		: > /appconfigs/bloom-shutdown.log
+	fi
+	shutdown_log "shutdown_started=1"
 
 	killall -9 main # mandatory to avoid the suppression of .tmp_update !
 	killall -9 updater
@@ -50,13 +77,17 @@ if [ "$0" = "/tmp/_shutdown" ]; then
 	umount /mnt/SDCARD/RetroArch/retroarch
 	umount /customer/lib/libgamename.so
 	swapoff /mnt/SDCARD/cachefile
+	shutdown_log "swapoff_complete=1"
 	sync
 	# Force FAT through a clean read-only transition before hardware poweroff.
 	# This occurs only after settings and bind-mounted consumers are quiesced.
-	mount -o remount,ro /mnt/SDCARD
+	remount_sd_read_only
+	shutdown_log "remount_ro_final=$?"
 	sync
 	umount -r /mnt/SDCARD
+	shutdown_log "umount_recursive=$?"
 	umount /mnt/SDCARD
+	shutdown_log "umount_final=$?"
 
 	############# DEBUG #############
 	# fuser -m /mnt/SDCARD > /appconfigs/shutdown.log
