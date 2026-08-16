@@ -12,6 +12,11 @@ Develop and cross-compile on the host; handhelds are deployment and test targets
 
 Build environment, dependency pinning, deployment tools, and smoke-test commands will be documented as they are established in Phase 1.
 
+Maintainers can dispatch `Hardware test build` to produce a checksummed,
+seven-day GitHub Actions artifact without publishing a release. This is the
+only supported source for physical-device test images until the release process
+is certified.
+
 ## Shell tests
 
 Run `make test-shell` with Docker available. The BATS harness mounts the repository read-only and creates a disposable fake `/mnt/SDCARD` tree for each test. Never point shell integration tests at a real SD card or user save directory.

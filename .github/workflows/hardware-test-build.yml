@@ -1,0 +1,37 @@
+name: Hardware test build
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build hardware test image
+    runs-on: ubuntu-latest
+    container:
+      image: aemiii91/miyoomini-toolchain@sha256:e5123590ad75d27f0f4c91196e3119a255cad45f3ae15243e29a8e0a2ec50132
+      options: --user root
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: recursive
+      - name: Build test release
+        shell: bash
+        run: |
+          source /root/.bashrc
+          short_sha="${GITHUB_SHA::8}"
+          TARGET=BloomOS VERSION_OVERRIDE="0.1.0-dev-${short_sha}" make release
+          sha256sum release/*.zip > release/SHA256SUMS
+      - name: Upload test artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: bloom-os-hardware-test-${{ github.sha }}
+          path: |
+            release/*.zip
+            release/SHA256SUMS
+          compression-level: 0
+          retention-days: 7
+          if-no-files-found: error
