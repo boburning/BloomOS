@@ -8,6 +8,7 @@ tools/*.sh text eol=lf
 tools/bloom-mini-test text eol=lf
 static/build/.tmp_update/bin/bloom-test-runner text eol=lf
 *.txt text eol=lf
+*.sha256 text eol=lf
 *.port text eol=lf
 *.notfound text eol=lf
 *.conf text eol=lf

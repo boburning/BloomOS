@@ -1,8 +1,9 @@
 ###########################################################
 
-TARGET=Onion
+TARGET=BloomOS
 VERSION=4.4.0-beta-20260120
 RA_SUBVERSION=1.22.2-1
+CHANNEL?=development
 
 ###########################################################
 
@@ -11,6 +12,7 @@ VERSION = $(VERSION_OVERRIDE)
 endif
  
 RELEASE_NAME := $(TARGET)-v$(VERSION)
+SOURCE_DATE_EPOCH ?= $(shell git log -1 --format=%ct)
 
 ifdef OS
 	current_dir := $(shell cd)
@@ -33,6 +35,8 @@ BIN_DIR             := $(ROOT_DIR)/build/.tmp_update/bin
 DIST_DIR            := $(ROOT_DIR)/dist
 INSTALLER_DIR       := $(DIST_DIR)/miyoo/app/.tmp_update
 RELEASE_DIR         := $(ROOT_DIR)/release
+RELEASE_VERSION_DIR := $(RELEASE_DIR)/$(VERSION)
+RELEASE_ARCHIVE     := $(RELEASE_VERSION_DIR)/$(RELEASE_NAME).zip
 STATIC_BUILD        := $(ROOT_DIR)/static/build
 STATIC_DIST         := $(ROOT_DIR)/static/dist
 STATIC_CONFIGS      := $(ROOT_DIR)/static/configs
@@ -54,7 +58,7 @@ include ./src/common/commands.mk
 
 ###########################################################
 
-.PHONY: all version core apps external release clean deepclean git-clean with-toolchain patch lib test
+.PHONY: all version core apps external release package-release clean deepclean git-clean with-toolchain patch lib test
 
 all: dist
 
@@ -218,10 +222,26 @@ dist: build
 	@echo " DONE"
 	@$(ECHO) $(PRINT_DONE)
 
-release: dist
+release: dist package-release
+
+package-release:
 	@$(ECHO) $(PRINT_RECIPE)
-	@rm -f $(RELEASE_DIR)/$(RELEASE_NAME).zip
-	@cd $(DIST_DIR) && 7z a -mtc=off $(RELEASE_DIR)/$(RELEASE_NAME).zip . -bsp1 -bso0
+	@rm -rf $(RELEASE_VERSION_DIR)
+	@mkdir -p $(RELEASE_VERSION_DIR)
+	@find $(DIST_DIR) -exec touch -h -d "@$(SOURCE_DATE_EPOCH)" {} +
+	@cd $(DIST_DIR) && find . \( -type f -o -type l \) -print | LC_ALL=C sort > $(RELEASE_VERSION_DIR)/archive-files.txt
+	@cd $(DIST_DIR) && zip -X -q $(RELEASE_ARCHIVE) -@ < $(RELEASE_VERSION_DIR)/archive-files.txt
+	@rm -f $(RELEASE_VERSION_DIR)/archive-files.txt
+	@python3 $(ROOT_DIR)/tools/release_metadata.py create \
+		--output-dir $(RELEASE_VERSION_DIR) \
+		--archive $(RELEASE_ARCHIVE) \
+		--version $(VERSION) \
+		--channel $(CHANNEL) \
+		--commit $$(git rev-parse HEAD) \
+		--source-date-epoch $(SOURCE_DATE_EPOCH) \
+		--dependency-lock $(ROOT_DIR)/build/dependencies.lock \
+		--toolchain $(TOOLCHAIN)
+	@python3 $(ROOT_DIR)/tools/release_metadata.py validate --output-dir $(RELEASE_VERSION_DIR)
 	@$(ECHO) $(PRINT_DONE)
 
 clean:

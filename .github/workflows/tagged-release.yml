@@ -30,12 +30,12 @@ jobs:
       shell: bash
       run: |
         source /root/.bashrc
-        VERSION_OVERRIDE=${{ env.BUILD_VERSION }} make release
+        VERSION_OVERRIDE=${{ env.BUILD_VERSION }} CHANNEL=stable make release
     - uses: marvinpinto/action-automatic-releases@d68defdd11f9dcc7f52f35c1b7c236ee7513bcc1 # latest resolved 2026-08-15
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
         prerelease: false
         draft: true
-        title: "Onion V${{ env.BUILD_VERSION }}"
+        title: "BloomOS v${{ env.BUILD_VERSION }}"
         files: |
-          release/Onion-v${{ env.BUILD_VERSION }}.zip
+          release/${{ env.BUILD_VERSION }}/*

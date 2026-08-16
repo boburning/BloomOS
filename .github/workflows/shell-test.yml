@@ -8,6 +8,9 @@ on:
       - 'src/**/*.sh'
       - 'static/**/*.sh'
       - 'test/shell/**'
+      - 'tools/release_metadata.py'
+      - 'build/themes.sha256'
+      - '.gitattributes'
   merge_group:
 
 permissions:
