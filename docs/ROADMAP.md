@@ -89,6 +89,8 @@ merged; it does not imply unrecorded hardware certification.
 - [x] Decompose inherited runtime and package payloads into a canonical,
   tree-hashed component replacement queue enforced during release packaging
   ([PR #76](https://github.com/boburning/BloomOS/pull/76)).
+- [ ] Attribute unchanged Onion GPL source provenance to script/config-only
+  package wrappers without extending that claim to selected emulator binaries.
 
 The hardware-sensitive BloomOS 1.0/1.1 implementation queue is at its
 physical-validation boundary. Source-provenance replacement work can continue

@@ -19,6 +19,8 @@ FIXED_COMPONENTS = (
 PACKAGE_KINDS = ("App", "Emu", "RApp")
 ANNOTATION_FIELDS = ("source", "source_revision", "license", "build_recipe", "resolution")
 RESOLUTIONS = ("replace-source-build-or-exclude", "source-build", "excluded")
+ONION_SOURCE = "https://github.com/OnionUI/Onion"
+ONION_WRAPPER_SUFFIXES = (".json", ".sh")
 
 
 def component_id(kind, name):
@@ -124,15 +126,52 @@ def apply_annotations(generated, current):
             raise ValueError(f"{component['id']}: source-build resolution requires complete provenance")
 
 
+def is_onion_source_wrapper(repository, component):
+    if component["kind"] != "package":
+        return False
+    root = repository / component["path"]
+    for path in root.rglob("*"):
+        if not path.is_file():
+            continue
+        content = canonical_file(path)
+        try:
+            content.decode("utf-8")
+        except UnicodeDecodeError:
+            return False
+        if b"\0" in content:
+            return False
+        if path.suffix.lower() not in ONION_WRAPPER_SUFFIXES and content:
+            return False
+    return True
+
+
+def annotate_onion_wrappers(repository, manifest):
+    count = 0
+    for component in manifest["components"]:
+        if component["resolution"] != "replace-source-build-or-exclude":
+            continue
+        if not is_onion_source_wrapper(repository, component):
+            continue
+        component.update({
+            "source": ONION_SOURCE,
+            "source_revision": BASELINE,
+            "license": "GPL-3.0-only",
+            "build_recipe": "Makefile",
+            "resolution": "source-build",
+        })
+        count += 1
+    return count
+
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=("create", "validate"))
+    parser.add_argument("command", choices=("create", "validate", "annotate-onion-wrappers"))
     parser.add_argument("--repository", type=pathlib.Path, required=True)
     parser.add_argument("--manifest", type=pathlib.Path, required=True)
     args = parser.parse_args()
     try:
         current = None
-        if args.command == "validate":
+        if args.command != "create":
             current = args.manifest.read_text(encoding="utf-8")
             parsed = json.loads(current)
             if parsed.get("schema") != 1:
@@ -141,6 +180,11 @@ def main():
         if current is not None:
             apply_annotations(generated, parsed)
         rendered = canonical(generated)
+        if args.command == "annotate-onion-wrappers":
+            count = annotate_onion_wrappers(args.repository, generated)
+            args.manifest.write_text(canonical(generated), encoding="utf-8", newline="\n")
+            print(f"legacy manifest annotated: {count} Onion source wrappers")
+            return 0
         if args.command == "create":
             args.manifest.write_text(rendered, encoding="utf-8", newline="\n")
         elif current != rendered:
