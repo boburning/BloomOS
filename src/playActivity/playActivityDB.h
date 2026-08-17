@@ -16,8 +16,8 @@
 #include "utils/str.h"
 
 #include "./cacheDB.h"
-#include "./playActivityModel.h"
 #include "./playActivityMigrations.h"
+#include "./playActivityModel.h"
 
 #define PLAY_ACTIVITY_DB_NEW_FILE "/mnt/SDCARD/Saves/CurrentProfile/play_activity/play_activity_db.sqlite"
 #define ROMS_FOLDER "/mnt/SDCARD/Roms"
