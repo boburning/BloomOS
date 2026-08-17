@@ -56,9 +56,10 @@ Furthermore, you can also set AdvanceMENU to be the start application, this is d
 
 1. Download Skraper (https://www.skraper.net/)
 2. Scrape your ROM collection every system at a time and on the media tab select only videos
-3. On the OnionUI SDCARD find the folder `App\AdvanceMENU\tools\Roms_and_Medias_Management\mp4_to_mng`, copy it to your PC, make a new folder named videos and then copy the video files there, every system at a time, and run the script to convert to mng+mp3 files
-4. Skraper video files start with 10 frames that are black so I made a script that removes the first 10 frames of every .mng file inside a folder. Download the script, copy it to your mng folder then run it. This step is optional. ([remove10.zip](https://github.com/OnionUI/Onion/files/11100644/remove10.zip))
-5. Copy the mng folder content to the Snaps folder in every systems folder
+3. Convert the videos to AdvanceMENU's MNG and MP3 format with source-built
+   AdvanceMAME desktop tools. BloomOS does not copy inherited Windows
+   executables and archives onto the SD card.
+4. Copy the converted MNG and MP3 files to the `Snaps` folder for each system.
 
 This process can take some time and it can be a little bit tricky. Videos scraped with Skraper don't have the best resolution, they are not as sharp as the snap pack for MAME. 
 

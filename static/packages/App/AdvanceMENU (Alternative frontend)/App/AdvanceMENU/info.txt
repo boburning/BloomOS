@@ -39,7 +39,7 @@ Initially ported by Trngaje and updated by Schmurtz from Onion Team, AdvanceMAME
 
 AdvanceMENU should include AdvanceMAME and AdvanceMESS with very few configuration but it can't be used as is due to a limitation of SDL on the Miyoo Mini: we can't run AdvanceMENU and AdvanceMAME simultaneously. It could be possible to modify AdvanceMENU source file to close it when an emulator is launched. So for now AdvanceMAME has been added like a "generic" emulator thanks to a script which close AdvanceMENU properly before running AdvanceMAME.
 
-AdvanceMAME and AdvanceMESS have their freshly generated info files (advmame.lst and advmess.lst, read info.txt in "Tools" folder for more information).
+AdvanceMAME and AdvanceMESS use generated info files named advmame.lst and advmess.lst.
 
 AdvanceMAME roms can be launched from MainUI but not AdvanceMESS roms due to the requirement of a bios + a rom (however a more complex launch script could allow that).
 
@@ -64,11 +64,11 @@ advmess.xml   ----------> This file seems to be generated each time AdvanceMESS 
 cheat.dat    -----------> Used by AdvanceMAME, a lot of games have available cheats: press Select + Start -> Enable/Disable a cheat
 font.ttf     -----------> Font used by AdvanceMENU (configured in advmenu.rc)
 category.ini -----------> Type of games used by AdvanceMENU ("type_import" configured in advmenu.rc)
-history.dat  -----------> Games informations and history for AdvanceMAME, however seems not supported anymore since AdvanceMAME Version 0.100.0 so removed (see "history.7z" in "tools" folder to restore it)
+history.dat  -----------> Games information and history for AdvanceMAME; it is not bundled because current AdvanceMAME versions no longer support it.
 hiscore.dat  -----------> Highscore database for AdvanceMAME.
 event.dat    -----------> The Event and Safequit database.
-BinggraeMelona.ttf -----> Required font used by AdvanceMAME, can be replaced for Korean translation (see "tools" folder)
-advmame.lst  -----------> Infos file for AdvanceMAME, contains all the game infos. Generated with --listbare command, see "tools\Roms_and_Medias_Management\xml_to_lst_(info_files)\info.txt" for details.
+BinggraeMelona.ttf -----> Required font used by AdvanceMAME and replaceable for localization.
+advmame.lst  -----------> Info file for AdvanceMAME, generated with the --listbare command.
 sysinfo.dat  -----------> MESS info database
 
 
@@ -140,20 +140,9 @@ Configuration of emulator (AdvanceMAME & AdvanceMESS) can be done directly with 
 - Irfanview allows to play mng files thanks to a plugin
   - but not those from the download page packs
 
-- The Onion Team has created a set of Windows PowerShell scripts to manage AdvanceMENU / AdvanceMAME roms and media
-  - See details in "tools/Roms_and_Medias_Management/info.txt"
-  - This folder contains scripts to:
-	- move AdvanceMAME incompatible roms to "_not_compatible" folder
-	- move roms without AdvanceMENU preview in "_RomsWithoutPreview" folder
-	  - useful to remove roms without preview from your AdvanceMENU or to find which roms still have to be scraped
-	- convert mp4 video files into mng files usable in AdvanceMENU
-	  - can be useful to create missing animated previews
-	- create your thumbnails in Onion in addition to the previews of AdvanceMENU
-	  - it creates .png files from all the existing .mng files
-	- convert MAME rom info files for advance menu
-	  - it converts xml to lst
-- AdvanceMAME has been translated in korean thanks to Trngaje
-  - details in "tools/language Korean files/info.txt"
+- Desktop ROM and media conversion utilities are not installed on the SD card.
+  Build the official AdvanceMAME tools from reviewed source when preparing MNG
+  previews or regenerated info lists.
 - Press A during screensaver to play the current displayed game
 - To display only one type of game, press start to display the menu -> Listing -> Types, here unselect all types then press A on the type you want to display.
 
