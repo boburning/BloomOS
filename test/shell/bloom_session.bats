@@ -9,6 +9,7 @@ setup() {
     export BLOOM_PROC_ROOT="$BLOOM_TEST_ROOT/proc"
     export BLOOM_LAUNCH_BIN="$MOCK_BIN/bloom-launch"
     export BLOOM_SEND_UDP_BIN="$MOCK_BIN/sendUDP"
+    export BLOOM_SAVE_FLUSH_BIN="$MOCK_BIN/bloom-save-flush"
     export BLOOM_SIGNAL_BIN="$MOCK_BIN/signal"
     export BLOOM_QUIT_WAIT_SECONDS=0
     export BLOOM_TERM_WAIT_SECONDS=0
@@ -16,9 +17,13 @@ setup() {
     mkdir -p "$BLOOM_PROC_ROOT" "$BLOOM_TEST_ROOT/requests"
     export REQUEST="$BLOOM_TEST_ROOT/requests/game.json"
     printf '%s\n' '{"schema":1}' >"$REQUEST"
-    cat >"$BLOOM_LAUNCH_BIN" <<'EOF'
+cat >"$BLOOM_LAUNCH_BIN" <<'EOF'
 #!/bin/sh
-[ "$1" = validate ] && [ -f "$2" ]
+case "$1" in
+    validate) [ -f "$2" ] ;;
+    get) [ "$3" = core ] && printf '%s\n' gambatte_libretro.so ;;
+    *) exit 1 ;;
+esac
 EOF
     chmod +x "$BLOOM_LAUNCH_BIN"
     cat >"$BLOOM_SIGNAL_BIN" <<'EOF'
@@ -26,6 +31,11 @@ EOF
 printf '%s %s\n' "$1" "$2" >>"$MOCK_LOG"
 EOF
     chmod +x "$BLOOM_SIGNAL_BIN"
+    cat >"$BLOOM_SAVE_FLUSH_BIN" <<'EOF'
+#!/bin/sh
+printf '{"schema":1,"core":"%s","corename":"Gambatte","files_flushed":2,"directories_flushed":4}\n' "$1"
+EOF
+    chmod +x "$BLOOM_SAVE_FLUSH_BIN"
 }
 
 start_running_session() {
@@ -35,23 +45,59 @@ start_running_session() {
     "$SESSION" attach 123
 }
 
+stop_to_flushing() {
+    cat >"$BLOOM_SEND_UDP_BIN" <<'EOF'
+#!/bin/sh
+[ "$1" = QUIT ] || exit 1
+rm -rf "$BLOOM_PROC_ROOT/$(cat "$BLOOM_SESSION_ROOT/pid")"
+EOF
+    chmod +x "$BLOOM_SEND_UDP_BIN"
+    "$SESSION" stop-retroarch
+}
+
 teardown() { teardown_bloom_fixture; }
 
 @test "session follows the explicit successful lifecycle" {
-    run "$SESSION" start "$REQUEST"
-    [ "$status" -eq 0 ]
-    "$SESSION" transition PREPARING STARTING
-    mkdir -p "$BLOOM_PROC_ROOT/123"
-    "$SESSION" attach 123
-    "$SESSION" transition RUNNING STOP_REQUESTED
-    "$SESSION" transition STOP_REQUESTED FLUSHING
-    "$SESSION" transition FLUSHING STOPPED
+    start_running_session
+    stop_to_flushing
+    "$SESSION" flush-saves
+    "$SESSION" complete
 
     run "$SESSION" status --json
     [ "$status" -eq 0 ]
     printf '%s' "$output" | grep -F '"state":"STOPPED"'
     printf '%s' "$output" | grep -F '"pid":123'
     grep -Eq '^[0-9a-f]{64}$' "$BLOOM_SESSION_ROOT/request_sha256"
+}
+
+@test "flushing cannot complete until a scoped save flush succeeds" {
+    start_running_session
+    stop_to_flushing
+
+    run "$SESSION" transition FLUSHING STOPPED
+    [ "$status" -eq 1 ]
+    run "$SESSION" complete
+    [ "$status" -eq 1 ]
+    grep -Fx FLUSHING "$BLOOM_SESSION_ROOT/state"
+
+    run "$SESSION" flush-saves
+    [ "$status" -eq 0 ]
+    printf '%s' "$output" | grep -F '"core":"gambatte_libretro.so"'
+    "$SESSION" complete
+    grep -Fx STOPPED "$BLOOM_SESSION_ROOT/state"
+}
+
+@test "failed scoped save flush makes the session terminally failed" {
+    start_running_session
+    stop_to_flushing
+    printf '#!/bin/sh\nexit 1\n' >"$BLOOM_SAVE_FLUSH_BIN"
+    chmod +x "$BLOOM_SAVE_FLUSH_BIN"
+
+    run "$SESSION" flush-saves
+    [ "$status" -eq 1 ]
+    grep -Fx FAILED "$BLOOM_SESSION_ROOT/state"
+    grep -Fx save_flush_failed "$BLOOM_SESSION_ROOT/failure_reason"
+    [ ! -e "$BLOOM_SESSION_ROOT/save_flush.json" ]
 }
 
 @test "invalid and stale transitions leave state unchanged" {
@@ -64,6 +110,12 @@ teardown() { teardown_bloom_fixture; }
     run "$SESSION" transition STARTING RUNNING
     [ "$status" -eq 1 ]
     grep -Fx PREPARING "$BLOOM_SESSION_ROOT/state"
+
+    "$SESSION" transition PREPARING STARTING
+    mkdir -p "$BLOOM_PROC_ROOT/123"
+    run "$SESSION" transition STARTING RUNNING
+    [ "$status" -eq 1 ]
+    grep -Fx STARTING "$BLOOM_SESSION_ROOT/state"
 }
 
 @test "a second active session is rejected but terminal sessions can restart" {

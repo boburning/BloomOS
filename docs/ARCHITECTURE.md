@@ -55,10 +55,9 @@ The first session-lifecycle action invariant is owned by `bloom-session
 stop-retroarch`: request `QUIT` through the bounded localhost control client,
 wait for exit, then use SIGTERM and finally SIGKILL only as bounded fallbacks.
 A forced kill is a `FAILED` terminal session rather than successful flushing.
-The developer game probe exercises and reports the method that completed. This is not yet the
-complete lifecycle manager: standalone-emulator adapters, save-flush
-confirmation, crash recovery, and selective service suspension remain separate
-milestones.
+The developer game probe exercises and reports the method that completed. This
+is not yet the complete lifecycle manager: standalone-emulator adapters, crash
+recovery, and selective service suspension remain separate milestones.
 
 `bloom-save-flush` provides the native durability boundary for RetroArch saves.
 It accepts a validated core basename, resolves that core's canonical `corename`
@@ -67,7 +66,9 @@ their immediate parent directory entries. It never invokes a global `sync` or
 walks another core's data. Missing core metadata, unsafe names, symlinks, and
 non-regular entries fail closed. Directory `fsync` returning `EINVAL` is allowed
 for FAT compatibility; regular save and state files must still flush
-successfully. Session integration remains responsible for preventing `STOPPED`
-until this scoped operation succeeds.
+successfully. `bloom-session` snapshots the validated core with the immutable
+request and prevents `STOPPED` until this scoped operation succeeds and its
+result is atomically recorded. A flush failure is terminal `FAILED`, so a clean
+exit can never be reported without save durability confirmation.
 
 Architectural decisions will be recorded as the corresponding subsystem work begins.

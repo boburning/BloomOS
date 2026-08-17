@@ -113,6 +113,7 @@ STOP_RESULT="$("$BLOOM_SESSION" stop-retroarch)" || fail session_stop_failed
 SHUTDOWN_METHOD="$(printf '%s' "$STOP_RESULT" | sed -n 's/.*"shutdown_method":"\([a-z_]*\)".*/\1/p')"
 case "$SHUTDOWN_METHOD" in retroarch_quit|sigterm|sigterm_fallback) ;; *) fail invalid_shutdown_method ;; esac
 RETROARCH_PID=""
+"$BLOOM_SESSION" flush-saves >/dev/null || fail save_flush_failed
 
 attempt=0
 while [ "$attempt" -lt 30 ]; do
@@ -122,7 +123,7 @@ while [ "$attempt" -lt 30 ]; do
 done
 pidof MainUI >/dev/null 2>&1 || fail mainui_return_timeout
 [ ! -e "$COMMAND_FILE" ] || fail command_cleanup_failed
-"$BLOOM_SESSION" transition FLUSHING STOPPED || fail session_complete_failed
+"$BLOOM_SESSION" complete || fail session_complete_failed
 
-printf '{"schema":1,"status":"passed","system":"%s","duration_seconds":%s,"rss_kb":%s,"shutdown_method":"%s","session_state":"STOPPED","graceful_exit":true,"mainui_return":true,"command_cleanup":true}\n' \
+printf '{"schema":1,"status":"passed","system":"%s","duration_seconds":%s,"rss_kb":%s,"shutdown_method":"%s","session_state":"STOPPED","graceful_exit":true,"save_flush":true,"mainui_return":true,"command_cleanup":true}\n' \
     "$SYSTEM" "$DURATION" "${RSS_KB:-0}" "$SHUTDOWN_METHOD"
