@@ -35,7 +35,7 @@ Wi-Fi-capable Mini Plus and Mini Flip, key-only SSH also requires at least one
 valid public key at:
 
 ```text
-/mnt/SDCARD/.tmp_update/config/bloom/authorized_keys
+/mnt/SDCARD/.bloom/authorized_keys
 ```
 
 Private keys stay on the development host. Bloom accepts plain `ssh-ed25519`,
@@ -49,7 +49,8 @@ On Linux or WSL2, provision a dedicated key:
 ```sh
 ssh-keygen -t ed25519 -f ~/.ssh/bloom_flip -C bloom-flip
 mkdir -p /path/to/sd/.tmp_update/config/bloom
-cp ~/.ssh/bloom_flip.pub /path/to/sd/.tmp_update/config/bloom/authorized_keys
+mkdir -p /path/to/sd/.bloom
+cp ~/.ssh/bloom_flip.pub /path/to/sd/.bloom/authorized_keys
 ```
 
 The inherited Dropbear binary stores generated host keys under

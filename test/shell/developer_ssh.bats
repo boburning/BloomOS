@@ -6,7 +6,7 @@ setup() {
     setup_bloom_fixture
     export SSH_HELPER=/workspace/static/build/.tmp_update/bin/bloom-dev-ssh
     export BLOOM_ROOT="$BLOOM_TEST_ROOT"
-    mkdir -p "$BLOOM_TEST_ROOT/tmp" "$SDCARD/.tmp_update/config/bloom"
+    mkdir -p "$BLOOM_TEST_ROOT/tmp" "$SDCARD/.bloom"
     cat >"$MOCK_BIN/pgrep" <<'EOF'
 #!/bin/sh
 exit 1
@@ -26,7 +26,7 @@ enable_flip() {
 
 install_valid_key() {
     printf '%s\n' 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBloomDeveloperFixture bloom-test' \
-        >"$SDCARD/.tmp_update/config/bloom/authorized_keys"
+        >"$SDCARD/.bloom/authorized_keys"
 }
 
 @test "developer SSH is disabled without the explicit flag" {
@@ -42,7 +42,7 @@ install_valid_key() {
 
 @test "developer SSH fails closed without a valid public key" {
     enable_flip
-    printf '%s\n' 'not-a-public-key' >"$SDCARD/.tmp_update/config/bloom/authorized_keys"
+    printf '%s\n' 'not-a-public-key' >"$SDCARD/.bloom/authorized_keys"
 
     run "$SSH_HELPER" start
 
@@ -60,7 +60,7 @@ install_valid_key() {
     [ "$status" -eq 0 ]
     [ "$(cat "$BLOOM_TEST_ROOT/tmp/bloom-dev-ssh.state")" = running_key_only ]
     grep -F 'dropbear -R -s -g -p 22' "$MOCK_LOG"
-    cmp "$SDCARD/.tmp_update/config/bloom/authorized_keys" "$BLOOM_TEST_ROOT/home/root/.ssh/authorized_keys"
+    cmp "$SDCARD/.bloom/authorized_keys" "$BLOOM_TEST_ROOT/home/root/.ssh/authorized_keys"
 }
 
 @test "Plus is supported and original Mini remains harmless" {

@@ -4,9 +4,12 @@ BloomOS is offline-first and collects no telemetry by default. Diagnostics remai
 
 Production SSH is off by default. Automatic developer SSH is limited to
 Wi-Fi-capable hardware and requires both `/mnt/SDCARD/.bloom-dev` and a valid
-public-key file under `.tmp_update/config/bloom/authorized_keys`. Password and
+public-key file under `.bloom/authorized_keys`. Password and
 blank-password authentication are disabled. Private keys, device addresses,
 and accepted host fingerprints remain on the developer workstation.
+The inherited Dropbear build offers only `hmac-sha1`; `bloom-device` enables
+that MAC for BloomOS connections only instead of weakening the workstation's
+SSH configuration globally.
 
 Updates and packages must be staged and verified with at least SHA-256; release signing is preferred. Downloaded code must never be executed through a `curl | sh` pattern. Logs and support bundles must redact credentials, tokens, and private keys.
 
