@@ -26,4 +26,21 @@ Mini test runner are the first migrated consumers. The vendor runtime remains a
 compatibility consumer and will be migrated incrementally after live parity is
 established.
 
+## Structured launch boundary
+
+`bloom-launch` owns schema-1 `BloomLaunchRequest` validation and atomic request
+writes. ROM and launcher paths, emulator type, core, automatic-state intent,
+temporary configs, requested resolution, and environment are data fields; new
+Bloom components must not construct executable shell text from them.
+
+Miyoo's closed MainUI still requires `cmd_to_run.sh`. The `write-legacy`
+operation is the only supported compatibility adapter: it validates the full
+request, confines ROMs and launchers to their expected SD-card roots, rejects
+duplicate/unknown fields and traversal, then atomically writes the legacy
+command in the exact double-quoted shape expected by the vendor runtime. The
+adapter currently refuses double quote, backtick, and backslash in a path
+because the legacy runtime cannot round-trip them safely. Structured requests
+retain the broader data model so that limitation disappears with the legacy
+parser rather than leaking into Bloom's API.
+
 Architectural decisions will be recorded as the corresponding subsystem work begins.
