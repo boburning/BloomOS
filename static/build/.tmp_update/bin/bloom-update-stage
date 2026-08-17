@@ -4,7 +4,7 @@ set -u
 SD_ROOT="${BLOOM_SD_ROOT:-/mnt/SDCARD}"
 VERIFY="${BLOOM_UPDATE_VERIFY_BIN:-$SD_ROOT/.tmp_update/bin/bloom-update-verify}"
 JQ="${BLOOM_JQ_BIN:-$SD_ROOT/.tmp_update/bin/jq}"
-UPDATE_ROOT="${BLOOM_UPDATE_ROOT:-$SD_ROOT/.tmp_update/update}"
+UPDATE_ROOT="${BLOOM_UPDATE_ROOT:-$SD_ROOT/.bloom/update}"
 STAGED_ROOT="$UPDATE_ROOT/staged"
 
 fail() { printf 'bloom-update-stage: %s\n' "$*" >&2; exit 1; }

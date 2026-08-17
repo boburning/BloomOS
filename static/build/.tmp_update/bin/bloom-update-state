@@ -2,7 +2,7 @@
 set -u
 
 SD_ROOT="${BLOOM_SD_ROOT:-/mnt/SDCARD}"
-UPDATE_ROOT="${BLOOM_UPDATE_ROOT:-$SD_ROOT/.tmp_update/update}"
+UPDATE_ROOT="${BLOOM_UPDATE_ROOT:-$SD_ROOT/.bloom/update}"
 VERIFY="${BLOOM_UPDATE_VERIFY_BIN:-$SD_ROOT/.tmp_update/bin/bloom-update-verify}"
 JQ="${BLOOM_JQ_BIN:-$SD_ROOT/.tmp_update/bin/jq}"
 STATE="$UPDATE_ROOT/state.json"
@@ -64,13 +64,23 @@ case "${1:-}" in
         [ "$#" -eq 1 ] || fail "boot-attempt takes no arguments"
         [ -f "$STATE" ] && [ ! -L "$STATE" ] || fail "no update is armed"
         phase="$(read_field "$STATE" '.phase')" || fail "current state is invalid"
-        case "$phase" in armed|testing) ;; *) fail "no update is awaiting validation" ;; esac
+        case "$phase" in activation_pending|testing) ;; *) fail "no update is awaiting validation" ;; esac
         attempts="$(read_field "$STATE" '.boot_attempts')" || fail "current state is invalid"
         case "$attempts" in ''|*[!0-9]*) fail "current state is invalid" ;; esac
         attempts=$((attempts + 1))
         if [ "$attempts" -ge "$MAX_BOOT_ATTEMPTS" ]; then next_phase=recovery_required; else next_phase=testing; fi
         "$JQ" -c --arg phase "$next_phase" --argjson attempts "$attempts" \
             '.phase=$phase | .boot_attempts=$attempts' "$STATE" | atomic_json "$STATE"
+        "$JQ" -c . "$STATE"
+        ;;
+    activation-start)
+        [ "$#" -eq 3 ] || fail "activation-start expects VERSION SNAPSHOT_ID"
+        version="$2"
+        snapshot_id="$3"
+        safe_version "$version" && safe_version "$snapshot_id" || fail "activation metadata is unsafe"
+        [ -f "$STATE" ] && [ "$(read_field "$STATE" '.phase')" = armed ] || fail "update is not armed"
+        [ "$(read_field "$STATE" '.pending_version')" = "$version" ] || fail "armed version does not match"
+        "$JQ" -c --arg snapshot "$snapshot_id" '.phase="activation_pending" | .snapshot_id=$snapshot' "$STATE" | atomic_json "$STATE"
         "$JQ" -c . "$STATE"
         ;;
     mark-good)
@@ -97,5 +107,5 @@ case "${1:-}" in
         [ -d "$path" ] && [ ! -L "$path" ] || fail "known-good payload is unavailable"
         "$JQ" -c --arg status recovery_available '. + {status:$status}' "$KNOWN_GOOD"
         ;;
-    *) fail "expected {status|arm VERSION|boot-attempt|mark-good VERSION|recovery}" ;;
+    *) fail "expected {status|arm VERSION|activation-start VERSION SNAPSHOT_ID|boot-attempt|mark-good VERSION|recovery}" ;;
 esac

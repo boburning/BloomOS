@@ -182,7 +182,8 @@ This verifier is the required boundary for later online and offline staging;
 the inherited size-only OTA path is not trusted as a BloomOS update path.
 
 Verified release inputs are copied into a version-specific directory below
-`.tmp_update/update/staged`. BloomOS verifies the copied bytes a second time,
+`.bloom/update/staged`. This SD-root state is outside `.tmp_update`, which the
+installer replaces during an upgrade. BloomOS verifies the copied bytes a second time,
 writes the verified record inside the same temporary directory, flushes pending
 writes, and publishes that directory with a single rename. Existing staged
 versions are never overwritten. Staging does not extract into or otherwise
@@ -200,5 +201,11 @@ and content outside the `miyoo` and `RetroArch` release roots, then extracts to
 an isolated versioned candidate directory. Required installer payloads are
 checked before the candidate directory is published. No candidate-preparation
 operation writes into the live OS tree.
+
+Activation requires an armed candidate and a retained prior known-good release.
+It creates a verified pre-update save snapshot, durably records
+`activation_pending`, and publishes package payloads before atomically renaming
+the boot installer trigger into place. Existing installer state is never
+overwritten. The next boot is the first counted validation attempt.
 
 Architectural decisions will be recorded as the corresponding subsystem work begins.

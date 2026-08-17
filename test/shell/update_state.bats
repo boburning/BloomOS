@@ -55,6 +55,7 @@ PY
     run "$STATE" arm 1.2.3
     [ "$status" -eq 0 ]
     printf '%s' "$output" | grep -F '"phase":"armed"'
+    "$STATE" activation-start 1.2.3 snapshot-1 >/dev/null
     run "$STATE" boot-attempt
     [ "$status" -eq 0 ]
     printf '%s' "$output" | grep -F '"boot_attempts":1'
@@ -70,6 +71,7 @@ PY
     "$STATE" mark-good 1.2.3 >/dev/null
     stage_release 1.2.4
     "$STATE" arm 1.2.4 >/dev/null
+    "$STATE" activation-start 1.2.4 snapshot-1 >/dev/null
 
     "$STATE" boot-attempt >/dev/null
     "$STATE" boot-attempt >/dev/null
@@ -80,6 +82,16 @@ PY
     [ "$status" -eq 0 ]
     printf '%s' "$output" | grep -F '"status":"recovery_available"'
     printf '%s' "$output" | grep -F '"version":"1.2.3"'
+}
+
+@test "boot attempts cannot begin before activation" {
+    stage_release 1.2.3
+    "$STATE" arm 1.2.3 >/dev/null
+
+    run "$STATE" boot-attempt
+
+    [ "$status" -eq 1 ]
+    printf '%s' "$output" | grep -F 'no update is awaiting validation'
 }
 
 @test "refuses concurrent updates and mismatched promotion" {

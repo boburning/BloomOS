@@ -2,7 +2,7 @@
 set -u
 
 SD_ROOT="${BLOOM_SD_ROOT:-/mnt/SDCARD}"
-UPDATE_ROOT="${BLOOM_UPDATE_ROOT:-$SD_ROOT/.tmp_update/update}"
+UPDATE_ROOT="${BLOOM_UPDATE_ROOT:-$SD_ROOT/.bloom/update}"
 VERIFY="${BLOOM_UPDATE_VERIFY_BIN:-$SD_ROOT/.tmp_update/bin/bloom-update-verify}"
 JQ="${BLOOM_JQ_BIN:-$SD_ROOT/.tmp_update/bin/jq}"
 SEVEN_ZIP="${BLOOM_7Z_BIN:-$SD_ROOT/.tmp_update/bin/7z}"

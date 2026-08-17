@@ -1,0 +1,58 @@
+#!/bin/sh
+set -u
+
+SD_ROOT="${BLOOM_SD_ROOT:-/mnt/SDCARD}"
+UPDATE_ROOT="${BLOOM_UPDATE_ROOT:-$SD_ROOT/.bloom/update}"
+STATE_BIN="${BLOOM_UPDATE_STATE_BIN:-$SD_ROOT/.tmp_update/bin/bloom-update-state}"
+SNAPSHOT_BIN="${BLOOM_SAVE_SNAPSHOT_BIN:-$SD_ROOT/.tmp_update/bin/bloom-save-snapshot}"
+JQ="${BLOOM_JQ_BIN:-$SD_ROOT/.tmp_update/bin/jq}"
+
+fail() { printf 'bloom-update-activate: %s\n' "$*" >&2; exit 1; }
+
+[ "$#" -eq 1 ] || fail "expected VERSION"
+version="$1"
+case "$version" in ''|*[!A-Za-z0-9._+-]*) fail "version is unsafe" ;; esac
+[ -x "$STATE_BIN" ] || fail "update state service is unavailable"
+[ -x "$SNAPSHOT_BIN" ] || fail "save snapshot service is unavailable"
+[ -x "$JQ" ] || fail "jq is unavailable"
+
+state="$($STATE_BIN status)" || fail "cannot read update state"
+[ "$(printf '%s\n' "$state" | "$JQ" -er '.phase')" = armed ] || fail "update is not armed"
+[ "$(printf '%s\n' "$state" | "$JQ" -er '.pending_version')" = "$version" ] || fail "armed version does not match"
+[ -f "$UPDATE_ROOT/known-good.json" ] && [ ! -L "$UPDATE_ROOT/known-good.json" ] || fail "no prior known-good release is retained"
+known_good_path="$("$JQ" -er '.path' "$UPDATE_ROOT/known-good.json")" || fail "known-good state is invalid"
+[ -d "$known_good_path" ] && [ ! -L "$known_good_path" ] || fail "known-good payload is unavailable"
+
+candidate="$UPDATE_ROOT/candidates/$version"
+[ -d "$candidate" ] && [ ! -L "$candidate" ] || fail "prepared candidate is unavailable"
+source_app="$candidate/miyoo/app"
+source_ra="$candidate/RetroArch"
+[ -f "$source_app/MainUI" ] && [ -d "$source_app/.tmp_update" ] || fail "candidate installer is incomplete"
+[ -f "$source_ra/retroarch.pak" ] || fail "candidate RetroArch payload is incomplete"
+
+target_app="$SD_ROOT/miyoo/app"
+target_ra="$SD_ROOT/RetroArch"
+mkdir -p "$target_app" "$target_ra" || fail "cannot create activation targets"
+[ ! -e "$target_app/MainUI" ] && [ ! -e "$target_app/.tmp_update" ] || fail "an installer is already pending"
+[ ! -e "$target_ra/retroarch.pak" ] || fail "a RetroArch installer is already pending"
+
+snapshot="$($SNAPSHOT_BIN create pre-update)" || fail "pre-update save snapshot failed"
+snapshot_id="$(printf '%s\n' "$snapshot" | "$JQ" -er '.id')" || fail "snapshot result is invalid"
+$STATE_BIN activation-start "$version" "$snapshot_id" >/dev/null || fail "cannot record activation"
+
+temporary_app="$target_app/.bloom-candidate-$$"
+temporary_ra="$target_ra/.bloom-candidate-$$.pak"
+temporary_trigger="$target_app/.bloom-MainUI-$$"
+cleanup() { rm -rf "$temporary_app"; rm -f "$temporary_ra" "$temporary_trigger"; }
+trap cleanup EXIT HUP INT TERM
+cp -R "$source_app/.tmp_update" "$temporary_app" || fail "cannot stage installer payload"
+cp "$source_ra/retroarch.pak" "$temporary_ra" || fail "cannot stage RetroArch payload"
+cp "$source_app/MainUI" "$temporary_trigger" || fail "cannot stage installer trigger"
+sync
+mv "$temporary_app" "$target_app/.tmp_update" || fail "cannot publish installer payload"
+mv "$temporary_ra" "$target_ra/retroarch.pak" || fail "cannot publish RetroArch payload"
+sync
+mv "$temporary_trigger" "$target_app/MainUI" || fail "cannot publish installer trigger"
+trap - EXIT HUP INT TERM
+sync
+printf '{"schema":1,"status":"activation_pending","version":"%s","snapshot_id":"%s"}\n' "$version" "$snapshot_id"
