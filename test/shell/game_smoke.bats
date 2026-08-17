@@ -55,6 +55,8 @@ printf '%s\n' "$*" >>"$MOCK_LOG"
 exit 1
 EOF
     chmod +x "$SDCARD/.tmp_update/bin/bloom-launch"
+    printf '#!/bin/sh\nexit 0\n' >"$SDCARD/.tmp_update/bin/bloom-session"
+    chmod +x "$SDCARD/.tmp_update/bin/bloom-session"
     cat >"$MOCK_BIN/pidof" <<'EOF'
 #!/bin/sh
 exit 0

@@ -1,0 +1,140 @@
+#!/bin/sh
+set -u
+
+SESSION_ROOT="${BLOOM_SESSION_ROOT:-/tmp/bloom-session}"
+PROC_ROOT="${BLOOM_PROC_ROOT:-/proc}"
+BLOOM_LAUNCH="${BLOOM_LAUNCH_BIN:-/mnt/SDCARD/.tmp_update/bin/bloom-launch}"
+STATE_FILE="$SESSION_ROOT/state"
+PID_FILE="$SESSION_ROOT/pid"
+HASH_FILE="$SESSION_ROOT/request_sha256"
+REQUEST_FILE="$SESSION_ROOT/request.json"
+REASON_FILE="$SESSION_ROOT/failure_reason"
+LOCK_DIR="$SESSION_ROOT/.lock"
+LOCKED=0
+
+fail() { printf 'bloom-session: %s\n' "$*" >&2; exit 1; }
+
+unlock() {
+    if [ "$LOCKED" -eq 1 ]; then
+        rmdir "$LOCK_DIR" 2>/dev/null || true
+        LOCKED=0
+    fi
+}
+trap unlock EXIT HUP INT TERM
+
+lock() {
+    mkdir -p "$SESSION_ROOT" || fail "cannot create session root"
+    chmod 700 "$SESSION_ROOT" 2>/dev/null || true
+    mkdir "$LOCK_DIR" 2>/dev/null || fail "session is busy"
+    LOCKED=1
+}
+
+read_value() {
+    if [ -r "$1" ]; then
+        IFS= read -r value <"$1" || true
+        printf '%s' "${value:-}"
+    fi
+}
+
+atomic_line() {
+    destination="$1"
+    value="$2"
+    temporary="$destination.tmp.$$"
+    (umask 077; printf '%s\n' "$value" >"$temporary") || fail "cannot write session state"
+    mv -f "$temporary" "$destination" || fail "cannot commit session state"
+}
+
+current_state() {
+    state="$(read_value "$STATE_FILE")"
+    printf '%s' "${state:-IDLE}"
+}
+
+valid_transition() {
+    case "$1:$2" in
+        PREPARING:STARTING|STARTING:RUNNING|RUNNING:STOP_REQUESTED|STOP_REQUESTED:FLUSHING|FLUSHING:STOPPED) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+transition_locked() {
+    expected="$1"
+    next="$2"
+    actual="$(current_state)"
+    [ "$actual" = "$expected" ] || fail "expected $expected but session is $actual"
+    valid_transition "$expected" "$next" || fail "invalid transition: $expected -> $next"
+    atomic_line "$STATE_FILE" "$next"
+}
+
+command_start() {
+    request="$1"
+    [ -x "$BLOOM_LAUNCH" ] || fail "bloom-launch is unavailable"
+    [ -f "$request" ] || fail "launch request not found"
+    "$BLOOM_LAUNCH" validate "$request" >/dev/null || fail "launch request is invalid"
+    lock
+    state="$(current_state)"
+    case "$state" in IDLE|STOPPED|FAILED) ;; *) fail "session is already active: $state" ;; esac
+    temporary="$REQUEST_FILE.tmp.$$"
+    (umask 077; cp "$request" "$temporary") || fail "cannot copy launch request"
+    if ! "$BLOOM_LAUNCH" validate "$temporary" >/dev/null; then
+        rm -f "$temporary"
+        fail "copied launch request is invalid"
+    fi
+    mv -f "$temporary" "$REQUEST_FILE" || fail "cannot commit launch request"
+    request_hash="$(sha256sum "$REQUEST_FILE" | awk '{print $1}')"
+    case "$request_hash" in ''|*[!0-9a-f]*) fail "cannot hash launch request" ;; esac
+    atomic_line "$HASH_FILE" "$request_hash"
+    rm -f "$PID_FILE" "$REASON_FILE"
+    atomic_line "$STATE_FILE" PREPARING
+}
+
+command_transition() {
+    lock
+    transition_locked "$1" "$2"
+}
+
+command_attach() {
+    pid="$1"
+    case "$pid" in ''|*[!0-9]*) fail "invalid emulator PID" ;; esac
+    lock
+    [ -d "$PROC_ROOT/$pid" ] || fail "emulator PID is not running"
+    [ "$(current_state)" = STARTING ] || fail "session is not STARTING"
+    atomic_line "$PID_FILE" "$pid"
+    transition_locked STARTING RUNNING
+}
+
+command_fail() {
+    reason="$1"
+    case "$reason" in ''|*[!a-z0-9_-]*) fail "invalid failure reason" ;; esac
+    lock
+    state="$(current_state)"
+    case "$state" in PREPARING|STARTING|RUNNING|STOP_REQUESTED|FLUSHING) ;; *) fail "session is not active" ;; esac
+    atomic_line "$REASON_FILE" "$reason"
+    atomic_line "$STATE_FILE" FAILED
+}
+
+command_status() {
+    lock
+    state="$(current_state)"
+    pid="$(read_value "$PID_FILE")"
+    request_hash="$(read_value "$HASH_FILE")"
+    reason="$(read_value "$REASON_FILE")"
+    printf '{"schema":1,"state":"%s","pid":%s,"request_sha256":"%s","failure_reason":"%s"}\n' \
+        "$state" "${pid:-null}" "${request_hash:-}" "${reason:-}"
+}
+
+usage() {
+    printf 'Usage: bloom-session start REQUEST.json\n' >&2
+    printf '       bloom-session transition EXPECTED NEXT\n' >&2
+    printf '       bloom-session attach PID\n' >&2
+    printf '       bloom-session fail REASON\n' >&2
+    printf '       bloom-session status --json\n' >&2
+}
+
+case "${1:-}" in
+    start) [ "$#" -eq 2 ] || { usage; exit 2; }; command_start "$2" ;;
+    transition) [ "$#" -eq 3 ] || { usage; exit 2; }; command_transition "$2" "$3" ;;
+    attach) [ "$#" -eq 2 ] || { usage; exit 2; }; command_attach "$2" ;;
+    fail) [ "$#" -eq 2 ] || { usage; exit 2; }; command_fail "$2" ;;
+    status) [ "$#" -eq 2 ] && [ "$2" = --json ] || { usage; exit 2; }; command_status ;;
+    *) usage; exit 2 ;;
+esac

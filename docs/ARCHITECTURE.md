@@ -43,12 +43,20 @@ because the legacy runtime cannot round-trip them safely. Structured requests
 retain the broader data model so that limitation disappears with the legacy
 parser rather than leaking into Bloom's API.
 
-The first session-lifecycle invariant is graceful RetroArch termination:
+`bloom-session` owns the initial explicit lifecycle state machine. It validates
+and snapshots the immutable launch request, hashes that snapshot, serializes
+writers with an atomic lock, rejects stale or skipped transitions, attaches a
+verified emulator PID, and exposes machine-readable terminal state. The only
+successful path is `PREPARING → STARTING → RUNNING → STOP_REQUESTED → FLUSHING
+→ STOPPED`; an active state may instead terminate as `FAILED` with a bounded
+data-safe reason.
+
+The first session-lifecycle action invariant is graceful RetroArch termination:
 request `QUIT` through the bounded localhost control client, wait for exit,
 then use SIGTERM and finally SIGKILL only as bounded fallbacks. The developer
 game probe exercises and reports the method that completed. This is not yet the
-complete lifecycle manager: explicit persistent states, standalone-emulator
-adapters, save-flush confirmation, and selective service suspension remain
-separate milestones.
+complete lifecycle manager: standalone-emulator adapters, save-flush
+confirmation, crash recovery, and selective service suspension remain separate
+milestones.
 
 Architectural decisions will be recorded as the corresponding subsystem work begins.

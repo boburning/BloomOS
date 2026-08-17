@@ -7,6 +7,7 @@ COMMAND_FILE="$SYS_DIR/cmd_to_run.sh"
 REQUEST_FILE="$SYS_DIR/bloom-launch-request.json"
 BLOOM_LAUNCH="$SYS_DIR/bin/bloom-launch"
 SEND_UDP="$SYS_DIR/bin/sendUDP"
+BLOOM_SESSION="$SYS_DIR/bin/bloom-session"
 KEEP_SERVICES="$SYS_DIR/config/.keepServicesAlive"
 SYSTEM="${1:-}"
 ROM_B64="${2:-}"
@@ -38,6 +39,9 @@ cleanup() {
     fi
     if [ "$CREATED_REQUEST" -eq 1 ]; then
         rm -f "$REQUEST_FILE"
+    fi
+    if [ -x "$BLOOM_SESSION" ]; then
+        "$BLOOM_SESSION" fail smoke_cleanup >/dev/null 2>&1 || true
     fi
 }
 trap cleanup EXIT HUP INT TERM
@@ -74,6 +78,7 @@ esac
 LAUNCHER="$SD_ROOT/Emu/$SYSTEM/launch.sh"
 [ -x "$LAUNCHER" ] || fail launcher_not_found
 [ -x "$BLOOM_LAUNCH" ] || fail bloom_launch_not_found
+[ -x "$BLOOM_SESSION" ] || fail bloom_session_not_found
 [ ! -e "$COMMAND_FILE" ] || fail launch_already_pending
 [ ! -e "$REQUEST_FILE" ] || fail request_already_pending
 [ -z "$(retroarch_pid 2>/dev/null || true)" ] || fail retroarch_already_running
@@ -88,6 +93,8 @@ fi
     "$ROM_PATH" "$LAUNCHER" retroarch "$CORE" false || fail structured_request_failed
 CREATED_REQUEST=1
 "$BLOOM_LAUNCH" write-legacy "$REQUEST_FILE" "$COMMAND_FILE" || fail legacy_adapter_failed
+"$BLOOM_SESSION" start "$REQUEST_FILE" || fail session_start_failed
+"$BLOOM_SESSION" transition PREPARING STARTING || fail session_starting_failed
 sync
 killall MainUI >/dev/null 2>&1 || fail mainui_stop_failed
 
@@ -99,9 +106,11 @@ while [ "$attempt" -lt 60 ]; do
     attempt=$((attempt + 1))
 done
 [ -n "$RETROARCH_PID" ] || fail retroarch_start_timeout
+"$BLOOM_SESSION" attach "$RETROARCH_PID" || fail session_attach_failed
 
 RSS_KB="$(awk '/^VmRSS:/ { print $2; exit }' "/proc/$RETROARCH_PID/status")"
 sleep "$DURATION"
+"$BLOOM_SESSION" transition RUNNING STOP_REQUESTED || fail session_stop_request_failed
 SHUTDOWN_METHOD=retroarch_quit
 kill -CONT "$RETROARCH_PID" 2>/dev/null || true
 if [ ! -x "$SEND_UDP" ] || ! "$SEND_UDP" QUIT >/dev/null 2>&1; then
@@ -129,6 +138,7 @@ if kill -0 "$RETROARCH_PID" 2>/dev/null; then
     fail retroarch_graceful_exit_timeout
 fi
 RETROARCH_PID=""
+"$BLOOM_SESSION" transition STOP_REQUESTED FLUSHING || fail session_flushing_failed
 
 attempt=0
 while [ "$attempt" -lt 30 ]; do
@@ -138,6 +148,7 @@ while [ "$attempt" -lt 30 ]; do
 done
 pidof MainUI >/dev/null 2>&1 || fail mainui_return_timeout
 [ ! -e "$COMMAND_FILE" ] || fail command_cleanup_failed
+"$BLOOM_SESSION" transition FLUSHING STOPPED || fail session_complete_failed
 
-printf '{"schema":1,"status":"passed","system":"%s","duration_seconds":%s,"rss_kb":%s,"shutdown_method":"%s","graceful_exit":true,"mainui_return":true,"command_cleanup":true}\n' \
+printf '{"schema":1,"status":"passed","system":"%s","duration_seconds":%s,"rss_kb":%s,"shutdown_method":"%s","session_state":"STOPPED","graceful_exit":true,"mainui_return":true,"command_cleanup":true}\n' \
     "$SYSTEM" "$DURATION" "${RSS_KB:-0}" "$SHUTDOWN_METHOD"
