@@ -132,6 +132,16 @@ set `BLOOM_SNAPSHOT_RETENTION`; device operators can run
 update/rollback references and unverifiable evidence are preserved even when
 they exceed the configured count.
 
+Read snapshot recovery inventory without modifying it with:
+
+```sh
+bloomctl saves snapshots
+```
+
+Entries are reported as `verified` or `unverified`; active update references
+are marked explicitly. Listing an empty system does not create snapshot
+storage.
+
 | Device | Development method |
 | --- | --- |
 | Original Mini V1–V4 | Guarded SD-card request/results harness; UART is optional advanced work |

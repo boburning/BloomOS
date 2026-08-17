@@ -97,6 +97,46 @@ prune_snapshots() {
     printf '{"schema":1,"status":"pruned","retained":%s,"removed":%s}\n' "$limit" "$removed"
 }
 
+list_snapshots() {
+    [ -x "$JQ" ] || fail "jq is unavailable"
+    if [ ! -d "$SNAPSHOT_ROOT" ]; then
+        printf '%s\n' '{"schema":1,"snapshots":[]}'
+        return
+    fi
+    lock
+    inventory="$SNAPSHOT_ROOT/.list-$$"
+    : >"$inventory" || fail "cannot create snapshot inventory"
+    for snapshot in "$SNAPSHOT_ROOT"/*; do
+        [ -d "$snapshot" ] && [ ! -L "$snapshot" ] || continue
+        snapshot_id="$(basename "$snapshot")"
+        safe_name "$snapshot_id" || continue
+        if verify_snapshot "$snapshot"; then snapshot_status=verified; else snapshot_status=unverified; fi
+        trigger=unknown
+        if [ -f "$snapshot/metadata.json" ] && [ ! -L "$snapshot/metadata.json" ]; then
+            metadata_id="$("$JQ" -er '.id' "$snapshot/metadata.json" 2>/dev/null)" || metadata_id=""
+            metadata_trigger="$("$JQ" -er '.trigger' "$snapshot/metadata.json" 2>/dev/null)" || metadata_trigger=""
+            if [ "$metadata_id" = "$snapshot_id" ] && safe_name "$metadata_trigger"; then
+                trigger="$metadata_trigger"
+            else
+                snapshot_status=unverified
+            fi
+        fi
+        if [ -f "$snapshot/saves.tar" ] && [ ! -L "$snapshot/saves.tar" ]; then
+            bytes="$(wc -c <"$snapshot/saves.tar" | tr -d ' ')"
+        else
+            bytes=0
+        fi
+        case "$bytes" in ''|*[!0-9]*) bytes=0 ;; esac
+        if referenced_snapshot "$snapshot_id"; then referenced=true; else referenced=false; fi
+        "$JQ" -cn --arg id "$snapshot_id" --arg trigger "$trigger" --arg status "$snapshot_status" \
+            --argjson bytes "$bytes" --argjson referenced "$referenced" \
+            '{id:$id,trigger:$trigger,status:$status,bytes:$bytes,referenced:$referenced}' >>"$inventory" ||
+            fail "cannot serialize snapshot inventory"
+    done
+    "$JQ" -cs '{schema:1,snapshots:(sort_by(.id) | reverse)}' "$inventory" || fail "cannot publish snapshot inventory"
+    rm -f "$inventory"
+}
+
 create_snapshot() {
     trigger="$1"
     safe_name "$trigger" || fail "invalid snapshot trigger"
@@ -157,6 +197,7 @@ usage() {
     printf '       bloom-save-snapshot verify SNAPSHOT_ID\n' >&2
     printf '       bloom-save-snapshot restore SNAPSHOT_ID\n' >&2
     printf '       bloom-save-snapshot prune KEEP\n' >&2
+    printf '       bloom-save-snapshot list\n' >&2
 }
 
 case "${1:-}" in
@@ -169,5 +210,6 @@ case "${1:-}" in
         ;;
     restore) [ "$#" -eq 2 ] || { usage; exit 2; }; restore_snapshot "$2" ;;
     prune) [ "$#" -eq 2 ] || { usage; exit 2; }; prune_snapshots "$2" ;;
+    list) [ "$#" -eq 1 ] || { usage; exit 2; }; list_snapshots ;;
     *) usage; exit 2 ;;
 esac
