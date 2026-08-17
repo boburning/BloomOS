@@ -86,6 +86,15 @@ request and prevents `STOPPED` until this scoped operation succeeds and its
 result is atomically recorded. A flush failure is terminal `FAILED`, so a clean
 exit can never be reported without save durability confirmation.
 
+`bloom-save-snapshot` protects the complete current-profile `saves` and
+`states` trees. Creation rejects links and special files, archives both trees
+into a staging directory, records a SHA-256 checksum, and publishes only after
+a completion marker verifies. Restore is explicit, refuses active sessions,
+verifies the archive before touching live data, and moves both current trees
+to an on-card rollback directory until both replacements succeed. An
+interrupted restore therefore leaves the prior trees recoverable rather than
+silently reporting success.
+
 ## Canonical game identity
 
 `bloom-game-id` defines the schema-1 identity boundary. It normalizes the ROM
