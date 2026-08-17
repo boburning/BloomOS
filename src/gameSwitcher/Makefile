@@ -3,7 +3,8 @@ include ../common/config.mk
 
 CFILES := $(CFILES) \
 	../common/utils/udp.c \
-	../common/utils/retroarch_cmd.c
+	../common/utils/retroarch_cmd.c \
+	../playActivity/playActivityModel.c
 
 TARGET = gameSwitcher
 LDFLAGS := $(LDFLAGS) -lSDL -lSDL_ttf -lSDL_image -lSDL_rotozoom -lpng -lsqlite3 -pthread
