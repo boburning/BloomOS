@@ -112,6 +112,13 @@ whose GameID does not match its system and ROM path. New launch consumers must
 obtain the identifier from `bloom-game-id`; the legacy MainUI recent list
 remains a compatibility data source pending GameSwitcher and activity migration.
 
+Both the structured request and its legacy MainUI adapter use the same durable
+metadata sequence: write an exclusive temporary file, flush and close it,
+rename it over the destination, then flush the parent directory. Directory
+`fsync` reporting `EINVAL` or `ENOTSUP` is accepted for FAT implementations
+that do not expose directory flushing; all other write and flush failures are
+reported to the caller.
+
 ## Play Activity data boundary
 
 The first Play Activity cleanup isolates SQLite row ownership and image-path
