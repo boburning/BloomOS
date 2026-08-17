@@ -61,9 +61,8 @@ cat >"$SOURCE_DIR/localoptions.h" <<'EOF'
 #define DROPBEAR_PATH_SSH_PROGRAM ""
 #define DEFAULT_ROOT_PATH "/customer/app:/mnt/SDCARD/.tmp_update/bin:/usr/sbin:/usr/bin:/sbin:/bin:/config"
 #define DEFAULT_LIBRARY_PATH "/lib:/config/lib:/mnt/SDCARD/miyoo/lib:/mnt/SDCARD/.tmp_update/lib:/mnt/SDCARD/.tmp_update/lib/parasyte"
-#define DROPBEAR_SVR_NO_LOGIN_SHELL 1
+#define DROPBEAR_SVR_NO_SHELL_SESSION 1
 #define DROPBEAR_SVR_NO_CHDIR 1
-#define DROPBEAR_SVR_EVERYONE_LOGIN_AS_ROOT 1
 EOF
 
 TOOL_PREFIX="${CROSS_COMPILE:-arm-linux-gnueabihf-}"
