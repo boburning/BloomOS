@@ -14,6 +14,7 @@
         /workspace/.github/workflows/tagged-release.yml; do
         grep -F 'make unsigned-release' "$workflow"
         grep -F 'make sign-release' "$workflow"
+        grep -F 'git submodule foreach --recursive' "$workflow"
         ! grep -F 'container:' "$workflow"
         build_line="$(grep -n 'make unsigned-release' "$workflow" | cut -d: -f1)"
         secret_line="$(grep -n 'BLOOM_RELEASE_SIGNING_KEY:' "$workflow" | cut -d: -f1)"
