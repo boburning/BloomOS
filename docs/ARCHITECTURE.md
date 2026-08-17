@@ -51,10 +51,11 @@ successful path is `PREPARING → STARTING → RUNNING → STOP_REQUESTED → FL
 → STOPPED`; an active state may instead terminate as `FAILED` with a bounded
 data-safe reason.
 
-The first session-lifecycle action invariant is graceful RetroArch termination:
-request `QUIT` through the bounded localhost control client, wait for exit,
-then use SIGTERM and finally SIGKILL only as bounded fallbacks. The developer
-game probe exercises and reports the method that completed. This is not yet the
+The first session-lifecycle action invariant is owned by `bloom-session
+stop-retroarch`: request `QUIT` through the bounded localhost control client,
+wait for exit, then use SIGTERM and finally SIGKILL only as bounded fallbacks.
+A forced kill is a `FAILED` terminal session rather than successful flushing.
+The developer game probe exercises and reports the method that completed. This is not yet the
 complete lifecycle manager: standalone-emulator adapters, save-flush
 confirmation, crash recovery, and selective service suspension remain separate
 milestones.

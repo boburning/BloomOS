@@ -6,7 +6,6 @@ SYS_DIR="$SD_ROOT/.tmp_update"
 COMMAND_FILE="$SYS_DIR/cmd_to_run.sh"
 REQUEST_FILE="$SYS_DIR/bloom-launch-request.json"
 BLOOM_LAUNCH="$SYS_DIR/bin/bloom-launch"
-SEND_UDP="$SYS_DIR/bin/sendUDP"
 BLOOM_SESSION="$SYS_DIR/bin/bloom-session"
 KEEP_SERVICES="$SYS_DIR/config/.keepServicesAlive"
 SYSTEM="${1:-}"
@@ -110,35 +109,10 @@ done
 
 RSS_KB="$(awk '/^VmRSS:/ { print $2; exit }' "/proc/$RETROARCH_PID/status")"
 sleep "$DURATION"
-"$BLOOM_SESSION" transition RUNNING STOP_REQUESTED || fail session_stop_request_failed
-SHUTDOWN_METHOD=retroarch_quit
-kill -CONT "$RETROARCH_PID" 2>/dev/null || true
-if [ ! -x "$SEND_UDP" ] || ! "$SEND_UDP" QUIT >/dev/null 2>&1; then
-    SHUTDOWN_METHOD=sigterm
-    kill -TERM "$RETROARCH_PID" 2>/dev/null || fail retroarch_term_failed
-else
-    attempt=0
-    while kill -0 "$RETROARCH_PID" 2>/dev/null && [ "$attempt" -lt 5 ]; do
-        sleep 1
-        attempt=$((attempt + 1))
-    done
-    if kill -0 "$RETROARCH_PID" 2>/dev/null; then
-        SHUTDOWN_METHOD=sigterm_fallback
-        kill -TERM "$RETROARCH_PID" 2>/dev/null || fail retroarch_term_failed
-    fi
-fi
-
-attempt=0
-while kill -0 "$RETROARCH_PID" 2>/dev/null && [ "$attempt" -lt 20 ]; do
-    sleep 1
-    attempt=$((attempt + 1))
-done
-if kill -0 "$RETROARCH_PID" 2>/dev/null; then
-    kill -KILL "$RETROARCH_PID" 2>/dev/null || true
-    fail retroarch_graceful_exit_timeout
-fi
+STOP_RESULT="$("$BLOOM_SESSION" stop-retroarch)" || fail session_stop_failed
+SHUTDOWN_METHOD="$(printf '%s' "$STOP_RESULT" | sed -n 's/.*"shutdown_method":"\([a-z_]*\)".*/\1/p')"
+case "$SHUTDOWN_METHOD" in retroarch_quit|sigterm|sigterm_fallback) ;; *) fail invalid_shutdown_method ;; esac
 RETROARCH_PID=""
-"$BLOOM_SESSION" transition STOP_REQUESTED FLUSHING || fail session_flushing_failed
 
 attempt=0
 while [ "$attempt" -lt 30 ]; do

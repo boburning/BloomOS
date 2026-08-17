@@ -8,6 +8,11 @@ setup() {
     export BLOOM_SESSION_ROOT="$BLOOM_TEST_ROOT/session"
     export BLOOM_PROC_ROOT="$BLOOM_TEST_ROOT/proc"
     export BLOOM_LAUNCH_BIN="$MOCK_BIN/bloom-launch"
+    export BLOOM_SEND_UDP_BIN="$MOCK_BIN/sendUDP"
+    export BLOOM_SIGNAL_BIN="$MOCK_BIN/signal"
+    export BLOOM_QUIT_WAIT_SECONDS=0
+    export BLOOM_TERM_WAIT_SECONDS=0
+    export BLOOM_KILL_WAIT_SECONDS=0
     mkdir -p "$BLOOM_PROC_ROOT" "$BLOOM_TEST_ROOT/requests"
     export REQUEST="$BLOOM_TEST_ROOT/requests/game.json"
     printf '%s\n' '{"schema":1}' >"$REQUEST"
@@ -16,6 +21,18 @@ setup() {
 [ "$1" = validate ] && [ -f "$2" ]
 EOF
     chmod +x "$BLOOM_LAUNCH_BIN"
+    cat >"$BLOOM_SIGNAL_BIN" <<'EOF'
+#!/bin/sh
+printf '%s %s\n' "$1" "$2" >>"$MOCK_LOG"
+EOF
+    chmod +x "$BLOOM_SIGNAL_BIN"
+}
+
+start_running_session() {
+    "$SESSION" start "$REQUEST"
+    "$SESSION" transition PREPARING STARTING
+    mkdir -p "$BLOOM_PROC_ROOT/123"
+    "$SESSION" attach 123
 }
 
 teardown() { teardown_bloom_fixture; }
@@ -75,4 +92,54 @@ teardown() { teardown_bloom_fixture; }
     run "$SESSION" fail 'bad"reason'
     [ "$status" -eq 1 ]
     grep -Fx STARTING "$BLOOM_SESSION_ROOT/state"
+}
+
+@test "session owns RetroArch QUIT and enters flushing only after process exit" {
+    start_running_session
+    cat >"$BLOOM_SEND_UDP_BIN" <<'EOF'
+#!/bin/sh
+[ "$1" = QUIT ] || exit 1
+rm -rf "$BLOOM_PROC_ROOT/$(cat "$BLOOM_SESSION_ROOT/pid")"
+EOF
+    chmod +x "$BLOOM_SEND_UDP_BIN"
+
+    run "$SESSION" stop-retroarch
+
+    [ "$status" -eq 0 ]
+    printf '%s' "$output" | grep -F '"state":"FLUSHING"'
+    printf '%s' "$output" | grep -F '"shutdown_method":"retroarch_quit"'
+    grep -Fx FLUSHING "$BLOOM_SESSION_ROOT/state"
+    grep -F -- '-CONT 123' "$MOCK_LOG"
+}
+
+@test "failed control request uses bounded SIGTERM fallback" {
+    start_running_session
+    printf '#!/bin/sh\nexit 1\n' >"$BLOOM_SEND_UDP_BIN"
+    chmod +x "$BLOOM_SEND_UDP_BIN"
+    cat >"$BLOOM_SIGNAL_BIN" <<'EOF'
+#!/bin/sh
+printf '%s %s\n' "$1" "$2" >>"$MOCK_LOG"
+[ "$1" != -TERM ] || rm -rf "$BLOOM_PROC_ROOT/$2"
+EOF
+    chmod +x "$BLOOM_SIGNAL_BIN"
+
+    run "$SESSION" stop-retroarch
+
+    [ "$status" -eq 0 ]
+    printf '%s' "$output" | grep -F '"shutdown_method":"sigterm"'
+    grep -F -- '-TERM 123' "$MOCK_LOG"
+    grep -Fx FLUSHING "$BLOOM_SESSION_ROOT/state"
+}
+
+@test "forced kill is a failed terminal state rather than successful flushing" {
+    start_running_session
+    printf '#!/bin/sh\nexit 1\n' >"$BLOOM_SEND_UDP_BIN"
+    chmod +x "$BLOOM_SEND_UDP_BIN"
+
+    run "$SESSION" stop-retroarch
+
+    [ "$status" -eq 1 ]
+    grep -Fx FAILED "$BLOOM_SESSION_ROOT/state"
+    grep -Fx forced_kill_required "$BLOOM_SESSION_ROOT/failure_reason"
+    grep -F -- '-KILL 123' "$MOCK_LOG"
 }

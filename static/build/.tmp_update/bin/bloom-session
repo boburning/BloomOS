@@ -4,6 +4,11 @@ set -u
 SESSION_ROOT="${BLOOM_SESSION_ROOT:-/tmp/bloom-session}"
 PROC_ROOT="${BLOOM_PROC_ROOT:-/proc}"
 BLOOM_LAUNCH="${BLOOM_LAUNCH_BIN:-/mnt/SDCARD/.tmp_update/bin/bloom-launch}"
+SEND_UDP="${BLOOM_SEND_UDP_BIN:-/mnt/SDCARD/.tmp_update/bin/sendUDP}"
+SIGNAL_BIN="${BLOOM_SIGNAL_BIN:-}"
+QUIT_WAIT="${BLOOM_QUIT_WAIT_SECONDS:-5}"
+TERM_WAIT="${BLOOM_TERM_WAIT_SECONDS:-20}"
+KILL_WAIT="${BLOOM_KILL_WAIT_SECONDS:-2}"
 STATE_FILE="$SESSION_ROOT/state"
 PID_FILE="$SESSION_ROOT/pid"
 HASH_FILE="$SESSION_ROOT/request_sha256"
@@ -13,6 +18,11 @@ LOCK_DIR="$SESSION_ROOT/.lock"
 LOCKED=0
 
 fail() { printf 'bloom-session: %s\n' "$*" >&2; exit 1; }
+
+for wait_value in "$QUIT_WAIT" "$TERM_WAIT" "$KILL_WAIT"; do
+    case "$wait_value" in ''|*[!0-9]*) fail "invalid stop timeout" ;; esac
+    [ "$wait_value" -le 60 ] || fail "stop timeout exceeds 60 seconds"
+done
 
 unlock() {
     if [ "$LOCKED" -eq 1 ]; then
@@ -112,6 +122,74 @@ command_fail() {
     atomic_line "$STATE_FILE" FAILED
 }
 
+signal_process() {
+    signal="$1"
+    pid="$2"
+    if [ -n "$SIGNAL_BIN" ]; then
+        "$SIGNAL_BIN" "$signal" "$pid"
+    else
+        kill "$signal" "$pid"
+    fi
+}
+
+process_alive() { [ -d "$PROC_ROOT/$1" ]; }
+
+wait_for_exit() {
+    pid="$1"
+    limit="$2"
+    attempt=0
+    while process_alive "$pid" && [ "$attempt" -lt "$limit" ]; do
+        sleep 1
+        attempt=$((attempt + 1))
+    done
+    ! process_alive "$pid"
+}
+
+stop_failure() {
+    reason="$1"
+    lock
+    [ "$(current_state)" = STOP_REQUESTED ] || fail "stop failure lost session ownership"
+    atomic_line "$REASON_FILE" "$reason"
+    atomic_line "$STATE_FILE" FAILED
+    unlock
+    fail "$reason"
+}
+
+command_stop_retroarch() {
+    lock
+    [ "$(current_state)" = RUNNING ] || fail "session is not RUNNING"
+    pid="$(read_value "$PID_FILE")"
+    case "$pid" in ''|*[!0-9]*) fail "session emulator PID is invalid" ;; esac
+    process_alive "$pid" || fail "tracked emulator is not running"
+    transition_locked RUNNING STOP_REQUESTED
+    unlock
+
+    signal_process -CONT "$pid" 2>/dev/null || process_alive "$pid" || true
+    method=retroarch_quit
+    if [ ! -x "$SEND_UDP" ] || ! "$SEND_UDP" QUIT >/dev/null 2>&1; then
+        method=sigterm
+    elif wait_for_exit "$pid" "$QUIT_WAIT"; then
+        method=retroarch_quit
+    else
+        method=sigterm_fallback
+    fi
+
+    if process_alive "$pid"; then
+        signal_process -TERM "$pid" 2>/dev/null || process_alive "$pid" || true
+        wait_for_exit "$pid" "$TERM_WAIT" || true
+    fi
+    if process_alive "$pid"; then
+        signal_process -KILL "$pid" 2>/dev/null || process_alive "$pid" || true
+        wait_for_exit "$pid" "$KILL_WAIT" || true
+        stop_failure forced_kill_required
+    fi
+
+    lock
+    transition_locked STOP_REQUESTED FLUSHING
+    unlock
+    printf '{"schema":1,"state":"FLUSHING","shutdown_method":"%s"}\n' "$method"
+}
+
 command_status() {
     lock
     state="$(current_state)"
@@ -127,6 +205,7 @@ usage() {
     printf '       bloom-session transition EXPECTED NEXT\n' >&2
     printf '       bloom-session attach PID\n' >&2
     printf '       bloom-session fail REASON\n' >&2
+    printf '       bloom-session stop-retroarch\n' >&2
     printf '       bloom-session status --json\n' >&2
 }
 
@@ -135,6 +214,7 @@ case "${1:-}" in
     transition) [ "$#" -eq 3 ] || { usage; exit 2; }; command_transition "$2" "$3" ;;
     attach) [ "$#" -eq 2 ] || { usage; exit 2; }; command_attach "$2" ;;
     fail) [ "$#" -eq 2 ] || { usage; exit 2; }; command_fail "$2" ;;
+    stop-retroarch) [ "$#" -eq 1 ] || { usage; exit 2; }; command_stop_retroarch ;;
     status) [ "$#" -eq 2 ] && [ "$2" = --json ] || { usage; exit 2; }; command_status ;;
     *) usage; exit 2 ;;
 esac
