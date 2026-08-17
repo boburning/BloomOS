@@ -34,6 +34,14 @@ jobs:
       run: |
         echo "BUILD_VERSION=$(make version)" >> $GITHUB_ENV
         echo "SHA_SHORT=$(git log -n 1 --pretty=format:"%h" origin/main)" >> $GITHUB_ENV
+    - name: Configure release signing
+      env:
+        BLOOM_RELEASE_SIGNING_KEY: ${{ secrets.BLOOM_RELEASE_SIGNING_KEY }}
+      run: |
+        test -n "$BLOOM_RELEASE_SIGNING_KEY"
+        umask 077
+        printf '%s\n' "$BLOOM_RELEASE_SIGNING_KEY" > /tmp/bloom-release-signing-key.pem
+        echo "BLOOM_RELEASE_SIGNING_KEY_FILE=/tmp/bloom-release-signing-key.pem" >> $GITHUB_ENV
     - name: Print version
       run: |
         echo "BloomOS-v${{ env.BUILD_VERSION }}-${{ env.SHA_SHORT }}"
@@ -42,6 +50,9 @@ jobs:
       run: |
         source /root/.bashrc
         VERSION_OVERRIDE=${{ env.BUILD_VERSION }}-${{ env.SHA_SHORT }} CHANNEL=beta make release
+    - name: Remove release signing key
+      if: always()
+      run: rm -f /tmp/bloom-release-signing-key.pem
     - uses: marvinpinto/action-automatic-releases@d68defdd11f9dcc7f52f35c1b7c236ee7513bcc1 # latest resolved 2026-08-15
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}

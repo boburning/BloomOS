@@ -7,8 +7,14 @@ setup() {
     printf 'core\n' >"$TEST_ROOT/payload/miyoo/app/.tmp_update/onion.pak"
     printf 'retroarch\n' >"$TEST_ROOT/payload/RetroArch/retroarch.pak"
     printf 'locked\n' >"$TEST_ROOT/dependencies.lock"
+    openssl genpkey -algorithm Ed25519 -out "$TEST_ROOT/release-key.pem" >/dev/null 2>&1
     python3 -c 'import pathlib, zipfile; root=pathlib.Path(__import__("sys").argv[1]); archive=pathlib.Path(__import__("sys").argv[2]); z=zipfile.ZipFile(archive, "w"); [z.write(p, p.relative_to(root).as_posix()) for p in sorted(root.rglob("*")) if p.is_file()]; z.close()' \
         "$TEST_ROOT/payload" "$RELEASE_DIR/BloomOS-v1.2.3.zip"
+}
+
+sign_manifest() {
+    openssl pkeyutl -sign -inkey "$TEST_ROOT/release-key.pem" -rawin \
+        -in "$RELEASE_DIR/manifest.json" -out "$RELEASE_DIR/manifest.sig"
 }
 
 teardown() { rm -rf "$TEST_ROOT"; }
@@ -24,6 +30,7 @@ teardown() { rm -rf "$TEST_ROOT"; }
         --dependency-lock "$TEST_ROOT/dependencies.lock" \
         --toolchain example.invalid/toolchain@sha256:abc
     [ "$status" -eq 0 ]
+    sign_manifest
 
     run python3 /workspace/tools/release_metadata.py validate --output-dir "$RELEASE_DIR"
     [ "$status" -eq 0 ]
@@ -42,9 +49,27 @@ teardown() { rm -rf "$TEST_ROOT"; }
         --source-date-epoch 1700000000 \
         --dependency-lock "$TEST_ROOT/dependencies.lock" \
         --toolchain example.invalid/toolchain@sha256:abc
+    sign_manifest
     printf 'tampered\n' >>"$RELEASE_DIR/BloomOS-v1.2.3.zip"
 
     run python3 /workspace/tools/release_metadata.py validate --output-dir "$RELEASE_DIR"
     [ "$status" -ne 0 ]
     [[ "$output" == *"digest or size does not match"* ]]
+}
+
+@test "release validation requires a fixed-size Ed25519 signature" {
+    python3 /workspace/tools/release_metadata.py create \
+        --output-dir "$RELEASE_DIR" \
+        --archive "$RELEASE_DIR/BloomOS-v1.2.3.zip" \
+        --version 1.2.3 \
+        --channel stable \
+        --commit 0123456789012345678901234567890123456789 \
+        --source-date-epoch 1700000000 \
+        --dependency-lock "$TEST_ROOT/dependencies.lock" \
+        --toolchain example.invalid/toolchain@sha256:abc
+
+    run python3 /workspace/tools/release_metadata.py validate --output-dir "$RELEASE_DIR"
+
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"signature is missing or invalid"* ]]
 }
