@@ -116,7 +116,8 @@ merged; it does not imply unrecorded hardware certification.
   ([PR #84](https://github.com/boburning/BloomOS/pull/84)).
 - [x] Keep AdvanceMENU's functional on-device wrappers while removing bundled
   desktop executables, archives, scripts, and sample media without complete
-  component provenance.
+  component provenance
+  ([PR #85](https://github.com/boburning/BloomOS/pull/85)).
 
 The hardware-sensitive BloomOS 1.0/1.1 implementation queue is at its
 physical-validation boundary. Source-provenance replacement work can continue
