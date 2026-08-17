@@ -191,3 +191,9 @@ bloomctl logs export
 The command prints the resulting path below `BloomDiagnostics/`. The archive
 uses an allowlist and excludes ROMs, saves, Wi-Fi credentials, SSH keys,
 environment variables, scraper logs, network logs, and arbitrary `/tmp` logs.
+
+Inspect normalized hardware capabilities without duplicating model heuristics:
+
+```sh
+bloomctl platform capabilities
+```
