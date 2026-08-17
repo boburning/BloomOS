@@ -12,7 +12,8 @@ void printUsage()
            "       playActivity stop [rom_path]  -> Stop the counter for this rom\n"
            "       playActivity stop_all         -> Stop the counter for all roms\n"
            "       playActivity migrate          -> Migrate the old database (prior to Onion 4.2.0) to SQLite\n"
-           "       playActivity fix_paths        -> Change all absolute paths to relative paths\n");
+           "       playActivity fix_paths        -> Change all absolute paths to relative paths\n"
+           "       playActivity schema           -> Print the Bloom database schema version\n");
 }
 
 int main(int argc, char *argv[])
@@ -59,6 +60,21 @@ int main(int argc, char *argv[])
         }
         else if (strcmp(argv[i], "list") == 0) {
             play_activity_list_all();
+        }
+        else if (strcmp(argv[i], "schema") == 0) {
+            play_activity_db_open();
+            if (play_activity_db == NULL) {
+                fprintf(stderr, "Cannot open play activity database\n");
+                return EXIT_FAILURE;
+            }
+            int version = 0;
+            int result = play_activity_schema_version(play_activity_db, &version);
+            play_activity_db_close();
+            if (result != SQLITE_OK) {
+                fprintf(stderr, "Cannot read play activity schema: %s\n", sqlite3_errstr(result));
+                return EXIT_FAILURE;
+            }
+            printf("{\"schema\":1,\"database_schema_version\":%d}\n", version);
         }
         else {
             printf("Error: Invalid argument '%s'\n", argv[1]);
