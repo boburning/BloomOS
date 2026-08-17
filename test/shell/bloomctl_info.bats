@@ -94,6 +94,49 @@ run_info() {
     [ "$status" -eq 2 ]
 }
 
+@test "test smoke preserves the ROM path as encoded data for the guarded runner" {
+    smoke="$BLOOM_TEST_ROOT/bloom-game-smoke"
+    cat >"$smoke" <<'EOF'
+#!/bin/sh
+printf '%s\n%s\n%s\n' "$1" "$2" "$3" >"$BLOOM_TEST_ROOT/smoke-args"
+printf '%s\n' '{"schema":1,"status":"passed"}'
+EOF
+    chmod +x "$smoke"
+    export BLOOM_GAME_SMOKE_BIN="$smoke"
+    rom="$SDCARD/Roms/GB/Test [Rev 1] (World).zip"
+
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl test smoke GB "$rom" 12
+
+    [ "$status" -eq 0 ]
+    printf '%s' "$output" | grep -F '"status":"passed"'
+    [ "$(sed -n '1p' "$BLOOM_TEST_ROOT/smoke-args")" = GB ]
+    encoded="$(sed -n '2p' "$BLOOM_TEST_ROOT/smoke-args")"
+    [ "$(printf '%s' "$encoded" | base64 -d)" = "$rom" ]
+    [ "$(sed -n '3p' "$BLOOM_TEST_ROOT/smoke-args")" = 12 ]
+
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl test smoke GB "$rom"
+    [ "$status" -eq 0 ]
+    [ "$(sed -n '3p' "$BLOOM_TEST_ROOT/smoke-args")" = 10 ]
+}
+
+@test "test CLI rejects unsupported operations and newline paths before delegation" {
+    smoke="$BLOOM_TEST_ROOT/bloom-game-smoke"
+    cat >"$smoke" <<'EOF'
+#!/bin/sh
+touch "$BLOOM_TEST_ROOT/smoke-called"
+EOF
+    chmod +x "$smoke"
+    export BLOOM_GAME_SMOKE_BIN="$smoke"
+
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl test destructive
+    [ "$status" -eq 2 ]
+
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl test smoke GB "bad
+path.zip"
+    [ "$status" -eq 2 ]
+    [ ! -e "$BLOOM_TEST_ROOT/smoke-called" ]
+}
+
 @test "update commands delegate only the explicit offline operations" {
     mock_stage="$BLOOM_TEST_ROOT/mock-stage"
     mock_prepare="$BLOOM_TEST_ROOT/mock-prepare"
