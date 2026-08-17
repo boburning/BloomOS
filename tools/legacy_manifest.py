@@ -127,7 +127,7 @@ def apply_annotations(generated, current):
 
 
 def is_onion_source_wrapper(repository, component):
-    if component["kind"] != "package":
+    if component["kind"] not in ("package", "package-common"):
         return False
     root = repository / component["path"]
     for path in root.rglob("*"):

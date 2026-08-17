@@ -48,11 +48,11 @@
       "file_count": 4,
       "byte_count": 2808,
       "tree_sha256": "4d47846d7c3a8aedd84789d1b8ba1209b037ead884c65c424629dc066e4c610d",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "app-activity-tracker",
