@@ -7,9 +7,9 @@ Wi-Fi-capable hardware and requires both `/mnt/SDCARD/.bloom-dev` and a valid
 public-key file under `.bloom/authorized_keys`. Password and
 blank-password authentication are disabled. Private keys, device addresses,
 and accepted host fingerprints remain on the developer workstation.
-BloomOS rebuilds the inherited Dropbear server with public-key authentication.
-The proven Miyoo build offers only `hmac-sha1`; `bloom-device` enables that MAC
-for BloomOS connections without weakening the workstation SSH configuration.
+BloomOS bundles a dedicated Dropbear server with public-key authentication and
+modern SSH algorithms. `bloom-device` pins the configured identity, permits
+public-key authentication only, and refuses unknown or changed host keys.
 
 Updates and packages must be staged and verified with at least SHA-256; release signing is preferred. Downloaded code must never be executed through a `curl | sh` pattern. Logs and support bundles must redact credentials, tokens, and private keys.
 

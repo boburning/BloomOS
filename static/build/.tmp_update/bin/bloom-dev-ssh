@@ -7,8 +7,12 @@ SYS_DIR="$SD_ROOT/.tmp_update"
 DEV_FLAG="$SD_ROOT/.bloom-dev"
 AUTHORIZED_KEYS="$SD_ROOT/.bloom/authorized_keys"
 ROOT_SSH_DIR="$ROOT/home/root/.ssh"
+DEV_HOME="$ROOT/tmp/bloom-dev-home"
+HOME_MOUNT_MARKER="$ROOT/tmp/bloom-dev-home-mounted"
 STATE_FILE="$ROOT/tmp/bloom-dev-ssh.state"
 PORT="${BLOOM_DEV_SSH_PORT:-22}"
+DROPBEAR="${BLOOM_DROPBEAR:-$SYS_DIR/bin/bloom-dropbearmulti}"
+HOST_KEY="$SYS_DIR/etc/dropbear/dropbear_ed25519_host_key"
 
 state() {
     mkdir -p "$(dirname "$STATE_FILE")"
@@ -16,13 +20,31 @@ state() {
 }
 
 dropbear_running() {
-    pgrep -x dropbear >/dev/null 2>&1
+    pgrep -x dropbearmulti >/dev/null 2>&1 || pgrep -x dropbear >/dev/null 2>&1
 }
 
 stop_dropbear() {
     if dropbear_running; then
+        killall dropbearmulti >/dev/null 2>&1 || true
         killall dropbear >/dev/null 2>&1 || true
     fi
+    if [ -f "$HOME_MOUNT_MARKER" ]; then
+        umount "$ROOT/home" >/dev/null 2>&1 || true
+        rm -f "$HOME_MOUNT_MARKER"
+    fi
+}
+
+prepare_runtime_key() {
+    if ! mkdir -p "$ROOT_SSH_DIR" 2>/dev/null; then
+        mkdir -p "$DEV_HOME/root/.ssh" || return 1
+        chmod 755 "$DEV_HOME" || return 1
+        chmod 700 "$DEV_HOME/root" "$DEV_HOME/root/.ssh" || return 1
+        mount -o bind "$DEV_HOME" "$ROOT/home" || return 1
+        : >"$HOME_MOUNT_MARKER"
+    fi
+    chmod 700 "$ROOT/home/root" "$ROOT_SSH_DIR" || return 1
+    cp "$AUTHORIZED_KEYS" "$ROOT_SSH_DIR/authorized_keys" || return 1
+    chmod 600 "$ROOT_SSH_DIR/authorized_keys" || return 1
 }
 
 validate_authorized_keys() {
@@ -62,13 +84,37 @@ start_ssh() {
         return 0
     fi
 
-    mkdir -p "$ROOT_SSH_DIR" "$SYS_DIR/etc/dropbear" "$SYS_DIR/logs"
-    chmod 700 "$ROOT_SSH_DIR"
-    cp "$AUTHORIZED_KEYS" "$ROOT_SSH_DIR/authorized_keys"
-    chmod 600 "$ROOT_SSH_DIR/authorized_keys"
+    if [ ! -x "$DROPBEAR" ]; then
+        stop_dropbear
+        state unavailable
+        return 1
+    fi
 
     stop_dropbear
-    dropbear -E -R -s -g -p "$PORT" 2>>"$SYS_DIR/logs/developer-ssh.log"
+    mkdir -p "$SYS_DIR/etc/dropbear" "$SYS_DIR/logs"
+    if ! prepare_runtime_key; then
+        stop_dropbear
+        state runtime_key_failed
+        return 1
+    fi
+    {
+        printf '%s\n' '== Bloom developer SSH key path =='
+        id
+        awk -F: '$1 == "root" { print "root_home=" $6 " root_shell=" $7 }' /etc/passwd
+        ls -ld "$ROOT/home" "$ROOT/home/root" "$ROOT_SSH_DIR" "$ROOT_SSH_DIR/authorized_keys"
+        wc -c "$ROOT_SSH_DIR/authorized_keys"
+    } >>"$SYS_DIR/logs/developer-ssh.log" 2>&1
+    if [ ! -s "$HOST_KEY" ]; then
+        "$DROPBEAR" dropbearkey -t ed25519 -f "$HOST_KEY" >/dev/null || {
+            stop_dropbear
+            state host_key_failed
+            return 1
+        }
+        sync
+    fi
+
+    "$DROPBEAR" dropbear -F -r "$HOST_KEY" -D "$ROOT_SSH_DIR" -p "$PORT" \
+        >>"$SYS_DIR/logs/developer-ssh.log" 2>&1 &
     state running_key_only
 }
 

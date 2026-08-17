@@ -44,19 +44,21 @@ options. A missing or malformed file fails closed and stops developer Dropbear.
 The original Mini V1–V4 ignore SSH provisioning and continue to use the SD-card
 test protocol.
 
-On Linux or WSL2, provision a dedicated key:
+On Linux or WSL2, provision a dedicated key. The device harness is deliberately
+non-interactive, so either load a passphrase-protected key into `ssh-agent`
+before use or create a device-specific automation key with an empty passphrase:
 
 ```sh
-ssh-keygen -t ed25519 -f ~/.ssh/bloom_flip -C bloom-flip
+ssh-keygen -t ed25519 -N '' -f ~/.ssh/bloom_flip -C bloom-flip
 mkdir -p /path/to/sd/.tmp_update/config/bloom
 mkdir -p /path/to/sd/.bloom
 cp ~/.ssh/bloom_flip.pub /path/to/sd/.bloom/authorized_keys
 ```
 
-The inherited Dropbear binary stores generated host keys under
+Bloom's pinned, reproducible Dropbear build stores generated host keys under
 `.tmp_update/etc/dropbear`, so the first connection must verify and accept the
-unique device/SD-card fingerprint. Developer Dropbear disables password and
-blank-password authentication while allowing root public-key login. Remove
+unique device/SD-card fingerprint. Password authentication and forwarding are
+disabled at compile time while root public-key login remains available. Remove
 `.bloom-dev` and reboot to disable automatic developer SSH.
 
 ## Wi-Fi device harness

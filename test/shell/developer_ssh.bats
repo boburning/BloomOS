@@ -13,6 +13,7 @@ exit 1
 EOF
     mock_command killall
     mock_command dropbear
+    export BLOOM_DROPBEAR="$MOCK_BIN/dropbear"
     mock_command ifconfig
     chmod +x "$MOCK_BIN/pgrep"
 }
@@ -59,7 +60,9 @@ install_valid_key() {
 
     [ "$status" -eq 0 ]
     [ "$(cat "$BLOOM_TEST_ROOT/tmp/bloom-dev-ssh.state")" = running_key_only ]
-    grep -F 'dropbear -E -R -s -g -p 22' "$MOCK_LOG"
+    grep -F 'dropbear dropbear -F -r' "$MOCK_LOG"
+    grep -F -- '-D ' "$MOCK_LOG"
+    grep -F -- '-p 22' "$MOCK_LOG"
     cmp "$SDCARD/.bloom/authorized_keys" "$BLOOM_TEST_ROOT/home/root/.ssh/authorized_keys"
 }
 
@@ -69,7 +72,7 @@ install_valid_key() {
     printf '354\n' >"$BLOOM_TEST_ROOT/tmp/deviceModel"
     run "$SSH_HELPER" start
     [ "$status" -eq 0 ]
-    grep -F 'dropbear -E -R -s -g -p 22' "$MOCK_LOG"
+    grep -F 'dropbear dropbear -F -r' "$MOCK_LOG"
 
     : >"$MOCK_LOG"
     printf '283\n' >"$BLOOM_TEST_ROOT/tmp/deviceModel"
@@ -82,4 +85,9 @@ install_valid_key() {
 @test "network initialization delegates developer mode to the secure helper" {
     grep -F 'if [ -f /mnt/SDCARD/.bloom-dev ]' /workspace/static/build/.tmp_update/script/network/update_networking.sh
     grep -F '$sysdir/bin/bloom-dev-ssh start' /workspace/static/build/.tmp_update/script/network/update_networking.sh
+}
+
+@test "read-only firmware home has a checked bind-mount fallback" {
+    grep -F 'mount -o bind "$DEV_HOME" "$ROOT/home"' "$SSH_HELPER"
+    grep -F 'state runtime_key_failed' "$SSH_HELPER"
 }
