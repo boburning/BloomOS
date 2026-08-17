@@ -93,7 +93,8 @@ merged; it does not imply unrecorded hardware certification.
   package wrappers without extending that claim to selected emulator binaries
   ([PR #77](https://github.com/boburning/BloomOS/pull/77)).
 - [x] Extend the same exact-source attribution to the shared Onion package
-  assembly scripts while keeping asset and binary payloads quarantined.
+  assembly scripts while keeping asset and binary payloads quarantined
+  ([PR #78](https://github.com/boburning/BloomOS/pull/78)).
 
 The hardware-sensitive BloomOS 1.0/1.1 implementation queue is at its
 physical-validation boundary. Source-provenance replacement work can continue
