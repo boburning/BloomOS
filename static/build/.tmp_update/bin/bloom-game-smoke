@@ -6,6 +6,7 @@ SYS_DIR="$SD_ROOT/.tmp_update"
 COMMAND_FILE="$SYS_DIR/cmd_to_run.sh"
 REQUEST_FILE="$SYS_DIR/bloom-launch-request.json"
 BLOOM_LAUNCH="$SYS_DIR/bin/bloom-launch"
+BLOOM_GAME_ID="$SYS_DIR/bin/bloom-game-id"
 BLOOM_SESSION="$SYS_DIR/bin/bloom-session"
 KEEP_SERVICES="$SYS_DIR/config/.keepServicesAlive"
 SYSTEM="${1:-}"
@@ -77,6 +78,7 @@ esac
 LAUNCHER="$SD_ROOT/Emu/$SYSTEM/launch.sh"
 [ -x "$LAUNCHER" ] || fail launcher_not_found
 [ -x "$BLOOM_LAUNCH" ] || fail bloom_launch_not_found
+[ -x "$BLOOM_GAME_ID" ] || fail bloom_game_id_not_found
 [ -x "$BLOOM_SESSION" ] || fail bloom_session_not_found
 [ ! -e "$COMMAND_FILE" ] || fail launch_already_pending
 [ ! -e "$REQUEST_FILE" ] || fail request_already_pending
@@ -88,7 +90,8 @@ if [ ! -e "$KEEP_SERVICES" ]; then
     CREATED_KEEP_SERVICES=1
 fi
 
-"$BLOOM_LAUNCH" create "$REQUEST_FILE" "bloom-smoke-v1:$SYSTEM_ID:$ROM_PATH" "$SYSTEM_ID" \
+GAME_ID="$("$BLOOM_GAME_ID" "$SYSTEM_ID" "$ROM_PATH")" || fail game_id_failed
+"$BLOOM_LAUNCH" create "$REQUEST_FILE" "$GAME_ID" "$SYSTEM_ID" \
     "$ROM_PATH" "$LAUNCHER" retroarch "$CORE" false || fail structured_request_failed
 CREATED_REQUEST=1
 "$BLOOM_LAUNCH" write-legacy "$REQUEST_FILE" "$COMMAND_FILE" || fail legacy_adapter_failed

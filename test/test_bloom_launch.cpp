@@ -31,7 +31,7 @@ class BloomLaunchTest : public ::testing::Test {
         std::ofstream file(request_);
         file << R"({
   "schema": 1,
-  "game_id": "bloom-game-v1:test",
+  "game_id": "bloom-game-v1:2d514749ed2f60ba7a6583d7e36483b113005fd788bab176fc9941256551ad71",
   "system_id": "gb",
   "rom_path": "/mnt/SDCARD/Roms/GB/Bob's $pecial 游戏.zip",
   "launcher": "/mnt/SDCARD/Emu/GB/launch.sh",
@@ -67,10 +67,12 @@ TEST_F(BloomLaunchTest, ValidatesStructuredRequestAndQuotesLegacyBoundary)
 
 TEST_F(BloomLaunchTest, CreatesCanonicalJsonWithoutTreatingPathsAsCode)
 {
-    ASSERT_EQ(0, bloom_launch_create_file(request_.c_str(), "bloom-game-v1:test", "gb",
-                                          "/mnt/SDCARD/Roms/GB/Bob's $pecial 游戏.zip",
-                                          "/mnt/SDCARD/Emu/GB/launch.sh", "retroarch",
-                                          "gambatte_libretro.so", 0, error_, sizeof(error_)))
+    ASSERT_EQ(0, bloom_launch_create_file(
+                     request_.c_str(),
+                     "bloom-game-v1:2d514749ed2f60ba7a6583d7e36483b113005fd788bab176fc9941256551ad71", "gb",
+                     "/mnt/SDCARD/Roms/GB/Bob's $pecial 游戏.zip",
+                     "/mnt/SDCARD/Emu/GB/launch.sh", "retroarch",
+                     "gambatte_libretro.so", 0, error_, sizeof(error_)))
         << error_;
     EXPECT_EQ(0, bloom_launch_validate_file(request_.c_str(), error_, sizeof(error_))) << error_;
     std::ifstream file(request_);
@@ -93,6 +95,19 @@ TEST_F(BloomLaunchTest, RejectsCorePathsInsteadOfCoreBasenames)
     request.replace(core, strlen("gambatte_libretro.so"), "../gambatte_libretro.so");
     std::ofstream(request_) << request;
     EXPECT_NE(0, bloom_launch_validate_file(request_.c_str(), error_, sizeof(error_)));
+}
+
+TEST_F(BloomLaunchTest, RejectsGameIdThatDoesNotMatchSystemAndRom)
+{
+    write_request();
+    std::ifstream input(request_);
+    std::string request((std::istreambuf_iterator<char>(input)), std::istreambuf_iterator<char>());
+    size_t game_id = request.find("2d514749");
+    ASSERT_NE(game_id, std::string::npos);
+    request.replace(game_id, strlen("2d514749"), "01234567");
+    std::ofstream(request_) << request;
+    EXPECT_NE(0, bloom_launch_validate_file(request_.c_str(), error_, sizeof(error_)));
+    EXPECT_NE(std::string(error_).find("does not match"), std::string::npos);
 }
 
 TEST_F(BloomLaunchTest, RejectsUnknownAndDuplicateFields)
@@ -125,10 +140,12 @@ TEST_F(BloomLaunchTest, RejectsTraversalAndDoesNotReplaceExistingCommand)
 
 TEST_F(BloomLaunchTest, KeepsUnrepresentableLegacyPathsOutOfShell)
 {
-    ASSERT_EQ(0, bloom_launch_create_file(request_.c_str(), "bloom-game-v1:test", "gb",
-                                          "/mnt/SDCARD/Roms/GB/Unsafe`Name.gb",
-                                          "/mnt/SDCARD/Emu/GB/launch.sh", "retroarch",
-                                          "gambatte_libretro.so", 0, error_, sizeof(error_)));
+    ASSERT_EQ(0, bloom_launch_create_file(
+                     request_.c_str(),
+                     "bloom-game-v1:8d875cf8a8944eea3bbd7c811e0c9cb56f87b14f1f66b2adb9c1d6d1f3b546f5", "gb",
+                     "/mnt/SDCARD/Roms/GB/Unsafe`Name.gb",
+                     "/mnt/SDCARD/Emu/GB/launch.sh", "retroarch",
+                     "gambatte_libretro.so", 0, error_, sizeof(error_)));
     EXPECT_NE(0, bloom_launch_write_legacy(request_.c_str(), command_.c_str(), error_, sizeof(error_)));
     EXPECT_NE(std::string(error_).find("legacy MainUI boundary"), std::string::npos);
     EXPECT_FALSE(std::filesystem::exists(command_));

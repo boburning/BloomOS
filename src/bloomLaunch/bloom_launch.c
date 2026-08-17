@@ -1,4 +1,5 @@
 #include "bloom_launch.h"
+#include "../bloomGameId/bloom_game_id.h"
 
 #include <cjson/cJSON.h>
 #include <errno.h>
@@ -147,7 +148,7 @@ static bool valid_request(cJSON *root, char *error, size_t error_size)
     cJSON *environment = cJSON_GetObjectItemCaseSensitive(root, "environment");
 
     if (!cJSON_IsNumber(schema) || schema->valuedouble != 1.0 || schema->valueint != 1 ||
-        !cJSON_IsString(game_id) || !safe_text(game_id->valuestring) || !cJSON_IsString(system_id) ||
+        !cJSON_IsString(game_id) || !bloom_game_id_valid(game_id->valuestring) || !cJSON_IsString(system_id) ||
         !valid_system_id(system_id->valuestring) || !cJSON_IsString(rom_path) ||
         !path_under(rom_path->valuestring, "/mnt/SDCARD/Roms/") || !cJSON_IsString(launcher) ||
         !path_under(launcher->valuestring, "/mnt/SDCARD/Emu/") || strlen(launcher->valuestring) < strlen("/launch.sh") ||
@@ -162,6 +163,15 @@ static bool valid_request(cJSON *root, char *error, size_t error_size)
     if ((cJSON_IsString(core) && !valid_core(core->valuestring)) ||
         (strcmp(emulator->valuestring, "retroarch") == 0 && !cJSON_IsString(core)) || environment->child != NULL) {
         set_error(error, error_size, "request launch configuration is invalid");
+        return false;
+    }
+    char expected_game_id[BLOOM_GAME_ID_LENGTH + 1];
+    char relative_path[4096];
+    char game_id_error[128];
+    if (bloom_game_id_create(system_id->valuestring, rom_path->valuestring, expected_game_id, sizeof(expected_game_id),
+                             relative_path, sizeof(relative_path), game_id_error, sizeof(game_id_error)) != 0 ||
+        strcmp(game_id->valuestring, expected_game_id) != 0) {
+        set_error(error, error_size, "request GameID does not match its system and ROM path");
         return false;
     }
     cJSON *config = NULL;

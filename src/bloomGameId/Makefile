@@ -1,7 +1,5 @@
 INCLUDE_UTILS = 0
-INCLUDE_CJSON = 1
-TARGET = bloom-launch
-CFILES = ../bloomGameId/bloom_game_id.c
+TARGET = bloom-game-id
 
 include ../common/config.mk
 include ../common/commands.mk
