@@ -71,4 +71,21 @@ request and prevents `STOPPED` until this scoped operation succeeds and its
 result is atomically recorded. A flush failure is terminal `FAILED`, so a clean
 exit can never be reported without save durability confirmation.
 
+## Canonical game identity
+
+`bloom-game-id` defines the schema-1 identity boundary. It normalizes the ROM
+path relative to `/mnt/SDCARD/Roms`, rejects traversal and unsafe paths, and
+hashes `bloom-game-v1`, the stable system identifier, and that relative path as
+three NUL-separated UTF-8 fields. The public identifier is
+`bloom-game-v1:<sha256>`; JSON inspection also exposes the source system and
+normalized path for debugging and migration. Identity never depends on display
+title, basename, or extension-stripped filename. A playlist or container path
+therefore remains the canonical identity for a multi-disc title when it is the
+launched ROM path.
+
+Structured launch validation recomputes the identifier and rejects a request
+whose GameID does not match its system and ROM path. New launch consumers must
+obtain the identifier from `bloom-game-id`; the legacy MainUI recent list
+remains a compatibility data source pending GameSwitcher and activity migration.
+
 Architectural decisions will be recorded as the corresponding subsystem work begins.

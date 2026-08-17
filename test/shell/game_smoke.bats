@@ -55,6 +55,11 @@ printf '%s\n' "$*" >>"$MOCK_LOG"
 exit 1
 EOF
     chmod +x "$SDCARD/.tmp_update/bin/bloom-launch"
+    cat >"$SDCARD/.tmp_update/bin/bloom-game-id" <<'EOF'
+#!/bin/sh
+printf '%s\n' bloom-game-v1:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+EOF
+    chmod +x "$SDCARD/.tmp_update/bin/bloom-game-id"
     printf '#!/bin/sh\nexit 0\n' >"$SDCARD/.tmp_update/bin/bloom-session"
     chmod +x "$SDCARD/.tmp_update/bin/bloom-session"
     cat >"$MOCK_BIN/pidof" <<'EOF'
@@ -67,6 +72,6 @@ EOF
 
     [ "$status" -eq 1 ]
     printf '%s' "$output" | grep -F '"reason":"structured_request_failed"'
-    grep -F "create $SDCARD/.tmp_update/bloom-launch-request.json bloom-smoke-v1:gb:$rom gb $rom" "$MOCK_LOG"
+    grep -F "create $SDCARD/.tmp_update/bloom-launch-request.json bloom-game-v1:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef gb $rom" "$MOCK_LOG"
     [ ! -e "$SDCARD/.tmp_update/bloom-launch-request.json" ]
 }
