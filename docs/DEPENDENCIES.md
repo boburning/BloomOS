@@ -66,11 +66,16 @@ machine-enforced provenance tier:
 - `legacy` components have exact inherited binary identity but incomplete
   authoritative source or license evidence and may ship only on the
   `development` hardware-test channel;
+- `inventory` groups delegate channel eligibility to the exact resolution of
+  every component selected from a canonical manifest;
 - `excluded` components may not ship on any channel.
 
 Release packaging checks this policy before assembling the archive. Stable,
 beta, and nightly builds therefore fail closed while any included component is
-still legacy. Moving a component to `source` requires replacing or rebuilding
+still legacy. Inventory-backed runtime and package groups are evaluated at
+their exact manifest resolution, so replacing one component removes only that
+component from the blocker list; the policy cannot remain permanently blocked
+by a resolved umbrella group. Moving a component to `source` requires replacing or rebuilding
 it from reviewed inputs; binary hashes alone are never accepted as historical
 source evidence.
 
