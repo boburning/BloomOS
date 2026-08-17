@@ -1,0 +1,67 @@
+#!/bin/sh
+set -u
+
+SD_ROOT="${BLOOM_SD_ROOT:-/mnt/SDCARD}"
+UPDATE_ROOT="${BLOOM_UPDATE_ROOT:-$SD_ROOT/.tmp_update/update}"
+VERIFY="${BLOOM_UPDATE_VERIFY_BIN:-$SD_ROOT/.tmp_update/bin/bloom-update-verify}"
+JQ="${BLOOM_JQ_BIN:-$SD_ROOT/.tmp_update/bin/jq}"
+SEVEN_ZIP="${BLOOM_7Z_BIN:-$SD_ROOT/.tmp_update/bin/7z}"
+
+fail() { printf 'bloom-update-prepare: %s\n' "$*" >&2; exit 1; }
+
+[ "$#" -eq 1 ] || fail "expected VERSION"
+version="$1"
+case "$version" in ''|*[!A-Za-z0-9._+-]*) fail "version is unsafe" ;; esac
+[ -x "$VERIFY" ] || fail "update verifier is unavailable"
+[ -x "$JQ" ] || fail "jq is unavailable"
+[ -x "$SEVEN_ZIP" ] || fail "7z is unavailable"
+
+staged="$UPDATE_ROOT/staged/$version"
+candidates="$UPDATE_ROOT/candidates"
+candidate="$candidates/$version"
+[ -d "$staged" ] && [ ! -L "$staged" ] || fail "staged version is unavailable"
+[ ! -L "$candidates" ] || fail "candidate path is unsafe"
+filename="$("$JQ" -er '.filename' "$staged/verified.json")" || fail "staged record is invalid"
+archive="$staged/$filename"
+verified="$($VERIFY "$staged/manifest.json" "$staged/manifest.sig" "$archive")" || fail "staged version failed verification"
+[ "$(printf '%s\n' "$verified" | "$JQ" -er '.version')" = "$version" ] || fail "staged version does not match"
+
+mkdir -p "$candidates" || fail "cannot create candidate root"
+[ ! -e "$candidate" ] || fail "candidate is already prepared"
+temporary="$candidates/.incoming-$version-$$"
+inventory="$candidates/.inventory-$version-$$"
+cleanup() { rm -rf "$temporary"; rm -f "$inventory" "$inventory.full"; }
+trap cleanup EXIT HUP INT TERM
+mkdir "$temporary" || fail "cannot create temporary candidate"
+
+"$SEVEN_ZIP" l -slt "$archive" >"$inventory.full" || fail "cannot inspect release archive"
+awk 'found { if (index($0, "Path = ") == 1) print substr($0, 8) } /^----------$/ { found=1 }' \
+    "$inventory.full" >"$inventory"
+if grep -E '^Attributes = .*l' "$inventory.full" >/dev/null 2>&1 || grep -F 'Symbolic Link = ' "$inventory.full" >/dev/null 2>&1; then
+    fail "release archive contains a link"
+fi
+rm -f "$inventory.full"
+
+while IFS= read -r entry; do
+    case "$entry" in
+        ''|/*|\\*|*\\*|..|../*|*/..|*/../*) fail "release archive contains an unsafe path" ;;
+        miyoo|miyoo/*|RetroArch|RetroArch/*) ;;
+        *) fail "release archive contains an unexpected top-level path" ;;
+    esac
+done <"$inventory"
+grep -Fx 'miyoo/app/MainUI' "$inventory" >/dev/null || fail "release archive is missing MainUI"
+grep -Fx 'miyoo/app/.tmp_update/onion.pak' "$inventory" >/dev/null || fail "release archive is missing core payload"
+grep -Fx 'RetroArch/retroarch.pak' "$inventory" >/dev/null || fail "release archive is missing RetroArch payload"
+
+"$SEVEN_ZIP" x -y -aoa "-o$temporary" "$archive" >/dev/null || fail "cannot extract candidate"
+[ -f "$temporary/miyoo/app/MainUI" ] || fail "prepared candidate is missing MainUI"
+[ -f "$temporary/miyoo/app/.tmp_update/onion.pak" ] || fail "prepared candidate is missing core payload"
+[ -f "$temporary/RetroArch/retroarch.pak" ] || fail "prepared candidate is missing RetroArch payload"
+if find "$temporary" -type l | grep -q .; then fail "prepared candidate contains a link"; fi
+printf '%s\n' "$verified" >"$temporary/verified.json" || fail "cannot record candidate verification"
+sync
+mv "$temporary" "$candidate" || fail "cannot publish candidate"
+rm -f "$inventory"
+trap - EXIT HUP INT TERM
+sync
+printf '{"schema":1,"status":"prepared","version":"%s","path":"%s"}\n' "$version" "$candidate"

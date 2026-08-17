@@ -6,11 +6,13 @@ setup() {
     setup_bloom_fixture
     export VERIFY=/workspace/static/build/.tmp_update/bin/bloom-update-verify
     export STAGE=/workspace/static/build/.tmp_update/bin/bloom-update-stage
+    export PREPARE=/workspace/static/build/.tmp_update/bin/bloom-update-prepare
     export STATE=/workspace/static/build/.tmp_update/bin/bloom-update-state
     export BLOOM_SD_ROOT="$SDCARD"
     export BLOOM_UPDATE_VERIFY_BIN="$VERIFY"
     export BLOOM_OPENSSL_BIN=/usr/bin/openssl
     export BLOOM_JQ_BIN=/usr/bin/jq
+    export BLOOM_7Z_BIN=/usr/bin/7z
     export BLOOM_UPDATE_PUBLIC_KEY="$BLOOM_TEST_ROOT/public.pem"
     export BLOOM_UPDATE_ROOT="$BLOOM_TEST_ROOT/update"
     openssl genpkey -algorithm Ed25519 -out "$BLOOM_TEST_ROOT/private.pem" >/dev/null 2>&1
@@ -24,13 +26,20 @@ stage_release() {
     archive="$BLOOM_TEST_ROOT/BloomOS-v$version.zip"
     manifest="$BLOOM_TEST_ROOT/manifest-$version.json"
     signature="$BLOOM_TEST_ROOT/manifest-$version.sig"
-    printf 'release %s\n' "$version" >"$archive"
+    python3 - "$archive" "$version" <<'PY'
+import sys, zipfile
+with zipfile.ZipFile(sys.argv[1], "w") as archive:
+    archive.writestr("miyoo/app/MainUI", "launcher " + sys.argv[2])
+    archive.writestr("miyoo/app/.tmp_update/onion.pak", "core")
+    archive.writestr("RetroArch/retroarch.pak", "retroarch")
+PY
     size="$(wc -c <"$archive" | tr -d ' ')"
     digest="$(sha256sum "$archive" | awk '{print $1}')"
     printf '{"schema":1,"product":"BloomOS","version":"%s","channel":"beta","devices":["mini","plus","flip"],"artifacts":[{"filename":"BloomOS-v%s.zip","sha256":"%s","size":%s,"media_type":"application/zip"}]}\n' \
         "$version" "$version" "$digest" "$size" >"$manifest"
     openssl pkeyutl -sign -inkey "$BLOOM_TEST_ROOT/private.pem" -rawin -in "$manifest" -out "$signature"
     "$STAGE" "$manifest" "$signature" "$archive" >/dev/null
+    "$PREPARE" "$version" >/dev/null
 }
 
 @test "reports idle before any update is armed" {

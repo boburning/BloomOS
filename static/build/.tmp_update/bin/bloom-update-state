@@ -41,6 +41,11 @@ case "${1:-}" in
         safe_version "$version" || fail "version is unsafe"
         staged="$UPDATE_ROOT/staged/$version"
         [ -d "$staged" ] && [ ! -L "$staged" ] || fail "staged version is unavailable"
+        candidate="$UPDATE_ROOT/candidates/$version"
+        [ -d "$candidate" ] && [ ! -L "$candidate" ] || fail "prepared candidate is unavailable"
+        [ -f "$candidate/miyoo/app/MainUI" ] && \
+            [ -f "$candidate/miyoo/app/.tmp_update/onion.pak" ] && \
+            [ -f "$candidate/RetroArch/retroarch.pak" ] || fail "prepared candidate is incomplete"
         [ -x "$VERIFY" ] || fail "update verifier is unavailable"
         filename="$(read_field "$staged/verified.json" '.filename')" || fail "staged record is invalid"
         verified="$($VERIFY "$staged/manifest.json" "$staged/manifest.sig" "$staged/$filename")" || fail "staged version failed verification"
