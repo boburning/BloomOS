@@ -19,7 +19,7 @@ case "${1:-}" in
         state="$($STATE_BIN status)" || fail "cannot read update state"
         phase="$(printf '%s\n' "$state" | "$JQ" -er '.phase')" || fail "update state is invalid"
         case "$phase" in
-            activation_pending|testing) "$STATE_BIN" boot-attempt ;;
+            activation_pending|testing|rollback_pending) "$STATE_BIN" boot-attempt ;;
             *) printf '%s\n' "$state" ;;
         esac
         ;;

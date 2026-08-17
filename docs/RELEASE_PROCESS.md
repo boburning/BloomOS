@@ -40,6 +40,13 @@ installed and pending versions match, runs structured health checks, and only
 then promotes the release to known-good. These commands do not extract directly
 over the running OS.
 
+If the attempt limit enters `recovery_required`, `bloomctl update rollback`
+rebuilds the last known-good candidate from its retained signed release triplet,
+creates a pre-rollback save snapshot, and arms the installer. It refuses to
+overwrite pending installer content. The recovered release must boot and pass
+the normal `bloomctl update confirm` gate; repeated rollback failures stop in a
+terminal state for manual recovery.
+
 - versioning and stable, beta, and nightly channels;
 - closure of the remaining unresolved inputs in `build/dependencies.lock`;
 - automated test gates and the three-device physical test matrix;

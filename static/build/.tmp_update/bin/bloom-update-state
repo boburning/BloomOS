@@ -52,23 +52,28 @@ case "${1:-}" in
         [ "$(printf '%s\n' "$verified" | "$JQ" -er '.version')" = "$version" ] || fail "staged version does not match"
         if [ -f "$STATE" ]; then
             phase="$(read_field "$STATE" '.phase')" || fail "current state is invalid"
-            case "$phase" in armed|testing|recovery_required) fail "another update is active" ;; esac
+            case "$phase" in armed|activation_pending|testing|recovery_required|rollback_pending|rollback_failed) fail "another update is active" ;; esac
         fi
         previous=""
         if [ -f "$KNOWN_GOOD" ]; then previous="$(read_field "$KNOWN_GOOD" '.version')" || fail "known-good state is invalid"; fi
         "$JQ" -cn --arg version "$version" --arg previous "$previous" \
-            '{schema:1,phase:"armed",pending_version:$version,previous_version:(if $previous == "" then null else $previous end),boot_attempts:0}' | atomic_json "$STATE"
+            '{schema:1,phase:"armed",operation:"update",pending_version:$version,previous_version:(if $previous == "" then null else $previous end),boot_attempts:0}' | atomic_json "$STATE"
         "$JQ" -c . "$STATE"
         ;;
     boot-attempt)
         [ "$#" -eq 1 ] || fail "boot-attempt takes no arguments"
         [ -f "$STATE" ] && [ ! -L "$STATE" ] || fail "no update is armed"
         phase="$(read_field "$STATE" '.phase')" || fail "current state is invalid"
-        case "$phase" in activation_pending|testing) ;; *) fail "no update is awaiting validation" ;; esac
+        case "$phase" in activation_pending|testing|rollback_pending) ;; *) fail "no update is awaiting validation" ;; esac
         attempts="$(read_field "$STATE" '.boot_attempts')" || fail "current state is invalid"
         case "$attempts" in ''|*[!0-9]*) fail "current state is invalid" ;; esac
         attempts=$((attempts + 1))
-        if [ "$attempts" -ge "$MAX_BOOT_ATTEMPTS" ]; then next_phase=recovery_required; else next_phase=testing; fi
+        operation="$("$JQ" -r '.operation // "update"' "$STATE")"
+        if [ "$attempts" -ge "$MAX_BOOT_ATTEMPTS" ]; then
+            if [ "$operation" = rollback ]; then next_phase=rollback_failed; else next_phase=recovery_required; fi
+        else
+            next_phase=testing
+        fi
         "$JQ" -c --arg phase "$next_phase" --argjson attempts "$attempts" \
             '.phase=$phase | .boot_attempts=$attempts' "$STATE" | atomic_json "$STATE"
         "$JQ" -c . "$STATE"
@@ -80,7 +85,20 @@ case "${1:-}" in
         safe_version "$version" && safe_version "$snapshot_id" || fail "activation metadata is unsafe"
         [ -f "$STATE" ] && [ "$(read_field "$STATE" '.phase')" = armed ] || fail "update is not armed"
         [ "$(read_field "$STATE" '.pending_version')" = "$version" ] || fail "armed version does not match"
-        "$JQ" -c --arg snapshot "$snapshot_id" '.phase="activation_pending" | .snapshot_id=$snapshot' "$STATE" | atomic_json "$STATE"
+        "$JQ" -c --arg snapshot "$snapshot_id" '.phase="activation_pending" | .operation="update" | .snapshot_id=$snapshot' "$STATE" | atomic_json "$STATE"
+        "$JQ" -c . "$STATE"
+        ;;
+    rollback-start)
+        [ "$#" -eq 3 ] || fail "rollback-start expects VERSION SNAPSHOT_ID"
+        version="$2"
+        snapshot_id="$3"
+        safe_version "$version" && safe_version "$snapshot_id" || fail "rollback metadata is unsafe"
+        [ -f "$STATE" ] && [ "$(read_field "$STATE" '.phase')" = recovery_required ] || fail "recovery is not required"
+        [ -f "$KNOWN_GOOD" ] && [ ! -L "$KNOWN_GOOD" ] || fail "no known-good update is retained"
+        [ "$(read_field "$KNOWN_GOOD" '.version')" = "$version" ] || fail "rollback version is not known-good"
+        failed="$(read_field "$STATE" '.pending_version')" || fail "failed version is unavailable"
+        "$JQ" -cn --arg version "$version" --arg failed "$failed" --arg snapshot "$snapshot_id" \
+            '{schema:1,phase:"rollback_pending",operation:"rollback",pending_version:$version,failed_version:$failed,snapshot_id:$snapshot,boot_attempts:0}' | atomic_json "$STATE"
         "$JQ" -c . "$STATE"
         ;;
     mark-good)
@@ -91,12 +109,20 @@ case "${1:-}" in
         phase="$(read_field "$STATE" '.phase')" || fail "current state is invalid"
         case "$phase" in armed|testing) ;; *) fail "no update is awaiting validation" ;; esac
         [ "$(read_field "$STATE" '.pending_version')" = "$version" ] || fail "validated version does not match pending update"
+        operation="$("$JQ" -r '.operation // "update"' "$STATE")"
         previous="$("$JQ" -r '.previous_version // ""' "$STATE")"
         staged="$UPDATE_ROOT/staged/$version"
         [ -d "$staged" ] || fail "pending payload is unavailable"
-        "$JQ" -cn --arg version "$version" --arg path "$staged" --arg previous "$previous" \
-            '{schema:1,version:$version,path:$path,previous_version:(if $previous == "" then null else $previous end)}' | atomic_json "$KNOWN_GOOD"
-        "$JQ" -cn --arg version "$version" '{schema:1,phase:"known_good",version:$version}' | atomic_json "$STATE"
+        if [ "$operation" = rollback ]; then
+            [ -f "$KNOWN_GOOD" ] && [ "$(read_field "$KNOWN_GOOD" '.version')" = "$version" ] || fail "rollback target is no longer known-good"
+            failed="$(read_field "$STATE" '.failed_version')" || fail "failed version is unavailable"
+            "$JQ" -cn --arg version "$version" --arg failed "$failed" \
+                '{schema:1,phase:"known_good",version:$version,recovered_from:$failed}' | atomic_json "$STATE"
+        else
+            "$JQ" -cn --arg version "$version" --arg path "$staged" --arg previous "$previous" \
+                '{schema:1,version:$version,path:$path,previous_version:(if $previous == "" then null else $previous end)}' | atomic_json "$KNOWN_GOOD"
+            "$JQ" -cn --arg version "$version" '{schema:1,phase:"known_good",version:$version}' | atomic_json "$STATE"
+        fi
         "$JQ" -c . "$STATE"
         ;;
     recovery)
@@ -107,5 +133,5 @@ case "${1:-}" in
         [ -d "$path" ] && [ ! -L "$path" ] || fail "known-good payload is unavailable"
         "$JQ" -c --arg status recovery_available '. + {status:$status}' "$KNOWN_GOOD"
         ;;
-    *) fail "expected {status|arm VERSION|activation-start VERSION SNAPSHOT_ID|boot-attempt|mark-good VERSION|recovery}" ;;
+    *) fail "expected {status|arm VERSION|activation-start VERSION SNAPSHOT_ID|rollback-start VERSION SNAPSHOT_ID|boot-attempt|mark-good VERSION|recovery}" ;;
 esac

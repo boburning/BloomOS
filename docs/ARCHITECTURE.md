@@ -215,4 +215,13 @@ no-op. `bloomctl update confirm` promotes only a `testing` release whose
 installed version matches the pending signed version and whose structured
 health checks pass. Merely reaching MainUI never marks an update known-good.
 
+After bounded forward-update failures, rollback is available only from
+`recovery_required`. BloomOS re-verifies the retained known-good manifest,
+signature, archive size, and digest, then replaces any cached extraction with a
+fresh isolated candidate. It snapshots current saves before recording
+`rollback_pending`, publishes installer payloads before the trigger, and keeps
+the original known-good record unchanged. A recovered boot uses the same
+version and health confirmation gate. Repeated rollback failures stop in
+`rollback_failed` rather than recursively attempting recovery.
+
 Architectural decisions will be recorded as the corresponding subsystem work begins.

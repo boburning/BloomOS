@@ -54,6 +54,25 @@ PY
     [ ! -e "$SDCARD/miyoo/app/MainUI" ]
 }
 
+@test "replace rebuilds a cached candidate from the signed archive" {
+    python3 - "$ARCHIVE" <<'PY'
+import sys, zipfile
+with zipfile.ZipFile(sys.argv[1], "w") as archive:
+    archive.writestr("miyoo/app/MainUI", "signed launcher")
+    archive.writestr("miyoo/app/.tmp_update/onion.pak", "signed core")
+    archive.writestr("RetroArch/retroarch.pak", "signed retroarch")
+PY
+    sign_and_stage
+    mkdir -p "$BLOOM_UPDATE_ROOT/candidates/1.2.3/miyoo/app/.tmp_update"
+    printf 'tampered\n' >"$BLOOM_UPDATE_ROOT/candidates/1.2.3/miyoo/app/.tmp_update/onion.pak"
+
+    run "$PREPARE" --replace 1.2.3
+
+    [ "$status" -eq 0 ]
+    grep -Fx 'signed core' "$BLOOM_UPDATE_ROOT/candidates/1.2.3/miyoo/app/.tmp_update/onion.pak"
+    [ ! -e "$BLOOM_UPDATE_ROOT/candidates/.replaced-1.2.3-$$" ]
+}
+
 @test "rejects a signed archive with path traversal" {
     python3 - "$ARCHIVE" <<'PY'
 import sys, zipfile
