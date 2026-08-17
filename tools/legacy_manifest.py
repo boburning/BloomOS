@@ -20,7 +20,7 @@ PACKAGE_KINDS = ("App", "Emu", "RApp")
 ANNOTATION_FIELDS = ("source", "source_revision", "license", "build_recipe", "resolution")
 RESOLUTIONS = ("replace-source-build-or-exclude", "source-build", "excluded")
 ONION_SOURCE = "https://github.com/OnionUI/Onion"
-ONION_WRAPPER_SUFFIXES = (".json", ".sh")
+ONION_WRAPPER_SUFFIXES = (".json", ".miyoocmd", ".sh")
 
 
 def component_id(kind, name):
