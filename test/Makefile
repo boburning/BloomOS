@@ -8,6 +8,7 @@ CFILES := $(CFILES) ../src/playActivity/playActivityModel.c
 CFILES := $(CFILES) ../src/playActivity/playActivityMigrations.c
 CFILES := $(CFILES) ../src/playActivity/playActivityIdentity.c
 CFILES := $(CFILES) ../src/playActivity/playActivityHealth.c
+CFILES := $(CFILES) ../src/playActivity/playActivityDuration.c
 CFILES := $(CFILES) ../src/common/utils/udp.c
 include ../src/common/config.mk
 
