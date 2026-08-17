@@ -94,11 +94,38 @@ system_health() {
     "$BLOOM_SYSTEM_HEALTH"
 }
 
+update_state_health() {
+    if [ ! -x "$BLOOM_UPDATE_STATE" ]; then
+        printf '%s' '{"schema":1,"healthy":false,"error":"unavailable"}'
+        return 1
+    fi
+    update_output="$(BLOOM_SD_ROOT="$(path /mnt/SDCARD)" BLOOM_UPDATE_ROOT="$(path /mnt/SDCARD/.bloom/update)" "$BLOOM_UPDATE_STATE" status 2>/dev/null)"
+    update_status=$?
+    phase="$(printf '%s\n' "$update_output" | sed -n 's/.*"phase":"\([a-z_]*\)".*/\1/p')"
+    [ "$update_status" -eq 0 ] || phase=""
+    case "$phase" in
+        idle|armed|activation_pending|testing|known_good|rollback_pending)
+            printf '{"schema":1,"healthy":true,"phase":"%s"}' "$phase"
+            return 0
+            ;;
+        recovery_required|rollback_failed)
+            printf '{"schema":1,"healthy":false,"phase":"%s","error":"recovery_required"}' "$phase"
+            return 1
+            ;;
+        *)
+            printf '%s' '{"schema":1,"healthy":false,"error":"invalid_state"}'
+            return 1
+            ;;
+    esac
+}
+
 print_health_json() {
     activity_output="$(play_activity_health)"
     activity_status=$?
     system_output="$(system_health)"
     system_status=$?
+    update_output="$(update_state_health)"
+    update_status=$?
     case "$activity_output" in
         \{*) ;;
         *) activity_output='{"schema":1,"healthy":false,"error":"execution_failed"}' ;;
@@ -107,12 +134,16 @@ print_health_json() {
         \{*) ;;
         *) system_output='{"schema":1,"healthy":false,"error":"execution_failed"}' ;;
     esac
-    if [ "$activity_status" -eq 0 ] && [ "$system_status" -eq 0 ]; then healthy=true; status=0; else healthy=false; status=1; fi
+    case "$update_output" in
+        \{*) ;;
+        *) update_output='{"schema":1,"healthy":false,"error":"execution_failed"}' ;;
+    esac
+    if [ "$activity_status" -eq 0 ] && [ "$system_status" -eq 0 ] && [ "$update_status" -eq 0 ]; then healthy=true; status=0; else healthy=false; status=1; fi
 
     printf '{\n'
     printf '  "schema": 1,\n'
     printf '  "healthy": %s,\n' "$healthy"
-    printf '  "checks": {"system": %s, "play_activity": %s}\n' "$system_output" "$activity_output"
+    printf '  "checks": {"system": %s, "play_activity": %s, "update_state": %s}\n' "$system_output" "$activity_output" "$update_output"
     printf '}\n'
     return "$status"
 }
@@ -122,6 +153,8 @@ print_health_text() {
     activity_status=$?
     system_output="$(system_health)"
     system_status=$?
+    update_output="$(update_state_health)"
+    update_status=$?
     if [ "$system_status" -eq 0 ]; then printf 'System: healthy\n'; else printf 'System: unhealthy\n'; fi
     printf '%s\n' "$system_output"
     if [ "$activity_status" -eq 0 ]; then
@@ -130,7 +163,9 @@ print_health_text() {
         printf 'Play Activity: unhealthy\n'
     fi
     printf '%s\n' "$activity_output"
-    if [ "$activity_status" -eq 0 ] && [ "$system_status" -eq 0 ]; then return 0; else return 1; fi
+    if [ "$update_status" -eq 0 ]; then printf 'Update state: healthy\n'; else printf 'Update state: unhealthy\n'; fi
+    printf '%s\n' "$update_output"
+    if [ "$activity_status" -eq 0 ] && [ "$system_status" -eq 0 ] && [ "$update_status" -eq 0 ]; then return 0; else return 1; fi
 }
 
 usage() {

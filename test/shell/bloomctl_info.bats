@@ -19,6 +19,14 @@ setup() {
         "$SDCARD/.tmp_update/bin/bloom-platform" \
         "$SDCARD/RetroArch/retroarch" \
         "$SDCARD/miyoo/app/MainUI"
+    default_update_state="$BLOOM_TEST_ROOT/default-update-state"
+    cat >"$default_update_state" <<'EOF'
+#!/bin/sh
+[ "$1" = status ] || exit 2
+printf '%s\n' '{"schema":1,"phase":"idle"}'
+EOF
+    chmod +x "$default_update_state"
+    export BLOOM_UPDATE_STATE_BIN="$default_update_state"
 }
 
 teardown() {
@@ -227,6 +235,43 @@ EOF
     printf '%s' "$output" | grep -F '"healthy": true'
     printf '%s' "$output" | grep -F '"system": {"schema":1,"healthy":true'
     printf '%s' "$output" | grep -F '"play_activity": {"schema":1,"healthy":true,"quick_check":"ok"}'
+    printf '%s' "$output" | grep -F '"update_state": {"schema":1,"healthy":true,"phase":"idle"}'
+}
+
+@test "health fails closed for recovery-required update state" {
+    cat >"$SDCARD/.tmp_update/bin/playActivity" <<'EOF'
+#!/bin/sh
+printf '%s\n' '{"schema":1,"healthy":true,"quick_check":"ok"}'
+EOF
+    update_state="$BLOOM_TEST_ROOT/recovery-update-state"
+    cat >"$update_state" <<'EOF'
+#!/bin/sh
+printf '%s\n' '{"schema":1,"phase":"recovery_required","pending_version":"2.0.0"}'
+EOF
+    chmod +x "$SDCARD/.tmp_update/bin/playActivity" "$update_state"
+    export BLOOM_UPDATE_STATE_BIN="$update_state"
+
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl health --json
+
+    [ "$status" -eq 1 ]
+    printf '%s' "$output" | grep -F '"update_state": {"schema":1,"healthy":false,"phase":"recovery_required","error":"recovery_required"}'
+    ! printf '%s' "$output" | grep -F 'pending_version'
+}
+
+@test "health replaces malformed update output with a bounded error" {
+    update_state="$BLOOM_TEST_ROOT/malformed-update-state"
+    cat >"$update_state" <<'EOF'
+#!/bin/sh
+printf '%s\n' 'not json and potentially sensitive'
+EOF
+    chmod +x "$update_state"
+    export BLOOM_UPDATE_STATE_BIN="$update_state"
+
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl health --json
+
+    [ "$status" -eq 1 ]
+    printf '%s' "$output" | grep -F '"update_state": {"schema":1,"healthy":false,"error":"invalid_state"}'
+    ! printf '%s' "$output" | grep -F 'potentially sensitive'
 }
 
 @test "health fails closed when Play Activity diagnostics are unavailable" {

@@ -58,8 +58,10 @@ merged; it does not imply unrecorded hardware certification.
   `bloomctl platform capabilities` ([PR #62](https://github.com/boburning/BloomOS/pull/62)).
 - [x] Expose the guarded developer-mode game smoke runner through
   `bloomctl test smoke` ([PR #63](https://github.com/boburning/BloomOS/pull/63)).
-- [ ] Persist stable, beta, and nightly selection and enforce it at the signed
-  update staging boundary (`feature/update-channel-policy`).
+- [x] Persist stable, beta, and nightly selection and enforce it at the signed
+  update staging boundary ([PR #64](https://github.com/boburning/BloomOS/pull/64)).
+- [ ] Surface malformed and terminal recovery update state through structured
+  system health (`feature/update-state-health`).
 
 ### Deferred physical validation
 
