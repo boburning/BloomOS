@@ -34,6 +34,7 @@ case "$size:$sha256" in *[!0-9a-f:]*) fail "cannot measure archive" ;; esac
     .product == "BloomOS" and
     (.version | type == "string" and length > 0) and
     (.channel == "stable" or .channel == "beta" or .channel == "nightly" or .channel == "development") and
+    .devices == ["mini", "plus", "flip"] and
     (.artifacts | type == "array" and length == 1) and
     .artifacts[0].filename == $filename and
     .artifacts[0].sha256 == $sha256 and
@@ -44,5 +45,5 @@ case "$size:$sha256" in *[!0-9a-f:]*) fail "cannot measure archive" ;; esac
 version="$("$JQ" -r '.version' "$manifest")"
 channel="$("$JQ" -r '.channel' "$manifest")"
 case "$version" in ''|*[!A-Za-z0-9._+-]*) fail "manifest version is unsafe" ;; esac
-printf '{"schema":1,"status":"verified","version":"%s","channel":"%s","filename":"%s","sha256":"%s","size":%s}\n' \
+printf '{"schema":1,"status":"verified","version":"%s","channel":"%s","devices":["mini","plus","flip"],"filename":"%s","sha256":"%s","size":%s}\n' \
     "$version" "$channel" "$filename" "$sha256" "$size"

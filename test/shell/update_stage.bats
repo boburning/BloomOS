@@ -20,7 +20,7 @@ setup() {
     openssl pkey -in "$BLOOM_TEST_ROOT/private.pem" -pubout -out "$BLOOM_UPDATE_PUBLIC_KEY" >/dev/null 2>&1
     size="$(wc -c <"$ARCHIVE" | tr -d ' ')"
     digest="$(sha256sum "$ARCHIVE" | awk '{print $1}')"
-    printf '{"schema":1,"product":"BloomOS","version":"1.2.3","channel":"beta","artifacts":[{"filename":"BloomOS-v1.2.3.zip","sha256":"%s","size":%s,"media_type":"application/zip"}]}\n' \
+    printf '{"schema":1,"product":"BloomOS","version":"1.2.3","channel":"beta","devices":["mini","plus","flip"],"artifacts":[{"filename":"BloomOS-v1.2.3.zip","sha256":"%s","size":%s,"media_type":"application/zip"}]}\n' \
         "$digest" "$size" >"$MANIFEST"
     openssl pkeyutl -sign -inkey "$BLOOM_TEST_ROOT/private.pem" -rawin -in "$MANIFEST" -out "$SIGNATURE"
 }

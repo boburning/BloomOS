@@ -12,6 +12,7 @@ from zipfile import BadZipFile, ZipFile
 
 
 COMPATIBLE_DEVICES = ["miyoo-mini-v1", "miyoo-mini-v2", "miyoo-mini-v3", "miyoo-mini-v4", "miyoo-mini-plus", "miyoo-mini-flip"]
+MANIFEST_DEVICES = ["mini", "plus", "flip"]
 REQUIRED_ARCHIVE_PATHS = {"miyoo/app/.tmp_update/onion.pak", "RetroArch/retroarch.pak"}
 RELEASE_CHANNELS = {"stable", "beta", "nightly", "development"}
 
@@ -61,6 +62,7 @@ def create(args: argparse.Namespace) -> None:
             "product": "BloomOS",
             "version": args.version,
             "channel": args.channel,
+            "devices": MANIFEST_DEVICES,
             "artifacts": [
                 {
                     "filename": archive.name,
@@ -98,6 +100,8 @@ def validate(args: argparse.Namespace) -> None:
         raise SystemExit("release metadata versions do not match")
     if manifest.get("channel") not in RELEASE_CHANNELS or manifest.get("channel") != build_info.get("channel"):
         raise SystemExit("release metadata channels are invalid or do not match")
+    if manifest.get("devices") != MANIFEST_DEVICES:
+        raise SystemExit("manifest device targets are invalid")
     if not isinstance(artifacts, list) or len(artifacts) != 1 or not isinstance(artifacts[0], dict):
         raise SystemExit("manifest must describe exactly one release archive")
 
