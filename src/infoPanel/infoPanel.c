@@ -5,6 +5,7 @@
 #include "appstate.h"
 #include "imagesBrowser.h"
 #include "imagesCache.h"
+#include "imagesConfig.h"
 #include "system/battery.h"
 #include "system/keymap_sw.h"
 #include "system/lang.h"
@@ -26,62 +27,6 @@ static char **g_images_titles;
 static int g_images_paths_count = 0;
 static int g_image_index = -1;
 static bool g_show_theme_controls = false;
-
-static bool loadImagesPathsFromJson(const char *config_path,
-                                    char ***images_paths,
-                                    int *images_paths_count,
-                                    char ***images_titles)
-{
-    char *json_str = NULL;
-
-    char temp_path[STR_MAX];
-    strncpy(temp_path, config_path, STR_MAX - 1);
-    dirname(temp_path);
-
-    if (!(json_str = file_read(config_path))) {
-        return false;
-    }
-
-    // Get JSON objects
-    cJSON *json_root = cJSON_Parse(json_str);
-    free(json_str);
-    cJSON *json_images_array = cJSON_GetObjectItem(json_root, "images");
-    *images_paths_count = cJSON_GetArraySize(json_images_array);
-    *images_paths = (char **)malloc(*images_paths_count * sizeof(char *));
-    *images_titles = (char **)malloc(*images_paths_count * sizeof(char *));
-
-    for (int i = 0; i < *images_paths_count; i++) {
-        (*images_paths)[i] = (char *)malloc((STR_MAX * 2 + 2) * sizeof(char));
-        static const int g_title_max_length = 50;
-        (*images_titles)[i] = (char *)malloc(g_title_max_length * sizeof(char));
-
-        const cJSON *json_image_item = cJSON_GetArrayItem(json_images_array, i);
-        if (!json_image_item) {
-            (*images_paths_count)--;
-            continue;
-        }
-        const cJSON *json_image_path =
-            cJSON_GetObjectItem(json_image_item, "path");
-        if (!json_image_path) {
-            (*images_paths_count)--;
-            continue;
-        }
-        const char *image_path = cJSON_GetStringValue(json_image_path);
-        snprintf((*images_paths)[i], STR_MAX * 2 + 1, "%s/%s", temp_path,
-                 image_path);
-
-        cJSON *json_image_title = cJSON_GetObjectItem(json_image_item, "title");
-        if (!json_image_title) {
-            continue;
-        }
-        char *image_title = cJSON_GetStringValue(json_image_title);
-        strncpy((*images_titles)[i], image_title, g_title_max_length);
-    }
-
-    cJSON_Delete(json_root);
-
-    return true;
-}
 
 const SDL_Rect *getControlsAwareFrame(const SDL_Rect *frame)
 {
@@ -404,16 +349,7 @@ int main(int argc, char *argv[])
             break;
     }
 
-    if (g_images_paths != NULL) {
-        for (int i = 0; i < g_images_paths_count; i++)
-            free(g_images_paths[i]);
-        free(g_images_paths);
-    }
-    if (g_images_titles != NULL) {
-        for (int i = 0; i < g_images_paths_count; i++)
-            free(g_images_titles[i]);
-        free(g_images_titles);
-    }
+    freeImagesConfig(g_images_paths, g_images_titles, g_images_paths_count);
 
     if (is_persistent) {
         while (!temp_flag_get("dismiss_info_panel")) {
