@@ -10,6 +10,7 @@ ROOT_SSH_DIR="$ROOT/home/root/.ssh"
 DEV_HOME="$ROOT/tmp/bloom-dev-home"
 HOME_MOUNT_MARKER="$ROOT/tmp/bloom-dev-home-mounted"
 STATE_FILE="$ROOT/tmp/bloom-dev-ssh.state"
+PID_FILE="$ROOT/tmp/bloom-dev-ssh.pid"
 PORT="${BLOOM_DEV_SSH_PORT:-22}"
 DROPBEAR="${BLOOM_DROPBEAR:-$SYS_DIR/bin/bloom-dropbearmulti}"
 HOST_KEY="$SYS_DIR/etc/dropbear/dropbear_ed25519_host_key"
@@ -19,12 +20,27 @@ state() {
     printf '%s\n' "$1" >"$STATE_FILE"
 }
 
-dropbear_running() {
-    pgrep -x dropbearmulti >/dev/null 2>&1 || pgrep -x dropbear >/dev/null 2>&1
-}
-
 stop_dropbear() {
-    if dropbear_running; then
+    tracked=0
+    if [ -r "$PID_FILE" ]; then
+        pid="$(cat "$PID_FILE" 2>/dev/null || true)"
+        case "$pid" in
+            ''|*[!0-9]*) ;;
+            *)
+                tracked=1
+                kill "$pid" >/dev/null 2>&1 || true
+                attempts=0
+                while kill -0 "$pid" >/dev/null 2>&1 && [ "$attempts" -lt 20 ]; do
+                    sleep 0.05
+                    attempts=$((attempts + 1))
+                done
+                kill -9 "$pid" >/dev/null 2>&1 || true
+                ;;
+        esac
+    fi
+    rm -f "$PID_FILE"
+    if [ "$tracked" -eq 0 ]; then
+        # One-time cleanup for upgrades from a helper that did not track its PID.
         killall dropbearmulti >/dev/null 2>&1 || true
         killall dropbear >/dev/null 2>&1 || true
     fi
@@ -114,7 +130,16 @@ start_ssh() {
     fi
 
     "$DROPBEAR" dropbear -F -r "$HOST_KEY" -D "$ROOT_SSH_DIR" -p "$PORT" \
-        >>"$SYS_DIR/logs/developer-ssh.log" 2>&1 &
+        >>"$SYS_DIR/logs/developer-ssh.log" 2>&1 3>&- &
+    server_pid=$!
+    printf '%s\n' "$server_pid" >"$PID_FILE"
+    sleep 1
+    if ! kill -0 "$server_pid" >/dev/null 2>&1; then
+        rm -f "$PID_FILE"
+        stop_dropbear
+        state startup_failed
+        return 1
+    fi
     state running_key_only
 }
 

@@ -12,13 +12,27 @@ setup() {
 exit 1
 EOF
     mock_command killall
-    mock_command dropbear
+    cat >"$MOCK_BIN/dropbear" <<'EOF'
+#!/bin/sh
+printf '%s\n' "$0 $*" >>"$MOCK_LOG"
+if [ "${1:-}" = dropbearkey ]; then
+    : >"$SDCARD/.tmp_update/etc/dropbear/dropbear_ed25519_host_key"
+elif [ "${1:-}" = dropbear ]; then
+    sleep 30
+fi
+EOF
+    chmod +x "$MOCK_BIN/dropbear"
     export BLOOM_DROPBEAR="$MOCK_BIN/dropbear"
     mock_command ifconfig
     chmod +x "$MOCK_BIN/pgrep"
 }
 
-teardown() { teardown_bloom_fixture; }
+teardown() {
+    if [ -r "$BLOOM_TEST_ROOT/tmp/bloom-dev-ssh.pid" ]; then
+        kill "$(cat "$BLOOM_TEST_ROOT/tmp/bloom-dev-ssh.pid")" 2>/dev/null || true
+    fi
+    teardown_bloom_fixture
+}
 
 enable_flip() {
     : >"$SDCARD/.bloom-dev"
@@ -38,7 +52,7 @@ install_valid_key() {
 
     [ "$status" -eq 0 ]
     [ "$(cat "$BLOOM_TEST_ROOT/tmp/bloom-dev-ssh.state")" = disabled ]
-    ! grep -Fq dropbear "$MOCK_LOG"
+    ! grep -Fq "$MOCK_BIN/dropbear " "$MOCK_LOG"
 }
 
 @test "developer SSH fails closed without a valid public key" {
@@ -49,7 +63,7 @@ install_valid_key() {
 
     [ "$status" -eq 1 ]
     [ "$(cat "$BLOOM_TEST_ROOT/tmp/bloom-dev-ssh.state")" = missing_or_invalid_key ]
-    ! grep -Fq dropbear "$MOCK_LOG"
+    ! grep -Fq "$MOCK_BIN/dropbear " "$MOCK_LOG"
 }
 
 @test "Flip developer SSH starts Dropbear in key-only mode" {
@@ -90,4 +104,25 @@ install_valid_key() {
 @test "read-only firmware home has a checked bind-mount fallback" {
     grep -F 'mount -o bind "$DEV_HOME" "$ROOT/home"' "$SSH_HELPER"
     grep -F 'state runtime_key_failed' "$SSH_HELPER"
+}
+
+@test "startup is reported only while the tracked server remains alive" {
+    enable_flip
+    install_valid_key
+    cat >"$MOCK_BIN/dropbear" <<'EOF'
+#!/bin/sh
+printf '%s\n' "$0 $*" >>"$MOCK_LOG"
+if [ "${1:-}" = dropbearkey ]; then
+    : >"$SDCARD/.tmp_update/etc/dropbear/dropbear_ed25519_host_key"
+    exit 0
+fi
+exit 1
+EOF
+    chmod +x "$MOCK_BIN/dropbear"
+
+    run "$SSH_HELPER" start
+
+    [ "$status" -eq 1 ]
+    [ "$(cat "$BLOOM_TEST_ROOT/tmp/bloom-dev-ssh.state")" = startup_failed ]
+    [ ! -e "$BLOOM_TEST_ROOT/tmp/bloom-dev-ssh.pid" ]
 }
