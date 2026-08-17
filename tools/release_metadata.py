@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import stat
 from datetime import datetime, timezone
 from pathlib import Path
 from zipfile import BadZipFile, ZipFile
@@ -29,6 +30,38 @@ def write_json(path: Path, value: object) -> None:
     path.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
+def payload_manifest(archive: Path, archive_hash: str) -> dict:
+    files: list[dict] = []
+    seen: set[str] = set()
+    try:
+        with ZipFile(archive) as release_zip:
+            for member in release_zip.infolist():
+                path = member.filename[2:] if member.filename.startswith("./") else member.filename
+                parts = Path(path).parts
+                if not path or path.startswith("/") or ".." in parts or "\\" in path:
+                    raise SystemExit(f"release archive contains unsafe path: {member.filename}")
+                if path in seen:
+                    raise SystemExit(f"release archive contains duplicate path: {path}")
+                seen.add(path)
+                if member.is_dir():
+                    continue
+                data = release_zip.read(member)
+                mode = member.external_attr >> 16
+                file_type = "symlink" if stat.S_ISLNK(mode) else "file"
+                files.append(
+                    {
+                        "path": path,
+                        "type": file_type,
+                        "size": len(data),
+                        "sha256": hashlib.sha256(data).hexdigest(),
+                    }
+                )
+    except BadZipFile as error:
+        raise SystemExit(f"release archive is invalid: {error}") from error
+    files.sort(key=lambda item: item["path"])
+    return {"schema": 1, "product": "BloomOS", "archive_sha256": archive_hash, "files": files}
+
+
 def create(args: argparse.Namespace) -> None:
     output_dir = Path(args.output_dir).resolve()
     archive = Path(args.archive).resolve()
@@ -39,6 +72,8 @@ def create(args: argparse.Namespace) -> None:
         raise SystemExit("dependency lock does not exist")
 
     archive_hash = sha256(archive)
+    payload = payload_manifest(archive, archive_hash)
+    write_json(output_dir / "payload-manifest.json", payload)
     build_date = datetime.fromtimestamp(args.source_date_epoch, timezone.utc).isoformat().replace("+00:00", "Z")
     write_json(
         output_dir / "build-info.json",
@@ -52,6 +87,7 @@ def create(args: argparse.Namespace) -> None:
             "source_date_epoch": args.source_date_epoch,
             "toolchain": args.toolchain,
             "dependency_lock_sha256": sha256(dependency_lock),
+            "payload_manifest_sha256": sha256(output_dir / "payload-manifest.json"),
             "compatible_devices": COMPATIBLE_DEVICES,
         },
     )
@@ -93,6 +129,7 @@ def validate(args: argparse.Namespace) -> None:
         raise SystemExit("manifest signature is missing or invalid")
     manifest = load_json(output_dir / "manifest.json")
     build_info = load_json(output_dir / "build-info.json")
+    recorded_payload = load_json(output_dir / "payload-manifest.json")
     artifacts = manifest.get("artifacts")
     if manifest.get("product") != "BloomOS" or build_info.get("product") != "BloomOS":
         raise SystemExit("release metadata has the wrong product")
@@ -115,6 +152,11 @@ def validate(args: argparse.Namespace) -> None:
     expected_sums = f"{actual_hash}  {archive.name}\n"
     if (output_dir / "SHA256SUMS").read_text(encoding="ascii") != expected_sums:
         raise SystemExit("SHA256SUMS does not match the release archive")
+    actual_payload = payload_manifest(archive, actual_hash)
+    if recorded_payload != actual_payload:
+        raise SystemExit("payload manifest does not match the release archive")
+    if build_info.get("payload_manifest_sha256") != sha256(output_dir / "payload-manifest.json"):
+        raise SystemExit("build info payload manifest digest does not match")
 
     try:
         with ZipFile(archive) as release_zip:

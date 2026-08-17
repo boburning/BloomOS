@@ -27,6 +27,11 @@ Build, pre-release, and tagged-release jobs now use the pinned toolchain index d
 
 The inherited history and tree contain large prebuilt emulator/core binaries, including ScummVM artifacts above GitHub's 50 MB recommendation. GitHub accepted the history, but Bloom must inventory each current bundled binary's source, exact revision, license, SHA-256, build method, and redistribution basis. Do not rewrite inherited history merely to silence the warning.
 
+Every release now emits and validates `payload-manifest.json`, providing the
+exact SHA-256 and size of each shipped file or symlink. This closes the binary
+identity portion of provenance; upstream source, build method, license, and
+redistribution mapping remain required for inherited binaries.
+
 ## Lock-file requirements
 
 `build/dependencies.lock` now records the resolved toolchain, submodule, and Action identifiers plus explicit unresolved fields. It must expand to cover RetroArch and core source revisions, theme/package revisions, downloaded artifact hashes, license identifiers, and provenance URLs before release builds are considered locked.
