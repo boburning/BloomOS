@@ -197,3 +197,13 @@ Inspect normalized hardware capabilities without duplicating model heuristics:
 ```sh
 bloomctl platform capabilities
 ```
+
+Run the guarded on-device game smoke flow in developer mode with:
+
+```sh
+bloomctl test smoke GB "/mnt/SDCARD/Roms/GB/Test Game.zip" 10
+```
+
+The optional duration defaults to ten seconds. The underlying runner accepts
+only its supported system allowlist and confines the ROM to that system's ROM
+directory.

@@ -201,6 +201,12 @@ inspection as the stable public CLI contract. It reports only observable model,
 display, input, battery-backend, and capability data; callers do not need to
 repeat hardware heuristics or depend directly on the internal helper.
 
+`bloomctl test smoke` is the stable CLI adapter for the existing developer-mode
+game smoke runner. It base64-encodes the ROM path before delegation so spaces
+and shell punctuation remain data. The runner retains all safety boundaries:
+explicit developer mode, supported-system allowlisting, ROM confinement,
+bounded duration, structured launch/session handling, and save flushing.
+
 ## Update trust boundary
 
 Release manifests are signed with the BloomOS Ed25519 release key after their

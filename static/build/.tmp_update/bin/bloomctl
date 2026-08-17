@@ -13,6 +13,7 @@ BLOOM_UPDATE_ROLLBACK="${BLOOM_UPDATE_ROLLBACK_BIN:-$SCRIPT_DIR/bloom-update-rol
 BLOOM_SYSTEM_HEALTH="${BLOOM_SYSTEM_HEALTH_BIN:-$SCRIPT_DIR/bloom-health-system}"
 BLOOM_SAVE_SNAPSHOT="${BLOOM_SAVE_SNAPSHOT_BIN:-$SCRIPT_DIR/bloom-save-snapshot}"
 BLOOM_DIAGNOSTICS_EXPORT="${BLOOM_DIAGNOSTICS_EXPORT_BIN:-$SCRIPT_DIR/bloom-diagnostics-export}"
+BLOOM_GAME_SMOKE="${BLOOM_GAME_SMOKE_BIN:-$SCRIPT_DIR/bloom-game-smoke}"
 
 path() {
     printf '%s%s' "$BLOOM_ROOT" "$1"
@@ -137,6 +138,25 @@ usage() {
     printf '       bloomctl saves snapshots\n' >&2
     printf '       bloomctl logs export\n' >&2
     printf '       bloomctl platform capabilities\n' >&2
+    printf '       bloomctl test smoke SYSTEM ROM_PATH [DURATION_SECONDS]\n' >&2
+}
+
+test_command() {
+    case "${1:-}" in
+        smoke)
+            [ "$#" -ge 3 ] && [ "$#" -le 4 ] || { usage; return 2; }
+            [ -x "$BLOOM_GAME_SMOKE" ] || { printf 'bloomctl: smoke test service is unavailable\n' >&2; return 1; }
+            newline='
+'
+            carriage_return="$(printf '\r')"
+            case "$3" in
+                *"$newline"*|*"$carriage_return"*) printf 'bloomctl: ROM path contains a newline\n' >&2; return 2 ;;
+            esac
+            rom_b64="$(printf '%s' "$3" | base64 | tr -d '\r\n')" || return 1
+            "$BLOOM_GAME_SMOKE" "$2" "$rom_b64" "${4:-10}"
+            ;;
+        *) usage; return 2 ;;
+    esac
 }
 
 platform_command() {
@@ -239,6 +259,10 @@ case "${1:-}" in
     platform)
         shift
         platform_command "$@"
+        ;;
+    test)
+        shift
+        test_command "$@"
         ;;
     *) usage; exit 2 ;;
 esac

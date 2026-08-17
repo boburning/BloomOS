@@ -54,8 +54,10 @@ merged; it does not imply unrecorded hardware certification.
   keep partial responses out of the verified cache ([PR #60](https://github.com/boburning/BloomOS/pull/60)).
 - [x] Export a privacy-bounded, allowlisted on-device diagnostics archive
   through `bloomctl logs export` ([PR #61](https://github.com/boburning/BloomOS/pull/61)).
-- [ ] Expose centralized structured hardware inspection through
-  `bloomctl platform capabilities` (`feature/platform-capabilities`).
+- [x] Expose centralized structured hardware inspection through
+  `bloomctl platform capabilities` ([PR #62](https://github.com/boburning/BloomOS/pull/62)).
+- [ ] Expose the guarded developer-mode game smoke runner through
+  `bloomctl test smoke` (`feature/smoke-test-cli`).
 
 ### Deferred physical validation
 
