@@ -10,6 +10,7 @@ __pycache__/
 !/build/themes.sha256
 !/build/provenance-policy.json
 !/build/shell-test-inputs.json
+!/build/legacy-manifest.json
 /build_test/
 /release/
 /dist/

@@ -13,9 +13,11 @@ on:
       - 'tools/core_manifest.py'
       - 'tools/provenance_policy.py'
       - 'tools/shell_test_inputs.py'
+      - 'tools/legacy_manifest.py'
       - 'build/core-manifest.json'
       - 'build/provenance-policy.json'
       - 'build/shell-test-inputs.json'
+      - 'build/legacy-manifest.json'
       - 'build/themes.sha256'
       - '.gitattributes'
   merge_group:

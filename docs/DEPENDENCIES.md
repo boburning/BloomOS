@@ -73,6 +73,21 @@ still legacy. Moving a component to `source` requires replacing or rebuilding
 it from reviewed inputs; binary hashes alone are never accepted as historical
 source evidence.
 
+`build/legacy-manifest.json` decomposes the remaining inherited runtime and
+package payload into 156 independently resolvable components covering 2,662
+files. Each entry locks its path, file count, byte count, and canonical tree
+SHA-256 while leaving unknown source, revision, license, and build recipe
+explicitly `null`. Its resolution must eventually become either a complete
+`source-build` record or an intentional channel exclusion. Release packaging
+recomputes the inventory, so inherited payload drift cannot silently expand
+the stable-publication backlog.
+
+The pinned SearchFilter and DinguxCommander repositories remain a separate
+legacy blocker: neither upstream repository declares a project license. Their
+source availability and commit identity therefore do not establish public
+redistribution rights; Bloom must replace them with clearly licensed
+implementations or exclude their output from public channels.
+
 ## Lock-file requirements
 
 `build/dependencies.lock` records the resolved toolchain, submodule, Action,
