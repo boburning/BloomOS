@@ -30,7 +30,33 @@ GTEST_INCLUDE_DIR=/usr/src/gtest/include SANITIZE=1 make test
 
 ## Developer mode bootstrap
 
-Developer mode is requested by creating `/mnt/SDCARD/.bloom-dev`. The initial implementation only reports the flag through `bloomctl info --json`; it does not yet enable SSH or change production behavior.
+Developer mode is requested by creating `/mnt/SDCARD/.bloom-dev`. On the
+Wi-Fi-capable Mini Plus and Mini Flip, key-only SSH also requires at least one
+valid public key at:
+
+```text
+/mnt/SDCARD/.tmp_update/config/bloom/authorized_keys
+```
+
+Private keys stay on the development host. Bloom accepts plain `ssh-ed25519`,
+`ssh-rsa`, and standard NIST ECDSA public-key lines without authorized-key
+options. A missing or malformed file fails closed and stops developer Dropbear.
+The original Mini V1–V4 ignore SSH provisioning and continue to use the SD-card
+test protocol.
+
+On Linux or WSL2, provision a dedicated key:
+
+```sh
+ssh-keygen -t ed25519 -f ~/.ssh/bloom_flip -C bloom-flip
+mkdir -p /path/to/sd/.tmp_update/config/bloom
+cp ~/.ssh/bloom_flip.pub /path/to/sd/.tmp_update/config/bloom/authorized_keys
+```
+
+The inherited Dropbear binary stores generated host keys under
+`.tmp_update/etc/dropbear`, so the first connection must verify and accept the
+unique device/SD-card fingerprint. Developer Dropbear disables password and
+blank-password authentication while allowing root public-key login. Remove
+`.bloom-dev` and reboot to disable automatic developer SSH.
 
 ## Wi-Fi device harness
 
@@ -47,8 +73,15 @@ tools/collect-logs.sh bloom-plus
 
 The first smoke check is intentionally read-only. Diagnostic collection writes
 `device.json` and `runtime.log` under the ignored `artifacts/device-logs/`
-directory unless an explicit output path is supplied. Device activation and SSH
-enablement are not part of this change.
+directory unless an explicit output path is supplied. Device activation
+requires `.bloom-dev` and a valid developer public key; no address, password,
+private key, or accepted host fingerprint is stored in the repository.
+
+| Device | Development method |
+| --- | --- |
+| Original Mini V1–V4 | Guarded SD-card request/results harness; UART is optional advanced work |
+| Mini Plus | Wi-Fi plus key-only SSH |
+| Mini Flip | Wi-Fi plus key-only SSH |
 
 ## Original Mini SD-card tests
 

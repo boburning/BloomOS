@@ -87,11 +87,18 @@ print_info_json() {
     detect_display
 
     case "$model" in
-        mini_plus|mini_flip) has_wifi=true ;;
-        *) has_wifi="$(bool_for_path /sys/class/net/wlan0)" ;;
+        mini_plus|mini_flip)
+            has_wifi=true
+            has_ssh=true
+            ;;
+        *)
+            has_wifi="$(bool_for_path /sys/class/net/wlan0)"
+            has_ssh=false
+            ;;
     esac
     has_lid="$(bool_for_path /sys/devices/soc0/soc/soc:hall-mh248/hallvalue)"
     developer_mode="$(bool_for_path /mnt/SDCARD/.bloom-dev)"
+    developer_ssh="$(read_first_line /tmp/bloom-dev-ssh.state)"
 
     printf '{\n'
     printf '  "schema": 1,\n'
@@ -104,8 +111,9 @@ print_info_json() {
     printf '  "firmware": "%s",\n' "$(json_string "${firmware:-unknown}")"
     printf '  "display": {"width": "%s", "height": "%s"},\n' \
         "$(json_string "$display_width")" "$(json_string "$display_height")"
-    printf '  "capabilities": {"wifi": %s, "lid": %s},\n' "$has_wifi" "$has_lid"
-    printf '  "developer_mode": %s\n' "$developer_mode"
+    printf '  "capabilities": {"wifi": %s, "ssh": %s, "lid": %s},\n' "$has_wifi" "$has_ssh" "$has_lid"
+    printf '  "developer_mode": %s,\n' "$developer_mode"
+    printf '  "developer_ssh": "%s"\n' "$(json_string "${developer_ssh:-disabled}")"
     printf '}\n'
 }
 

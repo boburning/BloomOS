@@ -1,0 +1,92 @@
+#!/bin/sh
+set -u
+
+ROOT="${BLOOM_ROOT:-}"
+SD_ROOT="$ROOT/mnt/SDCARD"
+SYS_DIR="$SD_ROOT/.tmp_update"
+DEV_FLAG="$SD_ROOT/.bloom-dev"
+AUTHORIZED_KEYS="$SYS_DIR/config/bloom/authorized_keys"
+ROOT_SSH_DIR="$ROOT/home/root/.ssh"
+STATE_FILE="$ROOT/tmp/bloom-dev-ssh.state"
+PORT="${BLOOM_DEV_SSH_PORT:-22}"
+
+state() {
+    mkdir -p "$(dirname "$STATE_FILE")"
+    printf '%s\n' "$1" >"$STATE_FILE"
+}
+
+dropbear_running() {
+    pgrep -x dropbear >/dev/null 2>&1
+}
+
+stop_dropbear() {
+    if dropbear_running; then
+        killall dropbear >/dev/null 2>&1 || true
+    fi
+}
+
+validate_authorized_keys() {
+    [ -f "$AUTHORIZED_KEYS" ] && [ -s "$AUTHORIZED_KEYS" ] || return 1
+    awk '
+        /^[[:space:]]*($|#)/ { next }
+        $1 !~ /^(ssh-ed25519|ssh-rsa|ecdsa-sha2-nistp(256|384|521))$/ { invalid = 1; next }
+        $2 !~ /^[A-Za-z0-9+\/=]+$/ { invalid = 1; next }
+        { keys++ }
+        END { exit invalid || keys == 0 }
+    ' "$AUTHORIZED_KEYS"
+}
+
+supports_ssh() {
+    model="$(cat "$ROOT/tmp/deviceModel" 2>/dev/null || true)"
+    [ "$model" = "354" ] || [ "$model" = "285" ]
+}
+
+start_ssh() {
+    if [ ! -f "$DEV_FLAG" ]; then
+        state disabled
+        return 0
+    fi
+    if ! supports_ssh; then
+        state unsupported
+        return 0
+    fi
+    if ! validate_authorized_keys; then
+        stop_dropbear
+        state missing_or_invalid_key
+        printf '%s\n' "Bloom developer SSH refused: valid authorized_keys required" >&2
+        return 1
+    fi
+    if ! ifconfig wlan0 >/dev/null 2>&1; then
+        stop_dropbear
+        state network_unavailable
+        return 0
+    fi
+
+    mkdir -p "$ROOT_SSH_DIR" "$SYS_DIR/etc/dropbear"
+    chmod 700 "$ROOT_SSH_DIR"
+    cp "$AUTHORIZED_KEYS" "$ROOT_SSH_DIR/authorized_keys"
+    chmod 600 "$ROOT_SSH_DIR/authorized_keys"
+
+    stop_dropbear
+    dropbear -R -s -g -p "$PORT"
+    state running_key_only
+}
+
+case "${1:-}" in
+    start) start_ssh ;;
+    stop)
+        stop_dropbear
+        state stopped
+        ;;
+    status)
+        if [ -r "$STATE_FILE" ]; then
+            cat "$STATE_FILE"
+        else
+            printf '%s\n' unknown
+        fi
+        ;;
+    *)
+        printf '%s\n' "Usage: bloom-dev-ssh <start|stop|status>" >&2
+        exit 2
+        ;;
+esac
