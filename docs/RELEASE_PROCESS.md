@@ -11,7 +11,10 @@ BloomOS has no public release process in operation yet. Release builds now produ
 Packaging normalizes distribution-tree timestamps to the source commit time, sorts the archive input list, suppresses archive timestamp metadata, and validates the archive and metadata before publication. Before the first public release, this document must still define:
 
 Release jobs materialize the protected `BLOOM_RELEASE_SIGNING_KEY` secret only
-inside a mode-`0600` temporary file. The build proves that its derived public
+inside a mode-`0600` temporary file after the pinned cross-toolchain container
+has produced the unsigned archive and metadata. Signing runs on the current
+Ubuntu runner's OpenSSL 3 runtime, outside the older toolchain image. The build
+proves that the private key's derived public
 key matches the key shipped on devices, signs `manifest.json`, verifies that
 signature before publication, and removes the temporary private key even when
 the job fails. Devices verify the signature before parsing the manifest or
