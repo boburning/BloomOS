@@ -188,4 +188,11 @@ writes, and publishes that directory with a single rename. Existing staged
 versions are never overwritten. Staging does not extract into or otherwise
 modify the live operating-system tree.
 
+The update state machine arms only a freshly re-verified staged payload. Each
+unvalidated boot increments a durable attempt counter; the third attempt enters
+`recovery_required` instead of continuing indefinitely. A payload becomes
+known-good only through an explicit successful-health promotion. Until then,
+the prior known-good staged payload and its signed metadata remain addressable
+as the recovery source.
+
 Architectural decisions will be recorded as the corresponding subsystem work begins.
