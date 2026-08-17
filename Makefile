@@ -75,6 +75,9 @@ $(CACHE)/.setup:
 	@rsync -a --exclude='.gitkeep' $(STATIC_DIST)/ $(DIST_DIR)
 # Copy shared libraries
 	@cp -R $(ROOT_DIR)/lib/. $(DIST_DIR)/miyoo/app/.tmp_update/lib
+# The inherited OpenSSL 3 binary requires the ARM GCC atomic runtime. Copy the
+# resolved file from the pinned cross-toolchain instead of relying on firmware.
+	@cp -L /opt/miyoomini-toolchain/arm-linux-gnueabihf/libc/usr/lib/libatomic.so.1 $(BUILD_DIR)/.tmp_update/lib/libatomic.so.1
 # Set version number
 	@mkdir -p $(BUILD_DIR)/.tmp_update/onionVersion
 	@echo -n "v$(VERSION)" > $(BUILD_DIR)/.tmp_update/onionVersion/version.txt
