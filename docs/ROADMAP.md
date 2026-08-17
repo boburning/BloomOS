@@ -38,9 +38,11 @@ merged; it does not imply unrecorded hardware certification.
 - [x] Reconcile activated update boots, count bounded validation attempts, and
   require installed-version plus structured-health confirmation before
   promotion ([PR #54](https://github.com/boburning/BloomOS/pull/54)).
-- [ ] Reconstruct rollback candidates from retained signed archives, snapshot
+- [x] Reconstruct rollback candidates from retained signed archives, snapshot
   saves, publish the recovery trigger transactionally, and expose the guarded
-  `bloomctl update rollback` operation (`feature/signed-update-rollback`).
+  `bloomctl update rollback` operation ([PR #55](https://github.com/boburning/BloomOS/pull/55)).
+- [ ] Stop modifying permanent emulator launch scripts for temporary reset and
+  auto-load-state options (`fix/temporary-launch-overrides`).
 
 ### Deferred physical validation
 

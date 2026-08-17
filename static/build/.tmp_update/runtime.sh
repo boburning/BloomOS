@@ -512,22 +512,19 @@ override_game_core() {
         fi
     fi
 
-    # Add appendconfig to the launch script if necessary
+    # Temporary state must never edit the permanent emulator launcher. Build a
+    # protected adjacent copy so launchers that derive paths from $0 continue
+    # to resolve their own RetroArch assets correctly.
     if [ ! -z "$appendconfig" ]; then
-        if grep -q -- "--appendconfig" "$launch_path"; then
-            # Update existing appendconfig in the script
-            sed -i "s|--appendconfig \".*\"|--appendconfig \"$appendconfig\"|g" "$launch_path"
-            log "Updated existing appendconfig in launch script: $appendconfig (path: $launch_path)"
-        else
-            # Inject appendconfig argument into the command
-            sed -i "s|./retroarch -v|& --appendconfig \"$appendconfig\"|g" "$launch_path"
-            log "Injected appendconfig into launch script: $appendconfig (path: $launch_path)"
-        fi
+        temporary_launch_path="$(bloom-launch-override create "$launch_path" "$appendconfig")" || return 1
+        write_launch_command "$temporary_launch_path" "$rompath"
+        log "Created temporary launch override: $temporary_launch_path"
     fi
 }
 
 cleanup_appendconfig() {
     launch_path="$1"
+    rompath="$2"
 
     if [ ! -f /tmp/quick_switch ]; then
         # Cleanup `cmd_to_run.sh` by removing any existing appendconfig
@@ -541,16 +538,23 @@ cleanup_appendconfig() {
         fi
     fi
 
-    # Clean up launch_path: Remove explicit appendconfig paths
-    if [ -w "$launch_path" ]; then
-        if grep -q '/tmp/reset.cfg' "$launch_path"; then
-            sed -i 's| --appendconfig "/tmp/reset.cfg"||g' "$launch_path"
-            log "Removed /tmp/reset.cfg from $launch_path"
-        elif grep -q '/tmp/auto_load_state.cfg' "$launch_path"; then
-            sed -i 's| --appendconfig "/tmp/auto_load_state.cfg"||g' "$launch_path"
-            log "Removed /tmp/auto_load_state.cfg from $launch_path"
+    if [ -n "${temporary_launch_path:-}" ]; then
+        bloom-launch-override remove "$temporary_launch_path" || log "Could not remove temporary launch override"
+        if [ -f /tmp/quick_switch ]; then
+            write_launch_command "$launch_path" "$rompath"
         fi
+        temporary_launch_path=""
     fi
+}
+
+shell_quote() {
+    printf '%s' "$1" | sed "s/'/'\\\\''/g"
+}
+
+write_launch_command() {
+    quoted_launcher="$(shell_quote "$1")"
+    quoted_rom="$(shell_quote "$2")"
+    printf "LD_PRELOAD='%s' '%s' '%s'\n" "$miyoodir/lib/libpadsp.so" "$quoted_launcher" "$quoted_rom" > "$sysdir/cmd_to_run.sh"
 }
 
 launch_game_postprocess() {
@@ -570,7 +574,7 @@ launch_game_postprocess() {
         playActivity stop "$rompath"
 
         # Remove appended configs
-        cleanup_appendconfig "$launch_path"
+        cleanup_appendconfig "$launch_path" "$rompath"
 
         if [ -f /tmp/.lowBat ]; then
             bootScreen lowBat
