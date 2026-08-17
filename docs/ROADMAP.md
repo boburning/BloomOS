@@ -114,6 +114,9 @@ merged; it does not imply unrecorded hardware certification.
   cleared runtime and package entries no longer leave permanent umbrella
   blockers while unresolved and excluded entries still fail closed
   ([PR #84](https://github.com/boburning/BloomOS/pull/84)).
+- [x] Keep AdvanceMENU's functional on-device wrappers while removing bundled
+  desktop executables, archives, scripts, and sample media without complete
+  component provenance.
 
 The hardware-sensitive BloomOS 1.0/1.1 implementation queue is at its
 physical-validation boundary. Source-provenance replacement work can continue

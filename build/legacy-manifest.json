@@ -71,14 +71,14 @@
       "id": "app-advancemenu--alternative-frontend",
       "kind": "package",
       "path": "static/packages/App/AdvanceMENU (Alternative frontend)",
-      "file_count": 24,
-      "byte_count": 9957853,
-      "tree_sha256": "d6a95d414f5fcf6253c3beeaf658e73d60416007d2acfece3dce213bbea81ee2",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "file_count": 5,
+      "byte_count": 8438,
+      "tree_sha256": "26c36eb2d4389e3aec24bcccfdebcdeaaeda924855834730e49167a1a65f5fb6",
+      "source": "https://github.com/boburning/BloomOS",
+      "source_revision": "release-commit",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "app-battery-monitor",

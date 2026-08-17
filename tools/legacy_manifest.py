@@ -22,6 +22,7 @@ RESOLUTIONS = ("replace-source-build-or-exclude", "source-build", "excluded")
 ONION_SOURCE = "https://github.com/OnionUI/Onion"
 ONION_WRAPPER_SUFFIXES = (".json", ".miyoocmd", ".notfound", ".sh")
 BLOOM_SOURCE = "https://github.com/boburning/BloomOS"
+ADVANCEMENU_ID = "app-advancemenu--alternative-frontend"
 BATTERY_MONITOR_ID = "app-battery-monitor"
 BATTERY_MONITOR_PACKAGE_ROOT = pathlib.PurePosixPath("App/BatteryMonitorUI")
 BATTERY_MONITOR_SOURCE_ROOT = pathlib.PurePosixPath("src/batteryMonitorUI")
@@ -237,6 +238,36 @@ def is_bloom_quick_guide(repository, component):
     return True
 
 
+def is_bloom_advancemenu_wrapper(repository, component):
+    if component["id"] != ADVANCEMENU_ID or component["kind"] != "package":
+        return False
+    root = repository / component["path"]
+    expected_files = {
+        "App/AdvanceMENU/config.json",
+        "App/AdvanceMENU/info.txt",
+        "App/AdvanceMENU/launch.sh",
+        "App/romscripts/emu/Open AdvanceMENU.sh",
+        "App/romscripts/rapp/Open AdvanceMENU.sh",
+    }
+    files = {
+        path.relative_to(root).as_posix(): path
+        for path in root.rglob("*")
+        if path.is_file()
+    }
+    if set(files) != expected_files:
+        return False
+    for path in files.values():
+        content = canonical_file(path)
+        try:
+            content.decode("utf-8")
+        except UnicodeDecodeError:
+            return False
+        if b"\0" in content:
+            return False
+    launch = canonical_file(files["App/AdvanceMENU/launch.sh"])
+    return b"cd $sysdir/bin/adv" in launch and b"./run_advmenu.sh" in launch
+
+
 def annotate_bloom_replacements(repository, manifest):
     count = 0
     for component in manifest["components"]:
@@ -256,6 +287,14 @@ def annotate_bloom_replacements(repository, manifest):
                 "source_revision": "release-commit",
                 "license": "GPL-3.0-only",
                 "build_recipe": "tools/generate_quick_guide.py",
+                "resolution": "source-build",
+            })
+        elif is_bloom_advancemenu_wrapper(repository, component):
+            component.update({
+                "source": BLOOM_SOURCE,
+                "source_revision": "release-commit",
+                "license": "GPL-3.0-only",
+                "build_recipe": "Makefile",
                 "resolution": "source-build",
             })
         else:
