@@ -10,3 +10,7 @@
 [submodule "third-party/RetroArch-patch"]
 	path = third-party/RetroArch-patch
 	url = https://github.com/OnionUI/RetroArch-patch
+[submodule "third-party/dropbear"]
+	path = third-party/dropbear
+	url = https://github.com/thomasklemenc/dropbear.git
+	branch = miyoomini

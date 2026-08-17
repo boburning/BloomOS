@@ -54,9 +54,7 @@ load_target() {
     [[ "$HOST" =~ ^[A-Za-z0-9.:_-]+$ ]] || die "target '$target' has an invalid host"
     [[ "$USER_NAME" =~ ^[A-Za-z0-9._-]+$ ]] || die "target '$target' has an invalid user"
 
-    # The inherited Dropbear 2022.83-MM build offers only hmac-sha1. Scope
-    # that compatibility setting to BloomOS connections.
-    SSH_ARGS=(-o BatchMode=yes -o StrictHostKeyChecking=yes -o MACs=hmac-sha1 -o ConnectTimeout=10 -i "$IDENTITY_FILE" -p "$PORT" "$USER_NAME@$HOST")
+    SSH_ARGS=(-o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=10 -i "$IDENTITY_FILE" -p "$PORT" "$USER_NAME@$HOST")
 }
 
 remote_info() {

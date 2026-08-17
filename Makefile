@@ -118,6 +118,8 @@ build: core apps external
 
 core: $(CACHE)/.setup
 	@$(ECHO) $(PRINT_RECIPE)
+# Build the developer SSH server with public-key authentication enabled.
+	@$(ROOT_DIR)/tools/build-dropbear.sh $(BIN_DIR)/dropbear
 # Build Onion binaries
 	@cd $(SRC_DIR)/bootScreen && BUILD_DIR=$(BIN_DIR) make
 	@cd $(SRC_DIR)/chargingState && BUILD_DIR=$(BIN_DIR) make
