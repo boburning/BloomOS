@@ -83,8 +83,9 @@ merged; it does not imply unrecorded hardware certification.
 - [x] Enforce source, legacy, and excluded provenance tiers at release
   packaging, with legacy payloads restricted to development artifacts
   ([PR #74](https://github.com/boburning/BloomOS/pull/74)).
-- [ ] Archive and verify the complete shell-test APK closure, rebuild without
-  network access, and publish the resulting GHCR image for digest-pinned CI.
+- [x] Archive and verify the complete shell-test APK closure, rebuild without
+  network access, and publish the resulting GHCR image for digest-pinned CI
+  ([PR #75](https://github.com/boburning/BloomOS/pull/75)).
 
 The current BloomOS 1.0/1.1 repository implementation queue is now at its
 physical-validation boundary. The checks below must produce device evidence
@@ -95,9 +96,9 @@ before hardware-sensitive behavior or public stable-release claims advance.
 Stable publication is fail-closed through `build/provenance-policy.json`.
 Inherited components without authoritative source, build, and license evidence
 are quarantined to development artifacts until they are replaced by reviewed
-source builds. The shell-test APK closure is archived and checksum-locked; its
-offline-built OCI image must still be published and pinned by digest in normal
-CI. Exact release and libretro
+source builds. The shell-test APK closure is archived and checksum-locked, and
+normal CI consumes its offline-built OCI image by immutable digest. Exact
+release and libretro
 binary identities are locked; missing historical evidence will not be guessed
 from those bytes.
 

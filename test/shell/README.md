@@ -13,6 +13,10 @@ Run the suite with:
 make test-shell
 ```
 
+Normal test runs use the public GHCR image by immutable manifest digest. Run
+`make rebuild-shell-test-image` to reproduce it from the archived APK closure
+without package network access.
+
 Test files should load `support/test_helper`, call `setup_bloom_fixture` from `setup()`, and invoke production scripts through the shell they declare. Add narrowly scoped mocks instead of placing host utilities or credentials in fixtures.
 
 The repository is mounted read-only. Per-test writable state lives under the container's temporary directory and is removed by BATS teardown.

@@ -53,12 +53,13 @@ GTEST_INCLUDE_DIR = /usr/include/
 endif
 
 TOOLCHAIN := aemiii91/miyoomini-toolchain@sha256:e5123590ad75d27f0f4c91196e3119a255cad45f3ae15243e29a8e0a2ec50132
+SHELL_TEST_IMAGE := ghcr.io/boburning/bloomos-shell-test@sha256:36adeca7c265345688ebf47b575c56e350b9016257e0a9ed15c63dc7e0447d63
 
 include ./src/common/commands.mk
 
 ###########################################################
 
-.PHONY: all version core apps external release unsigned-release package-release package-release-unsigned sign-release clean deepclean git-clean with-toolchain lib test
+.PHONY: all version core apps external release unsigned-release package-release package-release-unsigned sign-release clean deepclean git-clean with-toolchain lib test test-shell rebuild-shell-test-image
 
 all: dist
 
@@ -331,6 +332,9 @@ format:
 	@find ./src -regex '.*\.\(c\|h\|cpp\|hpp\)' -exec clang-format -style=file -i {} \;
 
 test-shell:
+	docker run --rm --volume "$(ROOT_DIR):/workspace:ro" $(SHELL_TEST_IMAGE) /workspace/test/shell
+
+rebuild-shell-test-image:
 	rm -rf $(BUILD_TEST_DIR)/shell-test-inputs
 	mkdir -p $(BUILD_TEST_DIR)
 	curl --fail --location --retry 3 \
@@ -343,4 +347,3 @@ test-shell:
 	docker build --network=none --tag bloom-shell-test:local \
 		--file $(ROOT_DIR)/test/shell/Dockerfile \
 		$(BUILD_TEST_DIR)/shell-test-inputs
-	docker run --rm --volume "$(ROOT_DIR):/workspace:ro" bloom-shell-test:local /workspace/test/shell

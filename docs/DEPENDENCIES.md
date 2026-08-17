@@ -33,9 +33,9 @@ complete signed APK closure is retained as the `shell-test-inputs-v1` release
 asset, with archive and per-package digests recorded in
 `build/shell-test-inputs.json`. `tools/shell_test_inputs.py` rejects unsafe,
 missing, duplicate, or modified archive members before the Docker build runs
-with `--network=none`. The separately dispatched publisher produces the public
-GHCR image; ordinary CI will move to its immutable manifest digest after the
-first repository-token publication.
+with `--network=none`. The publisher produces the public GHCR image using only
+repository-scoped credentials. Ordinary CI consumes that image exclusively by
+immutable manifest digest; the mutable `v1` tag is never a CI trust input.
 
 ## Bundled binaries
 
