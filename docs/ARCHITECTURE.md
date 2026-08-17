@@ -189,6 +189,13 @@ propagates an unhealthy or unavailable database check through its exit status.
 Additional independently testable subsystem checks can be added under the
 top-level `checks` object without changing the native database boundary.
 
+`bloomctl logs export` creates a timestamped support archive from an explicit
+allowlist: structured info, health, update state, snapshot inventory, bounded
+system facts, and Bloom-owned update/test/shutdown logs. It never scans ROMs,
+saves, network configuration, SSH material, process environments, or arbitrary
+temporary logs. Files are staged beside the final archive and published only
+after a non-empty compressed archive has been created.
+
 ## Update trust boundary
 
 Release manifests are signed with the BloomOS Ed25519 release key after their

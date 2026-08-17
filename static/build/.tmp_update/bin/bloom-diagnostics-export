@@ -1,0 +1,76 @@
+#!/bin/sh
+
+set -u
+
+BLOOM_ROOT="${BLOOM_ROOT:-}"
+SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+BLOOMCTL="${BLOOMCTL_BIN:-$SCRIPT_DIR/bloomctl}"
+OUTPUT_DIR="${BLOOM_DIAGNOSTICS_DIR:-${BLOOM_ROOT}/mnt/SDCARD/BloomDiagnostics}"
+NOW="${BLOOM_DIAGNOSTICS_NOW:-$(date -u +%Y%m%dT%H%M%SZ)}"
+STAGE="$OUTPUT_DIR/.diagnostics-$NOW-$$"
+ARCHIVE="$OUTPUT_DIR/diagnostics-$NOW.tar.gz"
+ARCHIVE_TMP="$ARCHIVE.part.$$"
+
+cleanup() {
+    rm -rf "$STAGE"
+    rm -f "$ARCHIVE_TMP"
+}
+
+fail() {
+    printf 'bloom-diagnostics-export: %s\n' "$*" >&2
+    exit 1
+}
+
+capture() {
+    name="$1"
+    shift
+    "$@" >"$STAGE/$name" 2>/dev/null
+    printf '%s\n' "$?" >"$STAGE/$name.status"
+}
+
+[ ! -L "$OUTPUT_DIR" ] || fail "output directory must not be a symlink"
+mkdir -p "$OUTPUT_DIR" || fail "cannot create output directory"
+[ ! -e "$ARCHIVE" ] || fail "archive already exists: $ARCHIVE"
+mkdir "$STAGE" || fail "cannot create staging directory"
+trap cleanup EXIT
+trap 'cleanup; exit 1' HUP INT TERM
+
+cat >"$STAGE/manifest.json" <<EOF
+{
+  "schema": 1,
+  "product": "BloomOS",
+  "generated_utc": "$NOW",
+  "privacy": "allowlisted",
+  "excluded": ["roms", "saves", "wifi_credentials", "ssh_keys", "environment"]
+}
+EOF
+
+capture info.json "$BLOOMCTL" info --json
+capture health.json "$BLOOMCTL" health --json
+capture update.json "$BLOOMCTL" update status
+capture snapshots.json "$BLOOMCTL" saves snapshots
+
+{
+    printf '%s\n' '== uptime =='
+    uptime 2>/dev/null || true
+    printf '%s\n' '== mounts =='
+    mount 2>/dev/null || true
+    printf '%s\n' '== memory =='
+    sed -n '1,20p' "${BLOOM_ROOT}/proc/meminfo" 2>/dev/null || true
+} >"$STAGE/system.txt"
+
+mkdir "$STAGE/logs"
+for source in \
+    "${BLOOM_ROOT}/mnt/SDCARD/.tmp_update/logs/bloom-update-boot.log" \
+    "${BLOOM_ROOT}/mnt/SDCARD/.tmp_update/logs/bloom-test-runner.log" \
+    "${BLOOM_ROOT}/appconfigs/bloom-shutdown.log"
+do
+    [ -f "$source" ] && [ ! -L "$source" ] || continue
+    tail -n 500 "$source" >"$STAGE/logs/${source##*/}"
+done
+
+tar -czf "$ARCHIVE_TMP" -C "$STAGE" . || fail "could not create archive"
+[ -s "$ARCHIVE_TMP" ] || fail "archive is empty"
+mv "$ARCHIVE_TMP" "$ARCHIVE" || fail "could not publish archive"
+sync
+printf '%s\n' "$ARCHIVE"
