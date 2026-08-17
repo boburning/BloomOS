@@ -1,0 +1,47 @@
+#!/bin/sh
+set -u
+
+SD_ROOT="${BLOOM_SD_ROOT:-/mnt/SDCARD}"
+VERIFY="${BLOOM_UPDATE_VERIFY_BIN:-$SD_ROOT/.tmp_update/bin/bloom-update-verify}"
+JQ="${BLOOM_JQ_BIN:-$SD_ROOT/.tmp_update/bin/jq}"
+UPDATE_ROOT="${BLOOM_UPDATE_ROOT:-$SD_ROOT/.tmp_update/update}"
+STAGED_ROOT="$UPDATE_ROOT/staged"
+
+fail() { printf 'bloom-update-stage: %s\n' "$*" >&2; exit 1; }
+
+[ "$#" -eq 3 ] || fail "expected MANIFEST SIGNATURE ARCHIVE"
+manifest="$1"
+signature="$2"
+archive="$3"
+
+[ -x "$VERIFY" ] || fail "update verifier is unavailable"
+[ -x "$JQ" ] || fail "jq is unavailable"
+[ ! -L "$UPDATE_ROOT" ] && [ ! -L "$STAGED_ROOT" ] || fail "staging path is unsafe"
+
+verified="$($VERIFY "$manifest" "$signature" "$archive")" || exit $?
+version="$(printf '%s\n' "$verified" | "$JQ" -er '.version')" || fail "verifier output is invalid"
+filename="$(printf '%s\n' "$verified" | "$JQ" -er '.filename')" || fail "verifier output is invalid"
+case "$version" in ''|*[!A-Za-z0-9._+-]*) fail "verified version is unsafe" ;; esac
+case "$filename" in ''|*/*|*\\*) fail "verified filename is unsafe" ;; esac
+
+mkdir -p "$STAGED_ROOT" || fail "cannot create staging root"
+[ ! -e "$STAGED_ROOT/$version" ] || fail "version is already staged"
+
+umask 077
+temporary="$STAGED_ROOT/.incoming-$version-$$"
+cleanup() { rm -rf "$temporary"; }
+trap cleanup EXIT HUP INT TERM
+mkdir "$temporary" || fail "cannot create temporary stage"
+cp "$manifest" "$temporary/manifest.json" || fail "cannot stage manifest"
+cp "$signature" "$temporary/manifest.sig" || fail "cannot stage signature"
+cp "$archive" "$temporary/$filename" || fail "cannot stage archive"
+
+staged_verified="$($VERIFY "$temporary/manifest.json" "$temporary/manifest.sig" "$temporary/$filename")" || \
+    fail "staged copy failed verification"
+printf '%s\n' "$staged_verified" >"$temporary/verified.json" || fail "cannot write staged state"
+sync
+mv "$temporary" "$STAGED_ROOT/$version" || fail "cannot publish staged update"
+trap - EXIT HUP INT TERM
+sync
+printf '{"schema":1,"status":"staged","version":"%s","path":"%s"}\n' \
+    "$version" "$STAGED_ROOT/$version"

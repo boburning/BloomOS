@@ -181,4 +181,11 @@ links, malformed metadata, an unknown key, or any content mismatch fail closed.
 This verifier is the required boundary for later online and offline staging;
 the inherited size-only OTA path is not trusted as a BloomOS update path.
 
+Verified release inputs are copied into a version-specific directory below
+`.tmp_update/update/staged`. BloomOS verifies the copied bytes a second time,
+writes the verified record inside the same temporary directory, flushes pending
+writes, and publishes that directory with a single rename. Existing staged
+versions are never overwritten. Staging does not extract into or otherwise
+modify the live operating-system tree.
+
 Architectural decisions will be recorded as the corresponding subsystem work begins.
