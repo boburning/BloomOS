@@ -51,6 +51,22 @@ static bool valid_system_id(const char *value)
     return true;
 }
 
+static bool valid_core(const char *value)
+{
+    if (!safe_text(value))
+        return false;
+    size_t length = strlen(value);
+    static const char suffix[] = "_libretro.so";
+    if (length <= strlen(suffix) || strcmp(value + length - strlen(suffix), suffix) != 0)
+        return false;
+    for (const unsigned char *p = (const unsigned char *)value; *p != '\0'; p++) {
+        if (!((*p >= 'A' && *p <= 'Z') || (*p >= 'a' && *p <= 'z') || (*p >= '0' && *p <= '9') || *p == '_' ||
+              *p == '-' || *p == '.'))
+            return false;
+    }
+    return true;
+}
+
 static cJSON *load_request(const char *path, char *error, size_t error_size)
 {
     FILE *file = fopen(path, "rb");
@@ -143,7 +159,7 @@ static bool valid_request(cJSON *root, char *error, size_t error_size)
         set_error(error, error_size, "request schema or field value is invalid");
         return false;
     }
-    if ((cJSON_IsString(core) && !safe_text(core->valuestring)) ||
+    if ((cJSON_IsString(core) && !valid_core(core->valuestring)) ||
         (strcmp(emulator->valuestring, "retroarch") == 0 && !cJSON_IsString(core)) || environment->child != NULL) {
         set_error(error, error_size, "request launch configuration is invalid");
         return false;
@@ -169,6 +185,32 @@ static int load_valid(const char *path, cJSON **request, char *error, size_t err
         *request = NULL;
         return -1;
     }
+    return 0;
+}
+
+int bloom_launch_get_string(const char *request_path, const char *field, char *value, size_t value_size, char *error,
+                            size_t error_size)
+{
+    static const char *readable[] = {"game_id", "system_id", "rom_path", "launcher", "emulator_type", "core"};
+    bool allowed = false;
+    for (size_t i = 0; i < sizeof(readable) / sizeof(readable[0]); i++)
+        if (strcmp(field, readable[i]) == 0)
+            allowed = true;
+    if (!allowed || value == NULL || value_size == 0) {
+        set_error(error, error_size, "request field is not readable");
+        return -1;
+    }
+    cJSON *request = NULL;
+    if (load_valid(request_path, &request, error, error_size) != 0)
+        return -1;
+    cJSON *item = cJSON_GetObjectItemCaseSensitive(request, field);
+    if (!cJSON_IsString(item) || strlen(item->valuestring) >= value_size) {
+        set_error(error, error_size, "request field is unavailable or too long");
+        cJSON_Delete(request);
+        return -1;
+    }
+    strcpy(value, item->valuestring);
+    cJSON_Delete(request);
     return 0;
 }
 
