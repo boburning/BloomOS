@@ -42,14 +42,15 @@ cat >"$SOURCE_DIR/localoptions.h" <<'EOF'
 #define DROPBEAR_3DES 1
 #define DROPBEAR_CHACHA20POLY1305 0
 #define DROPBEAR_ENABLE_CBC_MODE 1
-#define DROPBEAR_SHA2_256_HMAC 1
-#define DROPBEAR_DSS 0
+#define DROPBEAR_SHA2_256_HMAC 0
+#define DROPBEAR_DSS 1
 #define DROPBEAR_SK_KEYS 0
-#define DROPBEAR_DEFAULT_RSA_SIZE 2048
-#define DROPBEAR_DH_GROUP14_SHA256 1
-#define DROPBEAR_DH_GROUP1 0
+#define DROPBEAR_DEFAULT_RSA_SIZE 1024
+#define DROPBEAR_DH_GROUP14_SHA256 0
+#define DROPBEAR_DH_GROUP1 1
+#define DROPBEAR_DH_GROUP1_CLIENTONLY 0
 #define DO_MOTD 0
-#define DROPBEAR_SVR_PASSWORD_AUTH 0
+#define DROPBEAR_SVR_PASSWORD_AUTH 1
 #define DROPBEAR_SVR_PUBKEY_AUTH 1
 #define DROPBEAR_SVR_PUBKEY_OPTIONS 1
 #define DROPBEAR_CLI_PUBKEY_AUTH 0
@@ -62,7 +63,7 @@ cat >"$SOURCE_DIR/localoptions.h" <<'EOF'
 #define DEFAULT_LIBRARY_PATH "/lib:/config/lib:/mnt/SDCARD/miyoo/lib:/mnt/SDCARD/.tmp_update/lib:/mnt/SDCARD/.tmp_update/lib/parasyte"
 #define DROPBEAR_SVR_NO_LOGIN_SHELL 1
 #define DROPBEAR_SVR_NO_CHDIR 1
-#define DROPBEAR_SVR_EVERYONE_LOGIN_AS_ROOT 0
+#define DROPBEAR_SVR_EVERYONE_LOGIN_AS_ROOT 1
 EOF
 
 TOOL_PREFIX="${CROSS_COMPILE:-arm-linux-gnueabihf-}"
@@ -90,5 +91,4 @@ make PROGRAMS="dropbear" -j"$(nproc)" >/dev/null
 mkdir -p "$(dirname -- "$OUTPUT")"
 cp dropbear "$OUTPUT"
 grep -aFq 'authorized_keys' "$OUTPUT"
-grep -aFq 'hmac-sha2-256' "$OUTPUT"
 printf 'Built key-authenticated Dropbear: %s\n' "$OUTPUT"

@@ -62,13 +62,13 @@ start_ssh() {
         return 0
     fi
 
-    mkdir -p "$ROOT_SSH_DIR" "$SYS_DIR/etc/dropbear"
+    mkdir -p "$ROOT_SSH_DIR" "$SYS_DIR/etc/dropbear" "$SYS_DIR/logs"
     chmod 700 "$ROOT_SSH_DIR"
     cp "$AUTHORIZED_KEYS" "$ROOT_SSH_DIR/authorized_keys"
     chmod 600 "$ROOT_SSH_DIR/authorized_keys"
 
     stop_dropbear
-    dropbear -R -s -g -p "$PORT"
+    dropbear -E -R -s -g -p "$PORT" 2>>"$SYS_DIR/logs/developer-ssh.log"
     state running_key_only
 }
 

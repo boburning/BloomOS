@@ -59,7 +59,7 @@ install_valid_key() {
 
     [ "$status" -eq 0 ]
     [ "$(cat "$BLOOM_TEST_ROOT/tmp/bloom-dev-ssh.state")" = running_key_only ]
-    grep -F 'dropbear -R -s -g -p 22' "$MOCK_LOG"
+    grep -F 'dropbear -E -R -s -g -p 22' "$MOCK_LOG"
     cmp "$SDCARD/.bloom/authorized_keys" "$BLOOM_TEST_ROOT/home/root/.ssh/authorized_keys"
 }
 
@@ -69,7 +69,7 @@ install_valid_key() {
     printf '354\n' >"$BLOOM_TEST_ROOT/tmp/deviceModel"
     run "$SSH_HELPER" start
     [ "$status" -eq 0 ]
-    grep -F 'dropbear -R -s -g -p 22' "$MOCK_LOG"
+    grep -F 'dropbear -E -R -s -g -p 22' "$MOCK_LOG"
 
     : >"$MOCK_LOG"
     printf '283\n' >"$BLOOM_TEST_ROOT/tmp/deviceModel"

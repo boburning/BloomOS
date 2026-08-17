@@ -41,7 +41,7 @@ EOF
 
     [ "$status" -eq 0 ]
     printf '%s' "$output" | grep -F '"model": "mini_plus"'
-    grep -F -- '-o BatchMode=yes -o StrictHostKeyChecking=yes' "$MOCK_LOG"
+    grep -F -- '-o BatchMode=yes -o StrictHostKeyChecking=yes -o MACs=hmac-sha1' "$MOCK_LOG"
 }
 
 @test "info refuses a different physical model" {
