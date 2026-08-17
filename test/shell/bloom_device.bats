@@ -41,7 +41,9 @@ EOF
 
     [ "$status" -eq 0 ]
     printf '%s' "$output" | grep -F '"model": "mini_plus"'
-    grep -F -- '-o BatchMode=yes -o StrictHostKeyChecking=yes' "$MOCK_LOG"
+    grep -F -- '-o BatchMode=yes -o IdentitiesOnly=yes -o PreferredAuthentications=publickey' "$MOCK_LOG"
+    grep -F -- '-o PasswordAuthentication=no -o KbdInteractiveAuthentication=no' "$MOCK_LOG"
+    grep -F -- '-o StrictHostKeyChecking=yes' "$MOCK_LOG"
 }
 
 @test "info refuses a different physical model" {

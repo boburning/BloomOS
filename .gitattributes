@@ -21,5 +21,6 @@ static/dist/miyoo354/app/MainUI text eol=lf
 static/build/.tmp_update/bin/shutdown text eol=lf
 static/build/.tmp_update/bin/bloomctl text eol=lf
 static/build/.tmp_update/bin/bloom-* text eol=lf
+static/build/.tmp_update/bin/bloom-dropbearmulti binary
 static/configs/.tmp_update/config/passwd text eol=lf
 static/configs/.tmp_update/config/group text eol=lf

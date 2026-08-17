@@ -54,7 +54,10 @@ load_target() {
     [[ "$HOST" =~ ^[A-Za-z0-9.:_-]+$ ]] || die "target '$target' has an invalid host"
     [[ "$USER_NAME" =~ ^[A-Za-z0-9._-]+$ ]] || die "target '$target' has an invalid user"
 
-    SSH_ARGS=(-o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=10 -i "$IDENTITY_FILE" -p "$PORT" "$USER_NAME@$HOST")
+    SSH_ARGS=(-o BatchMode=yes -o IdentitiesOnly=yes -o PreferredAuthentications=publickey
+        -o PasswordAuthentication=no -o KbdInteractiveAuthentication=no
+        -o StrictHostKeyChecking=yes -o ConnectTimeout=10
+        -i "$IDENTITY_FILE" -p "$PORT" "$USER_NAME@$HOST")
 }
 
 remote_info() {

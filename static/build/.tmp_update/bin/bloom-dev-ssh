@@ -1,0 +1,163 @@
+#!/bin/sh
+set -u
+
+ROOT="${BLOOM_ROOT:-}"
+SD_ROOT="$ROOT/mnt/SDCARD"
+SYS_DIR="$SD_ROOT/.tmp_update"
+DEV_FLAG="$SD_ROOT/.bloom-dev"
+AUTHORIZED_KEYS="$SD_ROOT/.bloom/authorized_keys"
+ROOT_SSH_DIR="$ROOT/home/root/.ssh"
+DEV_HOME="$ROOT/tmp/bloom-dev-home"
+HOME_MOUNT_MARKER="$ROOT/tmp/bloom-dev-home-mounted"
+STATE_FILE="$ROOT/tmp/bloom-dev-ssh.state"
+PID_FILE="$ROOT/tmp/bloom-dev-ssh.pid"
+PORT="${BLOOM_DEV_SSH_PORT:-22}"
+DROPBEAR="${BLOOM_DROPBEAR:-$SYS_DIR/bin/bloom-dropbearmulti}"
+HOST_KEY="$SYS_DIR/etc/dropbear/dropbear_ed25519_host_key"
+
+state() {
+    mkdir -p "$(dirname "$STATE_FILE")"
+    printf '%s\n' "$1" >"$STATE_FILE"
+}
+
+stop_dropbear() {
+    tracked=0
+    if [ -r "$PID_FILE" ]; then
+        pid="$(cat "$PID_FILE" 2>/dev/null || true)"
+        case "$pid" in
+            ''|*[!0-9]*) ;;
+            *)
+                tracked=1
+                kill "$pid" >/dev/null 2>&1 || true
+                attempts=0
+                while kill -0 "$pid" >/dev/null 2>&1 && [ "$attempts" -lt 20 ]; do
+                    sleep 0.05
+                    attempts=$((attempts + 1))
+                done
+                kill -9 "$pid" >/dev/null 2>&1 || true
+                ;;
+        esac
+    fi
+    rm -f "$PID_FILE"
+    if [ "$tracked" -eq 0 ]; then
+        # One-time cleanup for upgrades from a helper that did not track its PID.
+        killall dropbearmulti >/dev/null 2>&1 || true
+        killall dropbear >/dev/null 2>&1 || true
+    fi
+    if [ -f "$HOME_MOUNT_MARKER" ]; then
+        umount "$ROOT/home" >/dev/null 2>&1 || true
+        rm -f "$HOME_MOUNT_MARKER"
+    fi
+}
+
+prepare_runtime_key() {
+    if ! mkdir -p "$ROOT_SSH_DIR" 2>/dev/null; then
+        mkdir -p "$DEV_HOME/root/.ssh" || return 1
+        chmod 755 "$DEV_HOME" || return 1
+        chmod 700 "$DEV_HOME/root" "$DEV_HOME/root/.ssh" || return 1
+        mount -o bind "$DEV_HOME" "$ROOT/home" || return 1
+        : >"$HOME_MOUNT_MARKER"
+    fi
+    chmod 700 "$ROOT/home/root" "$ROOT_SSH_DIR" || return 1
+    cp "$AUTHORIZED_KEYS" "$ROOT_SSH_DIR/authorized_keys" || return 1
+    chmod 600 "$ROOT_SSH_DIR/authorized_keys" || return 1
+}
+
+validate_authorized_keys() {
+    [ -f "$AUTHORIZED_KEYS" ] && [ -s "$AUTHORIZED_KEYS" ] || return 1
+    awk '
+        /^[[:space:]]*($|#)/ { next }
+        $1 !~ /^(ssh-ed25519|ssh-rsa|ecdsa-sha2-nistp(256|384|521))$/ { invalid = 1; next }
+        $2 !~ /^[A-Za-z0-9+\/=]+$/ { invalid = 1; next }
+        { keys++ }
+        END { exit invalid || keys == 0 }
+    ' "$AUTHORIZED_KEYS"
+}
+
+supports_ssh() {
+    model="$(cat "$ROOT/tmp/deviceModel" 2>/dev/null || true)"
+    [ "$model" = "354" ] || [ "$model" = "285" ]
+}
+
+start_ssh() {
+    if [ ! -f "$DEV_FLAG" ]; then
+        state disabled
+        return 0
+    fi
+    if ! supports_ssh; then
+        state unsupported
+        return 0
+    fi
+    if ! validate_authorized_keys; then
+        stop_dropbear
+        state missing_or_invalid_key
+        printf '%s\n' "Bloom developer SSH refused: valid authorized_keys required" >&2
+        return 1
+    fi
+    if ! ifconfig wlan0 >/dev/null 2>&1; then
+        stop_dropbear
+        state network_unavailable
+        return 0
+    fi
+
+    if [ ! -x "$DROPBEAR" ]; then
+        stop_dropbear
+        state unavailable
+        return 1
+    fi
+
+    stop_dropbear
+    mkdir -p "$SYS_DIR/etc/dropbear" "$SYS_DIR/logs"
+    if ! prepare_runtime_key; then
+        stop_dropbear
+        state runtime_key_failed
+        return 1
+    fi
+    {
+        printf '%s\n' '== Bloom developer SSH key path =='
+        id
+        awk -F: '$1 == "root" { print "root_home=" $6 " root_shell=" $7 }' /etc/passwd
+        ls -ld "$ROOT/home" "$ROOT/home/root" "$ROOT_SSH_DIR" "$ROOT_SSH_DIR/authorized_keys"
+        wc -c "$ROOT_SSH_DIR/authorized_keys"
+    } >>"$SYS_DIR/logs/developer-ssh.log" 2>&1
+    if [ ! -s "$HOST_KEY" ]; then
+        "$DROPBEAR" dropbearkey -t ed25519 -f "$HOST_KEY" >/dev/null || {
+            stop_dropbear
+            state host_key_failed
+            return 1
+        }
+        sync
+    fi
+
+    "$DROPBEAR" dropbear -F -r "$HOST_KEY" -D "$ROOT_SSH_DIR" -p "$PORT" \
+        >>"$SYS_DIR/logs/developer-ssh.log" 2>&1 3>&- &
+    server_pid=$!
+    printf '%s\n' "$server_pid" >"$PID_FILE"
+    sleep 1
+    if ! kill -0 "$server_pid" >/dev/null 2>&1; then
+        rm -f "$PID_FILE"
+        stop_dropbear
+        state startup_failed
+        return 1
+    fi
+    state running_key_only
+}
+
+case "${1:-}" in
+    start) start_ssh ;;
+    stop)
+        stop_dropbear
+        state stopped
+        ;;
+    status)
+        if [ -r "$STATE_FILE" ]; then
+            cat "$STATE_FILE"
+        else
+            printf '%s\n' unknown
+        fi
+        ;;
+    *)
+        printf '%s\n' "Usage: bloom-dev-ssh <start|stop|status>" >&2
+        exit 2
+        ;;
+esac

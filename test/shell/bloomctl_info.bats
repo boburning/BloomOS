@@ -41,6 +41,7 @@ run_info() {
     [ "$status" -eq 0 ]
     printf '%s' "$output" | grep -F '"model": "mini_plus"'
     printf '%s' "$output" | grep -F '"wifi": true'
+    printf '%s' "$output" | grep -F '"ssh": true'
     printf '%s' "$output" | grep -F '"lid": false'
     printf '%s' "$output" | grep -F '"height": "480"'
 }
@@ -57,6 +58,7 @@ run_info() {
     printf '%s' "$output" | grep -F '"model": "mini_flip"'
     printf '%s' "$output" | grep -F '"lid": true'
     printf '%s' "$output" | grep -F '"developer_mode": true'
+    printf '%s' "$output" | grep -F '"developer_ssh": "disabled"'
 }
 
 @test "rejects unknown commands without mutating the fixture" {

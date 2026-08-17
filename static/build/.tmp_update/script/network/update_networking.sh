@@ -269,6 +269,15 @@ ftp_authed() {
 
 # Starts dropbear if the toggle is set to on
 check_sshstate() {
+    if [ -f /mnt/SDCARD/.bloom-dev ]; then
+        if $sysdir/bin/bloom-dev-ssh start; then
+            log "SSH: Bloom developer key-only service checked"
+        else
+            log "SSH: Bloom developer service refused its configuration"
+        fi
+        return
+    fi
+
     if flag_enabled sshState; then
         if is_running dropbear; then
             if wifi_disabled; then
