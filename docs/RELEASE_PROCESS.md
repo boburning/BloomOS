@@ -7,8 +7,16 @@ BloomOS has no public release process in operation yet. Release builds now produ
 - `manifest.json` with signed channel, artifact size, and digest;
 - `manifest.sig`, an Ed25519 signature over the exact manifest bytes;
 - `build-info.json` with commit, deterministic build date, channel, toolchain, dependency-lock digest, and compatible device targets.
+- `payload-manifest.json` with the exact type, size, and SHA-256 digest of every
+  archived file or symlink.
 
 Packaging normalizes distribution-tree timestamps to the source commit time, sorts the archive input list, suppresses archive timestamp metadata, and validates the archive and metadata before publication. Before the first public release, this document must still define:
+
+Release validation reconstructs the payload manifest directly from the final
+ZIP, rejects duplicate, absolute, traversal, or backslash paths, and requires
+the manifest digest recorded by `build-info.json` to match. This provides exact
+binary provenance for the shipped bytes even while source/license mapping for
+some inherited binaries remains an explicit audit item.
 
 Release jobs materialize the protected `BLOOM_RELEASE_SIGNING_KEY` secret only
 inside a mode-`0600` temporary file after the pinned cross-toolchain container

@@ -64,8 +64,10 @@ merged; it does not imply unrecorded hardware certification.
   system health ([PR #65](https://github.com/boburning/BloomOS/pull/65)).
 - [x] Verify save-snapshot inventory through aggregate structured health
   without exposing save details ([PR #66](https://github.com/boburning/BloomOS/pull/66)).
-- [ ] Reject signed update staging before copying when SD capacity cannot hold
-  the verified archive plus a safety reserve (`feature/update-capacity-preflight`).
+- [x] Reject signed update staging before copying when SD capacity cannot hold
+  the verified archive plus a safety reserve ([PR #67](https://github.com/boburning/BloomOS/pull/67)).
+- [ ] Emit and validate exact per-file release payload provenance, including
+  unsafe and duplicate path rejection (`feature/release-payload-provenance`).
 
 ### Deferred physical validation
 
