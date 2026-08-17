@@ -1,0 +1,96 @@
+#!/bin/sh
+set -u
+
+SD_ROOT="${BLOOM_SD_ROOT:-/mnt/SDCARD}"
+UPDATE_ROOT="${BLOOM_UPDATE_ROOT:-$SD_ROOT/.tmp_update/update}"
+VERIFY="${BLOOM_UPDATE_VERIFY_BIN:-$SD_ROOT/.tmp_update/bin/bloom-update-verify}"
+JQ="${BLOOM_JQ_BIN:-$SD_ROOT/.tmp_update/bin/jq}"
+STATE="$UPDATE_ROOT/state.json"
+KNOWN_GOOD="$UPDATE_ROOT/known-good.json"
+MAX_BOOT_ATTEMPTS="${BLOOM_UPDATE_MAX_BOOT_ATTEMPTS:-3}"
+
+fail() { printf 'bloom-update-state: %s\n' "$*" >&2; exit 1; }
+safe_version() { case "$1" in ''|*[!A-Za-z0-9._+-]*) return 1 ;; *) return 0 ;; esac; }
+
+atomic_json() {
+    destination="$1"
+    temporary="$destination.tmp-$$"
+    umask 077
+    "$JQ" -c . >"$temporary" || { rm -f "$temporary"; fail "cannot write state"; }
+    sync
+    mv "$temporary" "$destination" || { rm -f "$temporary"; fail "cannot publish state"; }
+    sync
+}
+
+read_field() { "$JQ" -er "$2" "$1" 2>/dev/null; }
+
+[ -x "$JQ" ] || fail "jq is unavailable"
+case "$MAX_BOOT_ATTEMPTS" in ''|*[!0-9]*) fail "boot-attempt limit is invalid" ;; esac
+[ "$MAX_BOOT_ATTEMPTS" -gt 0 ] || fail "boot-attempt limit is invalid"
+mkdir -p "$UPDATE_ROOT" || fail "cannot create update root"
+[ ! -L "$UPDATE_ROOT" ] || fail "update root is unsafe"
+
+case "${1:-}" in
+    status)
+        [ "$#" -eq 1 ] || fail "status takes no arguments"
+        if [ -f "$STATE" ] && [ ! -L "$STATE" ]; then "$JQ" -c . "$STATE"; else printf '%s\n' '{"schema":1,"phase":"idle"}'; fi
+        ;;
+    arm)
+        [ "$#" -eq 2 ] || fail "arm expects VERSION"
+        version="$2"
+        safe_version "$version" || fail "version is unsafe"
+        staged="$UPDATE_ROOT/staged/$version"
+        [ -d "$staged" ] && [ ! -L "$staged" ] || fail "staged version is unavailable"
+        [ -x "$VERIFY" ] || fail "update verifier is unavailable"
+        filename="$(read_field "$staged/verified.json" '.filename')" || fail "staged record is invalid"
+        verified="$($VERIFY "$staged/manifest.json" "$staged/manifest.sig" "$staged/$filename")" || fail "staged version failed verification"
+        [ "$(printf '%s\n' "$verified" | "$JQ" -er '.version')" = "$version" ] || fail "staged version does not match"
+        if [ -f "$STATE" ]; then
+            phase="$(read_field "$STATE" '.phase')" || fail "current state is invalid"
+            case "$phase" in armed|testing|recovery_required) fail "another update is active" ;; esac
+        fi
+        previous=""
+        if [ -f "$KNOWN_GOOD" ]; then previous="$(read_field "$KNOWN_GOOD" '.version')" || fail "known-good state is invalid"; fi
+        "$JQ" -cn --arg version "$version" --arg previous "$previous" \
+            '{schema:1,phase:"armed",pending_version:$version,previous_version:(if $previous == "" then null else $previous end),boot_attempts:0}' | atomic_json "$STATE"
+        "$JQ" -c . "$STATE"
+        ;;
+    boot-attempt)
+        [ "$#" -eq 1 ] || fail "boot-attempt takes no arguments"
+        [ -f "$STATE" ] && [ ! -L "$STATE" ] || fail "no update is armed"
+        phase="$(read_field "$STATE" '.phase')" || fail "current state is invalid"
+        case "$phase" in armed|testing) ;; *) fail "no update is awaiting validation" ;; esac
+        attempts="$(read_field "$STATE" '.boot_attempts')" || fail "current state is invalid"
+        case "$attempts" in ''|*[!0-9]*) fail "current state is invalid" ;; esac
+        attempts=$((attempts + 1))
+        if [ "$attempts" -ge "$MAX_BOOT_ATTEMPTS" ]; then next_phase=recovery_required; else next_phase=testing; fi
+        "$JQ" -c --arg phase "$next_phase" --argjson attempts "$attempts" \
+            '.phase=$phase | .boot_attempts=$attempts' "$STATE" | atomic_json "$STATE"
+        "$JQ" -c . "$STATE"
+        ;;
+    mark-good)
+        [ "$#" -eq 2 ] || fail "mark-good expects VERSION"
+        version="$2"
+        safe_version "$version" || fail "version is unsafe"
+        [ -f "$STATE" ] && [ ! -L "$STATE" ] || fail "no update is awaiting validation"
+        phase="$(read_field "$STATE" '.phase')" || fail "current state is invalid"
+        case "$phase" in armed|testing) ;; *) fail "no update is awaiting validation" ;; esac
+        [ "$(read_field "$STATE" '.pending_version')" = "$version" ] || fail "validated version does not match pending update"
+        previous="$("$JQ" -r '.previous_version // ""' "$STATE")"
+        staged="$UPDATE_ROOT/staged/$version"
+        [ -d "$staged" ] || fail "pending payload is unavailable"
+        "$JQ" -cn --arg version "$version" --arg path "$staged" --arg previous "$previous" \
+            '{schema:1,version:$version,path:$path,previous_version:(if $previous == "" then null else $previous end)}' | atomic_json "$KNOWN_GOOD"
+        "$JQ" -cn --arg version "$version" '{schema:1,phase:"known_good",version:$version}' | atomic_json "$STATE"
+        "$JQ" -c . "$STATE"
+        ;;
+    recovery)
+        [ "$#" -eq 1 ] || fail "recovery takes no arguments"
+        [ -f "$STATE" ] && [ "$(read_field "$STATE" '.phase')" = recovery_required ] || fail "recovery is not required"
+        [ -f "$KNOWN_GOOD" ] && [ ! -L "$KNOWN_GOOD" ] || fail "no known-good update is retained"
+        path="$(read_field "$KNOWN_GOOD" '.path')" || fail "known-good state is invalid"
+        [ -d "$path" ] && [ ! -L "$path" ] || fail "known-good payload is unavailable"
+        "$JQ" -c --arg status recovery_available '. + {status:$status}' "$KNOWN_GOOD"
+        ;;
+    *) fail "expected {status|arm VERSION|boot-attempt|mark-good VERSION|recovery}" ;;
+esac
