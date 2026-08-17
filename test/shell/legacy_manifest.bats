@@ -6,7 +6,7 @@
         --manifest /workspace/build/legacy-manifest.json
 
     [ "$status" -eq 0 ]
-    [[ "$output" == "legacy manifest validate: 156 components" ]]
+    [[ "$output" == "legacy manifest validate: 155 components" ]]
 }
 
 @test "legacy manifest rejects modified inventory metadata" {

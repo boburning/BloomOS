@@ -1823,19 +1823,6 @@
       "resolution": "replace-source-build-or-exclude"
     },
     {
-      "id": "rapp-snk---neo-geo--gngeo",
-      "kind": "package",
-      "path": "static/packages/RApp/SNK - Neo Geo (GnGeo)",
-      "file_count": 5,
-      "byte_count": 1746550,
-      "tree_sha256": "580a28ffab9a4764be8432b559ac72482e4207f8d76868273160a52f5ee79bca",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
-    },
-    {
       "id": "rapp-sega---game-gear--gearsystem",
       "kind": "package",
       "path": "static/packages/RApp/Sega - Game Gear (Gearsystem)",

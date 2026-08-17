@@ -81,7 +81,7 @@ it from reviewed inputs; binary hashes alone are never accepted as historical
 source evidence.
 
 `build/legacy-manifest.json` decomposes the remaining inherited runtime and
-package payload into 156 independently resolvable components covering 2,638
+package payload into 155 independently resolvable components covering 2,633
 files. Each entry locks its path, file count, checkout-normalized byte count,
 and canonical tree SHA-256 while leaving unknown source, revision, license, and build recipe
 explicitly `null`. Its resolution must eventually become either a complete
@@ -101,7 +101,7 @@ definitions, and optional empty marker files. Those trees are
 unchanged from the pinned Onion baseline and are recorded as GPL-3.0-only
 source assemblies through the repository Makefile. This attribution applies
 only to the wrapper files; it does not confer provenance on the emulator/core
-binaries they select. The remaining 13 components contain runtime payloads,
+binaries they select. The remaining 12 components contain runtime payloads,
 executables, fonts, images, media, databases, firmware, or other inputs that
 still require component-specific evidence or exclusion.
 
@@ -139,6 +139,12 @@ Fake-08 standalone is rebuilt from the pinned upstream v0.0.2.19 source and
 its recursive z8lua revision using Bloom's immutable ARM toolchain. The complete
 upstream composite license is shipped beside the executable, and the resulting
 binary hash is locked after two clean builds produced identical output.
+
+The optional standalone GnGeo package is excluded. Onion introduced its binary
+from the MiyooCFW v2021-08-14 release, whose maintainers later documented that
+the exact source was lost. Bloom retains Neo Geo support through the existing
+libretro package instead of presenting a different GnGeo revision as the source
+of the inherited executable.
 
 The pinned SearchFilter and DinguxCommander repositories remain a separate
 legacy blocker: neither upstream repository declares a project license. Their
