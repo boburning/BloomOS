@@ -70,7 +70,7 @@ PY
 
     [ "$status" -eq 0 ]
     grep -Fx 'signed core' "$BLOOM_UPDATE_ROOT/candidates/1.2.3/miyoo/app/.tmp_update/onion.pak"
-    [ ! -e "$BLOOM_UPDATE_ROOT/candidates/.replaced-1.2.3-$$" ]
+    ! find "$BLOOM_UPDATE_ROOT/candidates" -maxdepth 1 -name '.replaced-*' | grep -q .
 }
 
 @test "rejects a signed archive with path traversal" {

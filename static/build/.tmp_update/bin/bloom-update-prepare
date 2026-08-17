@@ -10,7 +10,7 @@ SEVEN_ZIP="${BLOOM_7Z_BIN:-$SD_ROOT/.tmp_update/bin/7z}"
 fail() { printf 'bloom-update-prepare: %s\n' "$*" >&2; exit 1; }
 
 replace=0
-case "$#:$1" in
+case "$#:${1:-}" in
     1:*) version="$1" ;;
     2:--replace) replace=1; version="$2" ;;
     *) fail "expected [--replace] VERSION" ;;
