@@ -115,4 +115,11 @@ one transaction. Repeated application is idempotent. Expanding the mapping set
 requires system-specific launch evidence; folder names are never blindly
 lowercased into identity.
 
+`playActivity health` is the read-only database health boundary. It validates
+the complete schema-1 invariants, runs SQLite `PRAGMA quick_check`, and reports
+orphan activity rows, negative durations, currently open sessions, and
+unidentified ROM rows as structured JSON. Integrity failures, orphans, and
+negative durations make the command fail; open sessions and intentionally
+deferred identities remain operational counts rather than corruption.
+
 Architectural decisions will be recorded as the corresponding subsystem work begins.
