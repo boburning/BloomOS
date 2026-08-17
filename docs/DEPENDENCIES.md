@@ -87,12 +87,13 @@ symlinks by their target bytes so Windows and Linux produce the same inventory.
 This normalization is limited to the replacement queue; release payload
 manifests continue to hash every final shipped byte exactly.
 
-The first resolution pass identifies 135 package wrappers containing only
+The source-wrapper resolution pass identifies 136 package wrappers and shared
+package assembly scripts containing only
 UTF-8 `.sh`/`.json` source plus optional empty marker files. Those trees are
 unchanged from the pinned Onion baseline and are recorded as GPL-3.0-only
 source assemblies through the repository Makefile. This attribution applies
 only to the wrapper files; it does not confer provenance on the emulator/core
-binaries they select. The remaining 21 components contain runtime payloads,
+binaries they select. The remaining 20 components contain runtime payloads,
 executables, fonts, images, media, databases, firmware, or other inputs that
 still require component-specific evidence or exclusion.
 

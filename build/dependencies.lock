@@ -69,8 +69,8 @@ schema = 1
 component_count = 156
 file_count = 2662
 byte_count = 570737292
-source_build_components = 135
-unresolved_components = 21
+source_build_components = 136
+unresolved_components = 20
 inherited_baseline = "07505ea58c7bba698d6b9220ff43946a43cac76b"
 
 [themes]
