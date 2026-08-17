@@ -70,6 +70,39 @@ run_info() {
     [ ! -e "$SDCARD/.tmp_update/bloom-update-state" ]
 }
 
+@test "update commands delegate only the explicit offline operations" {
+    mock_stage="$BLOOM_TEST_ROOT/mock-stage"
+    mock_state="$BLOOM_TEST_ROOT/mock-state"
+    cat >"$mock_stage" <<'EOF'
+#!/bin/sh
+printf 'stage:%s:%s:%s\n' "$1" "$2" "$3"
+EOF
+    cat >"$mock_state" <<'EOF'
+#!/bin/sh
+printf 'state:%s:%s\n' "$1" "${2:-}"
+EOF
+    chmod +x "$mock_stage" "$mock_state"
+    export BLOOM_UPDATE_STAGE_BIN="$mock_stage"
+    export BLOOM_UPDATE_STATE_BIN="$mock_state"
+
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl update status
+    [ "$status" -eq 0 ]
+    [ "$output" = 'state:status:' ]
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl update stage /media/manifest.json /media/manifest.sig /media/BloomOS.zip
+    [ "$status" -eq 0 ]
+    [ "$output" = 'stage:/media/manifest.json:/media/manifest.sig:/media/BloomOS.zip' ]
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl update arm 1.2.3
+    [ "$status" -eq 0 ]
+    [ "$output" = 'state:arm:1.2.3' ]
+}
+
+@test "update CLI does not expose activation or health promotion" {
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl update activate 1.2.3
+    [ "$status" -eq 2 ]
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl update mark-good 1.2.3
+    [ "$status" -eq 2 ]
+}
+
 @test "health exposes the Play Activity diagnostic as structured JSON" {
     cat >"$SDCARD/.tmp_update/bin/playActivity" <<'EOF'
 #!/bin/sh

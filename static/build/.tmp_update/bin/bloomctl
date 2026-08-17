@@ -5,6 +5,8 @@ set -u
 BLOOM_ROOT="${BLOOM_ROOT:-}"
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 BLOOM_PLATFORM="$SCRIPT_DIR/bloom-platform"
+BLOOM_UPDATE_STAGE="${BLOOM_UPDATE_STAGE_BIN:-$SCRIPT_DIR/bloom-update-stage}"
+BLOOM_UPDATE_STATE="${BLOOM_UPDATE_STATE_BIN:-$SCRIPT_DIR/bloom-update-state}"
 
 path() {
     printf '%s%s' "$BLOOM_ROOT" "$1"
@@ -107,6 +109,29 @@ print_health_text() {
 
 usage() {
     printf 'Usage: bloomctl {info|health} [--json]\n' >&2
+    printf '       bloomctl update {status|stage MANIFEST SIGNATURE ARCHIVE|arm VERSION}\n' >&2
+}
+
+update_command() {
+    action="${1:-}"
+    case "$action" in
+        status)
+            [ "$#" -eq 1 ] || { usage; return 2; }
+            [ -x "$BLOOM_UPDATE_STATE" ] || { printf 'bloomctl: update state service is unavailable\n' >&2; return 1; }
+            "$BLOOM_UPDATE_STATE" status
+            ;;
+        stage)
+            [ "$#" -eq 4 ] || { usage; return 2; }
+            [ -x "$BLOOM_UPDATE_STAGE" ] || { printf 'bloomctl: update staging service is unavailable\n' >&2; return 1; }
+            "$BLOOM_UPDATE_STAGE" "$2" "$3" "$4"
+            ;;
+        arm)
+            [ "$#" -eq 2 ] || { usage; return 2; }
+            [ -x "$BLOOM_UPDATE_STATE" ] || { printf 'bloomctl: update state service is unavailable\n' >&2; return 1; }
+            "$BLOOM_UPDATE_STATE" arm "$2"
+            ;;
+        *) usage; return 2 ;;
+    esac
 }
 
 case "${1:-}" in
@@ -123,6 +148,10 @@ case "${1:-}" in
             --json) print_health_json ;;
             *) usage; exit 2 ;;
         esac
+        ;;
+    update)
+        shift
+        update_command "$@"
         ;;
     *) usage; exit 2 ;;
 esac

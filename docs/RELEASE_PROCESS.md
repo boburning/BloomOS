@@ -25,6 +25,13 @@ The signed manifest channel is one of `stable`, `beta`, `nightly`, or
 channels; development is reserved for hardware-test artifacts. On-device
 verification rejects any other value before an update can be staged.
 
+Offline updates use the same trust boundary as future network delivery. Copy
+the release ZIP, `manifest.json`, and `manifest.sig` to the SD card, then run
+`bloomctl update stage MANIFEST SIGNATURE ARCHIVE`. After reviewing
+`bloomctl update status`, `bloomctl update arm VERSION` records the verified
+payload as pending. These commands do not extract over the live OS; activation
+remains disabled until the recovery path is integrated with boot.
+
 - versioning and stable, beta, and nightly channels;
 - closure of the remaining unresolved inputs in `build/dependencies.lock`;
 - automated test gates and the three-device physical test matrix;
