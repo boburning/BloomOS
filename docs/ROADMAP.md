@@ -105,7 +105,8 @@ merged; it does not imply unrecorded hardware certification.
   six bundled example artwork/manual files without recorded licenses
   ([PR #81](https://github.com/boburning/BloomOS/pull/81)).
 - [x] Replace Battery Monitor's rights-restricted inherited Arkhip font with a
-  checksum-pinned DejaVu Sans release and ship its authoritative license.
+  checksum-pinned DejaVu Sans release and ship its authoritative license
+  ([PR #82](https://github.com/boburning/BloomOS/pull/82)).
 
 The hardware-sensitive BloomOS 1.0/1.1 implementation queue is at its
 physical-validation boundary. Source-provenance replacement work can continue
