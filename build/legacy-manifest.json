@@ -254,13 +254,13 @@
       "kind": "package",
       "path": "static/packages/App/Quick Guide",
       "file_count": 7,
-      "byte_count": 248494,
-      "tree_sha256": "b187f745b04a1c260b2e4490234c37de92c9d715e478d496e0caed651ffb6a36",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "byte_count": 1231637,
+      "tree_sha256": "50792d3832a8087a58d6198e4d2e04f7adac74a75a841240f80f8b47860f2894",
+      "source": "https://github.com/boburning/BloomOS",
+      "source_revision": "release-commit",
+      "license": "GPL-3.0-only",
+      "build_recipe": "tools/generate_quick_guide.py",
+      "resolution": "source-build"
     },
     {
       "id": "app-random-game",

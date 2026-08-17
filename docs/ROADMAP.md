@@ -107,6 +107,8 @@ merged; it does not imply unrecorded hardware certification.
 - [x] Replace Battery Monitor's rights-restricted inherited Arkhip font with a
   checksum-pinned DejaVu Sans release and ship its authoritative license
   ([PR #82](https://github.com/boburning/BloomOS/pull/82)).
+- [x] Replace inherited Quick Guide artwork with deterministic Bloom-authored
+  pages and enforce byte-for-byte reproduction from repository source.
 
 The hardware-sensitive BloomOS 1.0/1.1 implementation queue is at its
 physical-validation boundary. Source-provenance replacement work can continue
@@ -137,6 +139,8 @@ guessed from inherited bytes.
   maintainer-owned V2, Plus, and Flip hardware.
 - [ ] Validate Battery Monitor text fit and readability on V2, Plus, and Flip
   after replacing Arkhip with DejaVu Sans 2.37.
+- [ ] Validate Quick Guide page readability and shortcut accuracy on V2, Plus,
+  and Flip after replacing the inherited artwork.
 - [ ] Collect equivalent external physical evidence for original Mini V1, V3,
   and V4 before claiming stable support for those revisions.
 

@@ -25,6 +25,14 @@ BLOOM_SOURCE = "https://github.com/boburning/BloomOS"
 BATTERY_MONITOR_ID = "app-battery-monitor"
 BATTERY_MONITOR_PACKAGE_ROOT = pathlib.PurePosixPath("App/BatteryMonitorUI")
 BATTERY_MONITOR_SOURCE_ROOT = pathlib.PurePosixPath("src/batteryMonitorUI")
+QUICK_GUIDE_ID = "app-quick-guide"
+QUICK_GUIDE_ROOT = pathlib.PurePosixPath("App/Onion_Manual")
+QUICK_GUIDE_HASHES = {
+    "page1.png": "0c356f215b6ff0c41241a62d16d7d1176bbc0d431479dfd88af9c6dc6f79d41b",
+    "page2.png": "823a2b8fb3ab438b7704b9e330b0364c5337b500eb03dc52176c4468e5d9acfa",
+    "page3.png": "8f5e1f9c676c532361ded37a9fe18551a9488bab59c04c5faf1658278ac1e50b",
+    "page4.png": "9b5dcd56b765a2c1fb0a598db061aaf6ca4e18bcfbdfcc362d4179e8ba5eac39",
+}
 
 
 def component_id(kind, name):
@@ -204,20 +212,54 @@ def is_bloom_battery_monitor(repository, component):
     return True
 
 
+def is_bloom_quick_guide(repository, component):
+    if component["id"] != QUICK_GUIDE_ID or component["kind"] != "package":
+        return False
+    package_root = repository / component["path"] / QUICK_GUIDE_ROOT
+    expected_files = {"config.json", "images.json", "launch.sh", *QUICK_GUIDE_HASHES}
+    actual_files = {
+        path.relative_to(package_root).as_posix()
+        for path in package_root.rglob("*")
+        if path.is_file()
+    }
+    if actual_files != expected_files:
+        return False
+    if b'"description":"Getting started with BloomOS"' not in canonical_file(package_root / "config.json"):
+        return False
+    if b"infoPanel --images-json /mnt/SDCARD/App/Onion_Manual/images.json" not in canonical_file(package_root / "launch.sh"):
+        return False
+    generator = repository / "tools/generate_quick_guide.py"
+    if not generator.is_file():
+        return False
+    for name, expected in QUICK_GUIDE_HASHES.items():
+        if hashlib.sha256((package_root / name).read_bytes()).hexdigest() != expected:
+            return False
+    return True
+
+
 def annotate_bloom_replacements(repository, manifest):
     count = 0
     for component in manifest["components"]:
         if component["resolution"] != "replace-source-build-or-exclude":
             continue
-        if not is_bloom_battery_monitor(repository, component):
+        if is_bloom_battery_monitor(repository, component):
+            component.update({
+                "source": BLOOM_SOURCE,
+                "source_revision": "release-commit",
+                "license": "GPL-3.0-only AND LicenseRef-DejaVu-Fonts",
+                "build_recipe": "Makefile",
+                "resolution": "source-build",
+            })
+        elif is_bloom_quick_guide(repository, component):
+            component.update({
+                "source": BLOOM_SOURCE,
+                "source_revision": "release-commit",
+                "license": "GPL-3.0-only",
+                "build_recipe": "tools/generate_quick_guide.py",
+                "resolution": "source-build",
+            })
+        else:
             continue
-        component.update({
-            "source": BLOOM_SOURCE,
-            "source_revision": "release-commit",
-            "license": "GPL-3.0-only AND LicenseRef-DejaVu-Fonts",
-            "build_recipe": "Makefile",
-            "resolution": "source-build",
-        })
         count += 1
     return count
 
