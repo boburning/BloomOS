@@ -16,51 +16,14 @@
 #include "utils/str.h"
 
 #include "./cacheDB.h"
+#include "./playActivityModel.h"
 
 #define PLAY_ACTIVITY_DB_NEW_FILE "/mnt/SDCARD/Saves/CurrentProfile/play_activity/play_activity_db.sqlite"
 #define ROMS_FOLDER "/mnt/SDCARD/Roms"
 #define CMD_TO_RUN "/mnt/SDCARD/.tmp_update/cmd_to_run.sh"
 #define ROM_NOT_FOUND -1
 
-typedef struct ROM ROM;
-typedef struct PlayActivity PlayActivity;
-typedef struct PlayActivities PlayActivities;
-
-struct ROM {
-    int id;
-    char *type;
-    char *name;
-    char *file_path;
-    char *image_path;
-};
-struct PlayActivity {
-    ROM *rom;
-    int play_count;
-    int play_time_total;
-    int play_time_average;
-    char *first_played_at;
-    char *last_played_at;
-};
-struct PlayActivities {
-    PlayActivity **play_activity;
-    int count;
-    int play_time_total;
-};
-
 sqlite3 *play_activity_db = NULL;
-
-void get_rom_image_path(char *rom_file, char *out_image_path)
-{
-    if (str_endsWith(rom_file, ".p8") || str_endsWith(rom_file, ".png")) {
-        snprintf(out_image_path, STR_MAX - 1, "/mnt/SDCARD/Roms/%s", rom_file);
-    }
-
-    char *clean_rom_name = file_removeExtension(basename(rom_file));
-    char *rom_folder = strtok(rom_file, "/");
-
-    snprintf(out_image_path, STR_MAX - 1, "/mnt/SDCARD/Roms/%s/Imgs/%s.png", rom_folder, clean_rom_name);
-    free(clean_rom_name);
-}
 
 void play_activity_db_close()
 {
@@ -191,29 +154,10 @@ PlayActivities *play_activity_find_all(void)
         if (sqlite3_step(stmt) != SQLITE_ROW)
             break;
 
-        PlayActivity *entry = play_activities->play_activity[i] = (PlayActivity *)malloc(sizeof(PlayActivity));
-        ROM *rom = play_activities->play_activity[i]->rom = (ROM *)malloc(sizeof(ROM));
-        entry->first_played_at = NULL;
-        entry->last_played_at = NULL;
-
-        rom->id = sqlite3_column_int(stmt, 0);
-        rom->type = strdup((const char *)sqlite3_column_text(stmt, 1));
-        rom->name = strdup((const char *)sqlite3_column_text(stmt, 2));
-        if (sqlite3_column_text(stmt, 3) != NULL) {
-            rom->file_path = strdup((const char *)sqlite3_column_text(stmt, 3));
-            rom->image_path = malloc(STR_MAX * sizeof(char));
-            memset(rom->image_path, 0, STR_MAX);
-            get_rom_image_path(rom->file_path, rom->image_path);
-        }
-
-        entry->play_count = sqlite3_column_int(stmt, 4);
-        entry->play_time_total = sqlite3_column_int(stmt, 5);
-        entry->play_time_average = sqlite3_column_int(stmt, 6);
-        if (sqlite3_column_text(stmt, 8) != NULL) {
-            entry->first_played_at = strdup((const char *)sqlite3_column_text(stmt, 7));
-        }
-        if (sqlite3_column_text(stmt, 9) != NULL) {
-            entry->last_played_at = strdup((const char *)sqlite3_column_text(stmt, 8));
+        PlayActivity *entry = play_activities->play_activity[i] = play_activity_read_row(stmt);
+        if (entry == NULL) {
+            play_activities->count = i;
+            break;
         }
 
         play_activities->play_time_total += entry->play_time_total;
@@ -228,10 +172,7 @@ PlayActivities *play_activity_find_all(void)
 void free_play_activities(PlayActivities *pa_ptr)
 {
     for (int i = 0; i < pa_ptr->count; i++) {
-        free(pa_ptr->play_activity[i]->first_played_at);
-        free(pa_ptr->play_activity[i]->last_played_at);
-        free(pa_ptr->play_activity[i]->rom);
-        free(pa_ptr->play_activity[i]);
+        play_activity_free(pa_ptr->play_activity[i]);
     }
     free(pa_ptr->play_activity);
     free(pa_ptr);

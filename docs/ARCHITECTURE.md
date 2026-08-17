@@ -88,4 +88,15 @@ whose GameID does not match its system and ROM path. New launch consumers must
 obtain the identifier from `bloom-game-id`; the legacy MainUI recent list
 remains a compatibility data source pending GameSwitcher and activity migration.
 
+## Play Activity data boundary
+
+The first Play Activity cleanup isolates SQLite row ownership and image-path
+derivation in `playActivityModel`. Result columns are mapped explicitly to the
+nine-column aggregate query, nullable values are initialized, and all nested
+ROM strings have one matching cleanup path. Image lookup is non-mutating:
+ordinary ROMs map to the system `Imgs` directory while PICO-8 `.p8` and `.png`
+cartridges remain their own images. Canonical GameID columns, schema migrations,
+and monotonic duration tracking are subsequent additive database changes; this
+slice intentionally preserves the existing database and aggregate totals.
+
 Architectural decisions will be recorded as the corresponding subsystem work begins.
