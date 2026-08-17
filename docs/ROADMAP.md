@@ -33,7 +33,7 @@ merged; it does not imply unrecorded hardware certification.
   candidate preparation, durable known-good state, and transactional
   activation.
 
-### In progress
+### Completed hardening increments
 
 - [x] Reconcile activated update boots, count bounded validation attempts, and
   require installed-version plus structured-health confirmation before
@@ -76,8 +76,20 @@ merged; it does not imply unrecorded hardware certification.
 - [x] Eliminate the InfoPanel directory double-scan and dynamically grow its
   sorted image list without zero-sized or stale allocations
   ([PR #71](https://github.com/boburning/BloomOS/pull/71)).
-- [ ] Parse InfoPanel JSON image lists through a compacting, allocation-safe,
-  sanitizer-covered module (`fix/info-panel-json-loader`).
+- [x] Parse InfoPanel JSON image lists through a compacting, allocation-safe,
+  sanitizer-covered module ([PR #72](https://github.com/boburning/BloomOS/pull/72)).
+
+The current BloomOS 1.0/1.1 repository implementation queue is now at its
+physical-validation boundary. The checks below must produce device evidence
+before hardware-sensitive behavior or public stable-release claims advance.
+
+### Deferred external provenance
+
+Stable publication also remains blocked on the explicitly unresolved entries
+in `build/dependencies.lock`: authoritative source/build/redistribution mapping
+for inherited prebuilt components and an immutable Alpine package source for
+the shell-test image. Exact release and libretro binary identities are locked;
+the missing historical source evidence must not be guessed from those bytes.
 
 ### Deferred physical validation
 
