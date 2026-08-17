@@ -20,7 +20,9 @@ signature before publication, and removes the temporary private key even when
 the job fails. Devices verify the signature before parsing the manifest or
 trusting its archive digest and size.
 
-The signed manifest channel is one of `stable`, `beta`, `nightly`, or
+The signed manifest targets the `mini`, `plus`, and `flip` device families;
+the detailed build record explicitly lists original Mini V1 through V4. Its
+channel is one of `stable`, `beta`, `nightly`, or
 `development`. Stable, beta, and nightly are user-selectable publication
 channels; development is reserved for hardware-test artifacts. On-device
 verification rejects any other value before an update can be staged.

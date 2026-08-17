@@ -27,7 +27,7 @@ stage_release() {
     printf 'release %s\n' "$version" >"$archive"
     size="$(wc -c <"$archive" | tr -d ' ')"
     digest="$(sha256sum "$archive" | awk '{print $1}')"
-    printf '{"schema":1,"product":"BloomOS","version":"%s","channel":"beta","artifacts":[{"filename":"BloomOS-v%s.zip","sha256":"%s","size":%s,"media_type":"application/zip"}]}\n' \
+    printf '{"schema":1,"product":"BloomOS","version":"%s","channel":"beta","devices":["mini","plus","flip"],"artifacts":[{"filename":"BloomOS-v%s.zip","sha256":"%s","size":%s,"media_type":"application/zip"}]}\n' \
         "$version" "$version" "$digest" "$size" >"$manifest"
     openssl pkeyutl -sign -inkey "$BLOOM_TEST_ROOT/private.pem" -rawin -in "$manifest" -out "$signature"
     "$STAGE" "$manifest" "$signature" "$archive" >/dev/null
