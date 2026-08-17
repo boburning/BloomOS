@@ -33,8 +33,12 @@ the release ZIP, `manifest.json`, and `manifest.sig` to the SD card, then run
 `bloomctl update prepare VERSION` to validate the archive inventory and create
 an isolated candidate. After reviewing `bloomctl update status`,
 `bloomctl update arm VERSION` records the prepared, re-verified payload as
-pending. These commands do not extract over the live OS; activation remains
-disabled until the recovery path is integrated with boot.
+pending. Activation is an internal installer operation rather than a public
+CLI shortcut. On the first installed boot, BloomOS records a durable validation
+attempt. After checking the device, `bloomctl update confirm` verifies that the
+installed and pending versions match, runs structured health checks, and only
+then promotes the release to known-good. These commands do not extract directly
+over the running OS.
 
 - versioning and stable, beta, and nightly channels;
 - closure of the remaining unresolved inputs in `build/dependencies.lock`;

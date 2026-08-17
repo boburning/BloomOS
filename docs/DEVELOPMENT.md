@@ -96,6 +96,19 @@ proves launch and cleanup liveness only; it does not prove correct video,
 controls, audio, SRAM, or save states. Test ROMs and BIOS files remain local and
 must never be committed.
 
+An activated update is not considered successful merely because the installer
+or MainUI started. The runtime records each unconfirmed boot in durable
+`.bloom/update` state. After device checks pass, developers can promote the
+exact installed candidate with:
+
+```sh
+bloomctl update confirm
+```
+
+Confirmation fails closed on a version mismatch or an unhealthy structured
+diagnostic. Physical recovery and rollback validation remain part of the
+hardware matrix.
+
 | Device | Development method |
 | --- | --- |
 | Original Mini V1–V4 | Guarded SD-card request/results harness; UART is optional advanced work |
