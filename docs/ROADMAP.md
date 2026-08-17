@@ -86,10 +86,14 @@ merged; it does not imply unrecorded hardware certification.
 - [x] Archive and verify the complete shell-test APK closure, rebuild without
   network access, and publish the resulting GHCR image for digest-pinned CI
   ([PR #75](https://github.com/boburning/BloomOS/pull/75)).
+- [x] Decompose inherited runtime and package payloads into a canonical,
+  tree-hashed component replacement queue enforced during release packaging
+  ([PR #76](https://github.com/boburning/BloomOS/pull/76)).
 
-The current BloomOS 1.0/1.1 repository implementation queue is now at its
-physical-validation boundary. The checks below must produce device evidence
-before hardware-sensitive behavior or public stable-release claims advance.
+The hardware-sensitive BloomOS 1.0/1.1 implementation queue is at its
+physical-validation boundary. Source-provenance replacement work can continue
+independently, but the checks below must produce device evidence before
+hardware-sensitive behavior or public stable-release claims advance.
 
 ### Deferred external provenance
 
@@ -98,9 +102,10 @@ Inherited components without authoritative source, build, and license evidence
 are quarantined to development artifacts until they are replaced by reviewed
 source builds. The shell-test APK closure is archived and checksum-locked, and
 normal CI consumes its offline-built OCI image by immutable digest. Exact
-release and libretro
-binary identities are locked; missing historical evidence will not be guessed
-from those bytes.
+release and libretro binary identities are locked. The broader runtime and
+package backlog is decomposed in `build/legacy-manifest.json` so components can
+be independently rebuilt or excluded; missing historical evidence will not be
+guessed from inherited bytes.
 
 ### Deferred physical validation
 

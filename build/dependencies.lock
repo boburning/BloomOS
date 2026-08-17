@@ -63,6 +63,14 @@ schema = 1
 stable_tier = "source"
 legacy_channels = ["development"]
 
+[legacy_inventory]
+manifest = "build/legacy-manifest.json"
+schema = 1
+component_count = 156
+file_count = 2662
+byte_count = 570737292
+inherited_baseline = "07505ea58c7bba698d6b9220ff43946a43cac76b"
+
 [themes]
 source = "https://github.com/OnionUI/Themes"
 revision = "b01198352e8927c3c5b9a828f73177bc81745954"

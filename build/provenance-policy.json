@@ -62,12 +62,14 @@
       "id": "inherited-runtime-payload",
       "tier": "legacy",
       "paths": ["static/build/.tmp_update", "static/build/miyoo", "lib"],
+      "inventory": "build/legacy-manifest.json",
       "reason": "The inherited runtime contains mixed prebuilt libraries without complete source and redistribution mapping."
     },
     {
       "id": "inherited-package-catalog",
       "tier": "legacy",
       "paths": ["static/packages"],
+      "inventory": "build/legacy-manifest.json",
       "reason": "Standalone emulators and applications require component-level source, license, and build provenance."
     },
     {

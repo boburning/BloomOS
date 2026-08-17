@@ -240,6 +240,9 @@ package-release: package-release-unsigned sign-release
 
 package-release-unsigned:
 	@$(ECHO) $(PRINT_RECIPE)
+	@python3 $(ROOT_DIR)/tools/legacy_manifest.py validate \
+		--repository $(ROOT_DIR) \
+		--manifest $(ROOT_DIR)/build/legacy-manifest.json
 	@python3 $(ROOT_DIR)/tools/provenance_policy.py check-channel \
 		--policy $(ROOT_DIR)/build/provenance-policy.json \
 		--repository $(ROOT_DIR) \
