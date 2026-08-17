@@ -79,6 +79,21 @@ run_info() {
     [ ! -e "$SDCARD/.tmp_update/bloom-update-state" ]
 }
 
+@test "platform capabilities exposes the centralized structured inspection" {
+    printf '640,1440\n' >"$BLOOM_ROOT/sys/class/graphics/fb0/virtual_size"
+
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl platform capabilities
+
+    [ "$status" -eq 0 ]
+    printf '%s' "$output" | grep -F '"schema": 1'
+    printf '%s' "$output" | grep -F '"model": "mini_plus"'
+    printf '%s' "$output" | grep -F '"capabilities": {"wifi": true, "ssh": true'
+    printf '%s' "$output" | grep -F '"height": "480"'
+
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl platform model
+    [ "$status" -eq 2 ]
+}
+
 @test "update commands delegate only the explicit offline operations" {
     mock_stage="$BLOOM_TEST_ROOT/mock-stage"
     mock_prepare="$BLOOM_TEST_ROOT/mock-prepare"

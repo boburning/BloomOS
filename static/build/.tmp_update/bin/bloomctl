@@ -136,6 +136,18 @@ usage() {
     printf '       bloomctl update {status|stage MANIFEST SIGNATURE ARCHIVE|prepare VERSION|arm VERSION|confirm|rollback}\n' >&2
     printf '       bloomctl saves snapshots\n' >&2
     printf '       bloomctl logs export\n' >&2
+    printf '       bloomctl platform capabilities\n' >&2
+}
+
+platform_command() {
+    case "${1:-}" in
+        capabilities)
+            [ "$#" -eq 1 ] || { usage; return 2; }
+            [ -x "$BLOOM_PLATFORM" ] || { printf 'bloomctl: platform service is unavailable\n' >&2; return 1; }
+            sh "$BLOOM_PLATFORM" inspect --json
+            ;;
+        *) usage; return 2 ;;
+    esac
 }
 
 logs_command() {
@@ -223,6 +235,10 @@ case "${1:-}" in
     logs)
         shift
         logs_command "$@"
+        ;;
+    platform)
+        shift
+        platform_command "$@"
         ;;
     *) usage; exit 2 ;;
 esac

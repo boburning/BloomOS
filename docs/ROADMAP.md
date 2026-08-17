@@ -52,8 +52,10 @@ merged; it does not imply unrecorded hardware certification.
   `bloomctl` ([PR #59](https://github.com/boburning/BloomOS/pull/59)).
 - [x] Retry transient pinned-theme download failures with bounded attempts and
   keep partial responses out of the verified cache ([PR #60](https://github.com/boburning/BloomOS/pull/60)).
-- [ ] Export a privacy-bounded, allowlisted on-device diagnostics archive
-  through `bloomctl logs export` (`feature/diagnostics-export`).
+- [x] Export a privacy-bounded, allowlisted on-device diagnostics archive
+  through `bloomctl logs export` ([PR #61](https://github.com/boburning/BloomOS/pull/61)).
+- [ ] Expose centralized structured hardware inspection through
+  `bloomctl platform capabilities` (`feature/platform-capabilities`).
 
 ### Deferred physical validation
 

@@ -196,6 +196,11 @@ saves, network configuration, SSH material, process environments, or arbitrary
 temporary logs. Files are staged beside the final archive and published only
 after a non-empty compressed archive has been created.
 
+`bloomctl platform capabilities` exposes the centralized schema-1 platform
+inspection as the stable public CLI contract. It reports only observable model,
+display, input, battery-backend, and capability data; callers do not need to
+repeat hardware heuristics or depend directly on the internal helper.
+
 ## Update trust boundary
 
 Release manifests are signed with the BloomOS Ed25519 release key after their
