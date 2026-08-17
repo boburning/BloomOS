@@ -36,6 +36,15 @@ exact SHA-256 and size of each shipped file or symlink. This closes the binary
 identity portion of provenance; upstream source, build method, license, and
 redistribution mapping remain required for inherited binaries.
 
+`build/core-manifest.json` additionally inventories all 110 shipped libretro
+cores. It records each binary's exact size and SHA-256 plus any declared name,
+version, and license available from the paired libretro metadata, and ties the
+inherited bytes to Bloom's immutable Onion baseline commit. The release
+target refuses a stale or non-canonical inventory. Unknown upstream revisions,
+build flags, patch sets, known issues, and physical-validation dates remain
+explicit `null` or empty fields; they must be filled from authoritative source
+and device evidence rather than inferred from a filename.
+
 ## Lock-file requirements
 
 `build/dependencies.lock` now records the resolved toolchain, submodule, and Action identifiers plus explicit unresolved fields. It must expand to cover RetroArch and core source revisions, theme/package revisions, downloaded artifact hashes, license identifiers, and provenance URLs before release builds are considered locked.

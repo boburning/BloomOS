@@ -239,6 +239,9 @@ package-release: package-release-unsigned sign-release
 
 package-release-unsigned:
 	@$(ECHO) $(PRINT_RECIPE)
+	@python3 $(ROOT_DIR)/tools/core_manifest.py validate \
+		--core-dir $(STATIC_BUILD)/RetroArch/.retroarch/cores \
+		--manifest $(ROOT_DIR)/build/core-manifest.json
 	@rm -rf $(RELEASE_VERSION_DIR)
 	@mkdir -p $(RELEASE_VERSION_DIR)
 	@find $(DIST_DIR) -exec touch -h -d "@$(SOURCE_DATE_EPOCH)" {} +

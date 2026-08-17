@@ -6,11 +6,20 @@ BloomOS has no public release process in operation yet. Release builds now produ
 - `SHA256SUMS`;
 - `manifest.json` with signed channel, artifact size, and digest;
 - `manifest.sig`, an Ed25519 signature over the exact manifest bytes;
-- `build-info.json` with commit, deterministic build date, channel, toolchain, dependency-lock digest, and compatible device targets.
+- `payload-manifest.json` with the type, size, and SHA-256 of every archive
+  member;
+- `build-info.json` with commit, deterministic build date, channel, toolchain,
+  dependency-lock and payload-manifest digests, and compatible device targets.
 - `payload-manifest.json` with the exact type, size, and SHA-256 digest of every
   archived file or symlink.
 
-Packaging normalizes distribution-tree timestamps to the source commit time, sorts the archive input list, suppresses archive timestamp metadata, and validates the archive and metadata before publication. Before the first public release, this document must still define:
+Packaging normalizes distribution-tree timestamps to the source commit time,
+sorts the archive input list, suppresses archive timestamp metadata, and
+validates the archive and metadata before publication.
+
+Release packaging also validates `build/core-manifest.json` against every
+shipped libretro binary. A core change therefore cannot silently retain stale
+binary identity, declared license, or compatibility inventory.
 
 Release validation reconstructs the payload manifest directly from the final
 ZIP, rejects duplicate, absolute, traversal, or backslash paths, and requires
@@ -55,11 +64,19 @@ overwrite pending installer content. The recovered release must boot and pass
 the normal `bloomctl update confirm` gate; repeated rollback failures stop in a
 terminal state for manual recovery.
 
-- versioning and stable, beta, and nightly channels;
-- closure of the remaining unresolved inputs in `build/dependencies.lock`;
-- automated test gates and the three-device physical test matrix;
-- migration, backup, rollback, and recovery validation;
-- license and bundled dependency review;
-- signing and publication through infrastructure with a complete free path.
+## Remaining publication gates
+
+Versioning, stable/beta/nightly channel policy, signed GitHub Actions builds,
+and GitHub Releases provide the complete free publication path. Automated
+migration, backup, rollback, recovery, host, sanitizer, shell, cross-build, and
+packaging gates are in place.
+
+Before the first public stable release, Bloom must still:
+
+- close every unresolved source, build, and redistribution input in
+  `build/dependencies.lock`;
+- complete the bundled dependency and license review;
+- pass and record the three-device physical test matrix, including real
+  migration, update, boot-confirmation, and rollback operations.
 
 Releases must be built from a reviewed commit, and hardware-sensitive changes must identify the devices actually tested.
