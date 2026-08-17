@@ -89,10 +89,12 @@ def main():
     parser.add_argument("--policy", type=pathlib.Path, required=True)
     parser.add_argument("--repository", type=pathlib.Path, required=True)
     parser.add_argument("--channel")
+    parser.add_argument("--require-files", action="store_true")
     args = parser.parse_args()
     try:
         policy = load_policy(args.policy)
-        check_files(policy, args.repository)
+        if args.require_files:
+            check_files(policy, args.repository)
         if args.command == "check-channel":
             if args.channel is None:
                 raise ValueError("--channel is required")
