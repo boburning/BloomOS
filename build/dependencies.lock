@@ -76,9 +76,9 @@ manifest = "build/legacy-manifest.json"
 schema = 1
 component_count = 156
 file_count = 2656
-byte_count = 567471284
-source_build_components = 140
-unresolved_components = 16
+byte_count = 568454427
+source_build_components = 141
+unresolved_components = 15
 inherited_baseline = "07505ea58c7bba698d6b9220ff43946a43cac76b"
 
 [themes]

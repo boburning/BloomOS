@@ -146,3 +146,39 @@ assert battery["license"] == "GPL-3.0-only AND LicenseRef-DejaVu-Fonts"
 PY
     [ "$status" -eq 0 ]
 }
+
+@test "verified Bloom Quick Guide replacement receives source provenance" {
+    manifest="$BATS_TEST_TMPDIR/legacy-manifest.json"
+    cp /workspace/build/legacy-manifest.json "$manifest"
+    python3 - "$manifest" <<'PY'
+import json
+import sys
+path = sys.argv[1]
+data = json.load(open(path, encoding="utf-8"))
+guide = next(item for item in data["components"] if item["id"] == "app-quick-guide")
+for field in ("source", "source_revision", "license", "build_recipe"):
+    guide[field] = None
+guide["resolution"] = "replace-source-build-or-exclude"
+with open(path, "w", encoding="utf-8", newline="\n") as stream:
+    json.dump(data, stream, ensure_ascii=False, indent=2)
+    stream.write("\n")
+PY
+
+    run python3 /workspace/tools/legacy_manifest.py annotate-bloom-replacements \
+        --repository /workspace --manifest "$manifest"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == "legacy manifest annotated: 1 Bloom source replacements" ]]
+    run python3 - "$manifest" <<'PY'
+import json
+import sys
+components = {item["id"]: item for item in json.load(open(sys.argv[1], encoding="utf-8"))["components"]}
+guide = components["app-quick-guide"]
+assert guide["resolution"] == "source-build"
+assert guide["source"] == "https://github.com/boburning/BloomOS"
+assert guide["source_revision"] == "release-commit"
+assert guide["license"] == "GPL-3.0-only"
+assert guide["build_recipe"] == "tools/generate_quick_guide.py"
+PY
+    [ "$status" -eq 0 ]
+}
