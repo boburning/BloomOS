@@ -118,6 +118,8 @@ merged; it does not imply unrecorded hardware certification.
   desktop executables, archives, scripts, and sample media without complete
   component provenance
   ([PR #85](https://github.com/boburning/BloomOS/pull/85)).
+- [x] Replace the inherited Fake-08 standalone executable with a deterministic
+  ARM build from pinned upstream source and ship its complete composite license.
 
 The hardware-sensitive BloomOS 1.0/1.1 implementation queue is at its
 physical-validation boundary. Source-provenance replacement work can continue
@@ -150,6 +152,8 @@ guessed from inherited bytes.
   after replacing Arkhip with DejaVu Sans 2.37.
 - [ ] Validate Quick Guide page readability and shortcut accuracy on V2, Plus,
   and Flip after replacing the inherited artwork.
+- [ ] Validate source-built Fake-08 startup, audio, input, save behavior, and
+  representative cartridge compatibility on V2, Plus, and Flip.
 - [ ] Collect equivalent external physical evidence for original Mini V1, V3,
   and V4 before claiming stable support for those revisions.
 

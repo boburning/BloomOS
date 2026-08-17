@@ -18,6 +18,7 @@ Baseline: Onion `07505ea58c7bba698d6b9220ff43946a43cac76b`, audited 2026-08-15.
 | GCC `libatomic.so.1` runtime | Miyoo Mini cross-toolchain image pinned by digest | Image and in-image path pinned | Copied from the ARM sysroot during release assembly because the bundled OpenSSL 3 executable requires it. Covered by the GCC Runtime Library Exception; exact binary hashing is recorded by release packaging. |
 | Shell-test packages | `shell-test-inputs-v1`, archive SHA-256 `97a048903e55131877f44203103e33f28b84d6e0fe22c1588bb820b6075b6921` | Complete 38-APK closure archived with checksums and declared licenses | The image rebuild verifies the archive and every APK, removes Alpine repositories, and installs with Docker networking disabled. |
 | Battery Monitor font | DejaVu Sans 2.37, archive SHA-256 `7576310b219e04159d35ff61dd4a4ec4cdba4f35c00e002a136f00e96a908b0a`, font SHA-256 `7da195a74c55bef988d0d48f9508bd5d849425c1770dba5d7bfc6ce9ed848954` | Official release and license pinned | Replaces the inherited Arkhip file whose embedded notice reserves all rights. Visual layout remains pending device validation. |
+| Fake-08 standalone | `jtothebell/fake-08` v0.0.2.19 commit `18a1c8ab686f87f00a418add448ebe872b87869a` with recursive z8lua commit `abd65e3b05e285da0c6f86912b2817e7dc6bf6ea` | Source, recursive dependency, composite license, toolchain, and output hash pinned | Bloom rebuilds the Miyoo Mini executable instead of carrying the historically unexplained binary. Device game compatibility remains pending physical validation. |
 
 ## GitHub Actions
 
@@ -80,7 +81,7 @@ it from reviewed inputs; binary hashes alone are never accepted as historical
 source evidence.
 
 `build/legacy-manifest.json` decomposes the remaining inherited runtime and
-package payload into 156 independently resolvable components covering 2,637
+package payload into 156 independently resolvable components covering 2,638
 files. Each entry locks its path, file count, checkout-normalized byte count,
 and canonical tree SHA-256 while leaving unknown source, revision, license, and build recipe
 explicitly `null`. Its resolution must eventually become either a complete
@@ -93,14 +94,14 @@ symlinks by their target bytes so Windows and Linux produce the same inventory.
 This normalization is limited to the replacement queue; release payload
 manifests continue to hash every final shipped byte exactly.
 
-The source-wrapper and replacement pass identifies 142 package components and shared
+The source-wrapper and replacement pass identifies 143 package components and shared
 package assembly scripts containing only
 UTF-8 `.sh`/`.json` source, `.miyoocmd` command wrappers, `.notfound` port
 definitions, and optional empty marker files. Those trees are
 unchanged from the pinned Onion baseline and are recorded as GPL-3.0-only
 source assemblies through the repository Makefile. This attribution applies
 only to the wrapper files; it does not confer provenance on the emulator/core
-binaries they select. The remaining 14 components contain runtime payloads,
+binaries they select. The remaining 13 components contain runtime payloads,
 executables, fonts, images, media, databases, firmware, or other inputs that
 still require component-specific evidence or exclusion.
 
@@ -133,6 +134,11 @@ executables, archives, conversion scripts, and a media sample were removed from
 the SD-card package; they were not used by the device launcher and did not have
 complete component-level provenance. A future desktop companion must rebuild
 equivalent conversion tools from reviewed source rather than copying them back.
+
+Fake-08 standalone is rebuilt from the pinned upstream v0.0.2.19 source and
+its recursive z8lua revision using Bloom's immutable ARM toolchain. The complete
+upstream composite license is shipped beside the executable, and the resulting
+binary hash is locked after two clean builds produced identical output.
 
 The pinned SearchFilter and DinguxCommander repositories remain a separate
 legacy blocker: neither upstream repository declares a project license. Their

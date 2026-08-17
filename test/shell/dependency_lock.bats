@@ -39,6 +39,19 @@
         "/workspace/static/packages/App/Battery Monitor/App/BatteryMonitorUI/res/DejaVu_LICENSE.txt"
 }
 
+@test "Fake-08 standalone is source-pinned and license-complete" {
+    lock=/workspace/build/dependencies.lock
+    package="/workspace/static/packages/RApp/PICO-8 (Fake8 standalone)/RApp/PICO"
+
+    grep -F 'version = "0.0.2.19"' "$lock"
+    grep -F 'source_revision = "18a1c8ab686f87f00a418add448ebe872b87869a"' "$lock"
+    grep -F 'binary_sha256 = "e3d5f948413d181b98ae8b0883a72938fac38ea9013ae587fffee384a1a0f9b4"' "$lock"
+    [ "$(sha256sum "$package/FAKE08" | cut -d' ' -f1)" = \
+        "e3d5f948413d181b98ae8b0883a72938fac38ea9013ae587fffee384a1a0f9b4" ]
+    cmp /workspace/third-party/fake-08/LICENSE.MD "$package/LICENSE.MD"
+    grep -F 'cd $(THIRD_PARTY_DIR)/fake-08 && make miyoomini' /workspace/Makefile
+}
+
 @test "OpenSSL runtime dependency comes from the pinned ARM toolchain" {
     grep -F 'cp -L /opt/miyoomini-toolchain/arm-linux-gnueabihf/libc/usr/lib/libatomic.so.1' /workspace/Makefile
     ! grep -F 'libatomic.so.1' /workspace/Makefile | grep -F 'http'
