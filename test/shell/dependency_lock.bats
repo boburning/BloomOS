@@ -23,3 +23,8 @@
     run grep -E '^(gcc|gxx|binutils_ld|binutils_as|source_revision|patch_revision) = "UNRESOLVED"$' "$lock"
     [ "$status" -ne 0 ]
 }
+
+@test "OpenSSL runtime dependency comes from the pinned ARM toolchain" {
+    grep -F 'cp -L /opt/miyoomini-toolchain/arm-linux-gnueabihf/libc/usr/lib/libatomic.so.1' /workspace/Makefile
+    ! grep -F 'libatomic.so.1' /workspace/Makefile | grep -F 'http'
+}
