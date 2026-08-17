@@ -93,6 +93,10 @@ static int _udp_send(const char *ipAddress, int port, const char *message)
 
 static int _udp_send_receive(const char *ipAddress, int port, const char *message, char *response, size_t response_size)
 {
+    if (response == NULL || response_size < 2) {
+        errno = EINVAL;
+        return -1;
+    }
     int socket_fd;
     struct sockaddr_in server_address;
 
@@ -122,7 +126,7 @@ static int _udp_send_receive(const char *ipAddress, int port, const char *messag
         return -1;
     }
 
-    ssize_t bytes_received = recvfrom(socket_fd, response, response_size, 0, NULL, NULL);
+    ssize_t bytes_received = recvfrom(socket_fd, response, response_size - 1, 0, NULL, NULL);
     if (bytes_received == -1) {
         perror("Failed to receive data");
         close(socket_fd);
@@ -148,6 +152,10 @@ int udp_send(const char *ipAddress, int port, const char *message)
 
 int udp_send_receive(const char *ipAddress, int port, const char *message, char *response, size_t response_size)
 {
+    if (response == NULL || response_size < 2) {
+        errno = EINVAL;
+        return -1;
+    }
     for (int attempt = 0; attempt < MAX_RETRIES; attempt++) {
         if (_udp_send_receive(ipAddress, port, message, response, response_size) == 0) {
             return 0; // Success

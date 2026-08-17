@@ -88,7 +88,8 @@ private key, or accepted host fingerprint is stored in the repository.
 NES/FC, SNES/SFC, and PSX. It confines the supplied ROM to the matching system
 directory, creates a validated `BloomLaunchRequest`, crosses the normal Onion
 compatibility handoff through `bloom-launch`, keeps SSH
-alive for observation, bounds execution to 5–60 seconds, terminates RetroArch,
+alive for observation, bounds execution to 5–60 seconds, requests RetroArch's
+control-port `QUIT`, falls back through SIGTERM and finally SIGKILL as needed,
 and verifies that MainUI returns and the pending command is removed. A pass
 proves launch and cleanup liveness only; it does not prove correct video,
 controls, audio, SRAM, or save states. Test ROMs and BIOS files remain local and
