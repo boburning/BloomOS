@@ -246,6 +246,11 @@ writes, and publishes that directory with a single rename. Existing staged
 versions are never overwritten. Staging does not extract into or otherwise
 modify the live operating-system tree.
 
+Before creating staging state, BloomOS derives the required KiB from the signed
+archive size and adds a 16 MiB safety reserve. The current SD free space must
+meet that bound; an invalid threshold, unreadable capacity, or insufficient
+space fails before any incoming directory or partial payload is created.
+
 The update state machine arms only a freshly re-verified staged payload. Each
 unvalidated boot increments a durable attempt counter; the third attempt enters
 `recovery_required` instead of continuing indefinitely. A payload becomes

@@ -62,8 +62,10 @@ merged; it does not imply unrecorded hardware certification.
   update staging boundary ([PR #64](https://github.com/boburning/BloomOS/pull/64)).
 - [x] Surface malformed and terminal recovery update state through structured
   system health ([PR #65](https://github.com/boburning/BloomOS/pull/65)).
-- [ ] Verify save-snapshot inventory through aggregate structured health
-  without exposing save details (`feature/snapshot-health`).
+- [x] Verify save-snapshot inventory through aggregate structured health
+  without exposing save details ([PR #66](https://github.com/boburning/BloomOS/pull/66)).
+- [ ] Reject signed update staging before copying when SD capacity cannot hold
+  the verified archive plus a safety reserve (`feature/update-capacity-preflight`).
 
 ### Deferred physical validation
 
