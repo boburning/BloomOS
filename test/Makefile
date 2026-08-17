@@ -3,6 +3,7 @@ INCLUDE_UTILS = 0
 CFILES := ../src/infoPanel/imagesCache.c ../src/common/utils/log.c ../src/common/utils/file.c ../src/common/utils/str.c \
 	../src/bloomLaunch/bloom_launch.c ../include/cjson/cJSON.c
 CFILES := $(CFILES) ../src/infoPanel/imagesBrowser.c
+CFILES := $(CFILES) ../src/infoPanel/imagesConfig.c
 CFILES := $(CFILES) ../src/bloomSaveFlush/bloom_save_flush.c
 CFILES := $(CFILES) ../src/bloomGameId/bloom_game_id.c
 CFILES := $(CFILES) ../src/playActivity/playActivityModel.c

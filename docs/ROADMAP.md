@@ -73,9 +73,11 @@ merged; it does not imply unrecorded hardware certification.
 - [x] Inventory every shipped libretro core with exact binary identity and
   explicit source, license, patch, compatibility, and validation fields
   ([PR #70](https://github.com/boburning/BloomOS/pull/70)).
-- [ ] Eliminate the InfoPanel directory double-scan and dynamically grow its
+- [x] Eliminate the InfoPanel directory double-scan and dynamically grow its
   sorted image list without zero-sized or stale allocations
-  (`fix/image-browser-allocation`).
+  ([PR #71](https://github.com/boburning/BloomOS/pull/71)).
+- [ ] Parse InfoPanel JSON image lists through a compacting, allocation-safe,
+  sanitizer-covered module (`fix/info-panel-json-loader`).
 
 ### Deferred physical validation
 
