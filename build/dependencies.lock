@@ -46,6 +46,11 @@ package_version = "1.22.2-1"
 source_revision = "69a4f0ea1e8aaf442ae4858f2e7f2b31a1776576"
 patch_revision = "f9e959f7445d2ba0a4dd6279da41a095163767f2"
 
+[core_inventory]
+manifest = "build/core-manifest.json"
+schema = 1
+binary_count = 110
+
 [themes]
 source = "https://github.com/OnionUI/Themes"
 revision = "b01198352e8927c3c5b9a828f73177bc81745954"
@@ -53,7 +58,7 @@ artifact_checksums = "build/themes.sha256"
 
 [audit]
 unresolved = [
-  "RetroArch and emulator/core source-to-binary mapping",
+  "RetroArch and emulator/core source-to-binary mapping beyond exact shipped binary identity",
   "bundled binary provenance, licenses, and SHA-256 values",
   "immutable Alpine package repository snapshot for shell-test dependencies",
 ]

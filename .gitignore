@@ -6,6 +6,7 @@ __pycache__/
 !/build/
 /build/*
 !/build/dependencies.lock
+!/build/core-manifest.json
 !/build/themes.sha256
 /build_test/
 /release/

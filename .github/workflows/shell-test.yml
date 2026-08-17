@@ -10,6 +10,8 @@ on:
       - 'static/build/.tmp_update/bin/*'
       - 'test/shell/**'
       - 'tools/release_metadata.py'
+      - 'tools/core_manifest.py'
+      - 'build/core-manifest.json'
       - 'build/themes.sha256'
       - '.gitattributes'
   merge_group:
