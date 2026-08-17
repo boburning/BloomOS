@@ -119,6 +119,13 @@ bloomctl update rollback
 This is not a generic downgrade command. It accepts no version argument and
 uses only the retained signed known-good release selected by durable state.
 
+`bloomctl health --json` is also the update-promotion gate. Its system check
+requires a recognized Mini/Plus/Flip family, the installed BloomOS runtime,
+RetroArch and MainUI payloads, writable SD storage, and a default minimum of
+16 MiB free, in addition to Play Activity integrity. Development fixtures may
+override the free-space threshold; release behavior must not lower it without
+device evidence.
+
 | Device | Development method |
 | --- | --- |
 | Original Mini V1–V4 | Guarded SD-card request/results harness; UART is optional advanced work |

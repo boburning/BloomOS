@@ -1,0 +1,51 @@
+#!/bin/sh
+set -u
+
+BLOOM_ROOT="${BLOOM_ROOT:-}"
+SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+PLATFORM="${BLOOM_PLATFORM_BIN:-$SCRIPT_DIR/bloom-platform}"
+SD_ROOT="${BLOOM_SD_ROOT:-$BLOOM_ROOT/mnt/SDCARD}"
+MIN_FREE_KB="${BLOOM_HEALTH_MIN_FREE_KB:-16384}"
+
+case "$MIN_FREE_KB" in ''|*[!0-9]*) printf '%s\n' '{"schema":1,"healthy":false,"error":"invalid_threshold"}'; exit 1 ;; esac
+[ "$MIN_FREE_KB" -gt 0 ] || { printf '%s\n' '{"schema":1,"healthy":false,"error":"invalid_threshold"}'; exit 1; }
+
+model=unknown
+if [ -x "$PLATFORM" ]; then model="$(sh "$PLATFORM" model 2>/dev/null || printf unknown)"; fi
+case "$model" in mini|mini_plus|mini_flip) identity=true ;; *) identity=false ;; esac
+
+runtime=true
+for required in \
+    "$SD_ROOT/.tmp_update/runtime.sh" \
+    "$SD_ROOT/.tmp_update/bin/bloomctl" \
+    "$SD_ROOT/.tmp_update/bin/bloom-platform" \
+    "$SD_ROOT/.tmp_update/onionVersion/version.txt" \
+    "$SD_ROOT/RetroArch/retroarch" \
+    "$SD_ROOT/miyoo/app/MainUI"; do
+    [ -f "$required" ] || runtime=false
+done
+
+storage=false
+probe_dir="$SD_ROOT/.bloom"
+probe="$probe_dir/.health-probe-$$"
+if mkdir -p "$probe_dir" 2>/dev/null && (umask 077; printf 'bloom-health\n' >"$probe") 2>/dev/null; then
+    sync "$probe" 2>/dev/null || sync
+    rm -f "$probe"
+    storage=true
+fi
+
+free_kb="$(df -Pk "$SD_ROOT" 2>/dev/null | awk 'NR == 2 { print $4 }')"
+case "$free_kb" in ''|*[!0-9]*) free_kb=0 ;; esac
+if [ "$free_kb" -ge "$MIN_FREE_KB" ]; then capacity=true; else capacity=false; fi
+
+if [ "$identity" = true ] && [ "$runtime" = true ] && [ "$storage" = true ] && [ "$capacity" = true ]; then
+    healthy=true
+    status=0
+else
+    healthy=false
+    status=1
+fi
+
+printf '{"schema":1,"healthy":%s,"model":"%s","runtime":%s,"storage_writable":%s,"free_kb":%s,"minimum_free_kb":%s,"capacity":%s}\n' \
+    "$healthy" "$model" "$runtime" "$storage" "$free_kb" "$MIN_FREE_KB" "$capacity"
+exit "$status"

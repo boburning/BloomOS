@@ -10,6 +10,7 @@ BLOOM_UPDATE_PREPARE="${BLOOM_UPDATE_PREPARE_BIN:-$SCRIPT_DIR/bloom-update-prepa
 BLOOM_UPDATE_STATE="${BLOOM_UPDATE_STATE_BIN:-$SCRIPT_DIR/bloom-update-state}"
 BLOOM_UPDATE_BOOT="${BLOOM_UPDATE_BOOT_BIN:-$SCRIPT_DIR/bloom-update-boot}"
 BLOOM_UPDATE_ROLLBACK="${BLOOM_UPDATE_ROLLBACK_BIN:-$SCRIPT_DIR/bloom-update-rollback}"
+BLOOM_SYSTEM_HEALTH="${BLOOM_SYSTEM_HEALTH_BIN:-$SCRIPT_DIR/bloom-health-system}"
 
 path() {
     printf '%s%s' "$BLOOM_ROOT" "$1"
@@ -81,33 +82,51 @@ play_activity_health() {
     LD_LIBRARY_PATH="$library_dir${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" "$play_activity" health
 }
 
+system_health() {
+    if [ ! -x "$BLOOM_SYSTEM_HEALTH" ]; then
+        printf '%s' '{"schema":1,"healthy":false,"error":"unavailable"}'
+        return 1
+    fi
+    "$BLOOM_SYSTEM_HEALTH"
+}
+
 print_health_json() {
     activity_output="$(play_activity_health)"
     activity_status=$?
+    system_output="$(system_health)"
+    system_status=$?
     case "$activity_output" in
         \{*) ;;
         *) activity_output='{"schema":1,"healthy":false,"error":"execution_failed"}' ;;
     esac
-    if [ "$activity_status" -eq 0 ]; then healthy=true; else healthy=false; fi
+    case "$system_output" in
+        \{*) ;;
+        *) system_output='{"schema":1,"healthy":false,"error":"execution_failed"}' ;;
+    esac
+    if [ "$activity_status" -eq 0 ] && [ "$system_status" -eq 0 ]; then healthy=true; status=0; else healthy=false; status=1; fi
 
     printf '{\n'
     printf '  "schema": 1,\n'
     printf '  "healthy": %s,\n' "$healthy"
-    printf '  "checks": {"play_activity": %s}\n' "$activity_output"
+    printf '  "checks": {"system": %s, "play_activity": %s}\n' "$system_output" "$activity_output"
     printf '}\n'
-    return "$activity_status"
+    return "$status"
 }
 
 print_health_text() {
     activity_output="$(play_activity_health)"
     activity_status=$?
+    system_output="$(system_health)"
+    system_status=$?
+    if [ "$system_status" -eq 0 ]; then printf 'System: healthy\n'; else printf 'System: unhealthy\n'; fi
+    printf '%s\n' "$system_output"
     if [ "$activity_status" -eq 0 ]; then
         printf 'Play Activity: healthy\n'
     else
         printf 'Play Activity: unhealthy\n'
     fi
     printf '%s\n' "$activity_output"
-    return "$activity_status"
+    if [ "$activity_status" -eq 0 ] && [ "$system_status" -eq 0 ]; then return 0; else return 1; fi
 }
 
 usage() {

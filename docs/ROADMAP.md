@@ -41,8 +41,11 @@ merged; it does not imply unrecorded hardware certification.
 - [x] Reconstruct rollback candidates from retained signed archives, snapshot
   saves, publish the recovery trigger transactionally, and expose the guarded
   `bloomctl update rollback` operation ([PR #55](https://github.com/boburning/BloomOS/pull/55)).
-- [ ] Stop modifying permanent emulator launch scripts for temporary reset and
-  auto-load-state options (`fix/temporary-launch-overrides`).
+- [x] Stop modifying permanent emulator launch scripts for temporary reset and
+  auto-load-state options ([PR #56](https://github.com/boburning/BloomOS/pull/56)).
+- [ ] Require known hardware identity, complete runtime payloads, writable SD
+  storage, and a free-space floor in structured health and update confirmation
+  (`feature/device-health-baseline`).
 
 ### Deferred physical validation
 
