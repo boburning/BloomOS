@@ -1774,14 +1774,14 @@
       "id": "rapp-pico-8--fake8-standalone",
       "kind": "package",
       "path": "static/packages/RApp/PICO-8 (Fake8 standalone)",
-      "file_count": 5,
-      "byte_count": 737338,
-      "tree_sha256": "bea766869423849d862a1357ed1fde9bbad75c20b256705693ce36bf63a04f40",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "file_count": 6,
+      "byte_count": 717676,
+      "tree_sha256": "aaee3825c649aa01daeb9d884bf6879eabf10cc8c69662cdff74223705995f99",
+      "source": "https://github.com/jtothebell/fake-08",
+      "source_revision": "18a1c8ab686f87f00a418add448ebe872b87869a",
+      "license": "MIT AND Zlib AND ISC AND WTFPL AND LicenseRef-LodePNG AND CC-BY-SA-3.0 AND LicenseRef-Public-Domain",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-pico-8--pico-8-standalone",

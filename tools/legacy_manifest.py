@@ -23,6 +23,11 @@ ONION_SOURCE = "https://github.com/OnionUI/Onion"
 ONION_WRAPPER_SUFFIXES = (".json", ".miyoocmd", ".notfound", ".sh")
 BLOOM_SOURCE = "https://github.com/boburning/BloomOS"
 ADVANCEMENU_ID = "app-advancemenu--alternative-frontend"
+FAKE08_ID = "rapp-pico-8--fake8-standalone"
+FAKE08_SOURCE = "https://github.com/jtothebell/fake-08"
+FAKE08_REVISION = "18a1c8ab686f87f00a418add448ebe872b87869a"
+FAKE08_LICENSE = "MIT AND Zlib AND ISC AND WTFPL AND LicenseRef-LodePNG AND CC-BY-SA-3.0 AND LicenseRef-Public-Domain"
+FAKE08_BINARY_SHA256 = "e3d5f948413d181b98ae8b0883a72938fac38ea9013ae587fffee384a1a0f9b4"
 BATTERY_MONITOR_ID = "app-battery-monitor"
 BATTERY_MONITOR_PACKAGE_ROOT = pathlib.PurePosixPath("App/BatteryMonitorUI")
 BATTERY_MONITOR_SOURCE_ROOT = pathlib.PurePosixPath("src/batteryMonitorUI")
@@ -268,6 +273,35 @@ def is_bloom_advancemenu_wrapper(repository, component):
     return b"cd $sysdir/bin/adv" in launch and b"./run_advmenu.sh" in launch
 
 
+def is_source_built_fake08(repository, component):
+    if component["id"] != FAKE08_ID or component["kind"] != "package":
+        return False
+    root = repository / component["path"]
+    expected_files = {
+        "RApp/PICO/FAKE08",
+        "RApp/PICO/LICENSE.MD",
+        "RApp/PICO/config.json",
+        "RApp/PICO/cpufreq.sh",
+        "RApp/PICO/launch.sh",
+        "Roms/PICO/.gitkeep",
+    }
+    files = {
+        path.relative_to(root).as_posix(): path
+        for path in root.rglob("*")
+        if path.is_file()
+    }
+    if set(files) != expected_files:
+        return False
+    binary_hash = hashlib.sha256(files["RApp/PICO/FAKE08"].read_bytes()).hexdigest()
+    if binary_hash != FAKE08_BINARY_SHA256:
+        return False
+    source_license = repository / "third-party/fake-08/LICENSE.MD"
+    if not source_license.is_file() or canonical_file(source_license) != canonical_file(files["RApp/PICO/LICENSE.MD"]):
+        return False
+    makefile = canonical_file(repository / "Makefile")
+    return b"cd $(THIRD_PARTY_DIR)/fake-08 && make miyoomini" in makefile
+
+
 def annotate_bloom_replacements(repository, manifest):
     count = 0
     for component in manifest["components"]:
@@ -294,6 +328,14 @@ def annotate_bloom_replacements(repository, manifest):
                 "source": BLOOM_SOURCE,
                 "source_revision": "release-commit",
                 "license": "GPL-3.0-only",
+                "build_recipe": "Makefile",
+                "resolution": "source-build",
+            })
+        elif is_source_built_fake08(repository, component):
+            component.update({
+                "source": FAKE08_SOURCE,
+                "source_revision": FAKE08_REVISION,
+                "license": FAKE08_LICENSE,
                 "build_recipe": "Makefile",
                 "resolution": "source-build",
             })

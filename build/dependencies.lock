@@ -23,6 +23,8 @@ info_zip = "3.0"
 "third-party/DinguxCommander" = "7314f86cc1b5d1c75607120e9c2760261f69b67b"
 "third-party/RetroArch-patch" = "f9e959f7445d2ba0a4dd6279da41a095163767f2"
 "third-party/dropbear" = "887241694277b3816da5d174932c10546ea9d2c5"
+"third-party/fake-08" = "18a1c8ab686f87f00a418add448ebe872b87869a"
+"third-party/fake-08/libs/z8lua" = "abd65e3b05e285da0c6f86912b2817e7dc6bf6ea"
 "third-party/RetroArch-patch/submodules/RetroArch" = "69a4f0ea1e8aaf442ae4858f2e7f2b31a1776576"
 "third-party/SearchFilter/include/pugixml" = "2639dfd053221d3e8c9e9ff013e58699d9c1af15"
 "third-party/SearchFilter/include/sqlite3" = "a050cf6e5787d8dd341f7c0038247a3206ba6cf1"
@@ -52,6 +54,15 @@ package_version = "1.22.2-1"
 source_revision = "69a4f0ea1e8aaf442ae4858f2e7f2b31a1776576"
 patch_revision = "f9e959f7445d2ba0a4dd6279da41a095163767f2"
 
+[fake08]
+version = "0.0.2.19"
+source = "https://github.com/jtothebell/fake-08"
+source_revision = "18a1c8ab686f87f00a418add448ebe872b87869a"
+license = "MIT AND Zlib AND ISC AND WTFPL AND LicenseRef-LodePNG AND CC-BY-SA-3.0 AND LicenseRef-Public-Domain"
+license_file = "static/packages/RApp/PICO-8 (Fake8 standalone)/RApp/PICO/LICENSE.MD"
+build_recipe = "Makefile"
+binary_sha256 = "e3d5f948413d181b98ae8b0883a72938fac38ea9013ae587fffee384a1a0f9b4"
+
 [fonts.dejavu_sans]
 version = "2.37"
 source = "https://github.com/dejavu-fonts/dejavu-fonts/releases/tag/version_2_37"
@@ -75,10 +86,10 @@ legacy_channels = ["development"]
 manifest = "build/legacy-manifest.json"
 schema = 1
 component_count = 156
-file_count = 2637
-byte_count = 558505012
-source_build_components = 142
-unresolved_components = 14
+file_count = 2638
+byte_count = 558485350
+source_build_components = 143
+unresolved_components = 13
 inherited_baseline = "07505ea58c7bba698d6b9220ff43946a43cac76b"
 
 [themes]

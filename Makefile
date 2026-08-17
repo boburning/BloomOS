@@ -205,6 +205,9 @@ external: $(CACHE)/.setup $(THIRD_PARTY_DIR)/RetroArch-patch/bin/retroarch_miyoo
 	@mv -f $(BUILD_DIR)/App/Filter/* "$(PACKAGES_APP_DEST)/List shortcuts (Filter+Refresh)/App/Filter"
 	@rmdir $(BUILD_DIR)/App/Filter
 # Other
+	@$(ECHO) $(COLOR_BLUE)"\n-- Build Fake-08 standalone"$(COLOR_NORMAL)
+	@cd $(THIRD_PARTY_DIR)/fake-08 && make miyoomini && \
+		cp ./platform/miyoomini/FAKE08 "$(PACKAGES_RAPP_DEST)/PICO-8 (Fake8 standalone)/RApp/PICO/FAKE08"
 	@$(ECHO) $(COLOR_BLUE)"\n-- Build Terminal"$(COLOR_NORMAL)
 	@cd $(THIRD_PARTY_DIR)/Terminal && make && cp ./st "$(BIN_DIR)"
 	@$(ECHO) $(COLOR_BLUE)"\n-- Build DinguxCommander"$(COLOR_NORMAL)
@@ -293,6 +296,7 @@ deepclean: clean
 	@cd $(THIRD_PARTY_DIR)/SearchFilter && make clean
 	@cd $(THIRD_PARTY_DIR)/Terminal && make clean
 	@cd $(THIRD_PARTY_DIR)/DinguxCommander && make clean
+	@cd $(THIRD_PARTY_DIR)/fake-08 && make clean-miyoomini
 
 dev: clean
 	@$(MAKE_DEV)
