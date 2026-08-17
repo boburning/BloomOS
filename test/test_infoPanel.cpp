@@ -1,11 +1,61 @@
 #include "gtest/gtest.h"
 
 #include <string>
+#include <cstdlib>
+#include <fstream>
+#include <sys/stat.h>
+#include <unistd.h>
 #include <SDL/SDL.h>
 
 #include "../src/infoPanel/imagesCache.h"
+#include "../src/infoPanel/imagesBrowser.h"
 
 #define STR_MAX 256
+
+TEST(test_infoPanel, imageDirectoryScanIsDynamicAndSorted)
+{
+    char directory_template[] = "/tmp/bloom-images-XXXXXX";
+    char *directory = mkdtemp(directory_template);
+    ASSERT_NE(directory, (char *)NULL);
+
+    const char *filenames[] = {"z.JPG", "ignore.txt", "a.png", ".hidden.png", "m.jpeg"};
+    for (const char *filename : filenames) {
+        std::ofstream(std::string(directory) + "/" + filename) << "fixture";
+    }
+    ASSERT_EQ(mkdir((std::string(directory) + "/folder.png").c_str(), 0700), 0);
+
+    char **images_paths = NULL;
+    int images_paths_count = -1;
+    ASSERT_TRUE(loadImagesPathsFromDir(directory, &images_paths, &images_paths_count));
+    ASSERT_EQ(images_paths_count, 3);
+    EXPECT_EQ(std::string(images_paths[0]), std::string(directory) + "/a.png");
+    EXPECT_EQ(std::string(images_paths[1]), std::string(directory) + "/m.jpeg");
+    EXPECT_EQ(std::string(images_paths[2]), std::string(directory) + "/z.JPG");
+
+    for (int i = 0; i < images_paths_count; i++) {
+        free(images_paths[i]);
+    }
+    free(images_paths);
+    for (const char *filename : filenames) {
+        unlink((std::string(directory) + "/" + filename).c_str());
+    }
+    rmdir((std::string(directory) + "/folder.png").c_str());
+    rmdir(directory);
+}
+
+TEST(test_infoPanel, emptyImageDirectoryReturnsAnEmptyList)
+{
+    char directory_template[] = "/tmp/bloom-images-empty-XXXXXX";
+    char *directory = mkdtemp(directory_template);
+    ASSERT_NE(directory, (char *)NULL);
+
+    char **images_paths = (char **)0x1;
+    int images_paths_count = -1;
+    EXPECT_TRUE(loadImagesPathsFromDir(directory, &images_paths, &images_paths_count));
+    EXPECT_EQ(images_paths, (char **)NULL);
+    EXPECT_EQ(images_paths_count, 0);
+    rmdir(directory);
+}
 
 typedef struct
 {

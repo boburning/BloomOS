@@ -70,9 +70,12 @@ merged; it does not imply unrecorded hardware certification.
   unsafe and duplicate path rejection ([PR #68](https://github.com/boburning/BloomOS/pull/68)).
 - [x] Remove the unfinished inherited patch workflow that resolves a moving
   upstream latest release ([PR #69](https://github.com/boburning/BloomOS/pull/69)).
-- [ ] Inventory every shipped libretro core with exact binary identity and
+- [x] Inventory every shipped libretro core with exact binary identity and
   explicit source, license, patch, compatibility, and validation fields
-  (`feature/core-provenance-inventory`).
+  ([PR #70](https://github.com/boburning/BloomOS/pull/70)).
+- [ ] Eliminate the InfoPanel directory double-scan and dynamically grow its
+  sorted image list without zero-sized or stale allocations
+  (`fix/image-browser-allocation`).
 
 ### Deferred physical validation
 
