@@ -52,6 +52,14 @@ package_version = "1.22.2-1"
 source_revision = "69a4f0ea1e8aaf442ae4858f2e7f2b31a1776576"
 patch_revision = "f9e959f7445d2ba0a4dd6279da41a095163767f2"
 
+[fonts.dejavu_sans]
+version = "2.37"
+source = "https://github.com/dejavu-fonts/dejavu-fonts/releases/tag/version_2_37"
+archive_sha256 = "7576310b219e04159d35ff61dd4a4ec4cdba4f35c00e002a136f00e96a908b0a"
+font_sha256 = "7da195a74c55bef988d0d48f9508bd5d849425c1770dba5d7bfc6ce9ed848954"
+license = "LicenseRef-DejaVu-Fonts"
+license_file = "src/batteryMonitorUI/res/DejaVu_LICENSE.txt"
+
 [core_inventory]
 manifest = "build/core-manifest.json"
 schema = 1
@@ -67,10 +75,10 @@ legacy_channels = ["development"]
 manifest = "build/legacy-manifest.json"
 schema = 1
 component_count = 156
-file_count = 2655
-byte_count = 566783637
-source_build_components = 139
-unresolved_components = 17
+file_count = 2656
+byte_count = 567471284
+source_build_components = 140
+unresolved_components = 16
 inherited_baseline = "07505ea58c7bba698d6b9220ff43946a43cac76b"
 
 [themes]

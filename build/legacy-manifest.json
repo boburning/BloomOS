@@ -84,14 +84,14 @@
       "id": "app-battery-monitor",
       "kind": "package",
       "path": "static/packages/App/Battery Monitor",
-      "file_count": 9,
-      "byte_count": 355626,
-      "tree_sha256": "cac63c7bf50bc7158260d457077970a49932a2a9e226e29a6d51eb88a1ceb7bb",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "file_count": 10,
+      "byte_count": 1043273,
+      "tree_sha256": "cc75fa244257ac3deca563af3e5f0a814bafdcbe95ef39c474dac343826eefdb",
+      "source": "https://github.com/boburning/BloomOS",
+      "source_revision": "release-commit",
+      "license": "GPL-3.0-only AND LicenseRef-DejaVu-Fonts",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "app-clock--set-emulated-time",

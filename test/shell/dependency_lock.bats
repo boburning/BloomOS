@@ -24,6 +24,21 @@
     [ "$status" -ne 0 ]
 }
 
+@test "Battery Monitor font is checksum-pinned with its license" {
+    lock=/workspace/build/dependencies.lock
+
+    grep -F 'version = "2.37"' "$lock"
+    grep -F 'archive_sha256 = "7576310b219e04159d35ff61dd4a4ec4cdba4f35c00e002a136f00e96a908b0a"' "$lock"
+    grep -F 'font_sha256 = "7da195a74c55bef988d0d48f9508bd5d849425c1770dba5d7bfc6ce9ed848954"' "$lock"
+    grep -F 'license_file = "src/batteryMonitorUI/res/DejaVu_LICENSE.txt"' "$lock"
+    [ "$(sha256sum /workspace/src/batteryMonitorUI/res/DejaVuSans.ttf | cut -d' ' -f1)" = \
+        "7da195a74c55bef988d0d48f9508bd5d849425c1770dba5d7bfc6ce9ed848954" ]
+    cmp /workspace/src/batteryMonitorUI/res/DejaVuSans.ttf \
+        "/workspace/static/packages/App/Battery Monitor/App/BatteryMonitorUI/res/DejaVuSans.ttf"
+    cmp /workspace/src/batteryMonitorUI/res/DejaVu_LICENSE.txt \
+        "/workspace/static/packages/App/Battery Monitor/App/BatteryMonitorUI/res/DejaVu_LICENSE.txt"
+}
+
 @test "OpenSSL runtime dependency comes from the pinned ARM toolchain" {
     grep -F 'cp -L /opt/miyoomini-toolchain/arm-linux-gnueabihf/libc/usr/lib/libatomic.so.1' /workspace/Makefile
     ! grep -F 'libatomic.so.1' /workspace/Makefile | grep -F 'http'
