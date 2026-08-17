@@ -72,6 +72,7 @@ run_info() {
 
 @test "update commands delegate only the explicit offline operations" {
     mock_stage="$BLOOM_TEST_ROOT/mock-stage"
+    mock_prepare="$BLOOM_TEST_ROOT/mock-prepare"
     mock_state="$BLOOM_TEST_ROOT/mock-state"
     cat >"$mock_stage" <<'EOF'
 #!/bin/sh
@@ -81,8 +82,13 @@ EOF
 #!/bin/sh
 printf 'state:%s:%s\n' "$1" "${2:-}"
 EOF
-    chmod +x "$mock_stage" "$mock_state"
+    cat >"$mock_prepare" <<'EOF'
+#!/bin/sh
+printf 'prepare:%s\n' "$1"
+EOF
+    chmod +x "$mock_stage" "$mock_prepare" "$mock_state"
     export BLOOM_UPDATE_STAGE_BIN="$mock_stage"
+    export BLOOM_UPDATE_PREPARE_BIN="$mock_prepare"
     export BLOOM_UPDATE_STATE_BIN="$mock_state"
 
     run sh /workspace/static/build/.tmp_update/bin/bloomctl update status
@@ -91,6 +97,9 @@ EOF
     run sh /workspace/static/build/.tmp_update/bin/bloomctl update stage /media/manifest.json /media/manifest.sig /media/BloomOS.zip
     [ "$status" -eq 0 ]
     [ "$output" = 'stage:/media/manifest.json:/media/manifest.sig:/media/BloomOS.zip' ]
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl update prepare 1.2.3
+    [ "$status" -eq 0 ]
+    [ "$output" = 'prepare:1.2.3' ]
     run sh /workspace/static/build/.tmp_update/bin/bloomctl update arm 1.2.3
     [ "$status" -eq 0 ]
     [ "$output" = 'state:arm:1.2.3' ]

@@ -195,4 +195,10 @@ known-good only through an explicit successful-health promotion. Until then,
 the prior known-good staged payload and its signed metadata remain addressable
 as the recovery source.
 
+Candidate preparation re-verifies the staged archive, rejects links, traversal,
+and content outside the `miyoo` and `RetroArch` release roots, then extracts to
+an isolated versioned candidate directory. Required installer payloads are
+checked before the candidate directory is published. No candidate-preparation
+operation writes into the live OS tree.
+
 Architectural decisions will be recorded as the corresponding subsystem work begins.
