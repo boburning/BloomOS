@@ -25,6 +25,10 @@ info_zip = "3.0"
 "third-party/dropbear" = "887241694277b3816da5d174932c10546ea9d2c5"
 "third-party/fake-08" = "18a1c8ab686f87f00a418add448ebe872b87869a"
 "third-party/fake-08/libs/z8lua" = "abd65e3b05e285da0c6f86912b2817e7dc6bf6ea"
+"third-party/openbor" = "b00efbc7752cb55709dfc9fdfdfc7cfe78ddfb90"
+"third-party/SDL2" = "b424665e0899769b200231ba943353a5fee1b6b6"
+"third-party/ogg" = "e1774cd77f471443541596e09078e78fdc342e4f"
+"third-party/tremor" = "820fb3237ea81af44c9cc468c8b4e20128e3e5ad"
 "third-party/RetroArch-patch/submodules/RetroArch" = "69a4f0ea1e8aaf442ae4858f2e7f2b31a1776576"
 "third-party/SearchFilter/include/pugixml" = "2639dfd053221d3e8c9e9ff013e58699d9c1af15"
 "third-party/SearchFilter/include/sqlite3" = "a050cf6e5787d8dd341f7c0038247a3206ba6cf1"
@@ -63,6 +67,21 @@ license_file = "static/packages/RApp/PICO-8 (Fake8 standalone)/RApp/PICO/LICENSE
 build_recipe = "Makefile"
 binary_sha256 = "e3d5f948413d181b98ae8b0883a72938fac38ea9013ae587fffee384a1a0f9b4"
 
+[openbor]
+version = "4.0-b00efbc"
+source = "https://github.com/DCurrent/openbor"
+source_revision = "b00efbc7752cb55709dfc9fdfdfc7cfe78ddfb90"
+miyoo_patch_source = "https://github.com/steward-fu/website/releases/tag/miyoo-mini"
+miyoo_patch_archive_sha256 = "19b30d06c38ab60a9498bb3caa4716faaa124b5daa0228dd409e9b0a525ee5ec"
+sdl_link_source = "https://github.com/libsdl-org/SDL"
+sdl_link_revision = "b424665e0899769b200231ba943353a5fee1b6b6"
+ogg_revision = "e1774cd77f471443541596e09078e78fdc342e4f"
+tremor_revision = "820fb3237ea81af44c9cc468c8b4e20128e3e5ad"
+license = "BSD-3-Clause"
+license_file = "static/packages/RApp/Game engine - Open Beats of Rage/RApp/OpenBOR/LICENSE.MD"
+build_recipe = "build/openbor/build.sh"
+binary_sha256 = "41ef99389f37a943eb67b9f50cb2847ff00c646f0f3d63598611684053b19c57"
+
 [fonts.dejavu_sans]
 version = "2.37"
 source = "https://github.com/dejavu-fonts/dejavu-fonts/releases/tag/version_2_37"
@@ -86,10 +105,10 @@ legacy_channels = ["development"]
 manifest = "build/legacy-manifest.json"
 schema = 1
 component_count = 155
-file_count = 2633
-byte_count = 556738800
-source_build_components = 143
-unresolved_components = 12
+file_count = 2634
+byte_count = 556753656
+source_build_components = 144
+unresolved_components = 11
 inherited_baseline = "07505ea58c7bba698d6b9220ff43946a43cac76b"
 
 [themes]

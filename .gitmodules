@@ -16,3 +16,15 @@
 [submodule "third-party/fake-08"]
 	path = third-party/fake-08
 	url = https://github.com/jtothebell/fake-08.git
+[submodule "third-party/openbor"]
+	path = third-party/openbor
+	url = https://github.com/DCurrent/openbor.git
+[submodule "third-party/SDL2"]
+	path = third-party/SDL2
+	url = https://github.com/libsdl-org/SDL.git
+[submodule "third-party/ogg"]
+	path = third-party/ogg
+	url = https://github.com/xiph/ogg.git
+[submodule "third-party/tremor"]
+	path = third-party/tremor
+	url = https://gitlab.xiph.org/xiph/tremor.git

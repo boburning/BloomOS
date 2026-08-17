@@ -1462,14 +1462,14 @@
       "id": "rapp-game-engine---open-beats-of-rage",
       "kind": "package",
       "path": "static/packages/RApp/Game engine - Open Beats of Rage",
-      "file_count": 4,
-      "byte_count": 1228193,
-      "tree_sha256": "976c69be5054a020f53df3f61c3d3b4bb1efb7512c71ebbc6f4fc1c0c789a8c9",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "file_count": 5,
+      "byte_count": 1243049,
+      "tree_sha256": "472d7da118d43c8bc2909b7033ea27dc3fb77e7cdd53b2d8cb3fd198cea1141f",
+      "source": "https://github.com/DCurrent/openbor",
+      "source_revision": "b00efbc7752cb55709dfc9fdfdfc7cfe78ddfb90",
+      "license": "BSD-3-Clause",
+      "build_recipe": "build/openbor/build.sh",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-game-engine---puzzlescript--puzzlescript",

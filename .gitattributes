@@ -3,6 +3,7 @@
 *.sh text eol=lf
 *.bash text eol=lf
 *.bats text eol=lf
+build/openbor/*.patch text eol=lf whitespace=-trailing-space,-space-before-tab
 tools/bloom-device text eol=lf
 tools/*.sh text eol=lf
 tools/bloom-mini-test text eol=lf
