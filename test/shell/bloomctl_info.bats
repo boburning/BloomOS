@@ -64,7 +64,7 @@ run_info() {
 }
 
 @test "rejects unknown commands without mutating the fixture" {
-    run sh /workspace/static/build/.tmp_update/bin/bloomctl update rollback
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl update unknown
 
     [ "$status" -eq 2 ]
     [ ! -e "$SDCARD/.tmp_update/bloom-update-state" ]
@@ -75,6 +75,7 @@ run_info() {
     mock_prepare="$BLOOM_TEST_ROOT/mock-prepare"
     mock_state="$BLOOM_TEST_ROOT/mock-state"
     mock_boot="$BLOOM_TEST_ROOT/mock-boot"
+    mock_rollback="$BLOOM_TEST_ROOT/mock-rollback"
     cat >"$mock_stage" <<'EOF'
 #!/bin/sh
 printf 'stage:%s:%s:%s\n' "$1" "$2" "$3"
@@ -91,11 +92,16 @@ EOF
 #!/bin/sh
 printf 'boot:%s\n' "$1"
 EOF
-    chmod +x "$mock_stage" "$mock_prepare" "$mock_state" "$mock_boot"
+    cat >"$mock_rollback" <<'EOF'
+#!/bin/sh
+printf 'rollback\n'
+EOF
+    chmod +x "$mock_stage" "$mock_prepare" "$mock_state" "$mock_boot" "$mock_rollback"
     export BLOOM_UPDATE_STAGE_BIN="$mock_stage"
     export BLOOM_UPDATE_PREPARE_BIN="$mock_prepare"
     export BLOOM_UPDATE_STATE_BIN="$mock_state"
     export BLOOM_UPDATE_BOOT_BIN="$mock_boot"
+    export BLOOM_UPDATE_ROLLBACK_BIN="$mock_rollback"
 
     run sh /workspace/static/build/.tmp_update/bin/bloomctl update status
     [ "$status" -eq 0 ]
@@ -112,6 +118,9 @@ EOF
     run sh /workspace/static/build/.tmp_update/bin/bloomctl update confirm
     [ "$status" -eq 0 ]
     [ "$output" = 'boot:confirm' ]
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl update rollback
+    [ "$status" -eq 0 ]
+    [ "$output" = 'rollback' ]
 }
 
 @test "update CLI does not expose raw activation or state mutation" {

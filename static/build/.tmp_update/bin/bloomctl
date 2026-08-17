@@ -9,6 +9,7 @@ BLOOM_UPDATE_STAGE="${BLOOM_UPDATE_STAGE_BIN:-$SCRIPT_DIR/bloom-update-stage}"
 BLOOM_UPDATE_PREPARE="${BLOOM_UPDATE_PREPARE_BIN:-$SCRIPT_DIR/bloom-update-prepare}"
 BLOOM_UPDATE_STATE="${BLOOM_UPDATE_STATE_BIN:-$SCRIPT_DIR/bloom-update-state}"
 BLOOM_UPDATE_BOOT="${BLOOM_UPDATE_BOOT_BIN:-$SCRIPT_DIR/bloom-update-boot}"
+BLOOM_UPDATE_ROLLBACK="${BLOOM_UPDATE_ROLLBACK_BIN:-$SCRIPT_DIR/bloom-update-rollback}"
 
 path() {
     printf '%s%s' "$BLOOM_ROOT" "$1"
@@ -111,7 +112,7 @@ print_health_text() {
 
 usage() {
     printf 'Usage: bloomctl {info|health} [--json]\n' >&2
-    printf '       bloomctl update {status|stage MANIFEST SIGNATURE ARCHIVE|prepare VERSION|arm VERSION|confirm}\n' >&2
+    printf '       bloomctl update {status|stage MANIFEST SIGNATURE ARCHIVE|prepare VERSION|arm VERSION|confirm|rollback}\n' >&2
 }
 
 update_command() {
@@ -141,6 +142,11 @@ update_command() {
             [ "$#" -eq 1 ] || { usage; return 2; }
             [ -x "$BLOOM_UPDATE_BOOT" ] || { printf 'bloomctl: update boot service is unavailable\n' >&2; return 1; }
             "$BLOOM_UPDATE_BOOT" confirm
+            ;;
+        rollback)
+            [ "$#" -eq 1 ] || { usage; return 2; }
+            [ -x "$BLOOM_UPDATE_ROLLBACK" ] || { printf 'bloomctl: update rollback service is unavailable\n' >&2; return 1; }
+            "$BLOOM_UPDATE_ROLLBACK"
             ;;
         *) usage; return 2 ;;
     esac

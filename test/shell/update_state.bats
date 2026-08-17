@@ -84,6 +84,51 @@ PY
     printf '%s' "$output" | grep -F '"version":"1.2.3"'
 }
 
+@test "tracks rollback separately and preserves the retained known-good record" {
+    stage_release 1.2.3
+    "$STATE" arm 1.2.3 >/dev/null
+    "$STATE" mark-good 1.2.3 >/dev/null
+    known_good_before="$(sha256sum "$BLOOM_UPDATE_ROOT/known-good.json" | awk '{print $1}')"
+    stage_release 1.2.4
+    "$STATE" arm 1.2.4 >/dev/null
+    "$STATE" activation-start 1.2.4 snapshot-update >/dev/null
+    "$STATE" boot-attempt >/dev/null
+    "$STATE" boot-attempt >/dev/null
+    "$STATE" boot-attempt >/dev/null
+
+    run "$STATE" rollback-start 1.2.3 snapshot-rollback
+    [ "$status" -eq 0 ]
+    printf '%s' "$output" | grep -F '"phase":"rollback_pending"'
+    printf '%s' "$output" | grep -F '"failed_version":"1.2.4"'
+    "$STATE" boot-attempt >/dev/null
+    run "$STATE" mark-good 1.2.3
+    [ "$status" -eq 0 ]
+    printf '%s' "$output" | grep -F '"recovered_from":"1.2.4"'
+    [ "$(sha256sum "$BLOOM_UPDATE_ROOT/known-good.json" | awk '{print $1}')" = "$known_good_before" ]
+}
+
+@test "a repeatedly failing rollback stops instead of looping recovery" {
+    stage_release 1.2.3
+    "$STATE" arm 1.2.3 >/dev/null
+    "$STATE" mark-good 1.2.3 >/dev/null
+    stage_release 1.2.4
+    "$STATE" arm 1.2.4 >/dev/null
+    "$STATE" activation-start 1.2.4 snapshot-update >/dev/null
+    "$STATE" boot-attempt >/dev/null
+    "$STATE" boot-attempt >/dev/null
+    "$STATE" boot-attempt >/dev/null
+    "$STATE" rollback-start 1.2.3 snapshot-rollback >/dev/null
+
+    "$STATE" boot-attempt >/dev/null
+    "$STATE" boot-attempt >/dev/null
+    run "$STATE" boot-attempt
+
+    [ "$status" -eq 0 ]
+    printf '%s' "$output" | grep -F '"phase":"rollback_failed"'
+    run "$STATE" recovery
+    [ "$status" -eq 1 ]
+}
+
 @test "boot attempts cannot begin before activation" {
     stage_release 1.2.3
     "$STATE" arm 1.2.3 >/dev/null

@@ -35,11 +35,12 @@ merged; it does not imply unrecorded hardware certification.
 
 ### In progress
 
-- [ ] Reconcile activated update boots, count bounded validation attempts, and
+- [x] Reconcile activated update boots, count bounded validation attempts, and
   require installed-version plus structured-health confirmation before
   promotion ([PR #54](https://github.com/boburning/BloomOS/pull/54)).
-- [ ] Reconstruct rollback candidates from retained signed archives and expose
-  a guarded recovery operation.
+- [ ] Reconstruct rollback candidates from retained signed archives, snapshot
+  saves, publish the recovery trigger transactionally, and expose the guarded
+  `bloomctl update rollback` operation (`feature/signed-update-rollback`).
 
 ### Deferred physical validation
 

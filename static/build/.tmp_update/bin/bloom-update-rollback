@@ -1,0 +1,57 @@
+#!/bin/sh
+set -u
+
+SD_ROOT="${BLOOM_SD_ROOT:-/mnt/SDCARD}"
+UPDATE_ROOT="${BLOOM_UPDATE_ROOT:-$SD_ROOT/.bloom/update}"
+STATE_BIN="${BLOOM_UPDATE_STATE_BIN:-$SD_ROOT/.tmp_update/bin/bloom-update-state}"
+PREPARE_BIN="${BLOOM_UPDATE_PREPARE_BIN:-$SD_ROOT/.tmp_update/bin/bloom-update-prepare}"
+SNAPSHOT_BIN="${BLOOM_SAVE_SNAPSHOT_BIN:-$SD_ROOT/.tmp_update/bin/bloom-save-snapshot}"
+JQ="${BLOOM_JQ_BIN:-$SD_ROOT/.tmp_update/bin/jq}"
+
+fail() { printf 'bloom-update-rollback: %s\n' "$*" >&2; exit 1; }
+
+[ "$#" -eq 0 ] || fail "rollback takes no arguments"
+[ -x "$STATE_BIN" ] || fail "update state service is unavailable"
+[ -x "$PREPARE_BIN" ] || fail "candidate service is unavailable"
+[ -x "$SNAPSHOT_BIN" ] || fail "save snapshot service is unavailable"
+[ -x "$JQ" ] || fail "jq is unavailable"
+
+recovery="$($STATE_BIN recovery)" || fail "signed recovery is unavailable"
+version="$(printf '%s\n' "$recovery" | "$JQ" -er '.version')" || fail "recovery version is invalid"
+case "$version" in ''|*[!A-Za-z0-9._+-]*) fail "recovery version is unsafe" ;; esac
+
+# Never publish a cached extraction during recovery. Rebuild it from the
+# retained manifest, signature, and archive through the normal verifier.
+$PREPARE_BIN --replace "$version" >/dev/null || fail "cannot rebuild signed recovery candidate"
+candidate="$UPDATE_ROOT/candidates/$version"
+source_app="$candidate/miyoo/app"
+source_ra="$candidate/RetroArch"
+[ -f "$source_app/MainUI" ] && [ -d "$source_app/.tmp_update" ] || fail "recovery installer is incomplete"
+[ -f "$source_ra/retroarch.pak" ] || fail "recovery RetroArch payload is incomplete"
+
+target_app="$SD_ROOT/miyoo/app"
+target_ra="$SD_ROOT/RetroArch"
+mkdir -p "$target_app" "$target_ra" || fail "cannot create rollback targets"
+[ ! -e "$target_app/MainUI" ] && [ ! -e "$target_app/.tmp_update" ] || fail "an installer is already pending"
+[ ! -e "$target_ra/retroarch.pak" ] || fail "a RetroArch installer is already pending"
+
+snapshot="$($SNAPSHOT_BIN create pre-rollback)" || fail "pre-rollback save snapshot failed"
+snapshot_id="$(printf '%s\n' "$snapshot" | "$JQ" -er '.id')" || fail "snapshot result is invalid"
+$STATE_BIN rollback-start "$version" "$snapshot_id" >/dev/null || fail "cannot record rollback"
+
+temporary_app="$target_app/.bloom-rollback-$$"
+temporary_ra="$target_ra/.bloom-rollback-$$.pak"
+temporary_trigger="$target_app/.bloom-MainUI-rollback-$$"
+cleanup() { rm -rf "$temporary_app"; rm -f "$temporary_ra" "$temporary_trigger"; }
+trap cleanup EXIT HUP INT TERM
+cp -R "$source_app/.tmp_update" "$temporary_app" || fail "cannot stage rollback installer"
+cp "$source_ra/retroarch.pak" "$temporary_ra" || fail "cannot stage rollback RetroArch payload"
+cp "$source_app/MainUI" "$temporary_trigger" || fail "cannot stage rollback trigger"
+sync
+mv "$temporary_app" "$target_app/.tmp_update" || fail "cannot publish rollback installer"
+mv "$temporary_ra" "$target_ra/retroarch.pak" || fail "cannot publish rollback RetroArch payload"
+sync
+mv "$temporary_trigger" "$target_app/MainUI" || fail "cannot publish rollback trigger"
+trap - EXIT HUP INT TERM
+sync
+printf '{"schema":1,"status":"rollback_pending","version":"%s","snapshot_id":"%s"}\n' "$version" "$snapshot_id"

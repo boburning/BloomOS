@@ -109,6 +109,16 @@ Confirmation fails closed on a version mismatch or an unhealthy structured
 diagnostic. Physical recovery and rollback validation remain part of the
 hardware matrix.
 
+When `bloomctl update status` reports `recovery_required`, the guarded recovery
+command is:
+
+```sh
+bloomctl update rollback
+```
+
+This is not a generic downgrade command. It accepts no version argument and
+uses only the retained signed known-good release selected by durable state.
+
 | Device | Development method |
 | --- | --- |
 | Original Mini V1–V4 | Guarded SD-card request/results harness; UART is optional advanced work |
