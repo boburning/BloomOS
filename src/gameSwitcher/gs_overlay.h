@@ -14,6 +14,7 @@
 #include "utils/msleep.h"
 #include "utils/str.h"
 
+#include "gameSwitcherIdentity.h"
 #include "gs_appState.h"
 #include "gs_model.h"
 #include "gs_render.h"
@@ -56,8 +57,10 @@ static void *_saveRomScreenAndStateThread(void *arg)
 
     if (game->romScreen != NULL && game->is_running) {
         char romScreenPath[STR_MAX];
-        uint32_t hash = FNV1A_Pippip_Yurii(game->recentItem.rompath, strlen(game->recentItem.rompath));
-        snprintf(romScreenPath, sizeof(romScreenPath), ROM_SCREENS_DIR "/%" PRIu32 ".png", hash);
+        if (gameswitcher_romscreen_path(game->game_id, romScreenPath, sizeof(romScreenPath)) != 0) {
+            uint32_t hash = FNV1A_Pippip_Yurii(game->recentItem.rompath, strlen(game->recentItem.rompath));
+            snprintf(romScreenPath, sizeof(romScreenPath), ROM_SCREENS_DIR "/%" PRIu32 ".png", hash);
+        }
 
         screenshot_save((uint32_t *)game->romScreen->pixels, romScreenPath, false);
 
@@ -150,9 +153,9 @@ void overlay_exit(void)
 
         // wait up to 5 seconds for RetroArch to exit
         for (int i = 0; i < 10; i++) {
-            msleep(500);  // 0.5s x 10 = 5s
+            msleep(500); // 0.5s x 10 = 5s
             if (system("pidof retroarch > /dev/null") != 0) {
-                break;  // retroarch is gone
+                break; // retroarch is gone
             }
         }
 

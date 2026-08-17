@@ -16,6 +16,7 @@
 
 #include "../playActivity/cacheDB.h"
 
+#include "gameSwitcherIdentity.h"
 #include "gs_model.h"
 #include "gs_retroarch.h"
 #include "gs_romscreen.h"
@@ -80,6 +81,7 @@ void setEntryDefaultValues(Game_s *game, int index)
     game->totalTime[0] = '\0';
     game->processed = false;
     game->is_running = false;
+    game->game_id[0] = '\0';
 
     strcpy(game->name, "");
     strcpy(game->shortname, "");
@@ -163,6 +165,8 @@ void processItem(Game_s *game)
     }
 
     game->processed = true;
+
+    gameswitcher_game_id(game->recentItem.launch, game->recentItem.rompath, game->game_id, sizeof(game->game_id));
 
     char *rom_name = file_removeExtension(file_basename(game->recentItem.rompath));
     strcpy(game->rom_name, rom_name);

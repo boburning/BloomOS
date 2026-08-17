@@ -112,6 +112,12 @@ whose GameID does not match its system and ROM path. New launch consumers must
 obtain the identifier from `bloom-game-id`; the legacy MainUI recent list
 remains a compatibility data source pending GameSwitcher and activity migration.
 
+GameSwitcher now derives the same canonical identifier from the proven GB,
+GBC, GBA, NES, SNES, and PS launcher mappings. New ROM screenshots use the
+GameID digest as their collision-resistant filename. Existing 32-bit FNV path
+screenshots remain a read-only fallback, and unknown/custom launchers remain
+unidentified instead of receiving a guessed system identity.
+
 Both the structured request and its legacy MainUI adapter use the same durable
 metadata sequence: write an exclusive temporary file, flush and close it,
 rename it over the destination, then flush the parent directory. Directory
