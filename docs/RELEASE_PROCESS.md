@@ -5,9 +5,17 @@ BloomOS has no public release process in operation yet. Release builds now produ
 - `BloomOS-v<version>.zip` with Onion-compatible internal paths;
 - `SHA256SUMS`;
 - `manifest.json` with artifact size and digest;
+- `manifest.sig`, an Ed25519 signature over the exact manifest bytes;
 - `build-info.json` with commit, deterministic build date, channel, toolchain, dependency-lock digest, and compatible device targets.
 
 Packaging normalizes distribution-tree timestamps to the source commit time, sorts the archive input list, suppresses archive timestamp metadata, and validates the archive and metadata before publication. Before the first public release, this document must still define:
+
+Release jobs materialize the protected `BLOOM_RELEASE_SIGNING_KEY` secret only
+inside a mode-`0600` temporary file. The build proves that its derived public
+key matches the key shipped on devices, signs `manifest.json`, verifies that
+signature before publication, and removes the temporary private key even when
+the job fails. Devices verify the signature before parsing the manifest or
+trusting its archive digest and size.
 
 - versioning and stable, beta, and nightly channels;
 - closure of the remaining unresolved inputs in `build/dependencies.lock`;

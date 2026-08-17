@@ -165,4 +165,20 @@ propagates an unhealthy or unavailable database check through its exit status.
 Additional independently testable subsystem checks can be added under the
 top-level `checks` object without changing the native database boundary.
 
+## Update trust boundary
+
+Release manifests are signed with the BloomOS Ed25519 release key after their
+archive digest and size are finalized. Release assembly proves that the private
+key supplied by the protected GitHub secret corresponds to the public key
+embedded in the image, signs the exact manifest bytes, and verifies the result
+before publication. The temporary signing key is removed before the pinned
+third-party publishing action runs.
+
+On-device `bloom-update-verify` verifies that signature before parsing any
+manifest fields. It then requires the exact BloomOS schema, a single ZIP
+artifact, and matching filename, SHA-256 digest, and byte size. Missing tools,
+links, malformed metadata, an unknown key, or any content mismatch fail closed.
+This verifier is the required boundary for later online and offline staging;
+the inherited size-only OTA path is not trusted as a BloomOS update path.
+
 Architectural decisions will be recorded as the corresponding subsystem work begins.

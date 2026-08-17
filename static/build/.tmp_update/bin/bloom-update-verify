@@ -1,0 +1,46 @@
+#!/bin/sh
+set -u
+
+SD_ROOT="${BLOOM_SD_ROOT:-/mnt/SDCARD}"
+OPENSSL="${BLOOM_OPENSSL_BIN:-$SD_ROOT/.tmp_update/bin/openssl}"
+PUBLIC_KEY="${BLOOM_UPDATE_PUBLIC_KEY:-$SD_ROOT/.tmp_update/keys/release-ed25519-public.pem}"
+JQ="${BLOOM_JQ_BIN:-$SD_ROOT/.tmp_update/bin/jq}"
+LIBRARY_DIR="$SD_ROOT/.tmp_update/lib"
+
+fail() { printf 'bloom-update-verify: %s\n' "$*" >&2; exit 1; }
+
+[ "$#" -eq 3 ] || fail "expected MANIFEST SIGNATURE ARCHIVE"
+manifest="$1"
+signature="$2"
+archive="$3"
+
+for input in "$manifest" "$signature" "$archive" "$PUBLIC_KEY"; do
+    [ -f "$input" ] && [ ! -L "$input" ] || fail "input is missing or unsafe"
+done
+[ -x "$OPENSSL" ] || fail "OpenSSL is unavailable"
+[ -x "$JQ" ] || fail "jq is unavailable"
+
+LD_LIBRARY_PATH="$LIBRARY_DIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" \
+    "$OPENSSL" pkeyutl -verify -pubin -inkey "$PUBLIC_KEY" -rawin -in "$manifest" -sigfile "$signature" \
+    >/dev/null 2>&1 || fail "manifest signature is invalid"
+
+filename="$(basename "$archive")"
+size="$(wc -c <"$archive" | tr -d ' ')"
+sha256="$(sha256sum "$archive" | awk '{print $1}')"
+case "$size:$sha256" in *[!0-9a-f:]*) fail "cannot measure archive" ;; esac
+
+"$JQ" -e --arg filename "$filename" --arg sha256 "$sha256" --argjson size "$size" '
+    .schema == 1 and
+    .product == "BloomOS" and
+    (.version | type == "string" and length > 0) and
+    (.artifacts | type == "array" and length == 1) and
+    .artifacts[0].filename == $filename and
+    .artifacts[0].sha256 == $sha256 and
+    .artifacts[0].size == $size and
+    .artifacts[0].media_type == "application/zip"
+' "$manifest" >/dev/null || fail "manifest does not match archive"
+
+version="$("$JQ" -r '.version' "$manifest")"
+case "$version" in ''|*[!A-Za-z0-9._+-]*) fail "manifest version is unsafe" ;; esac
+printf '{"schema":1,"status":"verified","version":"%s","filename":"%s","sha256":"%s","size":%s}\n' \
+    "$version" "$filename" "$sha256" "$size"

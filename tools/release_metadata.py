@@ -84,6 +84,9 @@ def load_json(path: Path) -> dict:
 
 def validate(args: argparse.Namespace) -> None:
     output_dir = Path(args.output_dir).resolve()
+    signature = output_dir / "manifest.sig"
+    if not signature.is_file() or signature.stat().st_size != 64:
+        raise SystemExit("manifest signature is missing or invalid")
     manifest = load_json(output_dir / "manifest.json")
     build_info = load_json(output_dir / "build-info.json")
     artifacts = manifest.get("artifacts")
