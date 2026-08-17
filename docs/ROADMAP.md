@@ -102,7 +102,8 @@ merged; it does not imply unrecorded hardware certification.
   functional source-only launcher can leave the legacy provenance tier
   ([PR #80](https://github.com/boburning/BloomOS/pull/80)).
 - [x] Preserve the Ports importer and plain-text definitions while excluding
-  six bundled example artwork/manual files without recorded licenses.
+  six bundled example artwork/manual files without recorded licenses
+  ([PR #81](https://github.com/boburning/BloomOS/pull/81)).
 
 The hardware-sensitive BloomOS 1.0/1.1 implementation queue is at its
 physical-validation boundary. Source-provenance replacement work can continue
