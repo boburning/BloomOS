@@ -119,7 +119,8 @@ merged; it does not imply unrecorded hardware certification.
   component provenance
   ([PR #85](https://github.com/boburning/BloomOS/pull/85)).
 - [x] Replace the inherited Fake-08 standalone executable with a deterministic
-  ARM build from pinned upstream source and ship its complete composite license.
+  ARM build from pinned upstream source and ship its complete composite license
+  ([PR #86](https://github.com/boburning/BloomOS/pull/86)).
 
 The hardware-sensitive BloomOS 1.0/1.1 implementation queue is at its
 physical-validation boundary. Source-provenance replacement work can continue
