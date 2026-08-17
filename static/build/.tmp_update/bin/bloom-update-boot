@@ -1,0 +1,41 @@
+#!/bin/sh
+set -u
+
+SD_ROOT="${BLOOM_SD_ROOT:-/mnt/SDCARD}"
+STATE_BIN="${BLOOM_UPDATE_STATE_BIN:-$SD_ROOT/.tmp_update/bin/bloom-update-state}"
+HEALTH_BIN="${BLOOM_HEALTH_BIN:-$SD_ROOT/.tmp_update/bin/bloomctl}"
+JQ="${BLOOM_JQ_BIN:-$SD_ROOT/.tmp_update/bin/jq}"
+VERSION_FILE="${BLOOM_VERSION_FILE:-$SD_ROOT/.tmp_update/onionVersion/version.txt}"
+
+fail() { printf 'bloom-update-boot: %s\n' "$*" >&2; exit 1; }
+normalize_version() { printf '%s' "$1" | sed 's/^v//'; }
+
+[ -x "$STATE_BIN" ] || fail "update state service is unavailable"
+[ -x "$JQ" ] || fail "jq is unavailable"
+
+case "${1:-}" in
+    begin)
+        [ "$#" -eq 1 ] || fail "begin takes no arguments"
+        state="$($STATE_BIN status)" || fail "cannot read update state"
+        phase="$(printf '%s\n' "$state" | "$JQ" -er '.phase')" || fail "update state is invalid"
+        case "$phase" in
+            activation_pending|testing) "$STATE_BIN" boot-attempt ;;
+            *) printf '%s\n' "$state" ;;
+        esac
+        ;;
+    confirm)
+        [ "$#" -eq 1 ] || fail "confirm takes no arguments"
+        state="$($STATE_BIN status)" || fail "cannot read update state"
+        [ "$(printf '%s\n' "$state" | "$JQ" -er '.phase')" = testing ] ||
+            fail "no booted update is awaiting confirmation"
+        pending="$(printf '%s\n' "$state" | "$JQ" -er '.pending_version')" || fail "pending version is invalid"
+        [ -r "$VERSION_FILE" ] || fail "installed version is unavailable"
+        IFS= read -r installed <"$VERSION_FILE" || fail "installed version is unavailable"
+        [ "$(normalize_version "$installed")" = "$(normalize_version "$pending")" ] ||
+            fail "installed version does not match pending update"
+        [ -x "$HEALTH_BIN" ] || fail "health service is unavailable"
+        "$HEALTH_BIN" health --json >/dev/null || fail "device health checks failed"
+        "$STATE_BIN" mark-good "$pending"
+        ;;
+    *) fail "expected {begin|confirm}" ;;
+esac

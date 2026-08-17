@@ -19,3 +19,10 @@ Exact device revisions, firmware versions, build commits, test dates, contributo
 | 2026-08-16 | Miyoo Mini Flip (model ID 285) | `v0.1.0-dev-bc086aa6`, `v0.1.0-dev-95de9362`, `v0.1.0-dev-fbf1a03e`, `v0.1.0-dev-3ed5ba7d` | Upgrade install, identity, display/input/battery/lid inventory, Wi-Fi capability, clean-entry boot, instrumented shutdown, Windows FAT check, Play Activity WAL compatibility, key-only SSH | Clean install and boot; native 752×560 panel; two input devices; hall sensor present with open-lid raw value 1; live AXP battery 64%; Wi-Fi capability true. A controlled shutdown cycle entered and returned clean. Play Activity converted a seeded rollback-journal database to WAL, preserved its rows, passed integrity and quick checks, and left no WAL/SHM sidecars after three UI opens. Bloom-built static Dropbear 2025.88 accepted repeated Ed25519 logins, refused password-only authentication, reported model 285 over the live harness, and retained about 74 MB available memory. | Earlier cycles entered or returned dirty, although CHKDSK found no filesystem damage. The first Activity Tracker open/exit briefly glitched the display, then two repeats were normal with no logged crash. Longer soak testing, reboot-path isolation, reboot-time SSH activation, and lid behavior remain required. |
 
 The V2 result is a maintainer validation baseline, not certification of V2 or evidence for V1, V3, or V4. The first Plus shutdown retest was invalid because the card entered Linux dirty after a failed Windows command-line eject. After repairing and using Windows Safely Remove Hardware, the card entered Linux without the not-properly-unmounted warning and returned to Windows clean after BloomOS shutdown.
+
+On 2026-08-17, a later Plus test invoked BloomOS's clean `shutdown -r` path
+over SSH. The helper quiesced SD-card consumers and disconnected normally, but
+the device did not return to its prior address within five minutes and a subnet
+SSH scan found no replacement address. Physical inspection and power-on are
+deferred until the maintainer returns; the persistent shutdown log must be
+collected before the reboot path is changed.

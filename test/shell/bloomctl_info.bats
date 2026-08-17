@@ -74,6 +74,7 @@ run_info() {
     mock_stage="$BLOOM_TEST_ROOT/mock-stage"
     mock_prepare="$BLOOM_TEST_ROOT/mock-prepare"
     mock_state="$BLOOM_TEST_ROOT/mock-state"
+    mock_boot="$BLOOM_TEST_ROOT/mock-boot"
     cat >"$mock_stage" <<'EOF'
 #!/bin/sh
 printf 'stage:%s:%s:%s\n' "$1" "$2" "$3"
@@ -86,10 +87,15 @@ EOF
 #!/bin/sh
 printf 'prepare:%s\n' "$1"
 EOF
-    chmod +x "$mock_stage" "$mock_prepare" "$mock_state"
+    cat >"$mock_boot" <<'EOF'
+#!/bin/sh
+printf 'boot:%s\n' "$1"
+EOF
+    chmod +x "$mock_stage" "$mock_prepare" "$mock_state" "$mock_boot"
     export BLOOM_UPDATE_STAGE_BIN="$mock_stage"
     export BLOOM_UPDATE_PREPARE_BIN="$mock_prepare"
     export BLOOM_UPDATE_STATE_BIN="$mock_state"
+    export BLOOM_UPDATE_BOOT_BIN="$mock_boot"
 
     run sh /workspace/static/build/.tmp_update/bin/bloomctl update status
     [ "$status" -eq 0 ]
@@ -103,9 +109,12 @@ EOF
     run sh /workspace/static/build/.tmp_update/bin/bloomctl update arm 1.2.3
     [ "$status" -eq 0 ]
     [ "$output" = 'state:arm:1.2.3' ]
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl update confirm
+    [ "$status" -eq 0 ]
+    [ "$output" = 'boot:confirm' ]
 }
 
-@test "update CLI does not expose activation or health promotion" {
+@test "update CLI does not expose raw activation or state mutation" {
     run sh /workspace/static/build/.tmp_update/bin/bloomctl update activate 1.2.3
     [ "$status" -eq 2 ]
     run sh /workspace/static/build/.tmp_update/bin/bloomctl update mark-good 1.2.3

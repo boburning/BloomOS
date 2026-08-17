@@ -208,4 +208,11 @@ It creates a verified pre-update save snapshot, durably records
 the boot installer trigger into place. Existing installer state is never
 overwritten. The next boot is the first counted validation attempt.
 
+The installed runtime reconciles that durable state immediately after the
+installer boundary and before mutable services start. `activation_pending` and
+`testing` boots increment the bounded attempt counter; unrelated boots are a
+no-op. `bloomctl update confirm` promotes only a `testing` release whose
+installed version matches the pending signed version and whose structured
+health checks pass. Merely reaching MainUI never marks an update known-good.
+
 Architectural decisions will be recorded as the corresponding subsystem work begins.

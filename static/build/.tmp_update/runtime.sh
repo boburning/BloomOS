@@ -24,6 +24,12 @@ main() {
 
     touch /tmp/is_booting
     check_installer
+    # Count boots of an activated candidate before mutable services start. A
+    # candidate is promoted only after explicit version and health validation.
+    mkdir -p "$sysdir/logs"
+    if [ -x "$sysdir/bin/bloom-update-boot" ]; then
+        bloom-update-boot begin >> "$sysdir/logs/bloom-update-boot.log" 2>&1 || log "Bloom update boot reconciliation failed"
+    fi
     clear_logs
 
     # Run explicit, safe-only hardware inventory requests in developer mode.
