@@ -20,12 +20,23 @@ jobs:
           submodules: recursive
       - name: Trust checked-out repository
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Configure release signing
+        env:
+          BLOOM_RELEASE_SIGNING_KEY: ${{ secrets.BLOOM_RELEASE_SIGNING_KEY }}
+        run: |
+          test -n "$BLOOM_RELEASE_SIGNING_KEY"
+          umask 077
+          printf '%s\n' "$BLOOM_RELEASE_SIGNING_KEY" > /tmp/bloom-release-signing-key.pem
+          echo "BLOOM_RELEASE_SIGNING_KEY_FILE=/tmp/bloom-release-signing-key.pem" >> $GITHUB_ENV
       - name: Build test release
         shell: bash
         run: |
           source /root/.bashrc
           short_sha="${GITHUB_SHA::8}"
           VERSION_OVERRIDE="0.1.0-dev-${short_sha}" CHANNEL=development make release
+      - name: Remove release signing key
+        if: always()
+        run: rm -f /tmp/bloom-release-signing-key.pem
       - name: Upload test artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:

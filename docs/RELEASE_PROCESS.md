@@ -4,7 +4,7 @@ BloomOS has no public release process in operation yet. Release builds now produ
 
 - `BloomOS-v<version>.zip` with Onion-compatible internal paths;
 - `SHA256SUMS`;
-- `manifest.json` with artifact size and digest;
+- `manifest.json` with signed channel, artifact size, and digest;
 - `manifest.sig`, an Ed25519 signature over the exact manifest bytes;
 - `build-info.json` with commit, deterministic build date, channel, toolchain, dependency-lock digest, and compatible device targets.
 
@@ -16,6 +16,11 @@ key matches the key shipped on devices, signs `manifest.json`, verifies that
 signature before publication, and removes the temporary private key even when
 the job fails. Devices verify the signature before parsing the manifest or
 trusting its archive digest and size.
+
+The signed manifest channel is one of `stable`, `beta`, `nightly`, or
+`development`. Stable, beta, and nightly are user-selectable publication
+channels; development is reserved for hardware-test artifacts. On-device
+verification rejects any other value before an update can be staged.
 
 - versioning and stable, beta, and nightly channels;
 - closure of the remaining unresolved inputs in `build/dependencies.lock`;

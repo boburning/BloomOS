@@ -21,6 +21,7 @@ archive="$3"
 verified="$($VERIFY "$manifest" "$signature" "$archive")" || exit $?
 version="$(printf '%s\n' "$verified" | "$JQ" -er '.version')" || fail "verifier output is invalid"
 filename="$(printf '%s\n' "$verified" | "$JQ" -er '.filename')" || fail "verifier output is invalid"
+channel="$(printf '%s\n' "$verified" | "$JQ" -er '.channel')" || fail "verifier output is invalid"
 case "$version" in ''|*[!A-Za-z0-9._+-]*) fail "verified version is unsafe" ;; esac
 case "$filename" in ''|*/*|*\\*) fail "verified filename is unsafe" ;; esac
 
@@ -43,5 +44,5 @@ sync
 mv "$temporary" "$STAGED_ROOT/$version" || fail "cannot publish staged update"
 trap - EXIT HUP INT TERM
 sync
-printf '{"schema":1,"status":"staged","version":"%s","path":"%s"}\n' \
-    "$version" "$STAGED_ROOT/$version"
+printf '{"schema":1,"status":"staged","version":"%s","channel":"%s","path":"%s"}\n' \
+    "$version" "$channel" "$STAGED_ROOT/$version"
