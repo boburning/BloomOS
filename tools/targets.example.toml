@@ -6,6 +6,10 @@ host = "192.0.2.10"
 user = "root"
 port = 22
 identity_file = "/home/you/.ssh/bloom_plus"
+# Optional dedicated pin store. host_key_alias lets one SD-card host key remain
+# pinned while the card moves between devices or its DHCP address changes.
+# known_hosts_file = "/home/you/.ssh/bloom_known_hosts"
+# host_key_alias = "bloom-test-card"
 expected_model = "mini_plus"
 
 [targets.bloom-flip]

@@ -64,14 +64,18 @@ disabled at compile time while root public-key login remains available. Remove
 ## Wi-Fi device harness
 
 Copy `tools/targets.example.toml` to the ignored `tools/targets.toml` and replace
-the documentation-only addresses and key paths. Hosts must already be present in
-the user's SSH `known_hosts`; the harness deliberately refuses password prompts
-and unknown host keys.
+the documentation-only addresses and key paths. Hosts must already be pinned in
+the user's SSH `known_hosts`, or in the target's optional `known_hosts_file`.
+Set `host_key_alias` when one test SD card, and therefore one Bloom host key,
+moves between handhelds or DHCP addresses. The harness deliberately refuses
+password prompts and unknown host keys.
 
 ```sh
 tools/bloom-device info bloom-plus
 tools/run-smoke-tests.sh bloom-plus
 tools/collect-logs.sh bloom-plus
+tools/bloom-device game-smoke bloom-plus GB \
+  "/mnt/SDCARD/Roms/GB/Example.zip" 10
 ```
 
 The first smoke check is intentionally read-only. Diagnostic collection writes
@@ -79,6 +83,15 @@ The first smoke check is intentionally read-only. Diagnostic collection writes
 directory unless an explicit output path is supplied. Device activation
 requires `.bloom-dev` and a valid developer public key; no address, password,
 private key, or accepted host fingerprint is stored in the repository.
+
+`game-smoke` is an explicitly developer-only runtime probe for GB, GBC, GBA,
+NES/FC, SNES/SFC, and PSX. It confines the supplied ROM to the matching system
+directory, launches through the normal Onion compatibility handoff, keeps SSH
+alive for observation, bounds execution to 5–60 seconds, terminates RetroArch,
+and verifies that MainUI returns and the pending command is removed. A pass
+proves launch and cleanup liveness only; it does not prove correct video,
+controls, audio, SRAM, or save states. Test ROMs and BIOS files remain local and
+must never be committed.
 
 | Device | Development method |
 | --- | --- |
