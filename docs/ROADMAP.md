@@ -95,6 +95,8 @@ merged; it does not imply unrecorded hardware certification.
 - [x] Extend the same exact-source attribution to the shared Onion package
   assembly scripts while keeping asset and binary payloads quarantined
   ([PR #78](https://github.com/boburning/BloomOS/pull/78)).
+- [x] Resolve the unchanged, binary-free ScummVM launcher package by treating
+  its `.miyoocmd` file as a UTF-8 Onion command wrapper.
 
 The hardware-sensitive BloomOS 1.0/1.1 implementation queue is at its
 physical-validation boundary. Source-provenance replacement work can continue

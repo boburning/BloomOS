@@ -880,11 +880,11 @@
       "file_count": 7,
       "byte_count": 6363,
       "tree_sha256": "1e335413cdc832532f4d35b86cc29ef1597afcd1bfaab6966a05f52c0d96fc52",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-snk---neo-geo--fbalpha2012-neogeo",
