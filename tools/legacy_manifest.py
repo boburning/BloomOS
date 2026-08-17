@@ -28,6 +28,10 @@ FAKE08_SOURCE = "https://github.com/jtothebell/fake-08"
 FAKE08_REVISION = "18a1c8ab686f87f00a418add448ebe872b87869a"
 FAKE08_LICENSE = "MIT AND Zlib AND ISC AND WTFPL AND LicenseRef-LodePNG AND CC-BY-SA-3.0 AND LicenseRef-Public-Domain"
 FAKE08_BINARY_SHA256 = "e3d5f948413d181b98ae8b0883a72938fac38ea9013ae587fffee384a1a0f9b4"
+OPENBOR_ID = "rapp-game-engine---open-beats-of-rage"
+OPENBOR_SOURCE = "https://github.com/DCurrent/openbor"
+OPENBOR_REVISION = "b00efbc7752cb55709dfc9fdfdfc7cfe78ddfb90"
+OPENBOR_BINARY_SHA256 = "41ef99389f37a943eb67b9f50cb2847ff00c646f0f3d63598611684053b19c57"
 BATTERY_MONITOR_ID = "app-battery-monitor"
 BATTERY_MONITOR_PACKAGE_ROOT = pathlib.PurePosixPath("App/BatteryMonitorUI")
 BATTERY_MONITOR_SOURCE_ROOT = pathlib.PurePosixPath("src/batteryMonitorUI")
@@ -302,6 +306,31 @@ def is_source_built_fake08(repository, component):
     return b"cd $(THIRD_PARTY_DIR)/fake-08 && make miyoomini" in makefile
 
 
+def is_source_built_openbor(repository, component):
+    if component["id"] != OPENBOR_ID or component["kind"] != "package":
+        return False
+    root = repository / component["path"]
+    expected_files = {
+        "RApp/OpenBOR/LICENSE.MD",
+        "RApp/OpenBOR/OpenBOR",
+        "RApp/OpenBOR/config.json",
+        "RApp/OpenBOR/launch.sh",
+        "Roms/OPENBOR/.gitkeep",
+    }
+    files = {
+        path.relative_to(root).as_posix(): path
+        for path in root.rglob("*")
+        if path.is_file()
+    }
+    if set(files) != expected_files:
+        return False
+    binary_hash = hashlib.sha256(files["RApp/OpenBOR/OpenBOR"].read_bytes()).hexdigest()
+    if binary_hash != OPENBOR_BINARY_SHA256:
+        return False
+    build_script = canonical_file(repository / "build/openbor/build.sh")
+    return b"third-party/openbor" in build_script and b"openbor-mmiyoo.patch" in build_script
+
+
 def annotate_bloom_replacements(repository, manifest):
     count = 0
     for component in manifest["components"]:
@@ -337,6 +366,14 @@ def annotate_bloom_replacements(repository, manifest):
                 "source_revision": FAKE08_REVISION,
                 "license": FAKE08_LICENSE,
                 "build_recipe": "Makefile",
+                "resolution": "source-build",
+            })
+        elif is_source_built_openbor(repository, component):
+            component.update({
+                "source": OPENBOR_SOURCE,
+                "source_revision": OPENBOR_REVISION,
+                "license": "BSD-3-Clause",
+                "build_recipe": "build/openbor/build.sh",
                 "resolution": "source-build",
             })
         else:

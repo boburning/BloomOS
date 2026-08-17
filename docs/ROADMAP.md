@@ -124,6 +124,10 @@ merged; it does not imply unrecorded hardware certification.
 - [x] Exclude the optional standalone GnGeo package whose exact released source
   was documented as lost, while retaining Neo Geo support through libretro
   ([PR #87](https://github.com/boburning/BloomOS/pull/87)).
+- [x] Replace the inherited OpenBOR executable with a deterministic ARM build
+  from pinned upstream source, the reviewed Steward-Fu Miyoo patch, and
+  source-built codec dependencies; defer device behavior to the hardware matrix
+  ([PR #88](https://github.com/boburning/BloomOS/pull/88)).
 
 The hardware-sensitive BloomOS 1.0/1.1 implementation queue is at its
 physical-validation boundary. Source-provenance replacement work can continue
@@ -158,6 +162,8 @@ guessed from inherited bytes.
   and Flip after replacing the inherited artwork.
 - [ ] Validate source-built Fake-08 startup, audio, input, save behavior, and
   representative cartridge compatibility on V2, Plus, and Flip.
+- [ ] Validate source-built OpenBOR startup, rendering, audio, input mappings,
+  PAK loading, and save behavior on V2, Plus, and Flip.
 - [ ] Collect equivalent external physical evidence for original Mini V1, V3,
   and V4 before claiming stable support for those revisions.
 

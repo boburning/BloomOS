@@ -11,6 +11,8 @@ __pycache__/
 !/build/provenance-policy.json
 !/build/shell-test-inputs.json
 !/build/legacy-manifest.json
+!/build/openbor/
+!/build/openbor/**
 /build_test/
 /release/
 /dist/

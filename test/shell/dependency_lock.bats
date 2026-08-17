@@ -52,6 +52,23 @@
     grep -F 'cd $(THIRD_PARTY_DIR)/fake-08 && make miyoomini' /workspace/Makefile
 }
 
+@test "OpenBOR standalone is source-pinned and license-complete" {
+    lock=/workspace/build/dependencies.lock
+    package="/workspace/static/packages/RApp/Game engine - Open Beats of Rage/RApp/OpenBOR"
+
+    grep -F 'source_revision = "b00efbc7752cb55709dfc9fdfdfc7cfe78ddfb90"' "$lock"
+    grep -F 'sdl_link_revision = "b424665e0899769b200231ba943353a5fee1b6b6"' "$lock"
+    grep -F 'ogg_revision = "e1774cd77f471443541596e09078e78fdc342e4f"' "$lock"
+    grep -F 'tremor_revision = "820fb3237ea81af44c9cc468c8b4e20128e3e5ad"' "$lock"
+    grep -F 'binary_sha256 = "41ef99389f37a943eb67b9f50cb2847ff00c646f0f3d63598611684053b19c57"' "$lock"
+    [ "$(sha256sum "$package/OpenBOR" | cut -d' ' -f1)" = \
+        "41ef99389f37a943eb67b9f50cb2847ff00c646f0f3d63598611684053b19c57" ]
+    grep -F '## OpenBOR' "$package/LICENSE.MD"
+    grep -F '## libogg' "$package/LICENSE.MD"
+    grep -F '## Tremor' "$package/LICENSE.MD"
+    grep -F './build/openbor/build.sh' /workspace/Makefile
+}
+
 @test "OpenSSL runtime dependency comes from the pinned ARM toolchain" {
     grep -F 'cp -L /opt/miyoomini-toolchain/arm-linux-gnueabihf/libc/usr/lib/libatomic.so.1' /workspace/Makefile
     ! grep -F 'libatomic.so.1' /workspace/Makefile | grep -F 'http'
