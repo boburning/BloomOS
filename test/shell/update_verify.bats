@@ -17,7 +17,7 @@ setup() {
     openssl pkey -in "$BLOOM_TEST_ROOT/private.pem" -pubout -out "$BLOOM_UPDATE_PUBLIC_KEY" >/dev/null 2>&1
     size="$(wc -c <"$ARCHIVE" | tr -d ' ')"
     digest="$(sha256sum "$ARCHIVE" | awk '{print $1}')"
-    printf '{"schema":1,"product":"BloomOS","version":"1.2.3","artifacts":[{"filename":"BloomOS-v1.2.3.zip","sha256":"%s","size":%s,"media_type":"application/zip"}]}\n' \
+    printf '{"schema":1,"product":"BloomOS","version":"1.2.3","channel":"stable","artifacts":[{"filename":"BloomOS-v1.2.3.zip","sha256":"%s","size":%s,"media_type":"application/zip"}]}\n' \
         "$digest" "$size" >"$MANIFEST"
     openssl pkeyutl -sign -inkey "$BLOOM_TEST_ROOT/private.pem" -rawin -in "$MANIFEST" -out "$SIGNATURE"
 }
@@ -30,6 +30,17 @@ teardown() { teardown_bloom_fixture; }
     [ "$status" -eq 0 ]
     printf '%s' "$output" | grep -F '"status":"verified"'
     printf '%s' "$output" | grep -F '"version":"1.2.3"'
+    printf '%s' "$output" | grep -F '"channel":"stable"'
+}
+
+@test "rejects an unknown signed release channel" {
+    sed -i 's/"stable"/"canary"/' "$MANIFEST"
+    openssl pkeyutl -sign -inkey "$BLOOM_TEST_ROOT/private.pem" -rawin -in "$MANIFEST" -out "$SIGNATURE"
+
+    run "$VERIFY" "$MANIFEST" "$SIGNATURE" "$ARCHIVE"
+
+    [ "$status" -eq 1 ]
+    printf '%s' "$output" | grep -F 'manifest does not match archive'
 }
 
 @test "rejects a manifest changed after signing" {
