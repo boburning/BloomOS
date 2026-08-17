@@ -5,6 +5,7 @@
 
 #include "system/screenshot.h"
 
+#include "gameSwitcherIdentity.h"
 #include "gs_model.h"
 #include "gs_retroarch.h"
 
@@ -42,7 +43,15 @@ RomScreenType_e findRomScreen(const Game_s *game, char *currPicture)
     //     }
     // }
 
-    // Check if hashed rom screen exists
+    // Prefer canonical GameID ownership for new BloomOS screenshots.
+    if (gameswitcher_romscreen_path(game->game_id, currPicture, STR_MAX * 2) == 0) {
+        printf_debug("Checking for canonical rom screen: %s\n", currPicture);
+        if (exists(currPicture)) {
+            return ROM_SCREEN_HASH;
+        }
+    }
+
+    // Retain the legacy path hash as a read-only compatibility fallback.
     uint32_t hash = FNV1A_Pippip_Yurii(game->recentItem.rompath, strlen(game->recentItem.rompath));
     sprintf(currPicture, ROM_SCREENS_DIR "/%" PRIu32 ".png", hash);
     printf_debug("Checking for hashed rom screen: %s\n", currPicture);

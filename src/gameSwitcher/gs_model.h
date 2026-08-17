@@ -5,6 +5,7 @@
 #include <pthread.h>
 #include <stdbool.h>
 
+#include "../bloomGameId/bloom_game_id.h"
 #include "SDL/SDL_rotozoom.h"
 #include "system/display.h"
 #include "utils/retroarch_cmd.h"
@@ -33,6 +34,7 @@ typedef struct {
 // Game history list
 typedef struct {
     RecentItem recentItem;
+    char game_id[BLOOM_GAME_ID_LENGTH + 1];
     SDL_Surface *romScreen;
     char rom_name[STR_MAX * 2];
     char name[STR_MAX * 2];
