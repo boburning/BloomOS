@@ -130,7 +130,8 @@ merged; it does not imply unrecorded hardware certification.
   ([PR #88](https://github.com/boburning/BloomOS/pull/88)).
 - [x] Exclude the optional native PICO-8 wrapper whose support payload has no
   declared upstream license, while retaining both source-built Fake-08 options
-  and leaving a clean path for a future independently licensed native wrapper.
+  and leaving a clean path for a future independently licensed native wrapper
+  ([PR #89](https://github.com/boburning/BloomOS/pull/89)).
 
 The hardware-sensitive BloomOS 1.0/1.1 implementation queue is at its
 physical-validation boundary. Source-provenance replacement work can continue
