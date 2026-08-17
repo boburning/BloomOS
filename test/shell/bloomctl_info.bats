@@ -11,6 +11,14 @@ setup() {
         "$BLOOM_ROOT/sys/class/graphics/fb0" \
         "$BLOOM_ROOT/sys/class/net"
     printf 'v0.0.0-test\n' >"$SDCARD/.tmp_update/onionVersion/version.txt"
+    printf '354\n' >"$BLOOM_ROOT/tmp/deviceModel"
+    mkdir -p "$SDCARD/miyoo/app" "$SDCARD/RetroArch"
+    touch \
+        "$SDCARD/.tmp_update/runtime.sh" \
+        "$SDCARD/.tmp_update/bin/bloomctl" \
+        "$SDCARD/.tmp_update/bin/bloom-platform" \
+        "$SDCARD/RetroArch/retroarch" \
+        "$SDCARD/miyoo/app/MainUI"
 }
 
 teardown() {
@@ -49,6 +57,7 @@ run_info() {
 }
 
 @test "detects Flip from the hall sensor when legacy model data is absent" {
+    rm -f "$BLOOM_ROOT/tmp/deviceModel"
     hall="$BLOOM_ROOT/sys/devices/soc0/soc/soc:hall-mh248"
     mkdir -p "$hall"
     printf '1\n' >"$hall/hallvalue"
@@ -142,6 +151,7 @@ EOF
 
     [ "$status" -eq 0 ]
     printf '%s' "$output" | grep -F '"healthy": true'
+    printf '%s' "$output" | grep -F '"system": {"schema":1,"healthy":true'
     printf '%s' "$output" | grep -F '"play_activity": {"schema":1,"healthy":true,"quick_check":"ok"}'
 }
 
@@ -160,9 +170,9 @@ exit 127
 EOF
     chmod +x "$SDCARD/.tmp_update/bin/playActivity"
 
-    run -127 sh /workspace/static/build/.tmp_update/bin/bloomctl health --json
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl health --json
 
-    [ "$status" -eq 127 ]
+    [ "$status" -eq 1 ]
     printf '%s' "$output" | grep -F '"healthy": false'
     printf '%s' "$output" | grep -F '"error":"execution_failed"'
 }

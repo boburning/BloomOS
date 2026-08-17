@@ -233,4 +233,12 @@ the original known-good record unchanged. A recovered boot uses the same
 version and health confirmation gate. Repeated rollback failures stop in
 `rollback_failed` rather than recursively attempting recovery.
 
+`bloom-health-system` supplies the non-database half of the structured health
+gate. It fails closed unless platform discovery identifies a supported device
+family, required runtime/RetroArch/MainUI payloads exist, the SD card accepts a
+mode-restricted write-and-sync probe, and at least 16 MiB remains free. The
+probe is removed immediately. `bloomctl health` combines this result with Play
+Activity integrity, so update confirmation cannot promote a release that only
+passes its database check.
+
 Architectural decisions will be recorded as the corresponding subsystem work begins.
