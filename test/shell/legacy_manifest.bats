@@ -73,6 +73,7 @@
     printf '#!/bin/sh\n' >"$repository/static/packages/App/Source/launch.sh"
     printf '{"name":"source"}\n' >"$repository/static/packages/App/Source/config.json"
     printf '/mnt/SDCARD/App/Source/launch.sh\n' >"$repository/static/packages/App/Source/start.miyoocmd"
+    printf 'GameName="Source"\n' >"$repository/static/packages/App/Source/source.notfound"
     printf '\177ELF' >"$repository/static/packages/App/Opaque/program"
     manifest="$BATS_TEST_TMPDIR/source-manifest.json"
 

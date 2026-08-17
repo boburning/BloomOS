@@ -864,14 +864,14 @@
       "id": "emu-ports-collection",
       "kind": "package",
       "path": "static/packages/Emu/Ports Collection",
-      "file_count": 18,
-      "byte_count": 497348,
-      "tree_sha256": "c6fa2e0cb4420183d379e6a2a9374b1b053b8b872d93419eb19c116e5c7d01ec",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "file_count": 12,
+      "byte_count": 14027,
+      "tree_sha256": "525a726d73324ace9759fc9adb8343aa9aeb807c4743a12f5f44a7cf5f8f32d9",
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-scumm--scummvm",

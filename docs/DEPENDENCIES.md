@@ -87,14 +87,14 @@ symlinks by their target bytes so Windows and Linux produce the same inventory.
 This normalization is limited to the replacement queue; release payload
 manifests continue to hash every final shipped byte exactly.
 
-The source-wrapper resolution pass identifies 138 package wrappers and shared
+The source-wrapper resolution pass identifies 139 package wrappers and shared
 package assembly scripts containing only
-UTF-8 `.sh`/`.json` source, `.miyoocmd` command wrappers, and optional empty
-marker files. Those trees are
+UTF-8 `.sh`/`.json` source, `.miyoocmd` command wrappers, `.notfound` port
+definitions, and optional empty marker files. Those trees are
 unchanged from the pinned Onion baseline and are recorded as GPL-3.0-only
 source assemblies through the repository Makefile. This attribution applies
 only to the wrapper files; it does not confer provenance on the emulator/core
-binaries they select. The remaining 18 components contain runtime payloads,
+binaries they select. The remaining 17 components contain runtime payloads,
 executables, fonts, images, media, databases, firmware, or other inputs that
 still require component-specific evidence or exclusion.
 
@@ -103,6 +103,11 @@ That optional sample entered the Onion tree without license metadata and was
 not used by the launcher, so Bloom excludes it instead of inferring public
 redistribution rights. The remaining FFplay JSON and shell launcher are an
 unchanged source-only wrapper attributed to the pinned Onion baseline.
+
+The Ports Collection keeps its import and launch scripts, import command, and
+plain-text bundled port definitions. Six inherited example artwork and manual
+files without recorded license metadata are excluded; the package therefore
+retains its functional importer without carrying opaque documentation assets.
 
 The pinned SearchFilter and DinguxCommander repositories remain a separate
 legacy blocker: neither upstream repository declares a project license. Their
