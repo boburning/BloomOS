@@ -126,7 +126,8 @@ merged; it does not imply unrecorded hardware certification.
   ([PR #87](https://github.com/boburning/BloomOS/pull/87)).
 - [x] Replace the inherited OpenBOR executable with a deterministic ARM build
   from pinned upstream source, the reviewed Steward-Fu Miyoo patch, and
-  source-built codec dependencies; defer device behavior to the hardware matrix.
+  source-built codec dependencies; defer device behavior to the hardware matrix
+  ([PR #88](https://github.com/boburning/BloomOS/pull/88)).
 
 The hardware-sensitive BloomOS 1.0/1.1 implementation queue is at its
 physical-validation boundary. Source-provenance replacement work can continue
