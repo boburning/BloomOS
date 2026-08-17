@@ -14,7 +14,8 @@ void printUsage()
            "       playActivity migrate          -> Migrate the old database (prior to Onion 4.2.0) to SQLite\n"
            "       playActivity fix_paths        -> Change all absolute paths to relative paths\n"
            "       playActivity schema           -> Print the Bloom database schema version\n"
-           "       playActivity backfill-game-ids [--dry-run] -> Add deterministic canonical identities\n");
+           "       playActivity backfill-game-ids [--dry-run] -> Add deterministic canonical identities\n"
+           "       playActivity health           -> Run read-only database health checks\n");
 }
 
 int main(int argc, char *argv[])
@@ -98,6 +99,29 @@ int main(int argc, char *argv[])
             printf("{\"schema\":1,\"mode\":\"%s\",\"eligible\":%d,\"updated\":%d,\"deferred\":%d}\n",
                    dry_run ? "dry-run" : "apply", identity_result.updated, dry_run ? 0 : identity_result.updated,
                    identity_result.deferred);
+        }
+        else if (strcmp(argv[i], "health") == 0) {
+            play_activity_db_open();
+            if (play_activity_db == NULL) {
+                fprintf(stderr, "Cannot open play activity database\n");
+                return EXIT_FAILURE;
+            }
+            struct play_activity_health health;
+            int result = play_activity_health_check(play_activity_db, &health);
+            play_activity_db_close();
+            if (result != SQLITE_OK) {
+                fprintf(stderr, "Cannot check Play Activity health: %s\n", sqlite3_errstr(result));
+                return EXIT_FAILURE;
+            }
+            int healthy = health.quick_check_ok && health.orphan_activities == 0 && health.negative_durations == 0;
+            printf("{\"schema\":1,\"healthy\":%s,\"database_schema_version\":%d,\"quick_check\":\"%s\","
+                   "\"orphan_activities\":%d,\"negative_durations\":%d,\"active_sessions\":%d,"
+                   "\"unidentified_roms\":%d}\n",
+                   healthy ? "true" : "false", health.schema_version, health.quick_check_ok ? "ok" : "failed",
+                   health.orphan_activities, health.negative_durations, health.active_sessions,
+                   health.unidentified_roms);
+            if (!healthy)
+                return EXIT_FAILURE;
         }
         else {
             printf("Error: Invalid argument '%s'\n", argv[1]);
