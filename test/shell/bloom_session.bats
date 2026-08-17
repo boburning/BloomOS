@@ -7,6 +7,7 @@ setup() {
     export SESSION=/workspace/static/build/.tmp_update/bin/bloom-session
     export BLOOM_SESSION_ROOT="$BLOOM_TEST_ROOT/session"
     export BLOOM_PROC_ROOT="$BLOOM_TEST_ROOT/proc"
+    export BLOOM_UPTIME_FILE="$BLOOM_TEST_ROOT/uptime"
     export BLOOM_LAUNCH_BIN="$MOCK_BIN/bloom-launch"
     export BLOOM_SEND_UDP_BIN="$MOCK_BIN/sendUDP"
     export BLOOM_SAVE_FLUSH_BIN="$MOCK_BIN/bloom-save-flush"
@@ -15,6 +16,7 @@ setup() {
     export BLOOM_TERM_WAIT_SECONDS=0
     export BLOOM_KILL_WAIT_SECONDS=0
     mkdir -p "$BLOOM_PROC_ROOT" "$BLOOM_TEST_ROOT/requests"
+    printf '100.00 50.00\n' >"$BLOOM_UPTIME_FILE"
     export REQUEST="$BLOOM_TEST_ROOT/requests/game.json"
     printf '%s\n' '{"schema":1}' >"$REQUEST"
 cat >"$BLOOM_LAUNCH_BIN" <<'EOF'
@@ -59,6 +61,7 @@ teardown() { teardown_bloom_fixture; }
 
 @test "session follows the explicit successful lifecycle" {
     start_running_session
+    printf '112.99 50.00\n' >"$BLOOM_UPTIME_FILE"
     stop_to_flushing
     "$SESSION" flush-saves
     "$SESSION" complete
@@ -67,7 +70,31 @@ teardown() { teardown_bloom_fixture; }
     [ "$status" -eq 0 ]
     printf '%s' "$output" | grep -F '"state":"STOPPED"'
     printf '%s' "$output" | grep -F '"pid":123'
+    printf '%s' "$output" | grep -F '"duration_seconds":12'
     grep -Eq '^[0-9a-f]{64}$' "$BLOOM_SESSION_ROOT/request_sha256"
+}
+
+@test "wall-clock changes cannot alter monotonic session duration" {
+    start_running_session
+    printf '107.75 50.00\n' >"$BLOOM_UPTIME_FILE"
+
+    run stop_to_flushing
+
+    [ "$status" -eq 0 ]
+    printf '%s' "$output" | grep -F '"duration_seconds":7'
+    grep -Fx 7 "$BLOOM_SESSION_ROOT/duration_seconds"
+}
+
+@test "a regressed monotonic clock fails the session without inventing play time" {
+    start_running_session
+    printf '99.00 50.00\n' >"$BLOOM_UPTIME_FILE"
+
+    run stop_to_flushing
+
+    [ "$status" -eq 1 ]
+    grep -Fx FAILED "$BLOOM_SESSION_ROOT/state"
+    grep -Fx monotonic_clock_regressed "$BLOOM_SESSION_ROOT/failure_reason"
+    [ ! -e "$BLOOM_SESSION_ROOT/duration_seconds" ]
 }
 
 @test "flushing cannot complete until a scoped save flush succeeds" {

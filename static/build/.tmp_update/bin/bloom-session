@@ -3,6 +3,7 @@ set -u
 
 SESSION_ROOT="${BLOOM_SESSION_ROOT:-/tmp/bloom-session}"
 PROC_ROOT="${BLOOM_PROC_ROOT:-/proc}"
+UPTIME_FILE="${BLOOM_UPTIME_FILE:-$PROC_ROOT/uptime}"
 BLOOM_LAUNCH="${BLOOM_LAUNCH_BIN:-/mnt/SDCARD/.tmp_update/bin/bloom-launch}"
 BLOOM_SAVE_FLUSH="${BLOOM_SAVE_FLUSH_BIN:-/mnt/SDCARD/.tmp_update/bin/bloom-save-flush}"
 SEND_UDP="${BLOOM_SEND_UDP_BIN:-/mnt/SDCARD/.tmp_update/bin/sendUDP}"
@@ -17,6 +18,8 @@ REQUEST_FILE="$SESSION_ROOT/request.json"
 CORE_FILE="$SESSION_ROOT/core"
 FLUSH_RESULT_FILE="$SESSION_ROOT/save_flush.json"
 REASON_FILE="$SESSION_ROOT/failure_reason"
+MONOTONIC_START_FILE="$SESSION_ROOT/monotonic_start_seconds"
+DURATION_FILE="$SESSION_ROOT/duration_seconds"
 LOCK_DIR="$SESSION_ROOT/.lock"
 LOCKED=0
 
@@ -47,6 +50,14 @@ read_value() {
         IFS= read -r value <"$1" || true
         printf '%s' "${value:-}"
     fi
+}
+
+monotonic_seconds() {
+    [ -r "$UPTIME_FILE" ] || return 1
+    IFS=' ' read -r uptime_value _ <"$UPTIME_FILE" || return 1
+    uptime_seconds="${uptime_value%%.*}"
+    case "$uptime_seconds" in ''|*[!0-9]*) return 1 ;; esac
+    printf '%s' "$uptime_seconds"
 }
 
 atomic_line() {
@@ -102,7 +113,7 @@ command_start() {
     case "$request_hash" in ''|*[!0-9a-f]*) fail "cannot hash launch request" ;; esac
     atomic_line "$HASH_FILE" "$request_hash"
     atomic_line "$CORE_FILE" "$core"
-    rm -f "$PID_FILE" "$REASON_FILE" "$FLUSH_RESULT_FILE"
+    rm -f "$PID_FILE" "$REASON_FILE" "$FLUSH_RESULT_FILE" "$MONOTONIC_START_FILE" "$DURATION_FILE"
     atomic_line "$STATE_FILE" PREPARING
 }
 
@@ -157,7 +168,9 @@ command_attach() {
     lock
     [ -d "$PROC_ROOT/$pid" ] || fail "emulator PID is not running"
     [ "$(current_state)" = STARTING ] || fail "session is not STARTING"
+    monotonic_start="$(monotonic_seconds)" || fail "monotonic clock is unavailable"
     atomic_line "$PID_FILE" "$pid"
+    atomic_line "$MONOTONIC_START_FILE" "$monotonic_start"
     transition_locked STARTING RUNNING
 }
 
@@ -233,10 +246,20 @@ command_stop_retroarch() {
         stop_failure forced_kill_required
     fi
 
+    monotonic_start="$(read_value "$MONOTONIC_START_FILE")"
+    monotonic_stop="$(monotonic_seconds)" || stop_failure monotonic_clock_unavailable
+    case "$monotonic_start:$monotonic_stop" in
+        *[!0-9:]*|:*) stop_failure monotonic_clock_invalid ;;
+    esac
+    [ "$monotonic_stop" -ge "$monotonic_start" ] || stop_failure monotonic_clock_regressed
+    duration_seconds=$((monotonic_stop - monotonic_start))
+
     lock
+    atomic_line "$DURATION_FILE" "$duration_seconds"
     transition_locked STOP_REQUESTED FLUSHING
     unlock
-    printf '{"schema":1,"state":"FLUSHING","shutdown_method":"%s"}\n' "$method"
+    printf '{"schema":1,"state":"FLUSHING","shutdown_method":"%s","duration_seconds":%s}\n' \
+        "$method" "$duration_seconds"
 }
 
 command_status() {
@@ -245,8 +268,9 @@ command_status() {
     pid="$(read_value "$PID_FILE")"
     request_hash="$(read_value "$HASH_FILE")"
     reason="$(read_value "$REASON_FILE")"
-    printf '{"schema":1,"state":"%s","pid":%s,"request_sha256":"%s","failure_reason":"%s"}\n' \
-        "$state" "${pid:-null}" "${request_hash:-}" "${reason:-}"
+    duration="$(read_value "$DURATION_FILE")"
+    printf '{"schema":1,"state":"%s","pid":%s,"request_sha256":"%s","failure_reason":"%s","duration_seconds":%s}\n' \
+        "$state" "${pid:-null}" "${request_hash:-}" "${reason:-}" "${duration:-null}"
 }
 
 usage() {
