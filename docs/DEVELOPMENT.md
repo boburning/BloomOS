@@ -126,6 +126,12 @@ RetroArch and MainUI payloads, writable SD storage, and a default minimum of
 override the free-space threshold; release behavior must not lower it without
 device evidence.
 
+Save snapshot creation retains five verified snapshots by default. Tests may
+set `BLOOM_SNAPSHOT_RETENTION`; device operators can run
+`bloom-save-snapshot prune KEEP` for an explicit bounded prune. Active
+update/rollback references and unverifiable evidence are preserved even when
+they exceed the configured count.
+
 | Device | Development method |
 | --- | --- |
 | Original Mini V1–V4 | Guarded SD-card request/results harness; UART is optional advanced work |
