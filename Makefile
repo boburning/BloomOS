@@ -58,7 +58,7 @@ include ./src/common/commands.mk
 
 ###########################################################
 
-.PHONY: all version core apps external release package-release clean deepclean git-clean with-toolchain patch lib test
+.PHONY: all version core apps external release unsigned-release package-release package-release-unsigned sign-release clean deepclean git-clean with-toolchain patch lib test
 
 all: dist
 
@@ -233,12 +233,12 @@ dist: build
 
 release: dist package-release
 
-package-release:
+unsigned-release: dist package-release-unsigned
+
+package-release: package-release-unsigned sign-release
+
+package-release-unsigned:
 	@$(ECHO) $(PRINT_RECIPE)
-	@test -n "$(BLOOM_RELEASE_SIGNING_KEY_FILE)" -a -f "$(BLOOM_RELEASE_SIGNING_KEY_FILE)" || \
-		(echo "BLOOM_RELEASE_SIGNING_KEY_FILE is required" >&2; exit 1)
-	@openssl pkey -in "$(BLOOM_RELEASE_SIGNING_KEY_FILE)" -pubout | \
-		cmp - $(STATIC_BUILD)/.tmp_update/keys/release-ed25519-public.pem
 	@rm -rf $(RELEASE_VERSION_DIR)
 	@mkdir -p $(RELEASE_VERSION_DIR)
 	@find $(DIST_DIR) -exec touch -h -d "@$(SOURCE_DATE_EPOCH)" {} +
@@ -254,6 +254,14 @@ package-release:
 		--source-date-epoch $(SOURCE_DATE_EPOCH) \
 		--dependency-lock $(ROOT_DIR)/build/dependencies.lock \
 		--toolchain $(TOOLCHAIN)
+	@$(ECHO) $(PRINT_DONE)
+
+sign-release:
+	@$(ECHO) $(PRINT_RECIPE)
+	@test -n "$(BLOOM_RELEASE_SIGNING_KEY_FILE)" -a -f "$(BLOOM_RELEASE_SIGNING_KEY_FILE)" || \
+		(echo "BLOOM_RELEASE_SIGNING_KEY_FILE is required" >&2; exit 1)
+	@openssl pkey -in "$(BLOOM_RELEASE_SIGNING_KEY_FILE)" -pubout | \
+		cmp - $(STATIC_BUILD)/.tmp_update/keys/release-ed25519-public.pem
 	@openssl pkeyutl -sign -inkey "$(BLOOM_RELEASE_SIGNING_KEY_FILE)" -rawin \
 		-in $(RELEASE_VERSION_DIR)/manifest.json -out $(RELEASE_VERSION_DIR)/manifest.sig
 	@openssl pkeyutl -verify -pubin -inkey $(STATIC_BUILD)/.tmp_update/keys/release-ed25519-public.pem -rawin \

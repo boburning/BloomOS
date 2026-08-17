@@ -10,9 +10,6 @@ jobs:
   build:
     name: Build hardware test image
     runs-on: ubuntu-latest
-    container:
-      image: aemiii91/miyoomini-toolchain@sha256:e5123590ad75d27f0f4c91196e3119a255cad45f3ae15243e29a8e0a2ec50132
-      options: --user root
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -20,6 +17,18 @@ jobs:
           submodules: recursive
       - name: Trust checked-out repository
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Get version
+        run: |
+          short_sha="${GITHUB_SHA::8}"
+          echo "BUILD_VERSION=0.1.0-dev-${short_sha}" >> $GITHUB_ENV
+      - name: Build unsigned test release
+        run: |
+          docker run --rm \
+            --volume "$GITHUB_WORKSPACE:/workspace" \
+            --workdir /workspace \
+            aemiii91/miyoomini-toolchain@sha256:e5123590ad75d27f0f4c91196e3119a255cad45f3ae15243e29a8e0a2ec50132 \
+            bash -lc 'git config --global --add safe.directory /workspace; source /root/.bashrc; VERSION_OVERRIDE="${{ env.BUILD_VERSION }}" CHANNEL=development make unsigned-release'
+          sudo chown -R "$(id -u):$(id -g)" release
       - name: Configure release signing
         env:
           BLOOM_RELEASE_SIGNING_KEY: ${{ secrets.BLOOM_RELEASE_SIGNING_KEY }}
@@ -28,12 +37,8 @@ jobs:
           umask 077
           printf '%s\n' "$BLOOM_RELEASE_SIGNING_KEY" > /tmp/bloom-release-signing-key.pem
           echo "BLOOM_RELEASE_SIGNING_KEY_FILE=/tmp/bloom-release-signing-key.pem" >> $GITHUB_ENV
-      - name: Build test release
-        shell: bash
-        run: |
-          source /root/.bashrc
-          short_sha="${GITHUB_SHA::8}"
-          VERSION_OVERRIDE="0.1.0-dev-${short_sha}" CHANNEL=development make release
+      - name: Sign test release
+        run: VERSION_OVERRIDE="${{ env.BUILD_VERSION }}" make sign-release
       - name: Remove release signing key
         if: always()
         run: rm -f /tmp/bloom-release-signing-key.pem
@@ -42,7 +47,7 @@ jobs:
         with:
           name: bloom-os-hardware-test-${{ github.sha }}
           path: |
-            release/0.1.0-dev-*/*
+            release/${{ env.BUILD_VERSION }}/*
           compression-level: 0
           retention-days: 7
           if-no-files-found: error
