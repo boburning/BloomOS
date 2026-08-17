@@ -1784,19 +1784,6 @@
       "resolution": "source-build"
     },
     {
-      "id": "rapp-pico-8--pico-8-standalone",
-      "kind": "package",
-      "path": "static/packages/RApp/PICO-8 (PICO-8 standalone)",
-      "file_count": 40,
-      "byte_count": 9961432,
-      "tree_sha256": "720faf69f299c0c293e3edd34ec536aaeec0e05c812c04ba259b45668a935d65",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
-    },
-    {
       "id": "rapp-palm-os---m515--mu",
       "kind": "package",
       "path": "static/packages/RApp/Palm OS - m515 (mu)",
