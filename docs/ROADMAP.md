@@ -108,7 +108,8 @@ merged; it does not imply unrecorded hardware certification.
   checksum-pinned DejaVu Sans release and ship its authoritative license
   ([PR #82](https://github.com/boburning/BloomOS/pull/82)).
 - [x] Replace inherited Quick Guide artwork with deterministic Bloom-authored
-  pages and enforce byte-for-byte reproduction from repository source.
+  pages and enforce byte-for-byte reproduction from repository source
+  ([PR #83](https://github.com/boburning/BloomOS/pull/83)).
 
 The hardware-sensitive BloomOS 1.0/1.1 implementation queue is at its
 physical-validation boundary. Source-provenance replacement work can continue
