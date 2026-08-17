@@ -1,0 +1,138 @@
+#!/bin/sh
+set -u
+
+BLOOM_ROOT="${BLOOM_ROOT:-}"
+
+platform_path() { printf '%s%s' "$BLOOM_ROOT" "$1"; }
+
+platform_read() {
+    target="$(platform_path "$1")"
+    if [ -r "$target" ]; then
+        IFS= read -r value <"$target" || true
+        printf '%s' "${value:-}"
+    fi
+}
+
+platform_model() {
+    raw_model="$(platform_read /tmp/deviceModel)"
+    case "$raw_model" in
+        285) printf 'mini_flip' ;;
+        354) printf 'mini_plus' ;;
+        283) printf 'mini' ;;
+        *)
+            if [ -e "$(platform_path /sys/devices/soc0/soc/soc:hall-mh248/hallvalue)" ]; then
+                printf 'mini_flip'
+            elif [ -e "$(platform_path /customer/app/axp_test)" ]; then
+                printf 'mini_plus'
+            else
+                printf 'unknown'
+            fi
+            ;;
+    esac
+}
+
+platform_display() {
+    geometry="$(platform_read /sys/class/graphics/fb0/virtual_size)"
+    PLATFORM_VIRTUAL_SIZE=unknown
+    case "$geometry" in
+        *[!0-9,]*|*,*,*|,*|*,) PLATFORM_WIDTH=unknown; PLATFORM_HEIGHT=unknown ;;
+        *,*)
+            PLATFORM_VIRTUAL_SIZE="$geometry"
+            PLATFORM_WIDTH="${geometry%%,*}"
+            PLATFORM_HEIGHT="${geometry#*,}"
+            if [ "$PLATFORM_HEIGHT" -gt 800 ] 2>/dev/null; then
+                if [ $((PLATFORM_HEIGHT % 3)) -eq 0 ] &&
+                    [ $((PLATFORM_HEIGHT / 3)) -ge 400 ] &&
+                    [ $((PLATFORM_HEIGHT / 3)) -le 600 ]; then
+                    PLATFORM_HEIGHT=$((PLATFORM_HEIGHT / 3))
+                elif [ $((PLATFORM_HEIGHT % 2)) -eq 0 ] &&
+                    [ $((PLATFORM_HEIGHT / 2)) -ge 400 ] &&
+                    [ $((PLATFORM_HEIGHT / 2)) -le 600 ]; then
+                    PLATFORM_HEIGHT=$((PLATFORM_HEIGHT / 2))
+                fi
+            fi
+            ;;
+        *) PLATFORM_WIDTH=unknown; PLATFORM_HEIGHT=unknown ;;
+    esac
+}
+
+platform_bool_path() {
+    [ -e "$(platform_path "$1")" ] && printf true || printf false
+}
+
+platform_capability() {
+    capability="$1"
+    model="$(platform_model)"
+    case "$capability" in
+        wifi) [ "$model" = mini_plus ] || [ "$model" = mini_flip ] || [ -e "$(platform_path /sys/class/net/wlan0)" ] ;;
+        ssh) [ "$model" = mini_plus ] || [ "$model" = mini_flip ] ;;
+        lid) [ -e "$(platform_path /sys/devices/soc0/soc/soc:hall-mh248/hallvalue)" ] ;;
+        rtc) [ -e "$(platform_path /tmp/rtc_available)" ] || [ -e "$(platform_path /dev/rtc0)" ] ;;
+        input) [ "$(platform_input_count)" -gt 0 ] ;;
+        battery) [ "$(platform_battery_backend)" != unavailable ] ;;
+        *) return 2 ;;
+    esac
+}
+
+platform_input_count() {
+    count=0
+    for event in "$(platform_path /dev/input)"/event*; do
+        [ -e "$event" ] || continue
+        count=$((count + 1))
+    done
+    printf '%s' "$count"
+}
+
+platform_battery_backend() {
+    if [ -r "$(platform_path /sys/class/power_supply/battery/capacity)" ]; then
+        printf sysfs
+    elif [ -r "$(platform_path /tmp/percBat)" ]; then
+        printf batmon
+    elif [ -r "$(platform_path /tmp/.axp_result)" ]; then
+        printf axp_cache
+    elif [ -x "$(platform_path /customer/app/axp_test)" ]; then
+        printf axp_live
+    else
+        printf unavailable
+    fi
+}
+
+platform_bool() { platform_capability "$1" && printf true || printf false; }
+
+platform_inspect() {
+    platform_display
+    model_id="$(platform_read /tmp/deviceModel)"
+    printf '{\n'
+    printf '  "schema": 1,\n'
+    printf '  "model": "%s",\n' "$(platform_model)"
+    printf '  "model_id": "%s",\n' "${model_id:-unknown}"
+    printf '  "hardware_revision": "unknown",\n'
+    printf '  "display": {"width": "%s", "height": "%s", "virtual_size": "%s"},\n' \
+        "$PLATFORM_WIDTH" "$PLATFORM_HEIGHT" "$PLATFORM_VIRTUAL_SIZE"
+    printf '  "capabilities": {"wifi": %s, "ssh": %s, "lid": %s, "rtc": %s, "input": %s, "battery": %s},\n' \
+        "$(platform_bool wifi)" "$(platform_bool ssh)" "$(platform_bool lid)" "$(platform_bool rtc)" \
+        "$(platform_bool input)" "$(platform_bool battery)"
+    printf '  "input_event_count": %s,\n' "$(platform_input_count)"
+    printf '  "battery_backend": "%s"\n' "$(platform_battery_backend)"
+    printf '}\n'
+}
+
+usage() {
+    printf 'Usage: bloom-platform <inspect --json|model|display-width|display-height|capability NAME|input-count|battery-backend>\n' >&2
+}
+
+case "${1:-}" in
+    inspect) [ "${2:-}" = --json ] && [ "$#" -eq 2 ] || { usage; exit 2; }; platform_inspect ;;
+    model) [ "$#" -eq 1 ] || { usage; exit 2; }; platform_model; printf '\n' ;;
+    display-width) [ "$#" -eq 1 ] || { usage; exit 2; }; platform_display; printf '%s\n' "$PLATFORM_WIDTH" ;;
+    display-height) [ "$#" -eq 1 ] || { usage; exit 2; }; platform_display; printf '%s\n' "$PLATFORM_HEIGHT" ;;
+    capability)
+        [ "$#" -eq 2 ] || { usage; exit 2; }
+        platform_capability "$2"; status=$?
+        [ "$status" -ne 2 ] || { usage; exit 2; }
+        [ "$status" -eq 0 ] && printf 'true\n' || printf 'false\n'
+        ;;
+    input-count) [ "$#" -eq 1 ] || { usage; exit 2; }; platform_input_count; printf '\n' ;;
+    battery-backend) [ "$#" -eq 1 ] || { usage; exit 2; }; platform_battery_backend; printf '\n' ;;
+    *) usage; exit 2 ;;
+esac

@@ -3,6 +3,8 @@
 set -u
 
 BLOOM_ROOT="${BLOOM_ROOT:-}"
+SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+BLOOM_PLATFORM="$SCRIPT_DIR/bloom-platform"
 
 path() {
     printf '%s%s' "$BLOOM_ROOT" "$1"
@@ -20,84 +22,21 @@ json_string() {
     printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g; s/[^[:print:]]/?/g'
 }
 
-bool_for_path() {
-    if [ -e "$(path "$1")" ]; then
-        printf 'true'
-    else
-        printf 'false'
-    fi
-}
-
-detect_model() {
-    raw_model="$(read_first_line /tmp/deviceModel)"
-    hall_path="/sys/devices/soc0/soc/soc:hall-mh248/hallvalue"
-
-    case "$raw_model" in
-        285) printf 'mini_flip' ;;
-        354) printf 'mini_plus' ;;
-        283) printf 'mini' ;;
-        *)
-            if [ -e "$(path "$hall_path")" ]; then
-                printf 'mini_flip'
-            elif [ -e "$(path /customer/app/axp_test)" ]; then
-                printf 'mini_plus'
-            else
-                printf 'unknown'
-            fi
-            ;;
-    esac
-}
-
-detect_display() {
-    geometry="$(read_first_line /sys/class/graphics/fb0/virtual_size)"
-    case "$geometry" in
-        *,*)
-            display_width="${geometry%%,*}"
-            display_height="${geometry#*,}"
-            # The Miyoo framebuffer reports its backing buffer, which is
-            # commonly two or three visible frames tall. Report the physical
-            # panel rather than the buffer allocation.
-            if [ "$display_height" -gt 800 ] 2>/dev/null; then
-                if [ $((display_height % 3)) -eq 0 ] &&
-                    [ $((display_height / 3)) -ge 400 ] &&
-                    [ $((display_height / 3)) -le 600 ]; then
-                    display_height=$((display_height / 3))
-                elif [ $((display_height % 2)) -eq 0 ] &&
-                    [ $((display_height / 2)) -ge 400 ] &&
-                    [ $((display_height / 2)) -le 600 ]; then
-                    display_height=$((display_height / 2))
-                fi
-            fi
-            ;;
-        *)
-            display_width="unknown"
-            display_height="unknown"
-            ;;
-    esac
-}
-
 print_info_json() {
-    model="$(detect_model)"
+    model="$(sh "$BLOOM_PLATFORM" model)"
     raw_model="$(read_first_line /tmp/deviceModel)"
     serial="$(read_first_line /tmp/deviceSN)"
     version="$(read_first_line /mnt/SDCARD/.tmp_update/onionVersion/version.txt)"
     firmware="$(read_first_line /tmp/bloom-firmware-version)"
-    display_width=unknown
-    display_height=unknown
-    detect_display
-
-    case "$model" in
-        mini_plus|mini_flip)
-            has_wifi=true
-            has_ssh=true
-            ;;
-        *)
-            has_wifi="$(bool_for_path /sys/class/net/wlan0)"
-            has_ssh=false
-            ;;
-    esac
-    has_lid="$(bool_for_path /sys/devices/soc0/soc/soc:hall-mh248/hallvalue)"
-    developer_mode="$(bool_for_path /mnt/SDCARD/.bloom-dev)"
+    display_width="$(sh "$BLOOM_PLATFORM" display-width)"
+    display_height="$(sh "$BLOOM_PLATFORM" display-height)"
+    has_wifi="$(sh "$BLOOM_PLATFORM" capability wifi)"
+    has_ssh="$(sh "$BLOOM_PLATFORM" capability ssh)"
+    has_lid="$(sh "$BLOOM_PLATFORM" capability lid)"
+    has_rtc="$(sh "$BLOOM_PLATFORM" capability rtc)"
+    has_input="$(sh "$BLOOM_PLATFORM" capability input)"
+    has_battery="$(sh "$BLOOM_PLATFORM" capability battery)"
+    if [ -e "$(path /mnt/SDCARD/.bloom-dev)" ]; then developer_mode=true; else developer_mode=false; fi
     developer_ssh="$(read_first_line /tmp/bloom-dev-ssh.state)"
 
     printf '{\n'
@@ -111,14 +50,15 @@ print_info_json() {
     printf '  "firmware": "%s",\n' "$(json_string "${firmware:-unknown}")"
     printf '  "display": {"width": "%s", "height": "%s"},\n' \
         "$(json_string "$display_width")" "$(json_string "$display_height")"
-    printf '  "capabilities": {"wifi": %s, "ssh": %s, "lid": %s},\n' "$has_wifi" "$has_ssh" "$has_lid"
+    printf '  "capabilities": {"wifi": %s, "ssh": %s, "lid": %s, "rtc": %s, "input": %s, "battery": %s},\n' \
+        "$has_wifi" "$has_ssh" "$has_lid" "$has_rtc" "$has_input" "$has_battery"
     printf '  "developer_mode": %s,\n' "$developer_mode"
     printf '  "developer_ssh": "%s"\n' "$(json_string "${developer_ssh:-disabled}")"
     printf '}\n'
 }
 
 print_info_text() {
-    model="$(detect_model)"
+    model="$(sh "$BLOOM_PLATFORM" model)"
     version="$(read_first_line /mnt/SDCARD/.tmp_update/onionVersion/version.txt)"
     printf 'BloomOS %s\n' "${version:-unknown}"
     printf 'Model: %s\n' "$model"

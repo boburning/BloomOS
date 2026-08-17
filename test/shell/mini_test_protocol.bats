@@ -6,6 +6,7 @@ setup() {
     setup_bloom_fixture
     export MINI_TOOL=/workspace/tools/bloom-mini-test
     export RUNNER=/workspace/static/build/.tmp_update/bin/bloom-test-runner
+    cp /workspace/static/build/.tmp_update/bin/bloom-platform "$SDCARD/.tmp_update/bin/bloom-platform"
 }
 
 teardown() { teardown_bloom_fixture; }

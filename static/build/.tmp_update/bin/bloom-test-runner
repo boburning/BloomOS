@@ -7,6 +7,7 @@ TEST_ROOT="$SD_ROOT/BloomTest"
 REQUEST="$TEST_ROOT/request.json"
 RESULTS="$TEST_ROOT/results"
 BLOOMCTL="$SD_ROOT/.tmp_update/bin/bloomctl"
+BLOOM_PLATFORM="$SD_ROOT/.tmp_update/bin/bloom-platform"
 
 fail() { printf 'bloom-test-runner: %s\n' "$*" >&2; exit 1; }
 
@@ -29,41 +30,35 @@ fi
 "$BLOOMCTL" info --json >"$RESULTS/device.json" || fail "device inspection failed"
 {
     geometry="$(cat "$ROOT/sys/class/graphics/fb0/virtual_size" 2>/dev/null || true)"
-    width="${geometry%%,*}"
-    height="${geometry#*,}"
-    if [ "$height" -gt 800 ] 2>/dev/null; then
-        if [ $((height % 3)) -eq 0 ] && [ $((height / 3)) -ge 400 ] && [ $((height / 3)) -le 600 ]; then
-            height=$((height / 3))
-        elif [ $((height % 2)) -eq 0 ] && [ $((height / 2)) -ge 400 ] && [ $((height / 2)) -le 600 ]; then
-            height=$((height / 2))
-        fi
-    fi
+    width="$(sh "$BLOOM_PLATFORM" display-width)"
+    height="$(sh "$BLOOM_PLATFORM" display-height)"
     printf 'physical_size=%s,%s\n' "${width:-unknown}" "${height:-unknown}"
     printf 'framebuffer_virtual_size=%s\n' "${geometry:-unknown}"
 } >"$RESULTS/display.txt"
+BATTERY_BACKEND="$(sh "$BLOOM_PLATFORM" battery-backend)"
 BATTERY_CAPACITY="$ROOT/sys/class/power_supply/battery/capacity"
 BATMON_PERCENT="$ROOT/tmp/percBat"
 AXP_RESULT="$ROOT/tmp/.axp_result"
-if [ -r "$BATTERY_CAPACITY" ]; then
+if [ "$BATTERY_BACKEND" = sysfs ]; then
     {
         printf 'battery_source=sysfs\n'
         printf 'battery_capacity='
         cat "$BATTERY_CAPACITY"
     } >"$RESULTS/battery.txt"
-elif [ -r "$BATMON_PERCENT" ]; then
+elif [ "$BATTERY_BACKEND" = batmon ]; then
     {
         printf 'battery_source=batmon\n'
         printf 'battery_capacity='
         cat "$BATMON_PERCENT"
     } >"$RESULTS/battery.txt"
-elif [ -r "$AXP_RESULT" ]; then
+elif [ "$BATTERY_BACKEND" = axp_cache ]; then
     {
         printf 'battery_source=axp_cache\n'
         printf 'battery_raw='
         cat "$AXP_RESULT"
         printf '\n'
     } >"$RESULTS/battery.txt"
-elif [ -x "$ROOT/customer/app/axp_test" ]; then
+elif [ "$BATTERY_BACKEND" = axp_live ]; then
     axp_output="$("$ROOT/customer/app/axp_test" 2>/dev/null || true)"
     axp_capacity="$(printf '%s' "$axp_output" | sed -n 's/.*"battery"[[:space:]]*:[[:space:]]*\([0-9][0-9]*\).*/\1/p')"
     if [ -n "$axp_capacity" ]; then
@@ -94,11 +89,7 @@ fi
     else
         printf 'axp=absent\n'
     fi
-    event_count=0
-    for event in "$ROOT"/dev/input/event*; do
-        [ -e "$event" ] || continue
-        event_count=$((event_count + 1))
-    done
+    event_count="$(sh "$BLOOM_PLATFORM" input-count)"
     printf 'input_event_count=%s\n' "$event_count"
 } >"$RESULTS/platform.txt"
 if [ -n "$ROOT" ]; then

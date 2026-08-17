@@ -43,6 +43,7 @@ run_info() {
     printf '%s' "$output" | grep -F '"wifi": true'
     printf '%s' "$output" | grep -F '"ssh": true'
     printf '%s' "$output" | grep -F '"lid": false'
+    printf '%s' "$output" | grep -F '"rtc": false'
     printf '%s' "$output" | grep -F '"height": "480"'
 }
 
