@@ -13,7 +13,8 @@ void printUsage()
            "       playActivity stop_all         -> Stop the counter for all roms\n"
            "       playActivity migrate          -> Migrate the old database (prior to Onion 4.2.0) to SQLite\n"
            "       playActivity fix_paths        -> Change all absolute paths to relative paths\n"
-           "       playActivity schema           -> Print the Bloom database schema version\n");
+           "       playActivity schema           -> Print the Bloom database schema version\n"
+           "       playActivity backfill-game-ids [--dry-run] -> Add deterministic canonical identities\n");
 }
 
 int main(int argc, char *argv[])
@@ -75,6 +76,28 @@ int main(int argc, char *argv[])
                 return EXIT_FAILURE;
             }
             printf("{\"schema\":1,\"database_schema_version\":%d}\n", version);
+        }
+        else if (strcmp(argv[i], "backfill-game-ids") == 0) {
+            int dry_run = 0;
+            if (i + 1 < argc && strcmp(argv[i + 1], "--dry-run") == 0) {
+                dry_run = 1;
+                i++;
+            }
+            play_activity_db_open();
+            if (play_activity_db == NULL) {
+                fprintf(stderr, "Cannot open play activity database\n");
+                return EXIT_FAILURE;
+            }
+            struct play_activity_identity_result identity_result;
+            int result = play_activity_backfill_game_ids(play_activity_db, dry_run, &identity_result);
+            play_activity_db_close();
+            if (result != SQLITE_OK) {
+                fprintf(stderr, "Cannot backfill Play Activity GameIDs: %s\n", sqlite3_errstr(result));
+                return EXIT_FAILURE;
+            }
+            printf("{\"schema\":1,\"mode\":\"%s\",\"eligible\":%d,\"updated\":%d,\"deferred\":%d}\n",
+                   dry_run ? "dry-run" : "apply", identity_result.updated, dry_run ? 0 : identity_result.updated,
+                   identity_result.deferred);
         }
         else {
             printf("Error: Invalid argument '%s'\n", argv[1]);
