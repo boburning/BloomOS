@@ -16,6 +16,7 @@
 #include "utils/str.h"
 
 #include "./cacheDB.h"
+#include "./playActivityIdentity.h"
 #include "./playActivityMigrations.h"
 #include "./playActivityModel.h"
 

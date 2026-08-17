@@ -107,4 +107,12 @@ newer or internally incomplete schemas. Identity backfill is intentionally not
 part of this migration: ambiguous legacy rows remain `NULL` until their source
 system and normalized ROM path can be established deterministically.
 
+The explicit `backfill-game-ids` command currently recognizes only the six
+device-proven mappings (`GB`, `GBC`, `GBA`, `FC`, `SFC`, and `PS`). It supports a
+non-mutating dry run, precomputes duplicate identities, and defers unknown,
+duplicate, conflicting, or unsafe legacy rows while updating unrelated rows in
+one transaction. Repeated application is idempotent. Expanding the mapping set
+requires system-specific launch evidence; folder names are never blindly
+lowercased into identity.
+
 Architectural decisions will be recorded as the corresponding subsystem work begins.
