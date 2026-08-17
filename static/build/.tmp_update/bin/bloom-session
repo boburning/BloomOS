@@ -4,6 +4,7 @@ set -u
 SESSION_ROOT="${BLOOM_SESSION_ROOT:-/tmp/bloom-session}"
 PROC_ROOT="${BLOOM_PROC_ROOT:-/proc}"
 BLOOM_LAUNCH="${BLOOM_LAUNCH_BIN:-/mnt/SDCARD/.tmp_update/bin/bloom-launch}"
+BLOOM_SAVE_FLUSH="${BLOOM_SAVE_FLUSH_BIN:-/mnt/SDCARD/.tmp_update/bin/bloom-save-flush}"
 SEND_UDP="${BLOOM_SEND_UDP_BIN:-/mnt/SDCARD/.tmp_update/bin/sendUDP}"
 SIGNAL_BIN="${BLOOM_SIGNAL_BIN:-}"
 QUIT_WAIT="${BLOOM_QUIT_WAIT_SECONDS:-5}"
@@ -13,6 +14,8 @@ STATE_FILE="$SESSION_ROOT/state"
 PID_FILE="$SESSION_ROOT/pid"
 HASH_FILE="$SESSION_ROOT/request_sha256"
 REQUEST_FILE="$SESSION_ROOT/request.json"
+CORE_FILE="$SESSION_ROOT/core"
+FLUSH_RESULT_FILE="$SESSION_ROOT/save_flush.json"
 REASON_FILE="$SESSION_ROOT/failure_reason"
 LOCK_DIR="$SESSION_ROOT/.lock"
 LOCKED=0
@@ -61,7 +64,7 @@ current_state() {
 
 valid_transition() {
     case "$1:$2" in
-        PREPARING:STARTING|STARTING:RUNNING|RUNNING:STOP_REQUESTED|STOP_REQUESTED:FLUSHING|FLUSHING:STOPPED) return 0 ;;
+        PREPARING:STARTING|STARTING:RUNNING|RUNNING:STOP_REQUESTED|STOP_REQUESTED:FLUSHING) return 0 ;;
         *) return 1 ;;
     esac
 }
@@ -89,15 +92,61 @@ command_start() {
         rm -f "$temporary"
         fail "copied launch request is invalid"
     fi
+    core="$("$BLOOM_LAUNCH" get "$temporary" core)" || {
+        rm -f "$temporary"
+        fail "launch request core is unavailable"
+    }
+    case "$core" in ''|*[!A-Za-z0-9_.-]*) rm -f "$temporary"; fail "launch request core is invalid" ;; esac
     mv -f "$temporary" "$REQUEST_FILE" || fail "cannot commit launch request"
     request_hash="$(sha256sum "$REQUEST_FILE" | awk '{print $1}')"
     case "$request_hash" in ''|*[!0-9a-f]*) fail "cannot hash launch request" ;; esac
     atomic_line "$HASH_FILE" "$request_hash"
-    rm -f "$PID_FILE" "$REASON_FILE"
+    atomic_line "$CORE_FILE" "$core"
+    rm -f "$PID_FILE" "$REASON_FILE" "$FLUSH_RESULT_FILE"
     atomic_line "$STATE_FILE" PREPARING
 }
 
+command_flush_saves() {
+    lock
+    [ "$(current_state)" = FLUSHING ] || fail "session is not FLUSHING"
+    [ -x "$BLOOM_SAVE_FLUSH" ] || {
+        atomic_line "$REASON_FILE" save_flush_failed
+        atomic_line "$STATE_FILE" FAILED
+        fail "bloom-save-flush is unavailable"
+    }
+    core="$(read_value "$CORE_FILE")"
+    case "$core" in ''|*[!A-Za-z0-9_.-]*)
+        atomic_line "$REASON_FILE" save_flush_failed
+        atomic_line "$STATE_FILE" FAILED
+        fail "session core is invalid"
+        ;;
+    esac
+    temporary="$FLUSH_RESULT_FILE.tmp.$$"
+    if ! (umask 077; "$BLOOM_SAVE_FLUSH" "$core" >"$temporary"); then
+        rm -f "$temporary"
+        atomic_line "$REASON_FILE" save_flush_failed
+        atomic_line "$STATE_FILE" FAILED
+        fail "save flush failed"
+    fi
+    if [ ! -s "$temporary" ] || ! grep -q '"schema":1' "$temporary"; then
+        rm -f "$temporary"
+        atomic_line "$REASON_FILE" save_flush_failed
+        atomic_line "$STATE_FILE" FAILED
+        fail "save flush result is invalid"
+    fi
+    mv -f "$temporary" "$FLUSH_RESULT_FILE" || fail "cannot commit save flush result"
+    cat "$FLUSH_RESULT_FILE"
+}
+
+command_complete() {
+    lock
+    [ "$(current_state)" = FLUSHING ] || fail "session is not FLUSHING"
+    [ -s "$FLUSH_RESULT_FILE" ] && grep -q '"schema":1' "$FLUSH_RESULT_FILE" || fail "save flush is not confirmed"
+    atomic_line "$STATE_FILE" STOPPED
+}
+
 command_transition() {
+    [ "$1:$2" = PREPARING:STARTING ] || fail "transition is owned by a session action"
     lock
     transition_locked "$1" "$2"
 }
@@ -206,6 +255,8 @@ usage() {
     printf '       bloom-session attach PID\n' >&2
     printf '       bloom-session fail REASON\n' >&2
     printf '       bloom-session stop-retroarch\n' >&2
+    printf '       bloom-session flush-saves\n' >&2
+    printf '       bloom-session complete\n' >&2
     printf '       bloom-session status --json\n' >&2
 }
 
@@ -215,6 +266,8 @@ case "${1:-}" in
     attach) [ "$#" -eq 2 ] || { usage; exit 2; }; command_attach "$2" ;;
     fail) [ "$#" -eq 2 ] || { usage; exit 2; }; command_fail "$2" ;;
     stop-retroarch) [ "$#" -eq 1 ] || { usage; exit 2; }; command_stop_retroarch ;;
+    flush-saves) [ "$#" -eq 1 ] || { usage; exit 2; }; command_flush_saves ;;
+    complete) [ "$#" -eq 1 ] || { usage; exit 2; }; command_complete ;;
     status) [ "$#" -eq 2 ] && [ "$2" = --json ] || { usage; exit 2; }; command_status ;;
     *) usage; exit 2 ;;
 esac
