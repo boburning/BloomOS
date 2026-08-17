@@ -12,6 +12,7 @@ setup() {
     export BLOOM_JQ_BIN=/usr/bin/jq
     export BLOOM_UPDATE_PUBLIC_KEY="$BLOOM_TEST_ROOT/public.pem"
     export BLOOM_UPDATE_ROOT="$BLOOM_TEST_ROOT/update"
+    export BLOOM_UPDATE_CHANNEL_BIN=/workspace/static/build/.tmp_update/bin/bloom-update-channel
     export ARCHIVE="$BLOOM_TEST_ROOT/BloomOS-v1.2.3.zip"
     export MANIFEST="$BLOOM_TEST_ROOT/manifest.json"
     export SIGNATURE="$BLOOM_TEST_ROOT/manifest.sig"
@@ -23,6 +24,33 @@ setup() {
     printf '{"schema":1,"product":"BloomOS","version":"1.2.3","channel":"beta","devices":["mini","plus","flip"],"artifacts":[{"filename":"BloomOS-v1.2.3.zip","sha256":"%s","size":%s,"media_type":"application/zip"}]}\n' \
         "$digest" "$size" >"$MANIFEST"
     openssl pkeyutl -sign -inkey "$BLOOM_TEST_ROOT/private.pem" -rawin -in "$MANIFEST" -out "$SIGNATURE"
+    "$BLOOM_UPDATE_CHANNEL_BIN" set beta >/dev/null
+}
+
+@test "selected channel rejects less stable signed releases before staging" {
+    "$BLOOM_UPDATE_CHANNEL_BIN" set stable >/dev/null
+    run "$STAGE" "$MANIFEST" "$SIGNATURE" "$ARCHIVE"
+    [ "$status" -eq 1 ]
+    printf '%s' "$output" | grep -F 'beta update is not allowed by selected stable channel'
+    [ ! -e "$BLOOM_UPDATE_ROOT/staged/1.2.3" ]
+}
+
+@test "nightly selection accepts a signed beta release" {
+    "$BLOOM_UPDATE_CHANNEL_BIN" set nightly >/dev/null
+    run "$STAGE" "$MANIFEST" "$SIGNATURE" "$ARCHIVE"
+    [ "$status" -eq 0 ]
+    printf '%s' "$output" | grep -F '"channel":"beta"'
+}
+
+@test "development release requires explicit developer mode" {
+    sed -i 's/"beta"/"development"/' "$MANIFEST"
+    openssl pkeyutl -sign -inkey "$BLOOM_TEST_ROOT/private.pem" -rawin -in "$MANIFEST" -out "$SIGNATURE"
+    run "$STAGE" "$MANIFEST" "$SIGNATURE" "$ARCHIVE"
+    [ "$status" -eq 1 ]
+    printf '%s' "$output" | grep -F 'development updates require developer mode'
+    touch "$SDCARD/.bloom-dev"
+    run "$STAGE" "$MANIFEST" "$SIGNATURE" "$ARCHIVE"
+    [ "$status" -eq 0 ]
 }
 
 teardown() { teardown_bloom_fixture; }
@@ -63,6 +91,7 @@ teardown() { teardown_bloom_fixture; }
 }
 
 @test "refuses a symlinked update root" {
+    rm -rf "$BLOOM_UPDATE_ROOT"
     mkdir -p "$BLOOM_TEST_ROOT/elsewhere"
     ln -s "$BLOOM_TEST_ROOT/elsewhere" "$BLOOM_UPDATE_ROOT"
 

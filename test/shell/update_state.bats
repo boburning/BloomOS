@@ -15,8 +15,10 @@ setup() {
     export BLOOM_7Z_BIN=/usr/bin/7z
     export BLOOM_UPDATE_PUBLIC_KEY="$BLOOM_TEST_ROOT/public.pem"
     export BLOOM_UPDATE_ROOT="$BLOOM_TEST_ROOT/update"
+    export BLOOM_UPDATE_CHANNEL_BIN=/workspace/static/build/.tmp_update/bin/bloom-update-channel
     openssl genpkey -algorithm Ed25519 -out "$BLOOM_TEST_ROOT/private.pem" >/dev/null 2>&1
     openssl pkey -in "$BLOOM_TEST_ROOT/private.pem" -pubout -out "$BLOOM_UPDATE_PUBLIC_KEY" >/dev/null 2>&1
+    "$BLOOM_UPDATE_CHANNEL_BIN" set beta >/dev/null
 }
 
 teardown() { teardown_bloom_fixture; }

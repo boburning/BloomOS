@@ -1,0 +1,48 @@
+#!/bin/sh
+set -u
+
+SD_ROOT="${BLOOM_SD_ROOT:-/mnt/SDCARD}"
+UPDATE_ROOT="${BLOOM_UPDATE_ROOT:-$SD_ROOT/.bloom/update}"
+CHANNEL_FILE="$UPDATE_ROOT/channel"
+
+fail() { printf 'bloom-update-channel: %s\n' "$*" >&2; exit 1; }
+
+read_channel() {
+    [ ! -L "$CHANNEL_FILE" ] || fail "channel path is unsafe"
+    if [ -f "$CHANNEL_FILE" ]; then
+        IFS= read -r channel <"$CHANNEL_FILE" || channel=""
+        case "$channel" in stable|beta|nightly) printf '%s' "$channel" ;; *) fail "stored channel is invalid" ;; esac
+    else
+        printf stable
+    fi
+}
+
+[ ! -L "$UPDATE_ROOT" ] || fail "update root is unsafe"
+
+case "${1:-}" in
+    get)
+        [ "$#" -le 2 ] || fail "get accepts only --raw"
+        channel="$(read_channel)"
+        case "${2:-}" in
+            '') printf '{"schema":1,"channel":"%s","source":"%s"}\n' "$channel" "$([ -f "$CHANNEL_FILE" ] && printf configured || printf default)" ;;
+            --raw) printf '%s\n' "$channel" ;;
+            *) fail "get accepts only --raw" ;;
+        esac
+        ;;
+    set)
+        [ "$#" -eq 2 ] || fail "set expects stable, beta, or nightly"
+        case "$2" in stable|beta|nightly) ;; *) fail "channel must be stable, beta, or nightly" ;; esac
+        mkdir -p "$UPDATE_ROOT" || fail "cannot create update root"
+        [ ! -L "$CHANNEL_FILE" ] || fail "channel path is unsafe"
+        temporary="$CHANNEL_FILE.tmp-$$"
+        trap 'rm -f "$temporary"' EXIT HUP INT TERM
+        umask 077
+        printf '%s\n' "$2" >"$temporary" || fail "cannot write channel"
+        sync
+        mv "$temporary" "$CHANNEL_FILE" || fail "cannot publish channel"
+        trap - EXIT HUP INT TERM
+        sync
+        printf '{"schema":1,"channel":"%s","source":"configured"}\n' "$2"
+        ;;
+    *) fail "expected get [--raw] or set CHANNEL" ;;
+esac

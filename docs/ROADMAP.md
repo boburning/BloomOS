@@ -56,8 +56,10 @@ merged; it does not imply unrecorded hardware certification.
   through `bloomctl logs export` ([PR #61](https://github.com/boburning/BloomOS/pull/61)).
 - [x] Expose centralized structured hardware inspection through
   `bloomctl platform capabilities` ([PR #62](https://github.com/boburning/BloomOS/pull/62)).
-- [ ] Expose the guarded developer-mode game smoke runner through
-  `bloomctl test smoke` (`feature/smoke-test-cli`).
+- [x] Expose the guarded developer-mode game smoke runner through
+  `bloomctl test smoke` ([PR #63](https://github.com/boburning/BloomOS/pull/63)).
+- [ ] Persist stable, beta, and nightly selection and enforce it at the signed
+  update staging boundary (`feature/update-channel-policy`).
 
 ### Deferred physical validation
 
