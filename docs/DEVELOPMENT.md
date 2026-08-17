@@ -130,3 +130,8 @@ directory. At boot, the runtime invokes the idempotent runner only when both
 requests explicitly marked `safe_only`.
 
 `bloomctl info` is deliberately conservative. It reports observable capabilities and leaves the original Mini hardware revision unknown until a reliable V1–V4 detection method is established. Tests may set `BLOOM_ROOT` to a disposable fake root; production callers must leave it unset.
+
+`bloomctl health --json` is the machine-readable diagnostics surface. It runs
+the installed native Play Activity health check and returns nonzero if that
+check is unavailable or unhealthy. The command is read-only; repair and backup
+remain explicit operations rather than health-check side effects.

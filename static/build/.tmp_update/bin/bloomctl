@@ -65,8 +65,48 @@ print_info_text() {
     printf 'Hardware revision: unknown\n'
 }
 
+play_activity_health() {
+    play_activity="$(path /mnt/SDCARD/.tmp_update/bin/playActivity)"
+    library_dir="$(path /mnt/SDCARD/.tmp_update/lib)"
+    if [ ! -x "$play_activity" ]; then
+        printf '%s' '{"schema":1,"healthy":false,"error":"unavailable"}'
+        return 1
+    fi
+
+    LD_LIBRARY_PATH="$library_dir${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" "$play_activity" health
+}
+
+print_health_json() {
+    activity_output="$(play_activity_health)"
+    activity_status=$?
+    case "$activity_output" in
+        \{*) ;;
+        *) activity_output='{"schema":1,"healthy":false,"error":"execution_failed"}' ;;
+    esac
+    if [ "$activity_status" -eq 0 ]; then healthy=true; else healthy=false; fi
+
+    printf '{\n'
+    printf '  "schema": 1,\n'
+    printf '  "healthy": %s,\n' "$healthy"
+    printf '  "checks": {"play_activity": %s}\n' "$activity_output"
+    printf '}\n'
+    return "$activity_status"
+}
+
+print_health_text() {
+    activity_output="$(play_activity_health)"
+    activity_status=$?
+    if [ "$activity_status" -eq 0 ]; then
+        printf 'Play Activity: healthy\n'
+    else
+        printf 'Play Activity: unhealthy\n'
+    fi
+    printf '%s\n' "$activity_output"
+    return "$activity_status"
+}
+
 usage() {
-    printf 'Usage: bloomctl info [--json]\n' >&2
+    printf 'Usage: bloomctl {info|health} [--json]\n' >&2
 }
 
 case "${1:-}" in
@@ -74,6 +114,13 @@ case "${1:-}" in
         case "${2:-}" in
             '') print_info_text ;;
             --json) print_info_json ;;
+            *) usage; exit 2 ;;
+        esac
+        ;;
+    health)
+        case "${2:-}" in
+            '') print_health_text ;;
+            --json) print_health_json ;;
             *) usage; exit 2 ;;
         esac
         ;;

@@ -1,6 +1,7 @@
 #!/usr/bin/env bats
 
 load 'support/test_helper'
+bats_require_minimum_version 1.5.0
 
 setup() {
     setup_bloom_fixture
@@ -67,4 +68,56 @@ run_info() {
 
     [ "$status" -eq 2 ]
     [ ! -e "$SDCARD/.tmp_update/bloom-update-state" ]
+}
+
+@test "health exposes the Play Activity diagnostic as structured JSON" {
+    cat >"$SDCARD/.tmp_update/bin/playActivity" <<'EOF'
+#!/bin/sh
+[ "$1" = health ] || exit 2
+printf '%s\n' '{"schema":1,"healthy":true,"quick_check":"ok"}'
+EOF
+    chmod +x "$SDCARD/.tmp_update/bin/playActivity"
+
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl health --json
+
+    [ "$status" -eq 0 ]
+    printf '%s' "$output" | grep -F '"healthy": true'
+    printf '%s' "$output" | grep -F '"play_activity": {"schema":1,"healthy":true,"quick_check":"ok"}'
+}
+
+@test "health fails closed when Play Activity diagnostics are unavailable" {
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl health --json
+
+    [ "$status" -eq 1 ]
+    printf '%s' "$output" | grep -F '"healthy": false'
+    printf '%s' "$output" | grep -F '"error":"unavailable"'
+}
+
+@test "health keeps valid JSON when Play Activity cannot start" {
+    cat >"$SDCARD/.tmp_update/bin/playActivity" <<'EOF'
+#!/bin/sh
+exit 127
+EOF
+    chmod +x "$SDCARD/.tmp_update/bin/playActivity"
+
+    run -127 sh /workspace/static/build/.tmp_update/bin/bloomctl health --json
+
+    [ "$status" -eq 127 ]
+    printf '%s' "$output" | grep -F '"healthy": false'
+    printf '%s' "$output" | grep -F '"error":"execution_failed"'
+}
+
+@test "health does not embed non-JSON output from an incompatible binary" {
+    cat >"$SDCARD/.tmp_update/bin/playActivity" <<'EOF'
+#!/bin/sh
+printf '%s\n' 'Error: Invalid argument health'
+exit 1
+EOF
+    chmod +x "$SDCARD/.tmp_update/bin/playActivity"
+
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl health --json
+
+    [ "$status" -eq 1 ]
+    printf '%s' "$output" | grep -F '"error":"execution_failed"'
+    ! printf '%s' "$output" | grep -F 'Invalid argument'
 }
