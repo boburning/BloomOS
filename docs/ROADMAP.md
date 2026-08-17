@@ -104,6 +104,8 @@ merged; it does not imply unrecorded hardware certification.
 - [x] Preserve the Ports importer and plain-text definitions while excluding
   six bundled example artwork/manual files without recorded licenses
   ([PR #81](https://github.com/boburning/BloomOS/pull/81)).
+- [x] Replace Battery Monitor's rights-restricted inherited Arkhip font with a
+  checksum-pinned DejaVu Sans release and ship its authoritative license.
 
 The hardware-sensitive BloomOS 1.0/1.1 implementation queue is at its
 physical-validation boundary. Source-provenance replacement work can continue
@@ -132,6 +134,8 @@ guessed from inherited bytes.
   Flip.
 - [ ] Complete visual/audio/input/SRAM/save-state and longer soak coverage on
   maintainer-owned V2, Plus, and Flip hardware.
+- [ ] Validate Battery Monitor text fit and readability on V2, Plus, and Flip
+  after replacing Arkhip with DejaVu Sans 2.37.
 - [ ] Collect equivalent external physical evidence for original Mini V1, V3,
   and V4 before claiming stable support for those revisions.
 

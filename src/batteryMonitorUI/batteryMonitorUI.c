@@ -71,7 +71,7 @@ void init(void)
     left_arrow = IMG_Load("./res/left_arrow.png");
     end_graph = IMG_Load("./res/end.png");
 
-    font_Arkhip = TTF_OpenFont("./res/Arkhip_font.ttf", 15);
+    font_Arkhip = TTF_OpenFont("./res/DejaVuSans.ttf", 15);
 }
 
 void free_resources(void)

@@ -17,6 +17,7 @@ Baseline: Onion `07505ea58c7bba698d6b9220ff43946a43cac76b`, audited 2026-08-15.
 | Dropbear SSH | Official Dropbear `2025.88`, commit `887241694277b3816da5d174932c10546ea9d2c5` | Tag and commit pinned | Bloom builds a static ARMv7 server/keygen multicall binary with password authentication and forwarding disabled at compile time. The upstream license is shipped beside the binary as `LICENSE.dropbear`. |
 | GCC `libatomic.so.1` runtime | Miyoo Mini cross-toolchain image pinned by digest | Image and in-image path pinned | Copied from the ARM sysroot during release assembly because the bundled OpenSSL 3 executable requires it. Covered by the GCC Runtime Library Exception; exact binary hashing is recorded by release packaging. |
 | Shell-test packages | `shell-test-inputs-v1`, archive SHA-256 `97a048903e55131877f44203103e33f28b84d6e0fe22c1588bb820b6075b6921` | Complete 38-APK closure archived with checksums and declared licenses | The image rebuild verifies the archive and every APK, removes Alpine repositories, and installs with Docker networking disabled. |
+| Battery Monitor font | DejaVu Sans 2.37, archive SHA-256 `7576310b219e04159d35ff61dd4a4ec4cdba4f35c00e002a136f00e96a908b0a`, font SHA-256 `7da195a74c55bef988d0d48f9508bd5d849425c1770dba5d7bfc6ce9ed848954` | Official release and license pinned | Replaces the inherited Arkhip file whose embedded notice reserves all rights. Visual layout remains pending device validation. |
 
 ## GitHub Actions
 
@@ -87,14 +88,14 @@ symlinks by their target bytes so Windows and Linux produce the same inventory.
 This normalization is limited to the replacement queue; release payload
 manifests continue to hash every final shipped byte exactly.
 
-The source-wrapper resolution pass identifies 139 package wrappers and shared
+The source-wrapper and replacement pass identifies 140 package components and shared
 package assembly scripts containing only
 UTF-8 `.sh`/`.json` source, `.miyoocmd` command wrappers, `.notfound` port
 definitions, and optional empty marker files. Those trees are
 unchanged from the pinned Onion baseline and are recorded as GPL-3.0-only
 source assemblies through the repository Makefile. This attribution applies
 only to the wrapper files; it does not confer provenance on the emulator/core
-binaries they select. The remaining 17 components contain runtime payloads,
+binaries they select. The remaining 16 components contain runtime payloads,
 executables, fonts, images, media, databases, firmware, or other inputs that
 still require component-specific evidence or exclusion.
 
@@ -108,6 +109,13 @@ The Ports Collection keeps its import and launch scripts, import command, and
 plain-text bundled port definitions. Six inherited example artwork and manual
 files without recorded license metadata are excluded; the package therefore
 retains its functional importer without carrying opaque documentation assets.
+
+Battery Monitor now builds from Bloom source and copies a checksum-pinned
+DejaVu Sans 2.37 release plus its complete upstream font license. The inherited
+Arkhip font was removed because its embedded copyright and usage records do not
+grant the public redistribution rights Bloom requires. The package manifest
+accepts this replacement only when every packaged resource matches its source
+tree and the application opens the replacement font by its explicit filename.
 
 The pinned SearchFilter and DinguxCommander repositories remain a separate
 legacy blocker: neither upstream repository declares a project license. Their

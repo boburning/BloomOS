@@ -96,3 +96,53 @@ assert components["app-opaque"]["resolution"] == "replace-source-build-or-exclud
 PY
     [ "$status" -eq 0 ]
 }
+
+@test "verified Bloom Battery Monitor replacement receives composite provenance" {
+    repository="$BATS_TEST_TMPDIR/bloom-repository"
+    for directory in \
+        static/build/.tmp_update \
+        static/build/miyoo \
+        lib \
+        static/packages/common \
+        "static/packages/App/Battery Monitor/App/BatteryMonitorUI/res" \
+        static/packages/Emu \
+        static/packages/RApp \
+        src/batteryMonitorUI/res; do
+        mkdir -p "$repository/$directory"
+    done
+    printf 'fixture\n' >"$repository/static/build/.tmp_update/runtime"
+    printf 'fixture\n' >"$repository/static/build/miyoo/runtime"
+    printf 'fixture\n' >"$repository/lib/library.so"
+    printf 'fixture\n' >"$repository/static/packages/common/config"
+    package="$repository/static/packages/App/Battery Monitor/App/BatteryMonitorUI"
+    source="$repository/src/batteryMonitorUI"
+    printf '{"name":"Battery Monitor"}\n' >"$package/config.json"
+    printf '#!/bin/sh\n' >"$package/launch.sh"
+    printf 'include ../common/config.mk\n' >"$source/Makefile"
+    cp "$source/Makefile" "$package/Makefile"
+    printf 'TTF_OpenFont("./res/DejaVuSans.ttf", 15);\n' >"$source/batteryMonitorUI.c"
+    for file in DejaVuSans.ttf DejaVu_LICENSE.txt background.png end.png left_arrow.png right_arrow.png waiting_screen.png; do
+        printf 'fixture %s\n' "$file" >"$source/res/$file"
+        cp "$source/res/$file" "$package/res/$file"
+    done
+    manifest="$BATS_TEST_TMPDIR/bloom-manifest.json"
+
+    python3 /workspace/tools/legacy_manifest.py create \
+        --repository "$repository" --manifest "$manifest"
+    run python3 /workspace/tools/legacy_manifest.py annotate-bloom-replacements \
+        --repository "$repository" --manifest "$manifest"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == "legacy manifest annotated: 1 Bloom source replacements" ]]
+    run python3 - "$manifest" <<'PY'
+import json
+import sys
+components = {item["id"]: item for item in json.load(open(sys.argv[1], encoding="utf-8"))["components"]}
+battery = components["app-battery-monitor"]
+assert battery["resolution"] == "source-build"
+assert battery["source"] == "https://github.com/boburning/BloomOS"
+assert battery["source_revision"] == "release-commit"
+assert battery["license"] == "GPL-3.0-only AND LicenseRef-DejaVu-Fonts"
+PY
+    [ "$status" -eq 0 ]
+}

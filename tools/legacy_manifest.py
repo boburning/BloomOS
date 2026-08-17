@@ -21,6 +21,10 @@ ANNOTATION_FIELDS = ("source", "source_revision", "license", "build_recipe", "re
 RESOLUTIONS = ("replace-source-build-or-exclude", "source-build", "excluded")
 ONION_SOURCE = "https://github.com/OnionUI/Onion"
 ONION_WRAPPER_SUFFIXES = (".json", ".miyoocmd", ".notfound", ".sh")
+BLOOM_SOURCE = "https://github.com/boburning/BloomOS"
+BATTERY_MONITOR_ID = "app-battery-monitor"
+BATTERY_MONITOR_PACKAGE_ROOT = pathlib.PurePosixPath("App/BatteryMonitorUI")
+BATTERY_MONITOR_SOURCE_ROOT = pathlib.PurePosixPath("src/batteryMonitorUI")
 
 
 def component_id(kind, name):
@@ -163,9 +167,67 @@ def annotate_onion_wrappers(repository, manifest):
     return count
 
 
+def is_bloom_battery_monitor(repository, component):
+    if component["id"] != BATTERY_MONITOR_ID or component["kind"] != "package":
+        return False
+    package_root = repository / component["path"] / BATTERY_MONITOR_PACKAGE_ROOT
+    source_root = repository / BATTERY_MONITOR_SOURCE_ROOT
+    expected_package_files = {
+        "config.json",
+        "launch.sh",
+        "Makefile",
+        "res/DejaVuSans.ttf",
+        "res/DejaVu_LICENSE.txt",
+        "res/background.png",
+        "res/end.png",
+        "res/left_arrow.png",
+        "res/right_arrow.png",
+        "res/waiting_screen.png",
+    }
+    actual_package_files = {
+        path.relative_to(package_root).as_posix()
+        for path in package_root.rglob("*")
+        if path.is_file()
+    }
+    if actual_package_files != expected_package_files:
+        return False
+    for relative in ("Makefile",) + tuple(
+        sorted(item for item in expected_package_files if item.startswith("res/"))
+    ):
+        packaged = package_root / relative
+        source = source_root / relative
+        if not source.is_file() or canonical_file(packaged) != canonical_file(source):
+            return False
+    source_code = source_root / "batteryMonitorUI.c"
+    if not source_code.is_file() or b'TTF_OpenFont("./res/DejaVuSans.ttf", 15)' not in canonical_file(source_code):
+        return False
+    return True
+
+
+def annotate_bloom_replacements(repository, manifest):
+    count = 0
+    for component in manifest["components"]:
+        if component["resolution"] != "replace-source-build-or-exclude":
+            continue
+        if not is_bloom_battery_monitor(repository, component):
+            continue
+        component.update({
+            "source": BLOOM_SOURCE,
+            "source_revision": "release-commit",
+            "license": "GPL-3.0-only AND LicenseRef-DejaVu-Fonts",
+            "build_recipe": "Makefile",
+            "resolution": "source-build",
+        })
+        count += 1
+    return count
+
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=("create", "validate", "annotate-onion-wrappers"))
+    parser.add_argument(
+        "command",
+        choices=("create", "validate", "annotate-onion-wrappers", "annotate-bloom-replacements"),
+    )
     parser.add_argument("--repository", type=pathlib.Path, required=True)
     parser.add_argument("--manifest", type=pathlib.Path, required=True)
     args = parser.parse_args()
@@ -184,6 +246,11 @@ def main():
             count = annotate_onion_wrappers(args.repository, generated)
             args.manifest.write_text(canonical(generated), encoding="utf-8", newline="\n")
             print(f"legacy manifest annotated: {count} Onion source wrappers")
+            return 0
+        if args.command == "annotate-bloom-replacements":
+            count = annotate_bloom_replacements(args.repository, generated)
+            args.manifest.write_text(canonical(generated), encoding="utf-8", newline="\n")
+            print(f"legacy manifest annotated: {count} Bloom source replacements")
             return 0
         if args.command == "create":
             args.manifest.write_text(rendered, encoding="utf-8", newline="\n")
