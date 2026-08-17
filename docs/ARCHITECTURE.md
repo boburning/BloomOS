@@ -112,6 +112,13 @@ otherwise unverifiable entries are never silently deleted as retention. The
 explicit `prune KEEP` operation uses the same rules and rejects zero or
 non-numeric limits before removal.
 
+The read-only `list` operation returns schema-1 structured inventory with each
+safe snapshot's identifier, trigger, archive bytes, verification status, and
+active-update reference status. `bloomctl saves snapshots` exposes only that
+inventory for diagnostics and future UI consumers; restore and prune remain
+explicit lower-level operations and are not reachable through this read-only
+CLI route.
+
 ## Canonical game identity
 
 `bloom-game-id` defines the schema-1 identity boundary. It normalizes the ROM

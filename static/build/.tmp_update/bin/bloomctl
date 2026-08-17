@@ -11,6 +11,7 @@ BLOOM_UPDATE_STATE="${BLOOM_UPDATE_STATE_BIN:-$SCRIPT_DIR/bloom-update-state}"
 BLOOM_UPDATE_BOOT="${BLOOM_UPDATE_BOOT_BIN:-$SCRIPT_DIR/bloom-update-boot}"
 BLOOM_UPDATE_ROLLBACK="${BLOOM_UPDATE_ROLLBACK_BIN:-$SCRIPT_DIR/bloom-update-rollback}"
 BLOOM_SYSTEM_HEALTH="${BLOOM_SYSTEM_HEALTH_BIN:-$SCRIPT_DIR/bloom-health-system}"
+BLOOM_SAVE_SNAPSHOT="${BLOOM_SAVE_SNAPSHOT_BIN:-$SCRIPT_DIR/bloom-save-snapshot}"
 
 path() {
     printf '%s%s' "$BLOOM_ROOT" "$1"
@@ -132,6 +133,18 @@ print_health_text() {
 usage() {
     printf 'Usage: bloomctl {info|health} [--json]\n' >&2
     printf '       bloomctl update {status|stage MANIFEST SIGNATURE ARCHIVE|prepare VERSION|arm VERSION|confirm|rollback}\n' >&2
+    printf '       bloomctl saves snapshots\n' >&2
+}
+
+saves_command() {
+    case "${1:-}" in
+        snapshots)
+            [ "$#" -eq 1 ] || { usage; return 2; }
+            [ -x "$BLOOM_SAVE_SNAPSHOT" ] || { printf 'bloomctl: save snapshot service is unavailable\n' >&2; return 1; }
+            "$BLOOM_SAVE_SNAPSHOT" list
+            ;;
+        *) usage; return 2 ;;
+    esac
 }
 
 update_command() {
@@ -189,6 +202,10 @@ case "${1:-}" in
     update)
         shift
         update_command "$@"
+        ;;
+    saves)
+        shift
+        saves_command "$@"
         ;;
     *) usage; exit 2 ;;
 esac

@@ -139,6 +139,22 @@ EOF
     [ "$status" -eq 2 ]
 }
 
+@test "save snapshot inventory delegates only the read-only list operation" {
+    mock_snapshot="$BLOOM_TEST_ROOT/mock-snapshot"
+    cat >"$mock_snapshot" <<'EOF'
+#!/bin/sh
+printf 'snapshot:%s\n' "$1"
+EOF
+    chmod +x "$mock_snapshot"
+    export BLOOM_SAVE_SNAPSHOT_BIN="$mock_snapshot"
+
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl saves snapshots
+    [ "$status" -eq 0 ]
+    [ "$output" = 'snapshot:list' ]
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl saves restore anything
+    [ "$status" -eq 2 ]
+}
+
 @test "health exposes the Play Activity diagnostic as structured JSON" {
     cat >"$SDCARD/.tmp_update/bin/playActivity" <<'EOF'
 #!/bin/sh

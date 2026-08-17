@@ -46,8 +46,10 @@ merged; it does not imply unrecorded hardware certification.
 - [x] Require known hardware identity, complete runtime payloads, writable SD
   storage, and a free-space floor in structured health and update confirmation
   ([PR #57](https://github.com/boburning/BloomOS/pull/57)).
-- [ ] Bound verified save snapshots while preserving active recovery references
-  and corrupt evidence (`feature/save-snapshot-retention`).
+- [x] Bound verified save snapshots while preserving active recovery references
+  and corrupt evidence ([PR #58](https://github.com/boburning/BloomOS/pull/58)).
+- [ ] Expose read-only structured snapshot recovery inventory through
+  `bloomctl` (`feature/snapshot-inventory`).
 
 ### Deferred physical validation
 

@@ -130,3 +130,35 @@ create_snapshot() {
     [ -d "$SDCARD/Saves/BloomSnapshots/$corrupt" ]
     [ -d "$SDCARD/Saves/BloomSnapshots/$valid" ]
 }
+
+@test "lists verified referenced and corrupt snapshots as structured data" {
+    export BLOOM_JQ_BIN=/usr/bin/jq
+    export BLOOM_SNAPSHOT_RETENTION=5
+    create_snapshot
+    referenced="$SNAPSHOT_ID"
+    mkdir -p "$SDCARD/.bloom/update"
+    printf '{"schema":1,"phase":"testing","snapshot_id":"%s"}\n' "$referenced" >"$SDCARD/.bloom/update/state.json"
+    create_snapshot
+    corrupt="$SNAPSHOT_ID"
+    printf 'damage\n' >>"$SDCARD/Saves/BloomSnapshots/$corrupt/saves.tar"
+
+    run "$SNAPSHOT" list
+
+    [ "$status" -eq 0 ]
+    printf '%s' "$output" | jq -e --arg id "$referenced" \
+        '.schema == 1 and any(.snapshots[]; .id == $id and .status == "verified" and .referenced == true)' >/dev/null
+    printf '%s' "$output" | jq -e --arg id "$corrupt" \
+        'any(.snapshots[]; .id == $id and .status == "unverified" and .referenced == false)' >/dev/null
+    [ ! -e "$SDCARD/Saves/BloomSnapshots/.list-$$" ]
+    [ ! -e "$SDCARD/Saves/BloomSnapshots/.lock" ]
+}
+
+@test "lists an empty snapshot set without creating storage" {
+    export BLOOM_JQ_BIN=/usr/bin/jq
+
+    run "$SNAPSHOT" list
+
+    [ "$status" -eq 0 ]
+    [ "$output" = '{"schema":1,"snapshots":[]}' ]
+    [ ! -d "$SDCARD/Saves/BloomSnapshots" ]
+}
