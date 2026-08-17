@@ -344,14 +344,14 @@
       "id": "app-video-player--ffplay",
       "kind": "package",
       "path": "static/packages/App/Video Player (FFplay)",
-      "file_count": 3,
-      "byte_count": 3471564,
-      "tree_sha256": "8922325eb2208cfc02ea8398abe78308321d337e8843502cf14970e591deac58",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "file_count": 2,
+      "byte_count": 1230,
+      "tree_sha256": "4cb49aab90b9a7d7cb424252ca198899aab720dc86e0cbf53ee52a338e36dd1b",
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-amstrad---cpc--crocods",
