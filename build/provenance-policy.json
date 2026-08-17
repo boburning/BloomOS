@@ -1,0 +1,80 @@
+{
+  "schema": 1,
+  "channels": ["stable", "beta", "nightly", "development"],
+  "tiers": {
+    "source": {
+      "allowed_channels": ["stable", "beta", "nightly", "development"]
+    },
+    "legacy": {
+      "allowed_channels": ["development"]
+    },
+    "excluded": {
+      "allowed_channels": []
+    }
+  },
+  "components": [
+    {
+      "id": "bloom-native",
+      "tier": "source",
+      "paths": ["src", "tools"],
+      "source": "https://github.com/boburning/BloomOS",
+      "source_revision": "release-commit",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile"
+    },
+    {
+      "id": "retroarch-runtime",
+      "tier": "source",
+      "paths": ["third-party/RetroArch-patch"],
+      "source": "https://github.com/libretro/RetroArch",
+      "source_revision": "69a4f0ea1e8aaf442ae4858f2e7f2b31a1776576",
+      "license": "GPL-3.0-only",
+      "build_recipe": "third-party/RetroArch-patch/Makefile"
+    },
+    {
+      "id": "terminal",
+      "tier": "source",
+      "paths": ["third-party/Terminal"],
+      "source": "https://github.com/OnionUI/app-Terminal",
+      "source_revision": "b8d6f98ed0d4f95542dd0acb7ec683482d0a4029",
+      "license": "MIT",
+      "license_file": "third-party/Terminal/LICENSE",
+      "build_recipe": "third-party/Terminal/Makefile"
+    },
+    {
+      "id": "dropbear-developer-ssh",
+      "tier": "source",
+      "paths": ["third-party/dropbear", "tools/build-dropbear.sh"],
+      "source": "https://github.com/mkj/dropbear",
+      "source_revision": "887241694277b3816da5d174932c10546ea9d2c5",
+      "license": "LicenseRef-Dropbear",
+      "license_file": "third-party/dropbear/LICENSE",
+      "build_recipe": "tools/build-dropbear.sh"
+    },
+    {
+      "id": "inherited-libretro-cores",
+      "tier": "legacy",
+      "paths": ["static/build/RetroArch/.retroarch/cores"],
+      "inventory": "build/core-manifest.json",
+      "reason": "Exact binary identity is known, but per-core source revisions and build recipes are not."
+    },
+    {
+      "id": "inherited-runtime-payload",
+      "tier": "legacy",
+      "paths": ["static/build/.tmp_update", "static/build/miyoo", "lib"],
+      "reason": "The inherited runtime contains mixed prebuilt libraries without complete source and redistribution mapping."
+    },
+    {
+      "id": "inherited-package-catalog",
+      "tier": "legacy",
+      "paths": ["static/packages"],
+      "reason": "Standalone emulators and applications require component-level source, license, and build provenance."
+    },
+    {
+      "id": "search-and-file-manager",
+      "tier": "legacy",
+      "paths": ["third-party/SearchFilter", "third-party/DinguxCommander"],
+      "reason": "Pinned source is present, but the component repositories do not contain an authoritative top-level license declaration."
+    }
+  ]
+}
