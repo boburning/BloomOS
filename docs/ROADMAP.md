@@ -86,8 +86,9 @@ merged; it does not imply unrecorded hardware certification.
 - [x] Archive and verify the complete shell-test APK closure, rebuild without
   network access, and publish the resulting GHCR image for digest-pinned CI
   ([PR #75](https://github.com/boburning/BloomOS/pull/75)).
-- [ ] Decompose inherited runtime and package payloads into a canonical,
-  tree-hashed component replacement queue enforced during release packaging.
+- [x] Decompose inherited runtime and package payloads into a canonical,
+  tree-hashed component replacement queue enforced during release packaging
+  ([PR #76](https://github.com/boburning/BloomOS/pull/76)).
 
 The hardware-sensitive BloomOS 1.0/1.1 implementation queue is at its
 physical-validation boundary. Source-provenance replacement work can continue
