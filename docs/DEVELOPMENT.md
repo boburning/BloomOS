@@ -86,7 +86,8 @@ private key, or accepted host fingerprint is stored in the repository.
 
 `game-smoke` is an explicitly developer-only runtime probe for GB, GBC, GBA,
 NES/FC, SNES/SFC, and PSX. It confines the supplied ROM to the matching system
-directory, launches through the normal Onion compatibility handoff, keeps SSH
+directory, creates a validated `BloomLaunchRequest`, crosses the normal Onion
+compatibility handoff through `bloom-launch`, keeps SSH
 alive for observation, bounds execution to 5–60 seconds, terminates RetroArch,
 and verifies that MainUI returns and the pending command is removed. A pass
 proves launch and cleanup liveness only; it does not prove correct video,
