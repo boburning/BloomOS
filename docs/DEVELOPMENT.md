@@ -197,6 +197,10 @@ Fresh installs default to stable. Beta accepts stable and beta releases;
 nightly accepts stable, beta, and nightly. Development artifacts require the
 explicit developer-mode flag and are not a selectable end-user channel.
 
+Update staging also requires the signed archive size plus 16 MiB of free SD
+capacity before copying begins. Tests may override the reserve with
+`BLOOM_UPDATE_MIN_FREE_KB`; production uses the safety floor.
+
 Create a privacy-bounded device-side support bundle with:
 
 ```sh

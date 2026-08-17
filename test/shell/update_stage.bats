@@ -53,6 +53,31 @@ setup() {
     [ "$status" -eq 0 ]
 }
 
+@test "refuses low capacity before creating staging state" {
+    cat >"$MOCK_BIN/df" <<'EOF'
+#!/bin/sh
+printf '%s\n' 'Filesystem 1024-blocks Used Available Capacity Mounted on'
+printf '%s\n' '/dev/mock 100000 99999 1 100% /mnt/SDCARD'
+EOF
+    chmod +x "$MOCK_BIN/df"
+
+    run "$STAGE" "$MANIFEST" "$SIGNATURE" "$ARCHIVE"
+
+    [ "$status" -eq 1 ]
+    printf '%s' "$output" | grep -F 'insufficient free space'
+    [ ! -e "$BLOOM_UPDATE_ROOT/staged" ]
+}
+
+@test "rejects an invalid free-space reserve" {
+    export BLOOM_UPDATE_MIN_FREE_KB=0
+
+    run "$STAGE" "$MANIFEST" "$SIGNATURE" "$ARCHIVE"
+
+    [ "$status" -eq 1 ]
+    printf '%s' "$output" | grep -F 'free-space reserve is invalid'
+    [ ! -e "$BLOOM_UPDATE_ROOT/staged" ]
+}
+
 teardown() { teardown_bloom_fixture; }
 
 @test "publishes an independently verified immutable release triplet" {
