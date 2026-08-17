@@ -21,7 +21,11 @@ Baseline: Onion `07505ea58c7bba698d6b9220ff43946a43cac76b`, audited 2026-08-15.
 
 The inherited workflows referenced movable tags. Bloom resolves retained Actions to full commit SHAs with version comments. The formatting workflow no longer uses third-party changed-file or auto-commit Actions and never writes to contributor branches. Ordinary jobs declare `contents: read`; only release publication jobs receive job-scoped `contents: write`.
 
-Build, pre-release, and tagged-release jobs now use the pinned toolchain index digest. Theme downloads are commit-pinned and checksum-verified. The release scripts still resolve a moving latest release in the inherited patch workflow, so the complete baseline is not yet reproducible.
+Build, pre-release, and tagged-release jobs now use the pinned toolchain index
+digest. Theme downloads are commit-pinned and checksum-verified. The inherited,
+unfinished patch helper that resolved Onion's moving latest release has been
+removed; Bloom release tooling now consumes only reviewed source and explicitly
+pinned build inputs.
 
 ## Bundled binaries
 

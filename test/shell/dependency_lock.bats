@@ -28,3 +28,9 @@
     grep -F 'cp -L /opt/miyoomini-toolchain/arm-linux-gnueabihf/libc/usr/lib/libatomic.so.1' /workspace/Makefile
     ! grep -F 'libatomic.so.1' /workspace/Makefile | grep -F 'http'
 }
+
+@test "release tooling does not resolve a moving upstream latest release" {
+    run grep -R -E 'api\.github\.com/.*/releases/latest|Onion-latest\.zip|create_patch\.sh' \
+        /workspace/Makefile /workspace/.github /workspace/tools
+    [ "$status" -ne 0 ]
+}

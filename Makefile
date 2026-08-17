@@ -58,7 +58,7 @@ include ./src/common/commands.mk
 
 ###########################################################
 
-.PHONY: all version core apps external release unsigned-release package-release package-release-unsigned sign-release clean deepclean git-clean with-toolchain patch lib test
+.PHONY: all version core apps external release unsigned-release package-release package-release-unsigned sign-release clean deepclean git-clean with-toolchain lib test
 
 all: dist
 
@@ -307,9 +307,6 @@ toolchain: $(CACHE)/.docker
 
 with-toolchain: $(CACHE)/.docker
 	docker run --rm -v "$(ROOT_DIR)":/root/workspace $(TOOLCHAIN) /bin/bash -c "source /root/.bashrc; make $(CMD)"
-
-patch:
-	@chmod a+x $(ROOT_DIR)/.github/create_patch.sh && $(ROOT_DIR)/.github/create_patch.sh
 
 external-libs:
 	@cd $(ROOT_DIR)/include/SDL && make clean && make
