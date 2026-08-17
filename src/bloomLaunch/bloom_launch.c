@@ -233,6 +233,38 @@ int bloom_launch_validate_file(const char *request_path, char *error, size_t err
     return 0;
 }
 
+static int fsync_parent_directory(const char *path)
+{
+    char *parent = strdup(path);
+    if (parent == NULL)
+        return -1;
+    char *separator = strrchr(parent, '/');
+    if (separator == NULL) {
+        strcpy(parent, ".");
+    }
+    else if (separator == parent) {
+        separator[1] = '\0';
+    }
+    else {
+        *separator = '\0';
+    }
+
+    int directory = open(parent, O_RDONLY | O_DIRECTORY);
+    free(parent);
+    if (directory < 0)
+        return -1;
+    int result = fsync(directory);
+    int saved_errno = errno;
+    if (close(directory) != 0 && result == 0) {
+        result = -1;
+        saved_errno = errno;
+    }
+    if (result != 0 && (saved_errno == EINVAL || saved_errno == ENOTSUP))
+        result = 0;
+    errno = saved_errno;
+    return result;
+}
+
 static int atomic_write_bytes(const char *path, const char *data, size_t length, mode_t mode, char *error,
                               size_t error_size)
 {
@@ -263,8 +295,11 @@ static int atomic_write_bytes(const char *path, const char *data, size_t length,
         failed = 1;
     if (close(fd) != 0)
         failed = 1;
-    if (!failed)
+    if (!failed) {
         failed = rename(temp_path, path) != 0;
+        if (!failed)
+            failed = fsync_parent_directory(path) != 0;
+    }
     if (failed) {
         set_error(error, error_size, "cannot write atomic file: %s", strerror(errno));
         unlink(temp_path);
@@ -371,8 +406,11 @@ int bloom_launch_write_legacy(const char *request_path, const char *command_path
         failed = fclose(file) != 0 || failed;
     else
         close(fd);
-    if (!failed)
+    if (!failed) {
         failed = rename(temp_path, command_path) != 0;
+        if (!failed)
+            failed = fsync_parent_directory(command_path) != 0;
+    }
     if (failed) {
         set_error(error, error_size, "cannot write legacy command: %s", strerror(errno));
         unlink(temp_path);
