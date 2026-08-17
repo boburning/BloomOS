@@ -1,6 +1,6 @@
 include ../common/config.mk
 
-CFILES := $(CFILES) ../playActivity/playActivityModel.c
+CFILES := $(CFILES) ../playActivity/playActivityModel.c ../playActivity/playActivityMigrations.c
 
 TARGET = playActivityUI
 LDFLAGS := $(LDFLAGS) -lSDL -lSDL_image -lSDL_ttf -lsqlite3

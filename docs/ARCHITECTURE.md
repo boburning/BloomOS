@@ -99,4 +99,12 @@ cartridges remain their own images. Canonical GameID columns, schema migrations,
 and monotonic duration tracking are subsequent additive database changes; this
 slice intentionally preserves the existing database and aggregate totals.
 
+Schema version 1 adds singleton `schema_version` state, append-only
+`migration_history`, and a nullable unique canonical `rom.game_id` column. The
+migration uses `BEGIN IMMEDIATE`, preserves a SQLite-native pre-v1 backup before
+touching an existing database, rolls back on failure, is idempotent, and refuses
+newer or internally incomplete schemas. Identity backfill is intentionally not
+part of this migration: ambiguous legacy rows remain `NULL` until their source
+system and normalized ROM path can be established deterministically.
+
 Architectural decisions will be recorded as the corresponding subsystem work begins.

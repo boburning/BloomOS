@@ -5,6 +5,7 @@ CFILES := ../src/infoPanel/imagesCache.c ../src/common/utils/log.c ../src/common
 CFILES := $(CFILES) ../src/bloomSaveFlush/bloom_save_flush.c
 CFILES := $(CFILES) ../src/bloomGameId/bloom_game_id.c
 CFILES := $(CFILES) ../src/playActivity/playActivityModel.c
+CFILES := $(CFILES) ../src/playActivity/playActivityMigrations.c
 CFILES := $(CFILES) ../src/common/utils/udp.c
 include ../src/common/config.mk
 

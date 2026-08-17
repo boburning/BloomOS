@@ -17,11 +17,13 @@
 
 #include "./cacheDB.h"
 #include "./playActivityModel.h"
+#include "./playActivityMigrations.h"
 
 #define PLAY_ACTIVITY_DB_NEW_FILE "/mnt/SDCARD/Saves/CurrentProfile/play_activity/play_activity_db.sqlite"
 #define ROMS_FOLDER "/mnt/SDCARD/Roms"
 #define CMD_TO_RUN "/mnt/SDCARD/.tmp_update/cmd_to_run.sh"
 #define ROM_NOT_FOUND -1
+#define PLAY_ACTIVITY_DB_V1_BACKUP "/mnt/SDCARD/Saves/CurrentProfile/play_activity/play_activity_db.pre-bloom-v1.sqlite"
 
 sqlite3 *play_activity_db = NULL;
 
@@ -62,6 +64,12 @@ void play_activity_db_open(void)
                      "CREATE TABLE play_activity(rom_id INTEGER, play_time INTEGER, created_at INTEGER DEFAULT (strftime('%s', 'now')), updated_at INTEGER);"
                      "CREATE INDEX play_activity_rom_id_index ON play_activity(rom_id);",
                      NULL, NULL, NULL);
+    }
+    int migration_rc = play_activity_schema_migrate(
+        play_activity_db, play_activity_db_created ? PLAY_ACTIVITY_DB_V1_BACKUP : NULL);
+    if (migration_rc != SQLITE_OK) {
+        fprintf(stderr, "Cannot migrate play activity database: %s\n", sqlite3_errstr(migration_rc));
+        play_activity_db_close();
     }
 }
 
