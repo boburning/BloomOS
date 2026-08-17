@@ -10,6 +10,7 @@
 #include <string.h>
 #include <sys/stat.h>
 
+#include "database/sqlite_config.h"
 #include "utils/file.h"
 #include "utils/log.h"
 #include "utils/str.h"
@@ -80,6 +81,11 @@ void play_activity_db_open(void)
         printf("%s\n", sqlite3_errmsg(play_activity_db));
         play_activity_db_close();
         return;
+    }
+
+    int configure_rc = bloom_sqlite_configure(play_activity_db);
+    if (configure_rc != SQLITE_OK) {
+        fprintf(stderr, "Cannot configure play activity database: %s\n", sqlite3_errmsg(play_activity_db));
     }
 
     if (!play_activity_db_created) {
