@@ -181,3 +181,13 @@ requests explicitly marked `safe_only`.
 the installed native Play Activity health check and returns nonzero if that
 check is unavailable or unhealthy. The command is read-only; repair and backup
 remain explicit operations rather than health-check side effects.
+
+Create a privacy-bounded device-side support bundle with:
+
+```sh
+bloomctl logs export
+```
+
+The command prints the resulting path below `BloomDiagnostics/`. The archive
+uses an allowlist and excludes ROMs, saves, Wi-Fi credentials, SSH keys,
+environment variables, scraper logs, network logs, and arbitrary `/tmp` logs.

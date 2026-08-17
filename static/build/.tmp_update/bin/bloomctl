@@ -12,6 +12,7 @@ BLOOM_UPDATE_BOOT="${BLOOM_UPDATE_BOOT_BIN:-$SCRIPT_DIR/bloom-update-boot}"
 BLOOM_UPDATE_ROLLBACK="${BLOOM_UPDATE_ROLLBACK_BIN:-$SCRIPT_DIR/bloom-update-rollback}"
 BLOOM_SYSTEM_HEALTH="${BLOOM_SYSTEM_HEALTH_BIN:-$SCRIPT_DIR/bloom-health-system}"
 BLOOM_SAVE_SNAPSHOT="${BLOOM_SAVE_SNAPSHOT_BIN:-$SCRIPT_DIR/bloom-save-snapshot}"
+BLOOM_DIAGNOSTICS_EXPORT="${BLOOM_DIAGNOSTICS_EXPORT_BIN:-$SCRIPT_DIR/bloom-diagnostics-export}"
 
 path() {
     printf '%s%s' "$BLOOM_ROOT" "$1"
@@ -134,6 +135,18 @@ usage() {
     printf 'Usage: bloomctl {info|health} [--json]\n' >&2
     printf '       bloomctl update {status|stage MANIFEST SIGNATURE ARCHIVE|prepare VERSION|arm VERSION|confirm|rollback}\n' >&2
     printf '       bloomctl saves snapshots\n' >&2
+    printf '       bloomctl logs export\n' >&2
+}
+
+logs_command() {
+    case "${1:-}" in
+        export)
+            [ "$#" -eq 1 ] || { usage; return 2; }
+            [ -x "$BLOOM_DIAGNOSTICS_EXPORT" ] || { printf 'bloomctl: diagnostics export service is unavailable\n' >&2; return 1; }
+            "$BLOOM_DIAGNOSTICS_EXPORT"
+            ;;
+        *) usage; return 2 ;;
+    esac
 }
 
 saves_command() {
@@ -206,6 +219,10 @@ case "${1:-}" in
     saves)
         shift
         saves_command "$@"
+        ;;
+    logs)
+        shift
+        logs_command "$@"
         ;;
     *) usage; exit 2 ;;
 esac

@@ -50,8 +50,10 @@ merged; it does not imply unrecorded hardware certification.
   and corrupt evidence ([PR #58](https://github.com/boburning/BloomOS/pull/58)).
 - [x] Expose read-only structured snapshot recovery inventory through
   `bloomctl` ([PR #59](https://github.com/boburning/BloomOS/pull/59)).
-- [ ] Retry transient pinned-theme download failures with bounded attempts and
-  keep partial responses out of the verified cache (`fix/theme-download-retries`).
+- [x] Retry transient pinned-theme download failures with bounded attempts and
+  keep partial responses out of the verified cache ([PR #60](https://github.com/boburning/BloomOS/pull/60)).
+- [ ] Export a privacy-bounded, allowlisted on-device diagnostics archive
+  through `bloomctl logs export` (`feature/diagnostics-export`).
 
 ### Deferred physical validation
 
