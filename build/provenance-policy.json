@@ -8,6 +8,9 @@
     "legacy": {
       "allowed_channels": ["development"]
     },
+    "inventory": {
+      "allowed_channels": ["stable", "beta", "nightly", "development"]
+    },
     "excluded": {
       "allowed_channels": []
     }
@@ -60,16 +63,18 @@
     },
     {
       "id": "inherited-runtime-payload",
-      "tier": "legacy",
+      "tier": "inventory",
       "paths": ["static/build/.tmp_update", "static/build/miyoo", "lib"],
       "inventory": "build/legacy-manifest.json",
+      "inventory_kinds": ["runtime"],
       "reason": "The inherited runtime contains mixed prebuilt libraries without complete source and redistribution mapping."
     },
     {
       "id": "inherited-package-catalog",
-      "tier": "legacy",
+      "tier": "inventory",
       "paths": ["static/packages"],
       "inventory": "build/legacy-manifest.json",
+      "inventory_kinds": ["package", "package-common"],
       "reason": "Standalone emulators and applications require component-level source, license, and build provenance."
     },
     {

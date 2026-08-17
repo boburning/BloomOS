@@ -29,6 +29,12 @@ components cannot ship at all. This gate is intentionally stricter than a
 checksum inventory: it prevents exact but historically unexplained binaries
 from entering a public channel.
 
+The inherited runtime and package catalog are inventory-backed policy groups.
+Their exact `build/legacy-manifest.json` entries decide eligibility:
+`source-build` entries can ship on public channels, unresolved entries can ship
+only in development, and `excluded` entries cannot ship in any channel. Policy
+validation also requires every inventory entry to belong to exactly one group.
+
 Release validation reconstructs the payload manifest directly from the final
 ZIP, rejects duplicate, absolute, traversal, or backslash paths, and requires
 the manifest digest recorded by `build-info.json` to match. This provides exact
