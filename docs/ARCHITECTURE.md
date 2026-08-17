@@ -43,6 +43,15 @@ because the legacy runtime cannot round-trip them safely. Structured requests
 retain the broader data model so that limitation disappears with the legacy
 parser rather than leaking into Bloom's API.
 
+Until every emulator launcher consumes structured requests directly,
+reset/forced-auto-load options cross the compatibility boundary through
+`bloom-launch-override`. It validates the permanent launcher and the two
+supported temporary configs, writes a mode-0700 copy beside the launcher so
+`$0`-relative paths remain valid, and injects the option only into that copy.
+Runtime cleanup removes the Bloom-owned copy and never edits the permanent
+`launch.sh`; interruption can therefore leave at most an inert hidden file,
+not a corrupted emulator definition.
+
 `bloom-session` owns the initial explicit lifecycle state machine. It validates
 and snapshots the immutable launch request, hashes that snapshot, serializes
 writers with an atomic lock, rejects stale or skipped transitions, attaches a
