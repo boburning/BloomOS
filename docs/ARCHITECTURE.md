@@ -188,6 +188,10 @@ schema-1 report embeds the Play Activity report without rewriting it and
 propagates an unhealthy or unavailable database check through its exit status.
 Additional independently testable subsystem checks can be added under the
 top-level `checks` object without changing the native database boundary.
+The update-state check treats normal idle, staging, validation, and rollback
+validation phases as operational. Malformed or unavailable state and terminal
+`recovery_required` or `rollback_failed` phases fail health with a bounded
+summary that does not expose pending-version or path details.
 
 `bloomctl logs export` creates a timestamped support archive from an explicit
 allowlist: structured info, health, update state, snapshot inventory, bounded

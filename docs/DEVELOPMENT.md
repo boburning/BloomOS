@@ -179,8 +179,10 @@ requests explicitly marked `safe_only`.
 
 `bloomctl health --json` is the machine-readable diagnostics surface. It runs
 the installed native Play Activity health check and returns nonzero if that
-check is unavailable or unhealthy. The command is read-only; repair and backup
-remain explicit operations rather than health-check side effects.
+check, the system check, or update-state validation is unavailable or
+unhealthy. Recovery-required and terminal rollback-failure states deliberately
+fail health. The command is read-only; repair and backup remain explicit
+operations rather than health-check side effects.
 
 Inspect or select the signed update channel with:
 
