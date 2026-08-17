@@ -61,11 +61,11 @@
       "file_count": 2,
       "byte_count": 199,
       "tree_sha256": "f9e823b76ea355e4a8ad8aa6f8a99426e3348c901aac68424b494963077e309e",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "app-advancemenu--alternative-frontend",
@@ -100,11 +100,11 @@
       "file_count": 3,
       "byte_count": 545,
       "tree_sha256": "fa55446c3955729bc084a92ef4b16c3e05344624265170474ccabbbd36952227",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "app-display-calibration--240psuite",
@@ -139,11 +139,11 @@
       "file_count": 2,
       "byte_count": 184,
       "tree_sha256": "52054c2701bc9f7844b1de1691bfc51358dc2a94f8f6fce64c0131afa814c997",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "app-file-explorer--dinguxcommander",
@@ -165,11 +165,11 @@
       "file_count": 2,
       "byte_count": 503,
       "tree_sha256": "2ae66de69190ea3e376ada160c4312a3874d1639482adebd584436f4b5dc883f",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "app-gameswitcher--shortcut",
@@ -178,11 +178,11 @@
       "file_count": 2,
       "byte_count": 195,
       "tree_sha256": "2eb0ec1ed6986775e89295cf1a6d9cea638170966217aeafc846f17285cd11fc",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "app-guest-mode",
@@ -191,11 +191,11 @@
       "file_count": 7,
       "byte_count": 2820,
       "tree_sha256": "98c620a579559a5f0bde888a250fda282cd754325b466680a5bd7d929a10360c",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "app-list-shortcuts--filter-refresh",
@@ -204,11 +204,11 @@
       "file_count": 1,
       "byte_count": 0,
       "tree_sha256": "a4b71715daa3cadf0b16ad26f5a8dd3c1434905d69979ef9dc774273d23ab54b",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "app-music-player--gmu",
@@ -230,11 +230,11 @@
       "file_count": 2,
       "byte_count": 282,
       "tree_sha256": "7b7d7427e61f8351680b4c50e21853b0d5275d28442cb3800d5c592b666f09ab",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "app-pdf-reader--green",
@@ -243,11 +243,11 @@
       "file_count": 3,
       "byte_count": 721,
       "tree_sha256": "b523c9e629304c902b0ac177f448268490978a3b35442e5142aefcdaf76423a7",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "app-quick-guide",
@@ -269,11 +269,11 @@
       "file_count": 4,
       "byte_count": 2375,
       "tree_sha256": "ce008d425f013cd625d02128a59a73308f5ea9abbd78b7b0bed919a780f55340",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "app-retroarch--shortcut",
@@ -282,11 +282,11 @@
       "file_count": 2,
       "byte_count": 229,
       "tree_sha256": "e10b01cf7c1473e51741e975eff0dd594387364fb4bb6f69a93940147c6b433b",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "app-search--find-your-games",
@@ -295,11 +295,11 @@
       "file_count": 2,
       "byte_count": 309,
       "tree_sha256": "2d9f198daeb5f896634d80370abece61053b550c391e18f3b6221a9b982b0870",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "app-terminal--developer-tool",
@@ -308,11 +308,11 @@
       "file_count": 2,
       "byte_count": 207,
       "tree_sha256": "dbdc55b22d2868acf32ba6c47517775e89823b26a8bd635f7ba55a234f816c1d",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "app-themeswitcher",
@@ -321,11 +321,11 @@
       "file_count": 2,
       "byte_count": 194,
       "tree_sha256": "0edacfa3cc6d518a6d6083366a0f45e2e7b64b7d0c207b40ca9b9524b9327239",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "app-tweaks",
@@ -334,11 +334,11 @@
       "file_count": 2,
       "byte_count": 199,
       "tree_sha256": "039feb912bd3c4edcba8591d61ee0c6e2b8de70d8ed10e7d2533dcd39618c9bf",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "app-video-player--ffplay",
@@ -360,11 +360,11 @@
       "file_count": 3,
       "byte_count": 539,
       "tree_sha256": "6ffd308d302985082c3b13f1f14dc6fd23c2ddd00574965144932c63f777c398",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-arcade--mame-2003-plus",
@@ -373,11 +373,11 @@
       "file_count": 3,
       "byte_count": 1295,
       "tree_sha256": "671bf92d1e4aafc82553aaae0c64aed600b3a44af5dc284e5c69413827ae972b",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-atari---2600--stella-2014",
@@ -386,11 +386,11 @@
       "file_count": 3,
       "byte_count": 546,
       "tree_sha256": "fd248269573eb4a0d4a09c4f925cef4a0c768c47b30a456a12f842980d0a1322",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-atari---5200--a5200",
@@ -399,11 +399,11 @@
       "file_count": 3,
       "byte_count": 569,
       "tree_sha256": "2167c9e7f916c398bc0df6c28f4328c1c17ce60b0fe1dafb33fbd4707616785a",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-atari---7800--prosystem",
@@ -412,11 +412,11 @@
       "file_count": 3,
       "byte_count": 578,
       "tree_sha256": "386077558bde3449440691deaeb5f67b2e606e5468f67ff51a568582439a667e",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-atari---lynx--handy",
@@ -425,11 +425,11 @@
       "file_count": 3,
       "byte_count": 533,
       "tree_sha256": "0323f6390749ec06dc3e572bf9db9a9e4a77aa150e43e90faaae49da3cb552e3",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-bandai---sufami-turbo--snes9x",
@@ -438,11 +438,11 @@
       "file_count": 3,
       "byte_count": 542,
       "tree_sha256": "5274bcfef8cc353f05068971163c4665a3ac95c9d624095bbd91a55ddfb6eb95",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-bandai---wonderswancolor--b--cygne",
@@ -451,11 +451,11 @@
       "file_count": 3,
       "byte_count": 537,
       "tree_sha256": "cf434184761c78d49e54ddfaf18d8eab0d37eb122f7ef202fc466d296bfcb98b",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-capcom---cps1--fb-alpha-2012-cps-1",
@@ -464,11 +464,11 @@
       "file_count": 3,
       "byte_count": 538,
       "tree_sha256": "56bbd0aab997ddf4dbaef792b063e86d4deb22b1cb966165c35551012753fa8a",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-capcom---cps2--fb-alpha-2012-cps-2",
@@ -477,11 +477,11 @@
       "file_count": 3,
       "byte_count": 538,
       "tree_sha256": "92b8e62b2ab96fa2c1195a72836741f3a57a32936e851ab1178d542bf4343e67",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-capcom---cps3--fb-alpha-2012-cps-3",
@@ -490,11 +490,11 @@
       "file_count": 3,
       "byte_count": 538,
       "tree_sha256": "0644dea783403149e4e786f3599b0fcfd75a94eccc39b702aa6e27c39b3dc04e",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-coleco---colecovision--bluemsx",
@@ -503,11 +503,11 @@
       "file_count": 3,
       "byte_count": 570,
       "tree_sha256": "3d134d0c9a9b9b13aff20c5598436fa8ef4a4bc6d30c5fcaa995255bac19ad23",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-commodore---amiga--puae-2021",
@@ -516,11 +516,11 @@
       "file_count": 3,
       "byte_count": 610,
       "tree_sha256": "1acc5874772787c3c80ff88715f0371ec3afd400159e39dfbd7aca3497505e74",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-commodore---c64--vice-x64",
@@ -529,11 +529,11 @@
       "file_count": 3,
       "byte_count": 515,
       "tree_sha256": "5eaf8e7748bd638b47d68c1967779cbdc049cc08576ebcbc791440465bfd2378",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-commodore---vic-20--vice-xvic",
@@ -542,11 +542,11 @@
       "file_count": 3,
       "byte_count": 620,
       "tree_sha256": "eb70d2e9c53acebbd407445458ca9cb47ee0b6a2af0eddf1debdf799983819c7",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-fairchild---channelf--freechaf",
@@ -555,11 +555,11 @@
       "file_count": 3,
       "byte_count": 564,
       "tree_sha256": "949033a122e2cf1484eb0f24b14cb70d01b9199865caea5c209303f44cd43c95",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-gce---vectrex--vecx",
@@ -568,11 +568,11 @@
       "file_count": 3,
       "byte_count": 543,
       "tree_sha256": "c7385f252110b46939f09669fa317a83710900b84b6bd517bf68f112dedd598a",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-magnavox---odyssey2--o2em",
@@ -581,11 +581,11 @@
       "file_count": 3,
       "byte_count": 536,
       "tree_sha256": "63a0a091cd547cec26fdd4a97177d0f1a2bbf7358327dc48091924a0d833e287",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-mattel---intellivision--freeintv",
@@ -594,11 +594,11 @@
       "file_count": 3,
       "byte_count": 564,
       "tree_sha256": "d6dd5a6f5593a73dfcea9dc3477f677de65a247cd5f9acc1c7b00571337b7ef9",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-mega-duck--sameduck",
@@ -607,11 +607,11 @@
       "file_count": 3,
       "byte_count": 554,
       "tree_sha256": "9ef2a893d584ab35679407806c7f643c56f67c51907e6f4b593744e979eae892",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-microsoft---dos--dosbox-pure",
@@ -620,11 +620,11 @@
       "file_count": 3,
       "byte_count": 580,
       "tree_sha256": "368f4bd40d5a27ab124557606cbce66d5d5baf672da11017881b05a7d9ae14da",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-microsoft---msx--bluemsx",
@@ -633,11 +633,11 @@
       "file_count": 3,
       "byte_count": 542,
       "tree_sha256": "ebd0adefd10a389d45275e68c794258d84d95dc6281b08b924cf35148d11a2bd",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-nec---supergrafx--beetle-supergrafx",
@@ -646,11 +646,11 @@
       "file_count": 3,
       "byte_count": 560,
       "tree_sha256": "272d6974d547e66c08f4a1bf2f8d68e57e130d7237b035466327e5af13ef4aec",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-nec---turbografx-cd--beetle-pce-fast",
@@ -659,11 +659,11 @@
       "file_count": 3,
       "byte_count": 565,
       "tree_sha256": "9aa8e6501dace570306584ebd88e99e7c049fd394dd54e8bafc4c54d515fd1f8",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-nec---turbografx-16--beetle-pce-fast",
@@ -672,11 +672,11 @@
       "file_count": 3,
       "byte_count": 555,
       "tree_sha256": "df18139b5c2f427b999826b73068ae219ca294247b5475b15147a6a79647c6e8",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-nintendo---ds--drastic",
@@ -698,11 +698,11 @@
       "file_count": 3,
       "byte_count": 535,
       "tree_sha256": "a69aa609ca7c67d2e7b05eec9afd8da64d1616f1e0cfa09e1daa2485761b98ed",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-nintendo---gba--gpsp",
@@ -711,11 +711,11 @@
       "file_count": 3,
       "byte_count": 2297,
       "tree_sha256": "6b36443a0d23a0f4282ad930cb864e048db1d76ad421701d25bbd523960a9291",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-nintendo---game---watch--gw",
@@ -724,11 +724,11 @@
       "file_count": 3,
       "byte_count": 518,
       "tree_sha256": "55a2ae1587d3252e6326531140c47911f1b774afb5092a81ddd54ae24514b520",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-nintendo---game-boy--gambatte",
@@ -737,11 +737,11 @@
       "file_count": 3,
       "byte_count": 529,
       "tree_sha256": "b2fc3d3612589f04605f2243f839728dad90ae5b91a43f8ebddf14d31a6b7fbc",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-nintendo---game-boy-color--gambatte",
@@ -750,11 +750,11 @@
       "file_count": 3,
       "byte_count": 535,
       "tree_sha256": "da69d8298532027080b01ab27de46837f99d8fe98cd1f530710c2d32c52c6980",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-nintendo---nes--fceumm",
@@ -763,11 +763,11 @@
       "file_count": 3,
       "byte_count": 530,
       "tree_sha256": "acf55dabbce646fea3f3cc00e78a5a1e23ae5e7b645cb55a6334d368b1b13d46",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-nintendo---pokemon-mini--pokemini",
@@ -776,11 +776,11 @@
       "file_count": 3,
       "byte_count": 530,
       "tree_sha256": "f2e536c746d3a100d20eda640cec5d027752cd37b36b8eaf25d1481e72a69963",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-nintendo---snes--beetle-supafaust",
@@ -789,11 +789,11 @@
       "file_count": 3,
       "byte_count": 549,
       "tree_sha256": "097a8ac25bb213061283747a481d3f8d79e383f1d64cfe7dfc145e03f0952d7e",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-nintendo---satellaview--snes9x",
@@ -802,11 +802,11 @@
       "file_count": 3,
       "byte_count": 572,
       "tree_sha256": "b7a40ad710c6c9adf98108d7e09feee431628660f135d3c3d95d09761cb6a6c7",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-nintendo---super-game-boy--mgba",
@@ -815,11 +815,11 @@
       "file_count": 3,
       "byte_count": 531,
       "tree_sha256": "d724073fca446ceb764949eb51d13af96166474e6940759a8fbafa8b5fbd97ca",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-nintendo---virtual-boy--beetle-vb",
@@ -828,11 +828,11 @@
       "file_count": 3,
       "byte_count": 532,
       "tree_sha256": "c09dcfd26e31c7ae23a0a881c24d76fef6f800df0a25edcaeae66bb965fd1289",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-pico-8--fake8",
@@ -841,11 +841,11 @@
       "file_count": 4,
       "byte_count": 760,
       "tree_sha256": "8348c3a6b75fafd2d3e7135cd112f4f78583e6851674436b8b962ade53160a72",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-phillips---videopac---o2em",
@@ -854,11 +854,11 @@
       "file_count": 3,
       "byte_count": 539,
       "tree_sha256": "8d877cd83778b163ac141348e2f1af1b5645b0d00537d23a8a5e1ae576f1dbc2",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-ports-collection",
@@ -893,11 +893,11 @@
       "file_count": 3,
       "byte_count": 548,
       "tree_sha256": "91eb99e6815508a3b252f5feb31e8d1c624c12eac26d7e6220bb3ebd3f3d8527",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-snk---neo-geo-cd--neocd",
@@ -906,11 +906,11 @@
       "file_count": 3,
       "byte_count": 538,
       "tree_sha256": "4e052286b5f4136d9531a4a0b128b19b419384c19707deee168093176d3cfa0b",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-snk---neo-geo-pocket-color--b--neopop",
@@ -919,11 +919,11 @@
       "file_count": 3,
       "byte_count": 538,
       "tree_sha256": "25ff27ee463282650c9d7887ba3ab30ac513b137c048d7f211548ded97a6c036",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-sega---32x--picodrive",
@@ -932,11 +932,11 @@
       "file_count": 3,
       "byte_count": 582,
       "tree_sha256": "c36fae71447cccaeb0f958906348cf87537744e77ed6b36d1a554578c781ac94",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-sega---cd--picodrive",
@@ -945,11 +945,11 @@
       "file_count": 3,
       "byte_count": 579,
       "tree_sha256": "bd9be209049a3a530c4a6f1fb23fb51e2696fee2d42754228f77d5523e85c1d2",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-sega---game-gear--picodrive",
@@ -958,11 +958,11 @@
       "file_count": 3,
       "byte_count": 528,
       "tree_sha256": "88a2445dbbd31216a0d3d5679651165c39984e1b144af82ea62386313e415023",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-sega---genesis--picodrive",
@@ -971,11 +971,11 @@
       "file_count": 3,
       "byte_count": 555,
       "tree_sha256": "773eea7e0922cf94070b161a4e58a51cb5c6556c0737a98181ae7087d8e97ab4",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-sega---master-system--picodrive",
@@ -984,11 +984,11 @@
       "file_count": 3,
       "byte_count": 555,
       "tree_sha256": "e16fa1b25536024de908abe13b60bfa22aee7e89292ce7a08f058ae1f15f73e2",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-sega---sg-1000--gearsystem",
@@ -997,11 +997,11 @@
       "file_count": 3,
       "byte_count": 577,
       "tree_sha256": "c206095b4ecb71a1a355a63a9c46a0ab383a65c59d18ff1f9f626fd0cfdacb1f",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-sinclair---zx-spectrum--fuse",
@@ -1010,11 +1010,11 @@
       "file_count": 3,
       "byte_count": 543,
       "tree_sha256": "b47523ca14819fad3f9ebb5a8ba14b0cd092e778dc9a8ac570e0a565df8337d7",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-sony---playstation--pcsx-rearmed",
@@ -1023,11 +1023,11 @@
       "file_count": 3,
       "byte_count": 606,
       "tree_sha256": "e938a164b58b72ddf89977285097b4e498f904dd93faa962a1d808a30ead8a17",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-tic-80--tic-80",
@@ -1036,11 +1036,11 @@
       "file_count": 3,
       "byte_count": 541,
       "tree_sha256": "fccb2823e150fe0135885d42b03b236bb2ebec0bf50624133c88280728c68b8e",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "emu-watara---supervision--potator",
@@ -1049,11 +1049,11 @@
       "file_count": 3,
       "byte_count": 571,
       "tree_sha256": "80c55c36c6c2a4cfc233168a81194188cfe0e7047609a0445fb7b9c593fbd4c1",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp--arcade--final-burn-alpha",
@@ -1062,11 +1062,11 @@
       "file_count": 3,
       "byte_count": 496,
       "tree_sha256": "7fa6b581c31d619706d462bfabc27b758aa8ad4c39481933b455372999d0dd21",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp--arcade--mame-2003",
@@ -1075,11 +1075,11 @@
       "file_count": 3,
       "byte_count": 502,
       "tree_sha256": "362c1ccabb6ed962a5890050554e19e5f361f26ab5d48c92376aba3ed8a9423f",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp--java---j2me--squirreljme",
@@ -1088,11 +1088,11 @@
       "file_count": 3,
       "byte_count": 505,
       "tree_sha256": "0ee789635794e42fbcee9a2348e1c9626c3f74b011a00f0d73314fe9bc2f8c2e",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp--microsoft---msx--bluemsx",
@@ -1101,11 +1101,11 @@
       "file_count": 3,
       "byte_count": 530,
       "tree_sha256": "bc367c14ac2cbdd7738f7e97d7d1c955646be778775ff01cb7cd659585c35301",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-3do--opera",
@@ -1114,11 +1114,11 @@
       "file_count": 3,
       "byte_count": 491,
       "tree_sha256": "8b8ab30bcd9700b673238bb664616f76785d640917ded24fe90e0c5f7bb6caed",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-amstrad---cpc--caprice32",
@@ -1127,11 +1127,11 @@
       "file_count": 3,
       "byte_count": 560,
       "tree_sha256": "4ee077a694a46f638984a586581b7d761e29bcd17a68d36f3ba64daa13b458e3",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-arcade--advancemame",
@@ -1140,11 +1140,11 @@
       "file_count": 5,
       "byte_count": 1189,
       "tree_sha256": "af518855b42c76dea6d47e971ecdfc302e2ae82b7d19c0405cedba5fc70a43b3",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-arcade--fb-alpha-2012",
@@ -1153,11 +1153,11 @@
       "file_count": 3,
       "byte_count": 499,
       "tree_sha256": "4feeae4101c08b7e5433df1b9928d7f642bf57ff90200938ae112756d93cec87",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-arcade--final-burn-neo",
@@ -1166,11 +1166,11 @@
       "file_count": 3,
       "byte_count": 486,
       "tree_sha256": "cf75b80d40f425715acc79c139671488001bbaea1ef03f50ba71d9dcd272e0b0",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-arcade--m-b-a-mini",
@@ -1179,11 +1179,11 @@
       "file_count": 3,
       "byte_count": 491,
       "tree_sha256": "32a6c0cfd2cd1b336ee732dfaf03c2b843e10440ceaf400abda6a25526d52f79",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-arcade--mame-2000",
@@ -1192,11 +1192,11 @@
       "file_count": 3,
       "byte_count": 499,
       "tree_sha256": "f7eb394297ac0059f87e0d9e47dc371e254dbceeebc1acdeaf28472cfae1796e",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-arcade--mame-2003-xtreme",
@@ -1205,11 +1205,11 @@
       "file_count": 3,
       "byte_count": 589,
       "tree_sha256": "6943da740fded3e9ccb90392118c23dbd3abc63c1a2676870178601ff66d8594",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-arcade---laserdisk--daphne",
@@ -1218,11 +1218,11 @@
       "file_count": 3,
       "byte_count": 490,
       "tree_sha256": "8f66cbcf60a1375c185e8ceb2046960e8779202b6ba808ba2ca1bd553a3c5a76",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-arduboy--arduous",
@@ -1231,11 +1231,11 @@
       "file_count": 3,
       "byte_count": 526,
       "tree_sha256": "edd51961992993d9764d7222253a7b5dfb1e1d837d01e779214306bceeaf33a8",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-atari---5200--atari800",
@@ -1244,11 +1244,11 @@
       "file_count": 3,
       "byte_count": 502,
       "tree_sha256": "f308daa12491e241822dcf0c581a1be4630a2ccd1b7d619411d524ea257c07a8",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-atari---800--atari800",
@@ -1257,11 +1257,11 @@
       "file_count": 3,
       "byte_count": 509,
       "tree_sha256": "c82880ed825f817482dc91692e309a8e1093b1148c84e57e9960ffe872ede0c1",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-atari---jaguar--virtual-jaguar",
@@ -1270,11 +1270,11 @@
       "file_count": 3,
       "byte_count": 462,
       "tree_sha256": "66a391fbe589b8d3b118f23234962fe01086189f1733af0daa62d5a3dae9f6ef",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-atari---lynx--mednafen-lynx",
@@ -1283,11 +1283,11 @@
       "file_count": 3,
       "byte_count": 513,
       "tree_sha256": "39a22a7f0f7a80704a35f3e6dde4c86210f7df635cc35c72d03d43846c368303",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-atari---st--hatari",
@@ -1296,11 +1296,11 @@
       "file_count": 3,
       "byte_count": 455,
       "tree_sha256": "ed471acc2e8be889421dea8222d33d913c89ea730856f879aedacdd98180c81c",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-bk---0010--bk",
@@ -1309,11 +1309,11 @@
       "file_count": 3,
       "byte_count": 478,
       "tree_sha256": "696ad6a0b72a6ee2b4970e44e063c9e7f50c1790ce0e86f753a9169b5216ab0c",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-commodore---amiga--puae-2021-xtreme",
@@ -1322,11 +1322,11 @@
       "file_count": 3,
       "byte_count": 650,
       "tree_sha256": "141a46ea848592ebf0bc7657d870bd87b55f6f4c1dcb47538fba52f27e2e87d4",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-commodore---amiga--uae4arm",
@@ -1335,11 +1335,11 @@
       "file_count": 3,
       "byte_count": 491,
       "tree_sha256": "68840a072d4cd0d5ae749611853500c9b410be7a858c46e3f7336a51b12239ad",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-commodore---amiga-cd32--uae4arm",
@@ -1348,11 +1348,11 @@
       "file_count": 3,
       "byte_count": 500,
       "tree_sha256": "ab82030a20ec934a4ae9fd0df055e411573994d3abf4d7a417a19da2efbf2cbb",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-commodore---c64--frodo",
@@ -1361,11 +1361,11 @@
       "file_count": 3,
       "byte_count": 515,
       "tree_sha256": "615c857b8ebb8698bab6bc6cc66464ad488056fabf0f6a93b4e64afe258fc08e",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-commodore---sharp-x1--x1",
@@ -1374,11 +1374,11 @@
       "file_count": 3,
       "byte_count": 469,
       "tree_sha256": "e4592c2901bfb5ca3f051ef0cea725a67e0134e4ccc2092551270706b528223d",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-game-music-emu--gme",
@@ -1387,11 +1387,11 @@
       "file_count": 3,
       "byte_count": 482,
       "tree_sha256": "4e801200df0d1581c09fa0ea94be22bf0f3caa0dcb9214e099eda16ba41cd672",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-game-engine---chailove--chailove",
@@ -1400,11 +1400,11 @@
       "file_count": 3,
       "byte_count": 485,
       "tree_sha256": "a40ad043049af41311ad63e5e6ce76314c4d47af06b4e897ed06a46d48de4802",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-game-engine---easyrpg--easyrpg",
@@ -1413,11 +1413,11 @@
       "file_count": 3,
       "byte_count": 495,
       "tree_sha256": "bbabad49aa05fdf4c82ff977ee310a3b2d102f8ddd6eb5f165cef79f58ed128b",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-game-engine---lowres-nx--lowres-nx",
@@ -1426,11 +1426,11 @@
       "file_count": 3,
       "byte_count": 511,
       "tree_sha256": "6c12d88ed70258009dc0a54752b11c16ae3b9bdd42c2ca7b70b595a0067ba373",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-game-engine---löve--lutro",
@@ -1439,11 +1439,11 @@
       "file_count": 3,
       "byte_count": 483,
       "tree_sha256": "c8084b19cee4a446fb38232eab1a21201e54aa4fede04719959d2ad705142746",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-game-engine---microw8--uw8",
@@ -1452,11 +1452,11 @@
       "file_count": 3,
       "byte_count": 487,
       "tree_sha256": "c8d10708ce2066825ad182833671e4bb6d2cdf75d0934c4d4770789dc1bf9edf",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-game-engine---open-beats-of-rage",
@@ -1478,11 +1478,11 @@
       "file_count": 3,
       "byte_count": 532,
       "tree_sha256": "2814e55336c1dddcd5f5a42af92e42de3af29118bb6a5109dc9a04535a49ab05",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-microsoft---dos--dosbox-pure-0-9-7",
@@ -1491,11 +1491,11 @@
       "file_count": 3,
       "byte_count": 678,
       "tree_sha256": "caf6bee9bc4e59e136d4ee76ed738fb47b8a6e5d77e6f753724090fc84555d8f",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-microsoft---msx--fmsx",
@@ -1504,11 +1504,11 @@
       "file_count": 3,
       "byte_count": 522,
       "tree_sha256": "3c414593a28af008334c6eba5b0282eb1cf79973245c0dd087fd64d9df2a56bd",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-nec---pc-8000--quasi88",
@@ -1517,11 +1517,11 @@
       "file_count": 3,
       "byte_count": 507,
       "tree_sha256": "2af4dd55bb3ff70d62f3ebb4fdac580f86bdd7921b24569200e6bdba352e50bd",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-nec---pc-98--neko-project-ii-kai",
@@ -1530,11 +1530,11 @@
       "file_count": 3,
       "byte_count": 522,
       "tree_sha256": "f497aed2f5ddb270afba6d60681a29b817123cdf56f5ffc38b3a4771937df9cf",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-nec---pc-98--neko-project-ii",
@@ -1543,11 +1543,11 @@
       "file_count": 3,
       "byte_count": 503,
       "tree_sha256": "e1619d155db5870b8295cfa7867d1078737891c4e9cee4d26d34d61bf4236803",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-nec---pc-fx--mednafen-pc-fx",
@@ -1556,11 +1556,11 @@
       "file_count": 3,
       "byte_count": 513,
       "tree_sha256": "9d2e79ebc8fc43b846cbc874572ce9ee787184a2d4bd0a3aab6b45df7bd37e45",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-nec---turbografx-16--beetle-pce",
@@ -1569,11 +1569,11 @@
       "file_count": 3,
       "byte_count": 828,
       "tree_sha256": "e9b391d45c27abb911dec5efa59a7ca930d5c679162c76beec5070484565b876",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-nintendo---gb--gearboy",
@@ -1582,11 +1582,11 @@
       "file_count": 3,
       "byte_count": 488,
       "tree_sha256": "317eebeaa366d00babd5174c99efb14e1dc09884ef3bab833db4f91152c0f860",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-nintendo---gb--tgb-dual",
@@ -1595,11 +1595,11 @@
       "file_count": 3,
       "byte_count": 516,
       "tree_sha256": "e21faf39e1a1481e69d00ae9012728d28c5bc67add307b9f091f951358c2ab21",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-nintendo---gba--mednafen-gba",
@@ -1608,11 +1608,11 @@
       "file_count": 3,
       "byte_count": 507,
       "tree_sha256": "47d8bc7c3573e4db1d08a449a37eeb00cc7b87dede8cd009ba873ff51035e3dc",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-nintendo---gba--meteor",
@@ -1621,11 +1621,11 @@
       "file_count": 3,
       "byte_count": 483,
       "tree_sha256": "721602bda4ec652adc7d8d6c97131be21e3becaa21c05b308866f97f23e4eb5b",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-nintendo---gba--vba-next",
@@ -1634,11 +1634,11 @@
       "file_count": 3,
       "byte_count": 491,
       "tree_sha256": "8c51061d4bfece02e8adac2fc6c5fd04a803e006433a65bff9d930c658c30a5e",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-nintendo---gba--vba-m",
@@ -1647,11 +1647,11 @@
       "file_count": 3,
       "byte_count": 475,
       "tree_sha256": "e9c092475eef6b033a439a2373348ade8b4033533aa28a4208c29c4f1d20c74f",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-nintendo---gbc--gearboy",
@@ -1660,11 +1660,11 @@
       "file_count": 3,
       "byte_count": 497,
       "tree_sha256": "3f1ced6e39d5ce10c63921d3ab03c593b3dab459535aee56105f31020e53152d",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-nintendo---gbc--tgb-dual",
@@ -1673,11 +1673,11 @@
       "file_count": 3,
       "byte_count": 519,
       "tree_sha256": "b3b4e344e57d0f0b170e2386041c44ffda52e5463e277f9ad9bb351688ded22c",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-nintendo---nes--nestopia",
@@ -1686,11 +1686,11 @@
       "file_count": 3,
       "byte_count": 490,
       "tree_sha256": "6c4174e9a2f7d5aa41896d93748da7210464c41aed3a6d4ccc685858706437ac",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-nintendo---snes--chimerasnes",
@@ -1699,11 +1699,11 @@
       "file_count": 3,
       "byte_count": 529,
       "tree_sha256": "0d98a660d69950ab3d491e48d93da745006a2c21a371272cc2ce56ce33277734",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-nintendo---snes--snes9x-2002",
@@ -1712,11 +1712,11 @@
       "file_count": 3,
       "byte_count": 499,
       "tree_sha256": "2c962c6b43eaf0da6db8410945ba8d6609fe30fd3087540631c4f7e5e6618a00",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-nintendo---snes--snes9x-2005-plus",
@@ -1725,11 +1725,11 @@
       "file_count": 3,
       "byte_count": 530,
       "tree_sha256": "7bc4f780c244724b2e82e10fb732b3baf4baa9247fe5dcd8abe729c65d271bf6",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-nintendo---snes--snes9x-2005",
@@ -1738,11 +1738,11 @@
       "file_count": 3,
       "byte_count": 501,
       "tree_sha256": "7cf14241c614ab9e1d51c334e0419c5ef28f98773cbf0ff91ce35acba101f91c",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-nintendo---snes--snes9x-2010",
@@ -1751,11 +1751,11 @@
       "file_count": 3,
       "byte_count": 499,
       "tree_sha256": "bba068e7058306c8a20eb13893e616c6a7f934c6b452f8628dd373c3ff304be1",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-nintendo---snes--snes9x",
@@ -1764,11 +1764,11 @@
       "file_count": 3,
       "byte_count": 483,
       "tree_sha256": "7bd9864a20dadaceb482f32802f9cb4b25a8798dbc9316de87d2a319e7785739",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-pico-8--fake8-standalone",
@@ -1803,11 +1803,11 @@
       "file_count": 3,
       "byte_count": 469,
       "tree_sha256": "d86175b6b9ec287cb849a34d7e3469b7c424012ec093347d07f51e76d238752e",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-scumm--scummvm-standalone",
@@ -1842,11 +1842,11 @@
       "file_count": 3,
       "byte_count": 556,
       "tree_sha256": "63135611c576a8bb29ac0d3236b7d3215a59d0b2f3992de9137867957fefb9fa",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-sega---game-gear--genesis-plus-gx",
@@ -1855,11 +1855,11 @@
       "file_count": 3,
       "byte_count": 522,
       "tree_sha256": "2303e9a0dafa0fb190505dc93a2588b399ab1eb2509f33f81124fbec72eeec2b",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-sega---genesis--genesis-plus-gx",
@@ -1868,11 +1868,11 @@
       "file_count": 3,
       "byte_count": 522,
       "tree_sha256": "61ff96b0e1f5ba5d3988c33996eeff87b9ad20ca2bb51e00a7e319afe095ef73",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-sega---master-system--gearsystem",
@@ -1881,11 +1881,11 @@
       "file_count": 3,
       "byte_count": 556,
       "tree_sha256": "41b9a8458c3d99426e2f77c4590bff05bbcd425d1cb224b5e1894d20193f905a",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-sega---master-system--genesis-plus-gx",
@@ -1894,11 +1894,11 @@
       "file_count": 3,
       "byte_count": 522,
       "tree_sha256": "89ba3c684373c2e4d7eac553c87b1b76efd192aff0f6df9e03b16a86e520c66e",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-sega---roms-hacks--genesis-plus-gx",
@@ -1907,11 +1907,11 @@
       "file_count": 3,
       "byte_count": 541,
       "tree_sha256": "25d0aa0f71f9541306d944e2f32ddbd099ed909c4fa046ebf3a18bd0e3af9cb6",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-sega---sega-cd--genesis-plus-gx",
@@ -1920,11 +1920,11 @@
       "file_count": 3,
       "byte_count": 542,
       "tree_sha256": "caf2c60646ab18e994e74aa2f45323b75532c10d8a3cee4ed9333f53262e7f6b",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-sega---visual-memory-unit--vemulator",
@@ -1933,11 +1933,11 @@
       "file_count": 3,
       "byte_count": 495,
       "tree_sha256": "5dc29b45c10dd41f93f06feca8d9e22559e7e636d896b8a854c4a4815cee872d",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-sharp---x68000--px68k",
@@ -1946,11 +1946,11 @@
       "file_count": 3,
       "byte_count": 488,
       "tree_sha256": "9c558f6883e7f6e26deaf25e39f7eb373ed268bdca9f08172e28db246688705f",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-sinclair---zx81--81",
@@ -1959,11 +1959,11 @@
       "file_count": 3,
       "byte_count": 489,
       "tree_sha256": "744d4dfa598f04c78b7f1e55cc6ef31a5d99af6f6180a3f45fdfd22ffcac67cb",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-sony---playstation--pcsx-standalone",
@@ -1985,11 +1985,11 @@
       "file_count": 3,
       "byte_count": 606,
       "tree_sha256": "11c3210764748a28905cd992122d46a6608a60326901af8a59ea94c339309293",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-texas-instruments-ti-83--numero",
@@ -1998,11 +1998,11 @@
       "file_count": 3,
       "byte_count": 705,
       "tree_sha256": "bf3fbcafeb7daaf8d12143c75758130ac05b8908dbdec9e4f5fb2a7c4ac14653",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-thomson---moto--theodore",
@@ -2011,11 +2011,11 @@
       "file_count": 3,
       "byte_count": 499,
       "tree_sha256": "ae755979571fd94775decbbbaa6d050bcf0710e04d723ad2f1b513ecc9b5d69c",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-uzebox--uzem",
@@ -2024,11 +2024,11 @@
       "file_count": 3,
       "byte_count": 481,
       "tree_sha256": "063192626b165d2ccb782dee368fe913fc274b6d54fb97fc2539648be21b9094",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "source": "https://github.com/OnionUI/Onion",
+      "source_revision": "07505ea58c7bba698d6b9220ff43946a43cac76b",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
     }
   ]
 }
