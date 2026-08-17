@@ -67,6 +67,13 @@ RTC or NTP changes are never consulted and therefore cannot create fake play
 time. Writing this owned duration into Play Activity is a subsequent adapter
 step while legacy MainUI callers still own their existing activity rows.
 
+The native `playActivity stop-duration` adapter accepts an already measured
+elapsed duration, closes only the newest matching open row, and uses wall time
+only for the row's `updated_at` metadata. It is intentionally not called by the
+session manager until activity-start ownership moves away from the legacy
+MainUI/keymon paths; this prevents duplicate or competing activity rows during
+the compatibility transition.
+
 `bloom-save-flush` provides the native durability boundary for RetroArch saves.
 It accepts a validated core basename, resolves that core's canonical `corename`
 from RetroArch metadata, and flushes only the matching save and state trees plus

@@ -1,8 +1,13 @@
 #include "./playActivity.h"
 
+#include <errno.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+
+#include "playActivityDuration.h"
 
 void printUsage()
 {
@@ -10,6 +15,7 @@ void printUsage()
            "       playActivity start [rom_path] -> Launch the counter for this rom\n"
            "       playActivity resume           -> Resume the last rom as a new play activity\n"
            "       playActivity stop [rom_path]  -> Stop the counter for this rom\n"
+           "       playActivity stop-duration [rom_path] [seconds] -> Stop with monotonic elapsed time\n"
            "       playActivity stop_all         -> Stop the counter for all roms\n"
            "       playActivity migrate          -> Migrate the old database (prior to Onion 4.2.0) to SQLite\n"
            "       playActivity fix_paths        -> Change all absolute paths to relative paths\n"
@@ -48,6 +54,35 @@ int main(int argc, char *argv[])
             else {
                 printf("Error: Missing rom_path argument\n");
                 printUsage();
+                return EXIT_FAILURE;
+            }
+        }
+        else if (strcmp(argv[i], "stop-duration") == 0) {
+            if (i != 1 || argc != 4) {
+                fprintf(stderr, "Error: Expected rom_path and seconds arguments\n");
+                return EXIT_FAILURE;
+            }
+            char *rom_path = argv[++i];
+            char *end = NULL;
+            errno = 0;
+            long long duration = strtoll(argv[++i], &end, 10);
+            if (errno != 0 || end == argv[i] || *end != '\0' || duration < 0 || duration > INT_MAX) {
+                fprintf(stderr, "Error: Invalid duration\n");
+                return EXIT_FAILURE;
+            }
+            play_activity_db_open();
+            if (play_activity_db == NULL)
+                return EXIT_FAILURE;
+            int rom_id = __db_rom_find_by_file_path(rom_path, false);
+            int updated = 0;
+            time_t wall_time = time(NULL);
+            int result = rom_id == ROM_NOT_FOUND || wall_time < 0
+                             ? SQLITE_NOTFOUND
+                             : play_activity_set_latest_duration(play_activity_db, rom_id, duration, wall_time,
+                                                                 &updated);
+            play_activity_db_close();
+            if (result != SQLITE_OK || updated != 1) {
+                fprintf(stderr, "Error: No matching open Play Activity session\n");
                 return EXIT_FAILURE;
             }
         }
