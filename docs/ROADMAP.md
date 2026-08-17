@@ -48,8 +48,10 @@ merged; it does not imply unrecorded hardware certification.
   ([PR #57](https://github.com/boburning/BloomOS/pull/57)).
 - [x] Bound verified save snapshots while preserving active recovery references
   and corrupt evidence ([PR #58](https://github.com/boburning/BloomOS/pull/58)).
-- [ ] Expose read-only structured snapshot recovery inventory through
-  `bloomctl` (`feature/snapshot-inventory`).
+- [x] Expose read-only structured snapshot recovery inventory through
+  `bloomctl` ([PR #59](https://github.com/boburning/BloomOS/pull/59)).
+- [ ] Retry transient pinned-theme download failures with bounded attempts and
+  keep partial responses out of the verified cache (`fix/theme-download-retries`).
 
 ### Deferred physical validation
 
