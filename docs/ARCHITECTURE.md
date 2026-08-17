@@ -43,4 +43,12 @@ because the legacy runtime cannot round-trip them safely. Structured requests
 retain the broader data model so that limitation disappears with the legacy
 parser rather than leaking into Bloom's API.
 
+The first session-lifecycle invariant is graceful RetroArch termination:
+request `QUIT` through the bounded localhost control client, wait for exit,
+then use SIGTERM and finally SIGKILL only as bounded fallbacks. The developer
+game probe exercises and reports the method that completed. This is not yet the
+complete lifecycle manager: explicit persistent states, standalone-emulator
+adapters, save-flush confirmation, and selective service suspension remain
+separate milestones.
+
 Architectural decisions will be recorded as the corresponding subsystem work begins.
