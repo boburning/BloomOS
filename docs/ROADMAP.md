@@ -66,8 +66,10 @@ merged; it does not imply unrecorded hardware certification.
   without exposing save details ([PR #66](https://github.com/boburning/BloomOS/pull/66)).
 - [x] Reject signed update staging before copying when SD capacity cannot hold
   the verified archive plus a safety reserve ([PR #67](https://github.com/boburning/BloomOS/pull/67)).
-- [ ] Emit and validate exact per-file release payload provenance, including
-  unsafe and duplicate path rejection (`feature/release-payload-provenance`).
+- [x] Emit and validate exact per-file release payload provenance, including
+  unsafe and duplicate path rejection ([PR #68](https://github.com/boburning/BloomOS/pull/68)).
+- [ ] Remove the unfinished inherited patch workflow that resolves a moving
+  upstream latest release (`fix/remove-moving-patch-workflow`).
 
 ### Deferred physical validation
 
