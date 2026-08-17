@@ -38,12 +38,12 @@ def component_specs(repository):
     return specs
 
 
-def file_digest(path):
-    value = hashlib.sha256()
+def canonical_file(path):
+    value = bytearray()
     with path.open("rb") as stream:
         for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            value.update(chunk)
-    return value.hexdigest()
+            value.extend(chunk)
+    return bytes(value).replace(b"\r\n", b"\n")
 
 
 def tree_identity(root):
@@ -53,11 +53,14 @@ def tree_identity(root):
         relative = path.relative_to(root).as_posix()
         metadata = path.lstat()
         if stat.S_ISLNK(metadata.st_mode):
-            records.append(("symlink", relative, path.readlink().as_posix()))
+            content = path.readlink().as_posix().encode("utf-8")
+            byte_count += len(content)
+            records.append(("file", relative, len(content), hashlib.sha256(content).hexdigest()))
         elif stat.S_ISREG(metadata.st_mode):
-            size = metadata.st_size
+            content = canonical_file(path)
+            size = len(content)
             byte_count += size
-            records.append(("file", relative, size, file_digest(path)))
+            records.append(("file", relative, size, hashlib.sha256(content).hexdigest()))
         elif not stat.S_ISDIR(metadata.st_mode):
             raise ValueError(f"unsupported file type: {path}")
     if not records:

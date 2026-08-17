@@ -75,12 +75,17 @@ source evidence.
 
 `build/legacy-manifest.json` decomposes the remaining inherited runtime and
 package payload into 156 independently resolvable components covering 2,662
-files. Each entry locks its path, file count, byte count, and canonical tree
-SHA-256 while leaving unknown source, revision, license, and build recipe
+files. Each entry locks its path, file count, checkout-normalized byte count,
+and canonical tree SHA-256 while leaving unknown source, revision, license, and build recipe
 explicitly `null`. Its resolution must eventually become either a complete
 `source-build` record or an intentional channel exclusion. Release packaging
 recomputes the inventory, so inherited payload drift cannot silently expand
 the stable-publication backlog.
+
+The component tree form treats CRLF and LF checkouts identically and represents
+symlinks by their target bytes so Windows and Linux produce the same inventory.
+This normalization is limited to the replacement queue; release payload
+manifests continue to hash every final shipped byte exactly.
 
 The pinned SearchFilter and DinguxCommander repositories remain a separate
 legacy blocker: neither upstream repository declares a project license. Their
