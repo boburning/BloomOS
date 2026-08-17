@@ -239,6 +239,10 @@ package-release: package-release-unsigned sign-release
 
 package-release-unsigned:
 	@$(ECHO) $(PRINT_RECIPE)
+	@python3 $(ROOT_DIR)/tools/provenance_policy.py check-channel \
+		--policy $(ROOT_DIR)/build/provenance-policy.json \
+		--repository $(ROOT_DIR) \
+		--channel $(CHANNEL)
 	@python3 $(ROOT_DIR)/tools/core_manifest.py validate \
 		--core-dir $(STATIC_BUILD)/RetroArch/.retroarch/cores \
 		--manifest $(ROOT_DIR)/build/core-manifest.json

@@ -45,6 +45,28 @@ build flags, patch sets, known issues, and physical-validation dates remain
 explicit `null` or empty fields; they must be filled from authoritative source
 and device evidence rather than inferred from a filename.
 
+## Release provenance policy
+
+`build/provenance-policy.json` assigns every release component to a
+machine-enforced provenance tier:
+
+- `source` components have a pinned upstream revision, declared license, and
+  repository build recipe and may ship on every channel;
+- `legacy` components have exact inherited binary identity but incomplete
+  authoritative source or license evidence and may ship only on the
+  `development` hardware-test channel;
+- `excluded` components may not ship on any channel.
+
+Release packaging checks this policy before assembling the archive. Stable,
+beta, and nightly builds therefore fail closed while any included component is
+still legacy. Moving a component to `source` requires replacing or rebuilding
+it from reviewed inputs; binary hashes alone are never accepted as historical
+source evidence.
+
 ## Lock-file requirements
 
-`build/dependencies.lock` now records the resolved toolchain, submodule, and Action identifiers plus explicit unresolved fields. It must expand to cover RetroArch and core source revisions, theme/package revisions, downloaded artifact hashes, license identifiers, and provenance URLs before release builds are considered locked.
+`build/dependencies.lock` records the resolved toolchain, submodule, Action,
+inventory, and provenance-policy identifiers plus explicit unresolved fields.
+It must expand to cover authoritative core source revisions, build recipes,
+license identifiers, and immutable test-package inputs before stable release
+builds are considered locked.

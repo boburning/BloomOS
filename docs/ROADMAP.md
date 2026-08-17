@@ -78,6 +78,10 @@ merged; it does not imply unrecorded hardware certification.
   ([PR #71](https://github.com/boburning/BloomOS/pull/71)).
 - [x] Parse InfoPanel JSON image lists through a compacting, allocation-safe,
   sanitizer-covered module ([PR #72](https://github.com/boburning/BloomOS/pull/72)).
+- [x] Require the validation evidence gate before hardware-sensitive claims
+  advance ([PR #73](https://github.com/boburning/BloomOS/pull/73)).
+- [ ] Enforce source, legacy, and excluded provenance tiers at release
+  packaging, with legacy payloads restricted to development artifacts.
 
 The current BloomOS 1.0/1.1 repository implementation queue is now at its
 physical-validation boundary. The checks below must produce device evidence
@@ -85,11 +89,13 @@ before hardware-sensitive behavior or public stable-release claims advance.
 
 ### Deferred external provenance
 
-Stable publication also remains blocked on the explicitly unresolved entries
-in `build/dependencies.lock`: authoritative source/build/redistribution mapping
-for inherited prebuilt components and an immutable Alpine package source for
-the shell-test image. Exact release and libretro binary identities are locked;
-the missing historical source evidence must not be guessed from those bytes.
+Stable publication is fail-closed through `build/provenance-policy.json`.
+Inherited components without authoritative source, build, and license evidence
+are quarantined to development artifacts until they are replaced by reviewed
+source builds. The shell-test environment must also move to a digest-pinned OCI
+image with archived, checksummed APK rebuild inputs. Exact release and libretro
+binary identities are locked; missing historical evidence will not be guessed
+from those bytes.
 
 ### Deferred physical validation
 

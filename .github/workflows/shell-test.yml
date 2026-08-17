@@ -11,7 +11,9 @@ on:
       - 'test/shell/**'
       - 'tools/release_metadata.py'
       - 'tools/core_manifest.py'
+      - 'tools/provenance_policy.py'
       - 'build/core-manifest.json'
+      - 'build/provenance-policy.json'
       - 'build/themes.sha256'
       - '.gitattributes'
   merge_group:

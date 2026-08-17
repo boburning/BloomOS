@@ -51,6 +51,12 @@ manifest = "build/core-manifest.json"
 schema = 1
 binary_count = 110
 
+[provenance_policy]
+manifest = "build/provenance-policy.json"
+schema = 1
+stable_tier = "source"
+legacy_channels = ["development"]
+
 [themes]
 source = "https://github.com/OnionUI/Themes"
 revision = "b01198352e8927c3c5b9a828f73177bc81745954"
@@ -59,6 +65,6 @@ artifact_checksums = "build/themes.sha256"
 [audit]
 unresolved = [
   "RetroArch and emulator/core source-to-binary mapping beyond exact shipped binary identity",
-  "bundled binary provenance, licenses, and SHA-256 values",
+  "source builds and authoritative licenses for components quarantined in the legacy provenance tier",
   "immutable Alpine package repository snapshot for shell-test dependencies",
 ]

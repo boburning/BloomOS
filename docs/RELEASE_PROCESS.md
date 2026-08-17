@@ -21,6 +21,14 @@ Release packaging also validates `build/core-manifest.json` against every
 shipped libretro binary. A core change therefore cannot silently retain stale
 binary identity, declared license, or compatibility inventory.
 
+Before archive assembly, packaging evaluates `build/provenance-policy.json`
+for the requested channel. Stable, beta, and nightly accept only source-tier
+components with pinned source, license, and repository build recipes. Legacy
+inherited components are quarantined to development artifacts, and excluded
+components cannot ship at all. This gate is intentionally stricter than a
+checksum inventory: it prevents exact but historically unexplained binaries
+from entering a public channel.
+
 Release validation reconstructs the payload manifest directly from the final
 ZIP, rejects duplicate, absolute, traversal, or backslash paths, and requires
 the manifest digest recorded by `build-info.json` to match. This provides exact
@@ -73,9 +81,10 @@ packaging gates are in place.
 
 Before the first public stable release, Bloom must still:
 
-- close every unresolved source, build, and redistribution input in
+- replace or rebuild every included legacy-tier component so the provenance
+  policy passes for `stable`;
+- close every remaining immutable build-input and redistribution item in
   `build/dependencies.lock`;
-- complete the bundled dependency and license review;
 - pass and record the three-device physical test matrix, including real
   migration, update, boot-confirmation, and rollback operations.
 
