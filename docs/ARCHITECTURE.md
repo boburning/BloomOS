@@ -104,6 +104,14 @@ to an on-card rollback directory until both replacements succeed. An
 interrupted restore therefore leaves the prior trees recoverable rather than
 silently reporting success.
 
+Snapshot creation applies a default retention limit of five verified snapshots
+under the same operation lock. Retention orders Bloom-owned safe identifiers,
+keeps the newest verified snapshots, and additionally preserves any snapshot
+referenced by active update or rollback state. Corrupt, incomplete, linked, or
+otherwise unverifiable entries are never silently deleted as retention. The
+explicit `prune KEEP` operation uses the same rules and rejects zero or
+non-numeric limits before removal.
+
 ## Canonical game identity
 
 `bloom-game-id` defines the schema-1 identity boundary. It normalizes the ROM

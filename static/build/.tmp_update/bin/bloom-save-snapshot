@@ -5,6 +5,9 @@ SD_ROOT="${BLOOM_SD_ROOT:-/mnt/SDCARD}"
 PROFILE="$SD_ROOT/Saves/CurrentProfile"
 SNAPSHOT_ROOT="$SD_ROOT/Saves/BloomSnapshots"
 SESSION_STATE="${BLOOM_SESSION_STATE_FILE:-/tmp/bloom-session/state}"
+UPDATE_STATE="${BLOOM_UPDATE_STATE_FILE:-$SD_ROOT/.bloom/update/state.json}"
+JQ="${BLOOM_JQ_BIN:-$SD_ROOT/.tmp_update/bin/jq}"
+RETENTION="${BLOOM_SNAPSHOT_RETENTION:-5}"
 LOCK_DIR="$SNAPSHOT_ROOT/.lock"
 LOCKED=0
 
@@ -42,6 +45,58 @@ verify_snapshot() {
     (cd "$snapshot" && sha256sum -c archive.sha256 >/dev/null 2>&1)
 }
 
+referenced_snapshot() {
+    [ -r "$UPDATE_STATE" ] && [ -x "$JQ" ] || return 1
+    referenced="$("$JQ" -r '.snapshot_id // ""' "$UPDATE_STATE" 2>/dev/null)" || return 1
+    [ "$referenced" = "$1" ]
+}
+
+prune_locked() {
+    limit="$1"
+    case "$limit" in ''|*[!0-9]*) fail "retention limit is invalid" ;; esac
+    [ "$limit" -gt 0 ] || fail "retention limit is invalid"
+    inventory="$SNAPSHOT_ROOT/.prune-$$"
+    ordered="$SNAPSHOT_ROOT/.prune-ordered-$$"
+    : >"$inventory" || fail "cannot create retention inventory"
+    cleanup_prune() { rm -f "$inventory" "$ordered"; }
+    trap 'cleanup_prune; unlock' EXIT HUP INT TERM
+    for snapshot in "$SNAPSHOT_ROOT"/*; do
+        [ -d "$snapshot" ] && [ ! -L "$snapshot" ] || continue
+        snapshot_id="$(basename "$snapshot")"
+        safe_name "$snapshot_id" || continue
+        verify_snapshot "$snapshot" || continue
+        printf '%s\n' "$snapshot_id" >>"$inventory" || fail "cannot write retention inventory"
+    done
+    sort -r "$inventory" >"$ordered" || fail "cannot order retention inventory"
+    kept=0
+    removed=0
+    while IFS= read -r snapshot_id; do
+        [ -n "$snapshot_id" ] || continue
+        if referenced_snapshot "$snapshot_id"; then
+            continue
+        fi
+        if [ "$kept" -lt "$limit" ]; then
+            kept=$((kept + 1))
+            continue
+        fi
+        snapshot="$SNAPSHOT_ROOT/$snapshot_id"
+        [ -d "$snapshot" ] && [ ! -L "$snapshot" ] && verify_snapshot "$snapshot" ||
+            fail "snapshot changed during retention"
+        rm -rf "$snapshot" || fail "cannot remove expired snapshot"
+        removed=$((removed + 1))
+    done <"$ordered"
+    cleanup_prune
+    trap unlock EXIT HUP INT TERM
+    printf '%s' "$removed"
+}
+
+prune_snapshots() {
+    limit="$1"
+    lock
+    removed="$(prune_locked "$limit")" || fail "snapshot retention failed"
+    printf '{"schema":1,"status":"pruned","retained":%s,"removed":%s}\n' "$limit" "$removed"
+}
+
 create_snapshot() {
     trigger="$1"
     safe_name "$trigger" || fail "invalid snapshot trigger"
@@ -60,8 +115,11 @@ create_snapshot() {
         fail "cannot write snapshot metadata"
     : >"$staging/complete" || fail "cannot complete snapshot"
     verify_snapshot "$staging" || fail "staged snapshot failed verification"
+    sync
     mv "$staging" "$final" || fail "cannot publish snapshot"
-    printf '{"schema":1,"status":"created","id":"%s","trigger":"%s"}\n' "$snapshot_id" "$trigger"
+    removed="$(prune_locked "$RETENTION")" || fail "snapshot retention failed"
+    printf '{"schema":1,"status":"created","id":"%s","trigger":"%s","retention":%s,"removed":%s}\n' \
+        "$snapshot_id" "$trigger" "$RETENTION" "$removed"
 }
 
 restore_snapshot() {
@@ -98,6 +156,7 @@ usage() {
     printf 'Usage: bloom-save-snapshot create TRIGGER\n' >&2
     printf '       bloom-save-snapshot verify SNAPSHOT_ID\n' >&2
     printf '       bloom-save-snapshot restore SNAPSHOT_ID\n' >&2
+    printf '       bloom-save-snapshot prune KEEP\n' >&2
 }
 
 case "${1:-}" in
@@ -109,5 +168,6 @@ case "${1:-}" in
         printf '{"schema":1,"status":"verified","id":"%s"}\n' "$2"
         ;;
     restore) [ "$#" -eq 2 ] || { usage; exit 2; }; restore_snapshot "$2" ;;
+    prune) [ "$#" -eq 2 ] || { usage; exit 2; }; prune_snapshots "$2" ;;
     *) usage; exit 2 ;;
 esac
