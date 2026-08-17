@@ -1,0 +1,115 @@
+#!/bin/sh
+set -u
+
+SD_ROOT="${BLOOM_SD_ROOT:-/mnt/SDCARD}"
+SYS_DIR="$SD_ROOT/.tmp_update"
+COMMAND_FILE="$SYS_DIR/cmd_to_run.sh"
+KEEP_SERVICES="$SYS_DIR/config/.keepServicesAlive"
+SYSTEM="${1:-}"
+ROM_B64="${2:-}"
+DURATION="${3:-10}"
+CREATED_KEEP_SERVICES=0
+RETROARCH_PID=""
+
+fail() {
+    printf '{"schema":1,"status":"failed","reason":"%s"}\n' "$1"
+    exit 1
+}
+
+retroarch_pid() {
+    for proc in /proc/[0-9]*; do
+        [ "$(cat "$proc/comm" 2>/dev/null)" = retroarch ] || continue
+        printf '%s\n' "${proc##*/}"
+        return 0
+    done
+    return 1
+}
+
+cleanup() {
+    if [ -n "$RETROARCH_PID" ] && kill -0 "$RETROARCH_PID" 2>/dev/null; then
+        kill -TERM "$RETROARCH_PID" 2>/dev/null || true
+    fi
+    if [ "$CREATED_KEEP_SERVICES" -eq 1 ]; then
+        rm -f "$KEEP_SERVICES"
+    fi
+}
+trap cleanup EXIT HUP INT TERM
+
+[ -f "$SD_ROOT/.bloom-dev" ] || fail developer_mode_required
+case "$DURATION" in
+    ''|*[!0-9]*) fail invalid_duration ;;
+esac
+[ "$DURATION" -ge 5 ] && [ "$DURATION" -le 60 ] || fail invalid_duration
+
+case "$SYSTEM" in
+    GB|GBC|GBA|FC|SFC)
+        ROM_DIR="$SYSTEM"
+        ;;
+    PSX)
+        ROM_DIR=PS
+        ;;
+    *)
+        fail unsupported_system
+        ;;
+esac
+
+ROM_PATH="$(printf '%s' "$ROM_B64" | base64 -d 2>/dev/null)" || fail invalid_rom_encoding
+case "$ROM_PATH" in
+    "$SD_ROOT/Roms/$ROM_DIR/"*) ;;
+    *) fail rom_outside_system_directory ;;
+esac
+printf '%s' "$ROM_PATH" | grep -q '["$`\\]' && fail unsafe_rom_path
+[ -f "$ROM_PATH" ] || fail rom_not_found
+
+LAUNCHER="$SD_ROOT/Emu/$SYSTEM/launch.sh"
+[ -x "$LAUNCHER" ] || fail launcher_not_found
+[ ! -e "$COMMAND_FILE" ] || fail launch_already_pending
+[ -z "$(retroarch_pid 2>/dev/null || true)" ] || fail retroarch_already_running
+pidof MainUI >/dev/null 2>&1 || fail mainui_not_running
+
+if [ ! -e "$KEEP_SERVICES" ]; then
+    : >"$KEEP_SERVICES"
+    CREATED_KEEP_SERVICES=1
+fi
+
+printf 'LD_PRELOAD=%s/miyoo/lib/libpadsp.so "%s" "%s"\n' \
+    "$SD_ROOT" "$LAUNCHER" "$ROM_PATH" >"$COMMAND_FILE"
+chmod 755 "$COMMAND_FILE"
+sync
+killall MainUI >/dev/null 2>&1 || fail mainui_stop_failed
+
+attempt=0
+while [ "$attempt" -lt 60 ]; do
+    RETROARCH_PID="$(retroarch_pid 2>/dev/null || true)"
+    [ -n "$RETROARCH_PID" ] && break
+    sleep 1
+    attempt=$((attempt + 1))
+done
+[ -n "$RETROARCH_PID" ] || fail retroarch_start_timeout
+
+RSS_KB="$(awk '/^VmRSS:/ { print $2; exit }' "/proc/$RETROARCH_PID/status")"
+sleep "$DURATION"
+kill -TERM "$RETROARCH_PID" 2>/dev/null || fail retroarch_term_failed
+
+attempt=0
+while kill -0 "$RETROARCH_PID" 2>/dev/null && [ "$attempt" -lt 20 ]; do
+    sleep 1
+    attempt=$((attempt + 1))
+done
+if kill -0 "$RETROARCH_PID" 2>/dev/null; then
+    kill -KILL "$RETROARCH_PID" 2>/dev/null || true
+    fail retroarch_graceful_exit_timeout
+fi
+RETROARCH_PID=""
+
+attempt=0
+while [ "$attempt" -lt 30 ]; do
+    pidof MainUI >/dev/null 2>&1 && break
+    sleep 1
+    attempt=$((attempt + 1))
+done
+pidof MainUI >/dev/null 2>&1 || fail mainui_return_timeout
+[ ! -e "$COMMAND_FILE" ] || fail command_cleanup_failed
+
+printf '{"schema":1,"status":"passed","system":"%s","duration_seconds":%s,"rss_kb":%s,"graceful_exit":true,"mainui_return":true,"command_cleanup":true}\n' \
+    "$SYSTEM" "$DURATION" "${RSS_KB:-0}"

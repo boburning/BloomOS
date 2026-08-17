@@ -7,6 +7,7 @@ TARGETS_FILE="${BLOOM_TARGETS_FILE:-$SCRIPT_DIR/targets.toml}"
 usage() {
     cat <<'EOF'
 Usage: bloom-device <info|smoke|collect> <target> [output-directory]
+       bloom-device game-smoke <target> <GB|GBC|GBA|FC|SFC|PSX> <rom-path> [seconds]
 
 Targets are read from tools/targets.toml or BLOOM_TARGETS_FILE. Copy
 targets.example.toml to create a local configuration. Connections require an
@@ -26,9 +27,9 @@ toml_value() {
         /^[[:space:]]*\[/ { active = ($0 == section); next }
         active && $0 ~ "^[[:space:]]*" wanted "[[:space:]]*=" {
             sub("^[[:space:]]*" wanted "[[:space:]]*=[[:space:]]*", "")
-            sub(/[[:space:]]*#[^\"]*$/, "")
+            sub(/[[:space:]]*#[^"]*$/, "")
             gsub(/^[[:space:]]+|[[:space:]]+$/, "")
-            if ($0 ~ /^\".*\"$/) { sub(/^\"/, ""); sub(/\"$/, "") }
+            if ($0 ~ /^".*"$/) { sub(/^"/, ""); sub(/"$/, "") }
             print
             exit
         }
@@ -45,19 +46,28 @@ load_target() {
     PORT="$(toml_value "$target" port)"
     IDENTITY_FILE="$(toml_value "$target" identity_file)"
     EXPECTED_MODEL="$(toml_value "$target" expected_model)"
+    KNOWN_HOSTS_FILE="$(toml_value "$target" known_hosts_file)"
+    HOST_KEY_ALIAS="$(toml_value "$target" host_key_alias)"
 
     [[ -n "$HOST" && -n "$USER_NAME" && -n "$IDENTITY_FILE" && -n "$EXPECTED_MODEL" ]] ||
         die "target '$target' is missing a required setting"
     [[ "${PORT:-22}" =~ ^[0-9]+$ ]] || die "target '$target' has an invalid port"
     PORT="${PORT:-22}"
     [[ -f "$IDENTITY_FILE" ]] || die "identity file not found: $IDENTITY_FILE"
+    [[ -z "$KNOWN_HOSTS_FILE" || -f "$KNOWN_HOSTS_FILE" ]] ||
+        die "known_hosts file not found: $KNOWN_HOSTS_FILE"
     [[ "$HOST" =~ ^[A-Za-z0-9.:_-]+$ ]] || die "target '$target' has an invalid host"
     [[ "$USER_NAME" =~ ^[A-Za-z0-9._-]+$ ]] || die "target '$target' has an invalid user"
+    [[ -z "$HOST_KEY_ALIAS" || "$HOST_KEY_ALIAS" =~ ^[A-Za-z0-9.:_-]+$ ]] ||
+        die "target '$target' has an invalid host_key_alias"
 
     SSH_ARGS=(-o BatchMode=yes -o IdentitiesOnly=yes -o PreferredAuthentications=publickey
         -o PasswordAuthentication=no -o KbdInteractiveAuthentication=no
         -o StrictHostKeyChecking=yes -o ConnectTimeout=10
-        -i "$IDENTITY_FILE" -p "$PORT" "$USER_NAME@$HOST")
+        -i "$IDENTITY_FILE" -p "$PORT")
+    [[ -z "$KNOWN_HOSTS_FILE" ]] || SSH_ARGS+=(-o "UserKnownHostsFile=$KNOWN_HOSTS_FILE")
+    [[ -z "$HOST_KEY_ALIAS" ]] || SSH_ARGS+=(-o "HostKeyAlias=$HOST_KEY_ALIAS")
+    SSH_ARGS+=("$USER_NAME@$HOST")
 }
 
 remote_info() {
@@ -104,6 +114,17 @@ command_collect() {
     printf 'Diagnostics written to %s\n' "$output_dir"
 }
 
+command_game_smoke() {
+    local system="$1" rom_path="$2" duration="$3" rom_b64
+    [[ "$system" =~ ^(GB|GBC|GBA|FC|SFC|PSX)$ ]] || die "unsupported game-smoke system: $system"
+    [[ "$duration" =~ ^[0-9]+$ ]] && ((duration >= 5 && duration <= 60)) ||
+        die "game-smoke duration must be between 5 and 60 seconds"
+    [[ "$rom_path" == /mnt/SDCARD/Roms/* ]] || die "game-smoke ROM must be under /mnt/SDCARD/Roms"
+    [[ "$rom_path" != *$'\n'* && "$rom_path" != *$'\r'* ]] || die "game-smoke ROM path contains a newline"
+    rom_b64="$(printf '%s' "$rom_path" | base64 | tr -d '\r\n')"
+    ssh "${SSH_ARGS[@]}" "/mnt/SDCARD/.tmp_update/bin/bloom-game-smoke '$system' '$rom_b64' '$duration'"
+}
+
 [[ $# -ge 2 ]] || { usage >&2; exit 2; }
 COMMAND="$1"
 TARGET="$2"
@@ -115,6 +136,10 @@ case "$COMMAND" in
     collect)
         [[ $# -le 3 ]] || die "collect accepts at most one output directory"
         command_collect "${3:-artifacts/device-logs/$TARGET-$(date -u +%Y%m%dT%H%M%SZ)}"
+        ;;
+    game-smoke)
+        [[ $# -ge 4 && $# -le 5 ]] || die "game-smoke requires a system and ROM path, with optional duration"
+        command_game_smoke "$3" "$4" "${5:-10}"
         ;;
     -h|--help|help) usage ;;
     *) usage >&2; exit 2 ;;
