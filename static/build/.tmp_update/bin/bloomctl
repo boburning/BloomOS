@@ -10,6 +10,7 @@ BLOOM_UPDATE_PREPARE="${BLOOM_UPDATE_PREPARE_BIN:-$SCRIPT_DIR/bloom-update-prepa
 BLOOM_UPDATE_STATE="${BLOOM_UPDATE_STATE_BIN:-$SCRIPT_DIR/bloom-update-state}"
 BLOOM_UPDATE_BOOT="${BLOOM_UPDATE_BOOT_BIN:-$SCRIPT_DIR/bloom-update-boot}"
 BLOOM_UPDATE_ROLLBACK="${BLOOM_UPDATE_ROLLBACK_BIN:-$SCRIPT_DIR/bloom-update-rollback}"
+BLOOM_UPDATE_CHANNEL="${BLOOM_UPDATE_CHANNEL_BIN:-$SCRIPT_DIR/bloom-update-channel}"
 BLOOM_SYSTEM_HEALTH="${BLOOM_SYSTEM_HEALTH_BIN:-$SCRIPT_DIR/bloom-health-system}"
 BLOOM_SAVE_SNAPSHOT="${BLOOM_SAVE_SNAPSHOT_BIN:-$SCRIPT_DIR/bloom-save-snapshot}"
 BLOOM_DIAGNOSTICS_EXPORT="${BLOOM_DIAGNOSTICS_EXPORT_BIN:-$SCRIPT_DIR/bloom-diagnostics-export}"
@@ -134,7 +135,7 @@ print_health_text() {
 
 usage() {
     printf 'Usage: bloomctl {info|health} [--json]\n' >&2
-    printf '       bloomctl update {status|stage MANIFEST SIGNATURE ARCHIVE|prepare VERSION|arm VERSION|confirm|rollback}\n' >&2
+    printf '       bloomctl update {status|channel [stable|beta|nightly]|stage MANIFEST SIGNATURE ARCHIVE|prepare VERSION|arm VERSION|confirm|rollback}\n' >&2
     printf '       bloomctl saves snapshots\n' >&2
     printf '       bloomctl logs export\n' >&2
     printf '       bloomctl platform capabilities\n' >&2
@@ -195,6 +196,11 @@ saves_command() {
 update_command() {
     action="${1:-}"
     case "$action" in
+        channel)
+            [ "$#" -le 2 ] || { usage; return 2; }
+            [ -x "$BLOOM_UPDATE_CHANNEL" ] || { printf 'bloomctl: update channel service is unavailable\n' >&2; return 1; }
+            if [ "$#" -eq 1 ]; then "$BLOOM_UPDATE_CHANNEL" get; else "$BLOOM_UPDATE_CHANNEL" set "$2"; fi
+            ;;
         status)
             [ "$#" -eq 1 ] || { usage; return 2; }
             [ -x "$BLOOM_UPDATE_STATE" ] || { printf 'bloomctl: update state service is unavailable\n' >&2; return 1; }

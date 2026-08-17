@@ -216,6 +216,13 @@ embedded in the image, signs the exact manifest bytes, and verifies the result
 before publication. The temporary signing key is removed before the pinned
 third-party publishing action runs.
 
+The persistent update channel defaults to `stable` and can be set to `beta` or
+`nightly`. Staging enforces a monotonic trust policy: beta may also receive
+stable releases, and nightly may receive stable or beta releases, but a selected
+channel never accepts a less stable release. Signed `development` artifacts are
+accepted only when developer mode is explicitly enabled and cannot be selected
+as a normal publication channel.
+
 On-device `bloom-update-verify` verifies that signature before parsing any
 manifest fields. It then requires the exact BloomOS schema, a single ZIP
 artifact, and matching filename, SHA-256 digest, and byte size. Missing tools,

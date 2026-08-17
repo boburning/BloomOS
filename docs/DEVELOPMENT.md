@@ -182,6 +182,17 @@ the installed native Play Activity health check and returns nonzero if that
 check is unavailable or unhealthy. The command is read-only; repair and backup
 remain explicit operations rather than health-check side effects.
 
+Inspect or select the signed update channel with:
+
+```sh
+bloomctl update channel
+bloomctl update channel beta
+```
+
+Fresh installs default to stable. Beta accepts stable and beta releases;
+nightly accepts stable, beta, and nightly. Development artifacts require the
+explicit developer-mode flag and are not a selectable end-user channel.
+
 Create a privacy-bounded device-side support bundle with:
 
 ```sh
