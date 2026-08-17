@@ -7,6 +7,8 @@
 
     [ "$status" -eq 0 ]
     [[ "$output" == "legacy manifest validate: 155 components" ]]
+    [ ! -e "/workspace/static/packages/RApp/SNK - Neo Geo (GnGeo)" ]
+    ! grep -F 'GnGeo' /workspace/.github/create_fullres_files.sh
 }
 
 @test "legacy manifest rejects modified inventory metadata" {
