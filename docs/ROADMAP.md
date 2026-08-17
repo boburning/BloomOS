@@ -60,8 +60,10 @@ merged; it does not imply unrecorded hardware certification.
   `bloomctl test smoke` ([PR #63](https://github.com/boburning/BloomOS/pull/63)).
 - [x] Persist stable, beta, and nightly selection and enforce it at the signed
   update staging boundary ([PR #64](https://github.com/boburning/BloomOS/pull/64)).
-- [ ] Surface malformed and terminal recovery update state through structured
-  system health (`feature/update-state-health`).
+- [x] Surface malformed and terminal recovery update state through structured
+  system health ([PR #65](https://github.com/boburning/BloomOS/pull/65)).
+- [ ] Verify save-snapshot inventory through aggregate structured health
+  without exposing save details (`feature/snapshot-health`).
 
 ### Deferred physical validation
 

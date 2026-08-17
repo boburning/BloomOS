@@ -192,6 +192,10 @@ The update-state check treats normal idle, staging, validation, and rollback
 validation phases as operational. Malformed or unavailable state and terminal
 `recovery_required` or `rollback_failed` phases fail health with a bounded
 summary that does not expose pending-version or path details.
+The save-snapshot check verifies the checksummed inventory and reports only
+aggregate total, referenced, and unverified counts. Any corrupt or incomplete
+snapshot fails health while remaining preserved as recovery evidence; the
+health response does not expose snapshot identifiers or save contents.
 
 `bloomctl logs export` creates a timestamped support archive from an explicit
 allowlist: structured info, health, update state, snapshot inventory, bounded

@@ -183,6 +183,8 @@ check, the system check, or update-state validation is unavailable or
 unhealthy. Recovery-required and terminal rollback-failure states deliberately
 fail health. The command is read-only; repair and backup remain explicit
 operations rather than health-check side effects.
+Save-snapshot health is also aggregate-only: unverified evidence fails the
+check but is never pruned or repaired automatically.
 
 Inspect or select the signed update channel with:
 

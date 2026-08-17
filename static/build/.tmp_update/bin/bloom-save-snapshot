@@ -137,6 +137,18 @@ list_snapshots() {
     rm -f "$inventory"
 }
 
+health_snapshots() {
+    inventory="$(list_snapshots)" || fail "cannot inspect snapshot inventory"
+    total="$(printf '%s\n' "$inventory" | "$JQ" -er '.snapshots | length')" || fail "snapshot inventory is invalid"
+    unverified="$(printf '%s\n' "$inventory" | "$JQ" -er '[.snapshots[] | select(.status != "verified")] | length')" || fail "snapshot inventory is invalid"
+    referenced="$(printf '%s\n' "$inventory" | "$JQ" -er '[.snapshots[] | select(.referenced == true)] | length')" || fail "snapshot inventory is invalid"
+    if [ "$unverified" -eq 0 ]; then healthy=true; status=0; else healthy=false; status=1; fi
+    "$JQ" -cn --argjson healthy "$healthy" --argjson total "$total" \
+        --argjson unverified "$unverified" --argjson referenced "$referenced" \
+        '{schema:1,healthy:$healthy,total:$total,unverified:$unverified,referenced:$referenced}'
+    return "$status"
+}
+
 create_snapshot() {
     trigger="$1"
     safe_name "$trigger" || fail "invalid snapshot trigger"
@@ -198,6 +210,7 @@ usage() {
     printf '       bloom-save-snapshot restore SNAPSHOT_ID\n' >&2
     printf '       bloom-save-snapshot prune KEEP\n' >&2
     printf '       bloom-save-snapshot list\n' >&2
+    printf '       bloom-save-snapshot health\n' >&2
 }
 
 case "${1:-}" in
@@ -211,5 +224,6 @@ case "${1:-}" in
     restore) [ "$#" -eq 2 ] || { usage; exit 2; }; restore_snapshot "$2" ;;
     prune) [ "$#" -eq 2 ] || { usage; exit 2; }; prune_snapshots "$2" ;;
     list) [ "$#" -eq 1 ] || { usage; exit 2; }; list_snapshots ;;
+    health) [ "$#" -eq 1 ] || { usage; exit 2; }; health_snapshots ;;
     *) usage; exit 2 ;;
 esac

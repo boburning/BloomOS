@@ -27,6 +27,14 @@ printf '%s\n' '{"schema":1,"phase":"idle"}'
 EOF
     chmod +x "$default_update_state"
     export BLOOM_UPDATE_STATE_BIN="$default_update_state"
+    default_snapshot="$BLOOM_TEST_ROOT/default-snapshot"
+    cat >"$default_snapshot" <<'EOF'
+#!/bin/sh
+[ "$1" = health ] || exit 2
+printf '%s\n' '{"schema":1,"healthy":true,"total":0,"unverified":0,"referenced":0}'
+EOF
+    chmod +x "$default_snapshot"
+    export BLOOM_SAVE_SNAPSHOT_BIN="$default_snapshot"
 }
 
 teardown() {
@@ -236,6 +244,27 @@ EOF
     printf '%s' "$output" | grep -F '"system": {"schema":1,"healthy":true'
     printf '%s' "$output" | grep -F '"play_activity": {"schema":1,"healthy":true,"quick_check":"ok"}'
     printf '%s' "$output" | grep -F '"update_state": {"schema":1,"healthy":true,"phase":"idle"}'
+    printf '%s' "$output" | grep -F '"save_snapshots": {"schema":1,"healthy":true,"total":0,"unverified":0,"referenced":0}'
+}
+
+@test "health fails when snapshot inventory contains unverified evidence" {
+    cat >"$SDCARD/.tmp_update/bin/playActivity" <<'EOF'
+#!/bin/sh
+printf '%s\n' '{"schema":1,"healthy":true,"quick_check":"ok"}'
+EOF
+    snapshot="$BLOOM_TEST_ROOT/unverified-snapshot"
+    cat >"$snapshot" <<'EOF'
+#!/bin/sh
+printf '%s\n' '{"schema":1,"healthy":false,"total":2,"unverified":1,"referenced":0}'
+exit 1
+EOF
+    chmod +x "$SDCARD/.tmp_update/bin/playActivity" "$snapshot"
+    export BLOOM_SAVE_SNAPSHOT_BIN="$snapshot"
+
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl health --json
+
+    [ "$status" -eq 1 ]
+    printf '%s' "$output" | grep -F '"save_snapshots": {"schema":1,"healthy":false,"total":2,"unverified":1,"referenced":0}'
 }
 
 @test "health fails closed for recovery-required update state" {
