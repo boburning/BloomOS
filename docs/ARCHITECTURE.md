@@ -122,4 +122,10 @@ unidentified ROM rows as structured JSON. Integrity failures, orphans, and
 negative durations make the command fail; open sessions and intentionally
 deferred identities remain operational counts rather than corruption.
 
+`bloomctl health` is the stable system-facing diagnostics entry point. Its
+schema-1 report embeds the Play Activity report without rewriting it and
+propagates an unhealthy or unavailable database check through its exit status.
+Additional independently testable subsystem checks can be added under the
+top-level `checks` object without changing the native database boundary.
+
 Architectural decisions will be recorded as the corresponding subsystem work begins.
