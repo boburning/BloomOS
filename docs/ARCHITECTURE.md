@@ -59,6 +59,14 @@ The developer game probe exercises and reports the method that completed. This
 is not yet the complete lifecycle manager: standalone-emulator adapters, crash
 recovery, and selective service suspension remain separate milestones.
 
+Session elapsed time is measured from the emulator's successful `attach` to
+its confirmed exit using the monotonic kernel uptime clock. The start and final
+whole-second duration are atomically persisted with the session. A missing,
+invalid, or regressed monotonic clock makes the session `FAILED`; wall-clock
+RTC or NTP changes are never consulted and therefore cannot create fake play
+time. Writing this owned duration into Play Activity is a subsequent adapter
+step while legacy MainUI callers still own their existing activity rows.
+
 `bloom-save-flush` provides the native durability boundary for RetroArch saves.
 It accepts a validated core basename, resolves that core's canonical `corename`
 from RetroArch metadata, and flushes only the matching save and state trees plus
