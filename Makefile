@@ -331,5 +331,16 @@ format:
 	@find ./src -regex '.*\.\(c\|h\|cpp\|hpp\)' -exec clang-format -style=file -i {} \;
 
 test-shell:
-	docker build --tag bloom-shell-test:local $(ROOT_DIR)/test/shell
+	rm -rf $(BUILD_TEST_DIR)/shell-test-inputs
+	mkdir -p $(BUILD_TEST_DIR)
+	curl --fail --location --retry 3 \
+		--output $(BUILD_TEST_DIR)/bloom-shell-apks-v1.tar.gz \
+		https://github.com/boburning/BloomOS/releases/download/shell-test-inputs-v1/bloom-shell-apks-v1.tar.gz
+	python3 $(ROOT_DIR)/tools/shell_test_inputs.py \
+		--metadata $(ROOT_DIR)/build/shell-test-inputs.json \
+		--archive $(BUILD_TEST_DIR)/bloom-shell-apks-v1.tar.gz \
+		--output $(BUILD_TEST_DIR)/shell-test-inputs
+	docker build --network=none --tag bloom-shell-test:local \
+		--file $(ROOT_DIR)/test/shell/Dockerfile \
+		$(BUILD_TEST_DIR)/shell-test-inputs
 	docker run --rm --volume "$(ROOT_DIR):/workspace:ro" bloom-shell-test:local /workspace/test/shell

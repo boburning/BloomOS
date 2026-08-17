@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "base_image": "docker.io/library/alpine@sha256:4bcff63911fcb4448bd4fdacec207030997caf25e9bea4045fa6c8c44de311d1",
+  "release_tag": "shell-test-inputs-v1",
+  "archive": "bloom-shell-apks-v1.tar.gz",
+  "archive_size": 20802415,
+  "archive_sha256": "97a048903e55131877f44203103e33f28b84d6e0fe22c1588bb820b6075b6921",
+  "package_manifest_sha256": "0956b17629eef193069909d1c94c0a4943e63feb339b43ecf1554eb8e3b8fb54",
+  "package_licenses_sha256": "e66b52f4e665a2dde69f9c0e270e4d4a44ca99bf6f7672a5f292f686cf5e4480",
+  "package_count": 38,
+  "direct_packages": {
+    "7zip": "24.09-r0",
+    "bats-core": "1.12.0-r0",
+    "coreutils": "9.7-r1",
+    "jq": "1.8.1-r0",
+    "openssl": "3.5.7-r0",
+    "python3": "3.12.14-r0"
+  }
+}

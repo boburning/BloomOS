@@ -16,6 +16,7 @@ Baseline: Onion `07505ea58c7bba698d6b9220ff43946a43cac76b`, audited 2026-08-15.
 | Themes download | `OnionUI/Themes` commit `b01198352e8927c3c5b9a828f73177bc81745954` | Commit and SHA-256 pinned; bounded retries use temporary files | Review and intentionally update `build/themes.sha256` when changing the curated theme set. |
 | Dropbear SSH | Official Dropbear `2025.88`, commit `887241694277b3816da5d174932c10546ea9d2c5` | Tag and commit pinned | Bloom builds a static ARMv7 server/keygen multicall binary with password authentication and forwarding disabled at compile time. The upstream license is shipped beside the binary as `LICENSE.dropbear`. |
 | GCC `libatomic.so.1` runtime | Miyoo Mini cross-toolchain image pinned by digest | Image and in-image path pinned | Copied from the ARM sysroot during release assembly because the bundled OpenSSL 3 executable requires it. Covered by the GCC Runtime Library Exception; exact binary hashing is recorded by release packaging. |
+| Shell-test packages | `shell-test-inputs-v1`, archive SHA-256 `97a048903e55131877f44203103e33f28b84d6e0fe22c1588bb820b6075b6921` | Complete 38-APK closure archived with checksums and declared licenses | The image rebuild verifies the archive and every APK, removes Alpine repositories, and installs with Docker networking disabled. |
 
 ## GitHub Actions
 
@@ -26,6 +27,15 @@ digest. Theme downloads are commit-pinned and checksum-verified. The inherited,
 unfinished patch helper that resolved Onion's moving latest release has been
 removed; Bloom release tooling now consumes only reviewed source and explicitly
 pinned build inputs.
+
+Shell tests no longer resolve packages from the live Alpine repository. The
+complete signed APK closure is retained as the `shell-test-inputs-v1` release
+asset, with archive and per-package digests recorded in
+`build/shell-test-inputs.json`. `tools/shell_test_inputs.py` rejects unsafe,
+missing, duplicate, or modified archive members before the Docker build runs
+with `--network=none`. The separately dispatched publisher produces the public
+GHCR image; ordinary CI will move to its immutable manifest digest after the
+first repository-token publication.
 
 ## Bundled binaries
 

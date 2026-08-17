@@ -1,6 +1,13 @@
 FROM docker.io/library/alpine@sha256:4bcff63911fcb4448bd4fdacec207030997caf25e9bea4045fa6c8c44de311d1
 
-RUN apk add --no-cache bats-core=1.12.0-r0 coreutils=9.7-r1 7zip=24.09-r0 jq=1.8.1-r0 openssl=3.5.7-r0 python3=3.12.14-r0
+COPY SHA256SUMS /tmp/apks/SHA256SUMS
+COPY *.apk /tmp/apks/
+
+RUN cd /tmp/apks \
+    && sha256sum -c SHA256SUMS \
+    && : > /etc/apk/repositories \
+    && apk add --no-cache --no-network /tmp/apks/*.apk \
+    && rm -rf /tmp/apks
 
 WORKDIR /workspace
 ENTRYPOINT ["bats"]

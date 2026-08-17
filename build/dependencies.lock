@@ -38,6 +38,10 @@ info_zip = "3.0"
 image = "docker.io/library/alpine"
 index_digest = "sha256:4bcff63911fcb4448bd4fdacec207030997caf25e9bea4045fa6c8c44de311d1"
 linux_amd64_digest = "sha256:eafc1edb577d2e9b458664a15f23ea1c370214193226069eb22921169fc7e43f"
+input_manifest = "build/shell-test-inputs.json"
+input_release = "shell-test-inputs-v1"
+input_archive_sha256 = "97a048903e55131877f44203103e33f28b84d6e0fe22c1588bb820b6075b6921"
+input_package_count = 38
 bats_core_package = "1.12.0-r0"
 python3_package = "3.12.14-r0"
 
@@ -66,5 +70,4 @@ artifact_checksums = "build/themes.sha256"
 unresolved = [
   "RetroArch and emulator/core source-to-binary mapping beyond exact shipped binary identity",
   "source builds and authoritative licenses for components quarantined in the legacy provenance tier",
-  "immutable Alpine package repository snapshot for shell-test dependencies",
 ]

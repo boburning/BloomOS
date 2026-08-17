@@ -9,6 +9,7 @@ __pycache__/
 !/build/core-manifest.json
 !/build/themes.sha256
 !/build/provenance-policy.json
+!/build/shell-test-inputs.json
 /build_test/
 /release/
 /dist/

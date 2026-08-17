@@ -1,0 +1,41 @@
+name: Publish shell-test image
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Download archived APK closure
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download shell-test-inputs-v1 \
+            --repo "${GITHUB_REPOSITORY}" \
+            --pattern bloom-shell-apks-v1.tar.gz \
+            --dir "${RUNNER_TEMP}"
+          python3 tools/shell_test_inputs.py \
+            --metadata build/shell-test-inputs.json \
+            --archive "${RUNNER_TEMP}/bloom-shell-apks-v1.tar.gz" \
+            --output "${RUNNER_TEMP}/shell-test-inputs"
+      - name: Build without package network access
+        run: |
+          docker build \
+            --network=none \
+            --file test/shell/Dockerfile \
+            --tag ghcr.io/boburning/bloomos-shell-test:v1 \
+            "${RUNNER_TEMP}/shell-test-inputs"
+      - name: Publish image
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          printf '%s' "${GH_TOKEN}" | docker login ghcr.io --username "${GITHUB_ACTOR}" --password-stdin
+          docker push ghcr.io/boburning/bloomos-shell-test:v1
+          docker logout ghcr.io

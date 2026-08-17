@@ -19,7 +19,12 @@ is certified.
 
 ## Shell tests
 
-Run `make test-shell` with Docker available. The BATS harness mounts the repository read-only and creates a disposable fake `/mnt/SDCARD` tree for each test. Never point shell integration tests at a real SD card or user save directory.
+Run `make test-shell` with Docker, `curl`, and Python 3 available. The target
+downloads the checksum-locked APK closure, verifies and safely extracts it,
+then builds the test image with Docker networking disabled. The BATS harness
+mounts the repository read-only and creates a disposable fake `/mnt/SDCARD`
+tree for each test. Never point shell integration tests at a real SD card or
+user save directory.
 
 Native unit tests run normally and under AddressSanitizer in pull requests. To
 reproduce the sanitizer pass on Linux:
