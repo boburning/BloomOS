@@ -119,6 +119,16 @@ update_state_health() {
     esac
 }
 
+snapshot_health() {
+    if [ ! -x "$BLOOM_SAVE_SNAPSHOT" ]; then
+        printf '%s' '{"schema":1,"healthy":false,"error":"unavailable"}'
+        return 1
+    fi
+    BLOOM_SD_ROOT="$(path /mnt/SDCARD)" \
+        BLOOM_JQ_BIN="$(path /mnt/SDCARD/.tmp_update/bin/jq)" \
+        "$BLOOM_SAVE_SNAPSHOT" health
+}
+
 print_health_json() {
     activity_output="$(play_activity_health)"
     activity_status=$?
@@ -126,6 +136,8 @@ print_health_json() {
     system_status=$?
     update_output="$(update_state_health)"
     update_status=$?
+    snapshot_output="$(snapshot_health 2>/dev/null)"
+    snapshot_status=$?
     case "$activity_output" in
         \{*) ;;
         *) activity_output='{"schema":1,"healthy":false,"error":"execution_failed"}' ;;
@@ -138,12 +150,16 @@ print_health_json() {
         \{*) ;;
         *) update_output='{"schema":1,"healthy":false,"error":"execution_failed"}' ;;
     esac
-    if [ "$activity_status" -eq 0 ] && [ "$system_status" -eq 0 ] && [ "$update_status" -eq 0 ]; then healthy=true; status=0; else healthy=false; status=1; fi
+    case "$snapshot_output" in
+        \{*) ;;
+        *) snapshot_output='{"schema":1,"healthy":false,"error":"execution_failed"}' ;;
+    esac
+    if [ "$activity_status" -eq 0 ] && [ "$system_status" -eq 0 ] && [ "$update_status" -eq 0 ] && [ "$snapshot_status" -eq 0 ]; then healthy=true; status=0; else healthy=false; status=1; fi
 
     printf '{\n'
     printf '  "schema": 1,\n'
     printf '  "healthy": %s,\n' "$healthy"
-    printf '  "checks": {"system": %s, "play_activity": %s, "update_state": %s}\n' "$system_output" "$activity_output" "$update_output"
+    printf '  "checks": {"system": %s, "play_activity": %s, "update_state": %s, "save_snapshots": %s}\n' "$system_output" "$activity_output" "$update_output" "$snapshot_output"
     printf '}\n'
     return "$status"
 }
@@ -155,6 +171,8 @@ print_health_text() {
     system_status=$?
     update_output="$(update_state_health)"
     update_status=$?
+    snapshot_output="$(snapshot_health 2>/dev/null)"
+    snapshot_status=$?
     if [ "$system_status" -eq 0 ]; then printf 'System: healthy\n'; else printf 'System: unhealthy\n'; fi
     printf '%s\n' "$system_output"
     if [ "$activity_status" -eq 0 ]; then
@@ -165,7 +183,9 @@ print_health_text() {
     printf '%s\n' "$activity_output"
     if [ "$update_status" -eq 0 ]; then printf 'Update state: healthy\n'; else printf 'Update state: unhealthy\n'; fi
     printf '%s\n' "$update_output"
-    if [ "$activity_status" -eq 0 ] && [ "$system_status" -eq 0 ] && [ "$update_status" -eq 0 ]; then return 0; else return 1; fi
+    if [ "$snapshot_status" -eq 0 ]; then printf 'Save snapshots: healthy\n'; else printf 'Save snapshots: unhealthy\n'; fi
+    printf '%s\n' "$snapshot_output"
+    if [ "$activity_status" -eq 0 ] && [ "$system_status" -eq 0 ] && [ "$update_status" -eq 0 ] && [ "$snapshot_status" -eq 0 ]; then return 0; else return 1; fi
 }
 
 usage() {

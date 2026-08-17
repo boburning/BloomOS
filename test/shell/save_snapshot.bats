@@ -162,3 +162,29 @@ create_snapshot() {
     [ "$output" = '{"schema":1,"snapshots":[]}' ]
     [ ! -d "$SDCARD/Saves/BloomSnapshots" ]
 }
+
+@test "snapshot health is healthy for an empty or fully verified inventory" {
+    export BLOOM_JQ_BIN=/usr/bin/jq
+    run "$SNAPSHOT" health
+    [ "$status" -eq 0 ]
+    [ "$output" = '{"schema":1,"healthy":true,"total":0,"unverified":0,"referenced":0}' ]
+    [ ! -d "$SDCARD/Saves/BloomSnapshots" ]
+
+    create_snapshot
+    run "$SNAPSHOT" health
+    [ "$status" -eq 0 ]
+    printf '%s' "$output" | jq -e '.healthy == true and .total == 1 and .unverified == 0' >/dev/null
+}
+
+@test "snapshot health reports aggregate corruption without save details" {
+    export BLOOM_JQ_BIN=/usr/bin/jq
+    create_snapshot
+    printf 'private-game-name\n' >>"$SDCARD/Saves/BloomSnapshots/$SNAPSHOT_ID/saves.tar"
+
+    run "$SNAPSHOT" health
+
+    [ "$status" -eq 1 ]
+    printf '%s' "$output" | jq -e '.healthy == false and .total == 1 and .unverified == 1' >/dev/null
+    ! printf '%s' "$output" | grep -F 'private-game-name'
+    ! printf '%s' "$output" | grep -F "$SNAPSHOT_ID"
+}
