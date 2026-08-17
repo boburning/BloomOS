@@ -2,6 +2,14 @@ name: Publish shell-test image
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/shell-test-image.yml'
+      - 'build/shell-test-inputs.json'
+      - 'test/shell/Dockerfile'
+      - 'tools/shell_test_inputs.py'
 
 permissions:
   contents: read
