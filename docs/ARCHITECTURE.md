@@ -60,4 +60,14 @@ complete lifecycle manager: standalone-emulator adapters, save-flush
 confirmation, crash recovery, and selective service suspension remain separate
 milestones.
 
+`bloom-save-flush` provides the native durability boundary for RetroArch saves.
+It accepts a validated core basename, resolves that core's canonical `corename`
+from RetroArch metadata, and flushes only the matching save and state trees plus
+their immediate parent directory entries. It never invokes a global `sync` or
+walks another core's data. Missing core metadata, unsafe names, symlinks, and
+non-regular entries fail closed. Directory `fsync` returning `EINVAL` is allowed
+for FAT compatibility; regular save and state files must still flush
+successfully. Session integration remains responsible for preventing `STOPPED`
+until this scoped operation succeeds.
+
 Architectural decisions will be recorded as the corresponding subsystem work begins.

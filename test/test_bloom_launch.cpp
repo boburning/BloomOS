@@ -47,7 +47,7 @@ class BloomLaunchTest : public ::testing::Test {
     std::filesystem::path root_;
     std::filesystem::path request_;
     std::filesystem::path command_;
-    char error_[256] = { 0 };
+    char error_[256] = {0};
 };
 
 TEST_F(BloomLaunchTest, ValidatesStructuredRequestAndQuotesLegacyBoundary)
@@ -77,6 +77,22 @@ TEST_F(BloomLaunchTest, CreatesCanonicalJsonWithoutTreatingPathsAsCode)
     std::string request((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
     EXPECT_NE(request.find("Bob's $pecial"), std::string::npos);
     EXPECT_NE(request.find("\"environment\":{}"), std::string::npos);
+    char core[128] = {};
+    EXPECT_EQ(0, bloom_launch_get_string(request_.c_str(), "core", core, sizeof(core), error_, sizeof(error_)));
+    EXPECT_STREQ("gambatte_libretro.so", core);
+    EXPECT_NE(0, bloom_launch_get_string(request_.c_str(), "environment", core, sizeof(core), error_, sizeof(error_)));
+}
+
+TEST_F(BloomLaunchTest, RejectsCorePathsInsteadOfCoreBasenames)
+{
+    write_request();
+    std::ifstream input(request_);
+    std::string request((std::istreambuf_iterator<char>(input)), std::istreambuf_iterator<char>());
+    size_t core = request.find("gambatte_libretro.so");
+    ASSERT_NE(core, std::string::npos);
+    request.replace(core, strlen("gambatte_libretro.so"), "../gambatte_libretro.so");
+    std::ofstream(request_) << request;
+    EXPECT_NE(0, bloom_launch_validate_file(request_.c_str(), error_, sizeof(error_)));
 }
 
 TEST_F(BloomLaunchTest, RejectsUnknownAndDuplicateFields)

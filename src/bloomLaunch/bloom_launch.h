@@ -8,5 +8,7 @@ int bloom_launch_write_legacy(const char *request_path, const char *command_path
 int bloom_launch_create_file(const char *request_path, const char *game_id, const char *system_id, const char *rom_path,
                              const char *launcher, const char *emulator_type, const char *core, int auto_load_state,
                              char *error, size_t error_size);
+int bloom_launch_get_string(const char *request_path, const char *field, char *value, size_t value_size, char *error,
+                            size_t error_size);
 
 #endif
