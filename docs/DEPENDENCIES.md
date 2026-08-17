@@ -82,7 +82,7 @@ it from reviewed inputs; binary hashes alone are never accepted as historical
 source evidence.
 
 `build/legacy-manifest.json` decomposes the remaining inherited runtime and
-package payload into 155 independently resolvable components covering 2,634
+package payload into 154 independently resolvable components covering 2,594
 files. Each entry locks its path, file count, checkout-normalized byte count,
 and canonical tree SHA-256 while leaving unknown source, revision, license, and build recipe
 explicitly `null`. Its resolution must eventually become either a complete
@@ -102,7 +102,7 @@ definitions, and optional empty marker files. Those trees are
 unchanged from the pinned Onion baseline and are recorded as GPL-3.0-only
 source assemblies through the repository Makefile. This attribution applies
 only to the wrapper files; it does not confer provenance on the emulator/core
-binaries they select. The remaining 11 components contain runtime payloads,
+binaries they select. The remaining 10 components contain runtime payloads,
 executables, fonts, images, media, databases, firmware, or other inputs that
 still require component-specific evidence or exclusion.
 
@@ -155,6 +155,13 @@ from the MiyooCFW v2021-08-14 release, whose maintainers later documented that
 the exact source was lost. Bloom retains Neo Geo support through the existing
 libretro package instead of presenting a different GnGeo revision as the source
 of the inherited executable.
+
+The optional native PICO-8 wrapper is also excluded. It correctly required
+users to supply their own purchased PICO-8 executable and data, but the wrapper
+itself bundled shared libraries, a preload hook, and artwork from an upstream
+repository with no declared license. Bloom retains PICO-8 support through the
+source-built Fake-08 libretro and standalone packages; a future native wrapper
+must be reconstructed entirely from reviewed, redistributable inputs.
 
 The pinned SearchFilter and DinguxCommander repositories remain a separate
 legacy blocker: neither upstream repository declares a project license. Their
