@@ -1,0 +1,113 @@
+#!/bin/sh
+set -u
+
+SD_ROOT="${BLOOM_SD_ROOT:-/mnt/SDCARD}"
+PROFILE="$SD_ROOT/Saves/CurrentProfile"
+SNAPSHOT_ROOT="$SD_ROOT/Saves/BloomSnapshots"
+SESSION_STATE="${BLOOM_SESSION_STATE_FILE:-/tmp/bloom-session/state}"
+LOCK_DIR="$SNAPSHOT_ROOT/.lock"
+LOCKED=0
+
+fail() { printf 'bloom-save-snapshot: %s\n' "$*" >&2; exit 1; }
+
+unlock() {
+    if [ "$LOCKED" -eq 1 ]; then
+        rmdir "$LOCK_DIR" 2>/dev/null || true
+        LOCKED=0
+    fi
+}
+trap unlock EXIT HUP INT TERM
+
+lock() {
+    mkdir -p "$SNAPSHOT_ROOT" || fail "cannot create snapshot root"
+    mkdir "$LOCK_DIR" 2>/dev/null || fail "snapshot operation is busy"
+    LOCKED=1
+}
+
+safe_name() {
+    case "$1" in ''|*[!A-Za-z0-9_.-]*|.|..) return 1 ;; esac
+}
+
+validate_sources() {
+    [ -d "$PROFILE/saves" ] || fail "save directory is unavailable"
+    [ -d "$PROFILE/states" ] || fail "state directory is unavailable"
+    if find "$PROFILE/saves" "$PROFILE/states" \( -type l -o ! -type d ! -type f \) | grep -q .; then
+        fail "save trees contain unsupported entries"
+    fi
+}
+
+verify_snapshot() {
+    snapshot="$1"
+    [ -f "$snapshot/complete" ] && [ -f "$snapshot/archive.sha256" ] && [ -f "$snapshot/saves.tar" ] || return 1
+    (cd "$snapshot" && sha256sum -c archive.sha256 >/dev/null 2>&1)
+}
+
+create_snapshot() {
+    trigger="$1"
+    safe_name "$trigger" || fail "invalid snapshot trigger"
+    validate_sources
+    lock
+    timestamp="$(date -u +%Y%m%dT%H%M%SZ)" || fail "cannot read time"
+    snapshot_id="${timestamp}-${trigger}-$$"
+    safe_name "$snapshot_id" || fail "invalid snapshot identifier"
+    staging="$SNAPSHOT_ROOT/.tmp.$snapshot_id"
+    final="$SNAPSHOT_ROOT/$snapshot_id"
+    [ ! -e "$staging" ] && [ ! -e "$final" ] || fail "snapshot already exists"
+    mkdir "$staging" || fail "cannot stage snapshot"
+    tar -cf "$staging/saves.tar" -C "$PROFILE" saves states || fail "cannot archive save trees"
+    (cd "$staging" && sha256sum saves.tar >archive.sha256) || fail "cannot checksum snapshot"
+    printf '{"schema":1,"id":"%s","trigger":"%s"}\n' "$snapshot_id" "$trigger" >"$staging/metadata.json" ||
+        fail "cannot write snapshot metadata"
+    : >"$staging/complete" || fail "cannot complete snapshot"
+    verify_snapshot "$staging" || fail "staged snapshot failed verification"
+    mv "$staging" "$final" || fail "cannot publish snapshot"
+    printf '{"schema":1,"status":"created","id":"%s","trigger":"%s"}\n' "$snapshot_id" "$trigger"
+}
+
+restore_snapshot() {
+    snapshot_id="$1"
+    safe_name "$snapshot_id" || fail "invalid snapshot identifier"
+    state=IDLE
+    if [ -r "$SESSION_STATE" ]; then IFS= read -r state <"$SESSION_STATE" || true; fi
+    case "$state" in IDLE|STOPPED|FAILED) ;; *) fail "cannot restore during an active session" ;; esac
+    lock
+    snapshot="$SNAPSHOT_ROOT/$snapshot_id"
+    verify_snapshot "$snapshot" || fail "snapshot verification failed"
+    restore_stage="$PROFILE/.bloom-restore.$$"
+    rollback="$PROFILE/.bloom-rollback.$$"
+    [ ! -e "$restore_stage" ] && [ ! -e "$rollback" ] || fail "restore staging already exists"
+    mkdir "$restore_stage" "$rollback" || fail "cannot stage restore"
+    tar -xf "$snapshot/saves.tar" -C "$restore_stage" || fail "cannot extract snapshot"
+    [ -d "$restore_stage/saves" ] && [ -d "$restore_stage/states" ] || fail "snapshot scope is incomplete"
+    mv "$PROFILE/saves" "$rollback/saves" || fail "cannot preserve current saves"
+    if ! mv "$PROFILE/states" "$rollback/states"; then
+        mv "$rollback/saves" "$PROFILE/saves" 2>/dev/null || true
+        fail "cannot preserve current states"
+    fi
+    if ! mv "$restore_stage/saves" "$PROFILE/saves" || ! mv "$restore_stage/states" "$PROFILE/states"; then
+        rm -rf "$PROFILE/saves" "$PROFILE/states"
+        mv "$rollback/saves" "$PROFILE/saves" 2>/dev/null || true
+        mv "$rollback/states" "$PROFILE/states" 2>/dev/null || true
+        fail "cannot install restored save trees"
+    fi
+    rm -rf "$restore_stage" "$rollback"
+    printf '{"schema":1,"status":"restored","id":"%s"}\n' "$snapshot_id"
+}
+
+usage() {
+    printf 'Usage: bloom-save-snapshot create TRIGGER\n' >&2
+    printf '       bloom-save-snapshot verify SNAPSHOT_ID\n' >&2
+    printf '       bloom-save-snapshot restore SNAPSHOT_ID\n' >&2
+}
+
+case "${1:-}" in
+    create) [ "$#" -eq 2 ] || { usage; exit 2; }; create_snapshot "$2" ;;
+    verify)
+        [ "$#" -eq 2 ] || { usage; exit 2; }
+        safe_name "$2" || fail "invalid snapshot identifier"
+        verify_snapshot "$SNAPSHOT_ROOT/$2" || fail "snapshot verification failed"
+        printf '{"schema":1,"status":"verified","id":"%s"}\n' "$2"
+        ;;
+    restore) [ "$#" -eq 2 ] || { usage; exit 2; }; restore_snapshot "$2" ;;
+    *) usage; exit 2 ;;
+esac
