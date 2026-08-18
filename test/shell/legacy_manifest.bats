@@ -6,9 +6,10 @@
         --manifest /workspace/build/legacy-manifest.json
 
     [ "$status" -eq 0 ]
-    [[ "$output" == "legacy manifest validate: 154 components" ]]
+    [[ "$output" == "legacy manifest validate: 153 components" ]]
     [ ! -e "/workspace/static/packages/RApp/SNK - Neo Geo (GnGeo)" ]
     [ ! -e "/workspace/static/packages/RApp/PICO-8 (PICO-8 standalone)" ]
+    [ ! -e "/workspace/static/packages/RApp/SCUMM (ScummVM standalone)" ]
     ! grep -F 'GnGeo' /workspace/.github/create_fullres_files.sh
 }
 

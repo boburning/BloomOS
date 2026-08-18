@@ -163,6 +163,13 @@ repository with no declared license. Bloom retains PICO-8 support through the
 source-built Fake-08 libretro and standalone packages; a future native wrapper
 must be reconstructed entirely from reviewed, redistributable inputs.
 
+The optional ScummVM standalone package is excluded as redundant. Bloom keeps
+the existing ScummVM libretro launcher, importer, shortcut format, and core for
+all supported device models. The inherited core remains subject to the same
+source-to-binary provenance backlog as the other shipped libretro cores; this
+decision avoids maintaining a second ScummVM executable and private codec
+bundle without reducing supported game access.
+
 The pinned SearchFilter and DinguxCommander repositories remain a separate
 legacy blocker: neither upstream repository declares a project license. Their
 source availability and commit identity therefore do not establish public

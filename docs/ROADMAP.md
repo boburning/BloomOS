@@ -132,6 +132,9 @@ merged; it does not imply unrecorded hardware certification.
   declared upstream license, while retaining both source-built Fake-08 options
   and leaving a clean path for a future independently licensed native wrapper
   ([PR #89](https://github.com/boburning/BloomOS/pull/89)).
+- [x] Exclude the redundant inherited ScummVM standalone package and retain the
+  existing ScummVM libretro integration, avoiding a second engine and codec
+  stack while core source-to-binary provenance remains in the shared backlog.
 
 The hardware-sensitive BloomOS 1.0/1.1 implementation queue is at its
 physical-validation boundary. Source-provenance replacement work can continue
