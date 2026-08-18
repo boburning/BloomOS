@@ -1797,19 +1797,6 @@
       "resolution": "source-build"
     },
     {
-      "id": "rapp-scumm--scummvm-standalone",
-      "kind": "package",
-      "path": "static/packages/RApp/SCUMM (ScummVM standalone)",
-      "file_count": 67,
-      "byte_count": 132745097,
-      "tree_sha256": "eca52038bd5dc82e11b8a60b0daed3c3d8edcb7ab40c30aa87ff61986fa96c9f",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
-    },
-    {
       "id": "rapp-sega---game-gear--gearsystem",
       "kind": "package",
       "path": "static/packages/RApp/Sega - Game Gear (Gearsystem)",
