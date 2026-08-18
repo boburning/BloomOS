@@ -157,9 +157,12 @@ guessed from inherited bytes.
   persistent log proves swapoff, read-only FAT remount, and recursive unmount
   completed before the device required manual power-on
   ([PR #90](https://github.com/boburning/BloomOS/pull/90)).
-- [ ] Diagnose the Plus reboot/power-control handoff without changing the
-  proven clean SD-card quiescing path; repeat reboot only while local recovery
-  is available.
+- [x] Diagnose the Plus reboot/power-control handoff and add a delayed direct
+  kernel-reboot fallback without changing the proven clean SD-card quiescing
+  path ([PR #91](https://github.com/boburning/BloomOS/pull/91)).
+- [ ] Validate the guarded reboot fallback on Plus while local recovery is
+  available, then repeat the applicable reboot/poweroff paths on Mini V2 and
+  Flip.
 - [ ] Run real signed update activation, boot confirmation, bounded-failure,
   and rollback tests on Plus, then repeat applicable coverage on Mini V2 and
   Flip.
