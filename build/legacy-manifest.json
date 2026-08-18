@@ -107,19 +107,6 @@
       "resolution": "source-build"
     },
     {
-      "id": "app-display-calibration--240psuite",
-      "kind": "package",
-      "path": "static/packages/App/Display Calibration (240pSuite)",
-      "file_count": 4,
-      "byte_count": 1173344,
-      "tree_sha256": "3f6db3ef60d3c010bedf149ca4c52d5d78468881be7a91c7f9e87f78272b8b43",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
-    },
-    {
       "id": "app-ebook-reader--pixelreader",
       "kind": "package",
       "path": "static/packages/App/Ebook Reader (PixelReader)",
