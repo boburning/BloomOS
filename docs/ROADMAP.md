@@ -147,6 +147,9 @@ merged; it does not imply unrecorded hardware certification.
   and dedicated SNES core without exact source-to-binary evidence. Upstream's
   GPL source remains a candidate once its complete host toolchain can be rebuilt
   from attributable source; Bloom retains normal SNES support meanwhile.
+- [x] Exclude DinguxCommander and its package because the upstream repository
+  has no declared project license; require an independently implemented or
+  authoritatively licensed file manager before restoring the feature.
 
 The hardware-sensitive BloomOS 1.0/1.1 implementation queue is at its
 physical-validation boundary. Source-provenance replacement work can continue

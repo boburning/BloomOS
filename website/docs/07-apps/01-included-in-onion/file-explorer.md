@@ -1,31 +1,15 @@
 ---
 slug: /apps/file-explorer
-description: Organize your Onion with DinguxCommander
+description: File manager availability in BloomOS
 ---
 
 # File Explorer
 
-## Presentation
+BloomOS does not currently ship the inherited DinguxCommander package. Its
+upstream repository contains source but does not declare a project license, so
+Bloom cannot redistribute the executable, source, or bundled assets on public
+release channels.
 
-A dual-pane file explorer that allows you to manage files directly on your device.
-
-![](./assets/file-explorer.png)
-
-## Usage
-
-File Explorer is available in [Package Manager](package-manager).
-
-### Controls
-
-| Button        | Function                                            |
-| ------------- | --------------------------------------------------- |
-| Select        | Select items                                        |
-| A             | Open folder / View or execute file                  |
-| B             | Move up one directory / Cancel action               |
-| X             | Manage selected items (Copy/Delete/Move etc)        |
-| Y/Menu button | Open general submenu (Select all/New Directory etc) |
-| L1/R1         | Scroll page                                         |
-
-## Advanced
-
-[File Explorer / DinguxCommander source code](https://github.com/OnionUI/app-DinguxCommander/).
+A file manager can return after Bloom adopts an authoritatively licensed
+upstream implementation or builds an independent replacement. Historical Onion
+4.2 documentation remains available in the versioned documentation set.

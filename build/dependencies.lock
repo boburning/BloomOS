@@ -20,7 +20,6 @@ info_zip = "3.0"
 [submodules]
 "third-party/SearchFilter" = "fc95ef8a3e67b54046fd03228df5b922f7bde834"
 "third-party/Terminal" = "b8d6f98ed0d4f95542dd0acb7ec683482d0a4029"
-"third-party/DinguxCommander" = "7314f86cc1b5d1c75607120e9c2760261f69b67b"
 "third-party/RetroArch-patch" = "f9e959f7445d2ba0a4dd6279da41a095163767f2"
 "third-party/dropbear" = "887241694277b3816da5d174932c10546ea9d2c5"
 "third-party/fake-08" = "18a1c8ab686f87f00a418add448ebe872b87869a"
@@ -141,11 +140,11 @@ legacy_channels = ["development"]
 [legacy_inventory]
 manifest = "build/legacy-manifest.json"
 schema = 1
-component_count = 152
-file_count = 2511
-byte_count = 395771330
+component_count = 151
+file_count = 2500
+byte_count = 395489284
 source_build_components = 146
-unresolved_components = 6
+unresolved_components = 5
 inherited_baseline = "07505ea58c7bba698d6b9220ff43946a43cac76b"
 
 [themes]

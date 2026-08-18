@@ -78,10 +78,10 @@
       "reason": "Standalone emulators and applications require component-level source, license, and build provenance."
     },
     {
-      "id": "search-and-file-manager",
+      "id": "search-filter",
       "tier": "legacy",
-      "paths": ["third-party/SearchFilter", "third-party/DinguxCommander"],
-      "reason": "Pinned source is present, but the component repositories do not contain an authoritative top-level license declaration."
+      "paths": ["third-party/SearchFilter"],
+      "reason": "Pinned source is present, but the component repository does not contain an authoritative top-level license declaration."
     }
   ]
 }

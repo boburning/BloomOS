@@ -133,19 +133,6 @@
       "resolution": "source-build"
     },
     {
-      "id": "app-file-explorer--dinguxcommander",
-      "kind": "package",
-      "path": "static/packages/App/File Explorer (DinguxCommander)",
-      "file_count": 11,
-      "byte_count": 282046,
-      "tree_sha256": "14f6a5d61e5c3d4daf4df57dcfa27bc967b3ed045c5cfd4ebca74ff6c6db8358",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
-    },
-    {
       "id": "app-gallery--screenshot-viewer",
       "kind": "package",
       "path": "static/packages/App/Gallery (Screenshot viewer)",
