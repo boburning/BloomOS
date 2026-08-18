@@ -83,7 +83,7 @@ it from reviewed inputs; binary hashes alone are never accepted as historical
 source evidence.
 
 `build/legacy-manifest.json` decomposes the remaining inherited runtime and
-package payload into 151 independently resolvable components covering 2,500
+package payload into 150 independently resolvable components covering 2,424
 files. Each entry locks its path, file count, checkout-normalized byte count,
 and canonical tree SHA-256 while leaving unknown source, revision, license, and build recipe
 explicitly `null`. Its resolution must eventually become either a complete
@@ -200,6 +200,14 @@ source but no project license, so neither that source nor the inherited package
 assets can be redistributed on Bloom's public channels. A future file manager
 must be independently implemented or selected from an authoritatively licensed
 upstream project.
+
+The inherited GMU package is excluded. Although GMU itself publishes GPL-2.0
+source, the Miyoo package combines the executable, frontend and decoder
+plugins, sixteen private codec/rendering libraries, themes, and two bundled
+music tracks without a complete source, license, and build mapping for every
+shipped byte. A future music player must be assembled entirely from pinned,
+licensed sources and must not bundle media without explicit redistribution
+rights.
 
 ## Lock-file requirements
 
