@@ -46,6 +46,8 @@ merged; it does not imply unrecorded hardware certification.
   source-build workspaces outside the assembled runtime, preserve failed
   extraction diagnostics, and detach the expected live `MainUI` bind mount
   during transactional activation while preserving a stable SSH host identity.
+- [x] Explicitly release snapshot operation locks on successful create, list,
+  health, prune, and restore paths for BusyBox `ash` compatibility.
 - [x] Reconcile activated update boots, count bounded validation attempts, and
   require installed-version plus structured-health confirmation before
   promotion ([PR #54](https://github.com/boburning/BloomOS/pull/54)).
