@@ -46,6 +46,8 @@ merged; it does not imply unrecorded hardware certification.
   source-build workspaces outside the assembled runtime, preserve failed
   extraction diagnostics, and detach the expected live `MainUI` bind mount
   during transactional activation while preserving a stable SSH host identity.
+- [x] Explicitly release snapshot operation locks on successful create, list,
+  health, prune, and restore paths for BusyBox `ash` compatibility.
 - [x] Reconcile activated update boots, count bounded validation attempts, and
   require installed-version plus structured-health confirmation before
   promotion ([PR #54](https://github.com/boburning/BloomOS/pull/54)).
@@ -259,6 +261,14 @@ BloomOS 1.0 is not blocked on Sync, Hub, Link, profiles, or a replacement fronte
 ## Later 1.x releases
 
 Planned work includes safe updates and rollback, optional synchronization and offline achievements, a package hub, profiles and Kids Mode, system health, performance profiles, Nearby Play, a local browser companion, and a unified in-game experience.
+
+- [ ] Restore Nintendo DS support with a reproducible, open-source libretro
+  core such as melonDS or DeSmuME. Build it from pinned source for Bloom's
+  ARMv7 runtime, keep proprietary BIOS/firmware out of releases, and qualify
+  startup, rendering, audio, input, screen layouts, touch-pointer controls,
+  saves, and representative-game performance before enabling `NDS` on Mini
+  V1-V4, Plus, or Flip. DraStic and other proprietary standalone packages are
+  not candidates for BloomOS distribution.
 
 ## BloomOS 2.0 research
 

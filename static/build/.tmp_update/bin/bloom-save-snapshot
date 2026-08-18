@@ -94,6 +94,7 @@ prune_snapshots() {
     limit="$1"
     lock
     removed="$(prune_locked "$limit")" || fail "snapshot retention failed"
+    unlock
     printf '{"schema":1,"status":"pruned","retained":%s,"removed":%s}\n' "$limit" "$removed"
 }
 
@@ -135,6 +136,7 @@ list_snapshots() {
     done
     "$JQ" -cs '{schema:1,snapshots:(sort_by(.id) | reverse)}' "$inventory" || fail "cannot publish snapshot inventory"
     rm -f "$inventory"
+    unlock
 }
 
 health_snapshots() {
@@ -170,6 +172,7 @@ create_snapshot() {
     sync
     mv "$staging" "$final" || fail "cannot publish snapshot"
     removed="$(prune_locked "$RETENTION")" || fail "snapshot retention failed"
+    unlock
     printf '{"schema":1,"status":"created","id":"%s","trigger":"%s","retention":%s,"removed":%s}\n' \
         "$snapshot_id" "$trigger" "$RETENTION" "$removed"
 }
@@ -201,6 +204,7 @@ restore_snapshot() {
         fail "cannot install restored save trees"
     fi
     rm -rf "$restore_stage" "$rollback"
+    unlock
     printf '{"schema":1,"status":"restored","id":"%s"}\n' "$snapshot_id"
 }
 

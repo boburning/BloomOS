@@ -174,6 +174,12 @@ create_snapshot() {
     run "$SNAPSHOT" health
     [ "$status" -eq 0 ]
     printf '%s' "$output" | jq -e '.healthy == true and .total == 1 and .unverified == 0' >/dev/null
+    [ ! -e "$SDCARD/Saves/BloomSnapshots/.lock" ]
+
+    run "$SNAPSHOT" health
+    [ "$status" -eq 0 ]
+    printf '%s' "$output" | jq -e '.healthy == true and .total == 1 and .unverified == 0' >/dev/null
+    [ ! -e "$SDCARD/Saves/BloomSnapshots/.lock" ]
 }
 
 @test "snapshot health reports aggregate corruption without save details" {
