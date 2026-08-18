@@ -24,7 +24,7 @@ EOF
 #!/bin/sh
 printf '%s\n' "$0 $*" >>"$MOCK_LOG"
 if [ "${1:-}" = dropbearkey ]; then
-    : >"$SDCARD/.tmp_update/etc/dropbear/dropbear_ed25519_host_key"
+    : >"$SDCARD/.bloom/ssh/dropbear_ed25519_host_key"
 elif [ "${1:-}" = dropbear ]; then
     sleep 30
 fi
@@ -85,6 +85,7 @@ install_valid_key() {
     grep -F 'dropbear dropbear -F -r' "$MOCK_LOG"
     grep -F -- '-D ' "$MOCK_LOG"
     grep -F -- '-p 22' "$MOCK_LOG"
+    grep -F "$SDCARD/.bloom/ssh/dropbear_ed25519_host_key" "$MOCK_LOG"
     cmp "$SDCARD/.bloom/authorized_keys" "$BLOOM_TEST_ROOT/home/root/.ssh/authorized_keys"
 }
 
@@ -121,7 +122,7 @@ install_valid_key() {
 #!/bin/sh
 printf '%s\n' "$0 $*" >>"$MOCK_LOG"
 if [ "${1:-}" = dropbearkey ]; then
-    : >"$SDCARD/.tmp_update/etc/dropbear/dropbear_ed25519_host_key"
+    : >"$SDCARD/.bloom/ssh/dropbear_ed25519_host_key"
     exit 0
 fi
 exit 1

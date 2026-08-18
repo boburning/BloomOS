@@ -42,6 +42,10 @@ merged; it does not imply unrecorded hardware certification.
 - [x] Preserve pending candidates and validation state when upgrading early
   development cards from `.tmp_update/update` to the durable `.bloom/update`
   root.
+- [x] Reject FAT-incompatible installer payloads before packaging, keep
+  source-build workspaces outside the assembled runtime, preserve failed
+  extraction diagnostics, and detach the expected live `MainUI` bind mount
+  during transactional activation while preserving a stable SSH host identity.
 - [x] Reconcile activated update boots, count bounded validation attempts, and
   require installed-version plus structured-health confirmation before
   promotion ([PR #54](https://github.com/boburning/BloomOS/pull/54)).

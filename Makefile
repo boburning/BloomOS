@@ -235,6 +235,7 @@ dist: build
 	@echo $(RA_SUBVERSION) > $(DIST_DIR)/RetroArch/ra_package_version.txt
 # Package Onion core
 	@echo -n "Packaging Onion..."
+	@python3 $(ROOT_DIR)/tools/validate_fat_payload.py $(BUILD_DIR)
 	@cd $(BUILD_DIR) && 7z a -mtm=off $(DIST_DIR)/miyoo/app/.tmp_update/onion.pak . -x!RetroArch -bsp1 -bso0
 	@echo " DONE"
 	@$(ECHO) $(PRINT_DONE)

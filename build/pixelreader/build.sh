@@ -2,7 +2,7 @@
 set -eu
 
 root=$(CDPATH= cd -- "$(dirname "$0")/../.." && pwd)
-work="$root/build/pixelreader/work"
+work="$root/cache/pixelreader-work"
 prefix="$work/prefix"
 pixel_source="$work/pixel-reader-src"
 zlib_source="$work/zlib-src"
@@ -23,6 +23,8 @@ export CXXFLAGS="$CFLAGS"
 
 rm -rf "$work"
 mkdir -p "$prefix"
+cleanup() { rm -rf "$work"; }
+trap cleanup EXIT HUP INT TERM
 for source_pair in \
     "$root/third-party/pixel-reader:$pixel_source" \
     "$root/third-party/zlib:$zlib_source" \

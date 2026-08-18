@@ -6,6 +6,8 @@ UPDATE_ROOT="${BLOOM_UPDATE_ROOT:-$SD_ROOT/.bloom/update}"
 STATE_BIN="${BLOOM_UPDATE_STATE_BIN:-$SD_ROOT/.tmp_update/bin/bloom-update-state}"
 SNAPSHOT_BIN="${BLOOM_SAVE_SNAPSHOT_BIN:-$SD_ROOT/.tmp_update/bin/bloom-save-snapshot}"
 JQ="${BLOOM_JQ_BIN:-$SD_ROOT/.tmp_update/bin/jq}"
+MOUNT="${BLOOM_MOUNT_BIN:-mount}"
+UMOUNT="${BLOOM_UMOUNT_BIN:-umount}"
 
 fail() { printf 'bloom-update-activate: %s\n' "$*" >&2; exit 1; }
 
@@ -32,6 +34,9 @@ source_ra="$candidate/RetroArch"
 
 target_app="$SD_ROOT/miyoo/app"
 target_ra="$SD_ROOT/RetroArch"
+legacy_host_key="$SD_ROOT/.tmp_update/etc/dropbear/dropbear_ed25519_host_key"
+durable_host_key_dir="$SD_ROOT/.bloom/ssh"
+durable_host_key="$durable_host_key_dir/dropbear_ed25519_host_key"
 mkdir -p "$target_app" "$target_ra" || fail "cannot create activation targets"
 [ ! -L "$target_app/MainUI" ] || fail "an installer is already pending"
 if [ -f "$target_app/MainUI" ] && grep -Fq '#!/bin/sh' "$target_app/MainUI"; then
@@ -43,6 +48,12 @@ fi
 snapshot="$($SNAPSHOT_BIN create pre-update)" || fail "pre-update save snapshot failed"
 snapshot_id="$(printf '%s\n' "$snapshot" | "$JQ" -er '.id')" || fail "snapshot result is invalid"
 $STATE_BIN activation-start "$version" "$snapshot_id" >/dev/null || fail "cannot record activation"
+if [ ! -s "$durable_host_key" ] && [ -s "$legacy_host_key" ]; then
+    mkdir -p "$durable_host_key_dir" || fail "cannot create durable SSH key directory"
+    chmod 700 "$durable_host_key_dir" || fail "cannot protect durable SSH key directory"
+    cp "$legacy_host_key" "$durable_host_key" || fail "cannot preserve SSH host key"
+    chmod 600 "$durable_host_key" || fail "cannot protect durable SSH host key"
+fi
 
 temporary_app="$target_app/.bloom-candidate-$$"
 temporary_ra="$target_ra/.bloom-candidate-$$.pak"
@@ -56,6 +67,9 @@ sync
 mv "$temporary_app" "$target_app/.tmp_update" || fail "cannot publish installer payload"
 mv "$temporary_ra" "$target_ra/retroarch.pak" || fail "cannot publish RetroArch payload"
 sync
+if "$MOUNT" | grep -Fq " on $target_app/MainUI "; then
+    "$UMOUNT" -l "$target_app/MainUI" || fail "cannot detach the active MainUI mount"
+fi
 mv "$temporary_trigger" "$target_app/MainUI" || fail "cannot publish installer trigger"
 trap - EXIT HUP INT TERM
 sync
