@@ -174,8 +174,9 @@ merged; it does not imply unrecorded hardware certification.
 - [x] Exclude the inherited proprietary DraStic package and its incompletely
   attributable libraries, firmware, databases, fonts, and interface assets;
   remove the now-invalid legacy migration scripts, reserve the `NDS` library
-  path, and require a reproducible, licensed, device-qualified emulator before
-  Nintendo DS support returns.
+  path, remove the retired package from upgraded cards without touching ROMs
+  or saves, and require a reproducible, licensed, device-qualified emulator
+  before Nintendo DS support returns.
 - [x] Exclude the Search/Filter source and package integration because the
   upstream project has no authoritative license; retain per-system ROM cache
   refresh through Bloom's licensed shell implementation and require a clean-room
