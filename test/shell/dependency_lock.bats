@@ -69,6 +69,29 @@
     grep -F './build/openbor/build.sh' /workspace/Makefile
 }
 
+@test "PCSX standalone and private SDL are source-pinned and reproducible" {
+    lock=/workspace/build/dependencies.lock
+    package="/workspace/static/packages/RApp/Sony - PlayStation (PCSX standalone)/RApp/PCSX-ReARMed"
+
+    grep -F 'source_revision = "8987ee208f057b59a35815f4e6a805935faf2fc8"' "$lock"
+    grep -F 'sdl_revision = "0e0919585f2f809471ba45bdc16624ef4e887bc0"' "$lock"
+    grep -F 'binary_sha256 = "ab0a2048b2b54aa357cc172e94ef6a611a35c571853155bcef5f27d962f66da4"' "$lock"
+    grep -F 'sdl_sha256 = "8fef9e7d38dfce315fd1c9c7dee78a6926228eaf4dbbe42b26e069c8f511b4a5"' "$lock"
+    [ "$(sha256sum "$package/pcsx" | cut -d' ' -f1)" = \
+        "ab0a2048b2b54aa357cc172e94ef6a611a35c571853155bcef5f27d962f66da4" ]
+    [ "$(sha256sum "$package/lib/libSDL-1.2.so.0" | cut -d' ' -f1)" = \
+        "8fef9e7d38dfce315fd1c9c7dee78a6926228eaf4dbbe42b26e069c8f511b4a5" ]
+    grep -F '## PCSX-ReARMed' "$package/LICENSE.MD"
+    grep -F '## SDL 1.2' "$package/LICENSE.MD"
+    grep -F '## BloomOS and Onion package wrappers' "$package/LICENSE.MD"
+    cmp -s /workspace/third-party/pcsx_rearmed/frontend/320240/skin/background.png \
+        "$package/skin/background.png"
+    [ ! -e "$package/pcsx-fromMiyoo" ]
+    [ ! -e "$package/cheatpops.db" ]
+    [ ! -e "$package/.pcsx/memcards" ]
+    grep -F './build/pcsx/build.sh' /workspace/Makefile
+}
+
 @test "OpenSSL runtime dependency comes from the pinned ARM toolchain" {
     grep -F 'cp -L /opt/miyoomini-toolchain/arm-linux-gnueabihf/libc/usr/lib/libatomic.so.1' /workspace/Makefile
     ! grep -F 'libatomic.so.1' /workspace/Makefile | grep -F 'http'

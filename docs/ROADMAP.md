@@ -2,7 +2,7 @@
 
 ## Implementation status
 
-Last updated: 2026-08-17
+Last updated: 2026-08-18
 
 This section tracks delivered increments and deferred physical validation. A
 checked repository item means the implementation and automated tests have
@@ -135,6 +135,10 @@ merged; it does not imply unrecorded hardware certification.
 - [x] Exclude the redundant inherited ScummVM standalone package and retain the
   existing ScummVM libretro integration, avoiding a second engine and codec
   stack while core source-to-binary provenance remains in the shared backlog.
+- [x] Replace PCSX-ReARMed standalone, its external GPU plugins, package-private
+  Miyoo SDL, and menu skin with deterministic builds/assets from pinned source;
+  remove the unreachable stock fallback, unattributed cheat database, and
+  pre-created memory cards.
 
 The hardware-sensitive BloomOS 1.0/1.1 implementation queue is at its
 physical-validation boundary. Source-provenance replacement work can continue
@@ -186,6 +190,9 @@ guessed from inherited bytes.
   representative cartridge compatibility on V2, Plus, and Flip.
 - [ ] Validate source-built OpenBOR startup, rendering, audio, input mappings,
   PAK loading, and save behavior on V2, Plus, and Flip.
+- [ ] Validate source-built PCSX-ReARMed standalone startup, rendering, audio,
+  input, memory-card creation, save states, and representative games on V2,
+  Plus, and Flip.
 - [ ] Collect equivalent external physical evidence for original Mini V1, V3,
   and V4 before claiming stable support for those revisions.
 

@@ -17,6 +17,7 @@ on:
       - 'build/core-manifest.json'
       - 'build/dependencies.lock'
       - 'build/openbor/**'
+      - 'build/pcsx/**'
       - 'build/provenance-policy.json'
       - 'build/shell-test-inputs.json'
       - 'build/legacy-manifest.json'
@@ -35,6 +36,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Checkout shell-test source fixture
-        run: git submodule update --init --depth 1 third-party/fake-08
+        run: git submodule update --init --depth 1 third-party/fake-08 third-party/pcsx_rearmed
       - name: Build and run shell tests
         run: make test-shell

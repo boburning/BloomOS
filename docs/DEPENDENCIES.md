@@ -20,6 +20,7 @@ Baseline: Onion `07505ea58c7bba698d6b9220ff43946a43cac76b`, audited 2026-08-15.
 | Battery Monitor font | DejaVu Sans 2.37, archive SHA-256 `7576310b219e04159d35ff61dd4a4ec4cdba4f35c00e002a136f00e96a908b0a`, font SHA-256 `7da195a74c55bef988d0d48f9508bd5d849425c1770dba5d7bfc6ce9ed848954` | Official release and license pinned | Replaces the inherited Arkhip file whose embedded notice reserves all rights. Visual layout remains pending device validation. |
 | Fake-08 standalone | `jtothebell/fake-08` v0.0.2.19 commit `18a1c8ab686f87f00a418add448ebe872b87869a` with recursive z8lua commit `abd65e3b05e285da0c6f86912b2817e7dc6bf6ea` | Source, recursive dependency, composite license, toolchain, and output hash pinned | Bloom rebuilds the Miyoo Mini executable instead of carrying the historically unexplained binary. Device game compatibility remains pending physical validation. |
 | OpenBOR standalone | `DCurrent/openbor` commit `b00efbc7752cb55709dfc9fdfdfc7cfe78ddfb90`, SDL 2.0.20 commit `b424665e0899769b200231ba943353a5fee1b6b6`, libogg 1.3.5 commit `e1774cd77f471443541596e09078e78fdc342e4f`, and Tremor commit `820fb3237ea81af44c9cc468c8b4e20128e3e5ad` | Source, Miyoo patch provenance, licenses, toolchain, and output hash pinned | Bloom applies the reviewed Steward-Fu Miyoo patch to pinned OpenBOR source, statically links source-built codecs, and uses official SDL only as the link-time ABI. The device supplies Bloom's existing Miyoo SDL runtime. Physical validation remains pending. |
+| PCSX-ReARMed standalone | `notaz/pcsx_rearmed` commit `8987ee208f057b59a35815f4e6a805935faf2fc8`, its three recursive source revisions, and `shauninman/SDL-1.2` commit `0e0919585f2f809471ba45bdc16624ef4e887bc0` | Source, recursive dependencies, Miyoo SDL patch, composite license, toolchain, and output hashes pinned | Replaces the inherited executable, plugins, private SDL, skin, and unreachable stock fallback. The unattributed cheat database and pre-created memory cards are not shipped; PCSX creates user memory cards when needed. Physical game validation remains pending. |
 
 ## GitHub Actions
 
@@ -82,7 +83,7 @@ it from reviewed inputs; binary hashes alone are never accepted as historical
 source evidence.
 
 `build/legacy-manifest.json` decomposes the remaining inherited runtime and
-package payload into 154 independently resolvable components covering 2,594
+package payload into 153 independently resolvable components covering 2,517
 files. Each entry locks its path, file count, checkout-normalized byte count,
 and canonical tree SHA-256 while leaving unknown source, revision, license, and build recipe
 explicitly `null`. Its resolution must eventually become either a complete
@@ -95,14 +96,14 @@ symlinks by their target bytes so Windows and Linux produce the same inventory.
 This normalization is limited to the replacement queue; release payload
 manifests continue to hash every final shipped byte exactly.
 
-The source-wrapper and replacement pass identifies 144 package components and shared
+The source-wrapper and replacement pass identifies 145 package components and shared
 package assembly scripts containing only
 UTF-8 `.sh`/`.json` source, `.miyoocmd` command wrappers, `.notfound` port
 definitions, and optional empty marker files. Those trees are
 unchanged from the pinned Onion baseline and are recorded as GPL-3.0-only
 source assemblies through the repository Makefile. This attribution applies
 only to the wrapper files; it does not confer provenance on the emulator/core
-binaries they select. The remaining 10 components contain runtime payloads,
+binaries they select. The remaining 8 components contain runtime payloads,
 executables, fonts, images, media, databases, firmware, or other inputs that
 still require component-specific evidence or exclusion.
 
@@ -149,6 +150,17 @@ device. Pinned libogg and Tremor sources are compiled and linked statically,
 their licenses ship beside OpenBOR, and two clean ARM builds produced the same
 locked executable hash. Startup, controls, audio, rendering, and game behavior
 still require physical validation.
+
+PCSX-ReARMed standalone is rebuilt from the exact `8987ee2` revision recorded
+by Onion, including its pinned libpicofe, warm, and libchdr revisions. Bloom
+also rebuilds the package-private Miyoo SDL 1.2 from Shauninman's pinned source
+with a minimal patch that removes the unavailable MinUI settings dependency;
+system volume remains controlled by BloomOS. The executable, four external GPU
+plugins, and SDL library are stripped and hash-locked after repeat clean builds.
+The menu skin now comes directly from the same PCSX source. The unused literal
+`xxxxxxxxx` stock-binary fallback, unattributed cheat database, and pre-created
+memory cards are removed. Startup, rendering, audio, input, memory-card, state,
+and representative game behavior remain pending physical validation.
 
 The optional standalone GnGeo package is excluded. Onion introduced its binary
 from the MiyooCFW v2021-08-14 release, whose maintainers later documented that

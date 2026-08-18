@@ -28,3 +28,9 @@
 [submodule "third-party/tremor"]
 	path = third-party/tremor
 	url = https://gitlab.xiph.org/xiph/tremor.git
+[submodule "third-party/pcsx_rearmed"]
+	path = third-party/pcsx_rearmed
+	url = https://github.com/notaz/pcsx_rearmed.git
+[submodule "third-party/SDL-1.2"]
+	path = third-party/SDL-1.2
+	url = https://github.com/shauninman/SDL-1.2.git
