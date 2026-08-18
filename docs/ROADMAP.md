@@ -154,6 +154,10 @@ merged; it does not imply unrecorded hardware certification.
   an incompletely mapped frontend, decoder/codec stack, themes, and sample
   music; require an all-source, license-complete replacement before restoring
   music playback.
+- [x] Exclude the inherited proprietary DraStic package and its incompletely
+  attributable libraries, firmware, databases, fonts, and interface assets;
+  reserve the `NDS` library path while requiring a reproducible, licensed,
+  device-qualified emulator before Nintendo DS support returns.
 
 The hardware-sensitive BloomOS 1.0/1.1 implementation queue is at its
 physical-validation boundary. Source-provenance replacement work can continue

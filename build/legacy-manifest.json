@@ -640,19 +640,6 @@
       "resolution": "source-build"
     },
     {
-      "id": "emu-nintendo---ds--drastic",
-      "kind": "package",
-      "path": "static/packages/Emu/Nintendo - DS (Drastic)",
-      "file_count": 240,
-      "byte_count": 42423991,
-      "tree_sha256": "bf3bcdb727f010ef5c4cb98493a3a9f7ebeff4c43b9782a120d2b78421a4d1f4",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
-    },
-    {
       "id": "emu-nintendo---famicom-disk-syst---fceumm",
       "kind": "package",
       "path": "static/packages/Emu/Nintendo - Famicom Disk Syst. (FCEUmm)",

@@ -19,7 +19,7 @@ setup() {
     [ "$status" -ne 0 ]
     [[ "$output" == *"inherited-libretro-cores (legacy)"* ]]
     [[ "$output" == *"runtime-tmp-update (unresolved inventory)"* ]]
-    [[ "$output" == *"emu-nintendo---ds--drastic (unresolved inventory)"* ]]
+    [[ "$output" != *"emu-nintendo---ds--drastic"* ]]
     [[ "$output" != *"app-quick-guide"* ]]
 }
 
