@@ -327,3 +327,38 @@ assert component["build_recipe"] == "build/pcsx/build.sh"
 PY
     [ "$status" -eq 0 ]
 }
+
+@test "verified source-built PixelReader receives upstream provenance" {
+    manifest="$BATS_TEST_TMPDIR/legacy-manifest.json"
+    cp /workspace/build/legacy-manifest.json "$manifest"
+    python3 - "$manifest" <<'PY'
+import json
+import sys
+path = sys.argv[1]
+data = json.load(open(path, encoding="utf-8"))
+component = next(item for item in data["components"] if item["id"] == "app-ebook-reader--pixelreader")
+for field in ("source", "source_revision", "license", "build_recipe"):
+    component[field] = None
+component["resolution"] = "replace-source-build-or-exclude"
+with open(path, "w", encoding="utf-8", newline="\n") as stream:
+    json.dump(data, stream, ensure_ascii=False, indent=2)
+    stream.write("\n")
+PY
+
+    run python3 /workspace/tools/legacy_manifest.py annotate-bloom-replacements \
+        --repository /workspace --manifest "$manifest"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == "legacy manifest annotated: 1 Bloom source replacements" ]]
+    run python3 - "$manifest" <<'PY'
+import json
+import sys
+components = {item["id"]: item for item in json.load(open(sys.argv[1], encoding="utf-8"))["components"]}
+component = components["app-ebook-reader--pixelreader"]
+assert component["resolution"] == "source-build"
+assert component["source"] == "https://github.com/ealang/pixel-reader"
+assert component["source_revision"] == "762ed8ee40bf24fc05af1b0df1a95d30acd56b5b"
+assert component["build_recipe"] == "build/pixelreader/build.sh"
+PY
+    [ "$status" -eq 0 ]
+}
