@@ -160,6 +160,9 @@ guessed from inherited bytes.
 - [x] Diagnose the Plus reboot/power-control handoff and add a delayed direct
   kernel-reboot fallback without changing the proven clean SD-card quiescing
   path ([PR #91](https://github.com/boburning/BloomOS/pull/91)).
+- [x] Trace the first guarded-reboot device run to BusyBox `su -c` dropping the
+  `-r` mode before the detached helper, and preserve that mode by launching the
+  already-root shutdown helper directly.
 - [ ] Validate the guarded reboot fallback on Plus while local recovery is
   available, then repeat the applicable reboot/poweroff paths on Mini V2 and
   Flip.

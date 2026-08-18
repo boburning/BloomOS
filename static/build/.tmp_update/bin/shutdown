@@ -129,7 +129,9 @@ fi
 # run the script totally detached from current shell
 pgrep -f /tmp/_shutdown || (
 	set -m
-	su root -c "/usr/bin/nohup /tmp/_shutdown $1 </dev/null >/dev/null 2>&1 &"
+	# BusyBox su -c discards positional arguments supplied after the command.
+	# Launch directly so the requested reboot mode reaches the detached helper.
+	/usr/bin/nohup /tmp/_shutdown "${1:-}" </dev/null >/dev/null 2>&1 &
 )
 while true; do
 	sleep 10
