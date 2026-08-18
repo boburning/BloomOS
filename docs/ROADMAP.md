@@ -171,6 +171,9 @@ merged; it does not imply unrecorded hardware certification.
   obsolete zlib copy in the SD-card runtime; load stock libraries from
   `/customer/lib` while retaining Bloom's generated `libgamename` override and
   the audio preload shim required by existing launch commands.
+- [x] Retire the inherited parallel Dropbear/SFTP binaries and the legacy SSH
+  password/no-password toggles; retain only Bloom's source-built, key-only SSH
+  service behind explicit developer mode and a provisioned public key.
 
 The hardware-sensitive BloomOS 1.0/1.1 implementation queue is at its
 physical-validation boundary. Source-provenance replacement work can continue

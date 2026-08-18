@@ -29,7 +29,6 @@
 static struct network_s {
     bool smbd;
     bool http;
-    bool ssh;
     bool telnet;
     bool ftp;
     bool hotspot;
@@ -38,7 +37,6 @@ static struct network_s {
     bool auth_smbd;
     bool auth_ftp;
     bool auth_http;
-    bool auth_ssh;
     bool manual_tz;
     bool check_updates;
     bool keep_alive;
@@ -57,7 +55,6 @@ void network_loadState(void)
 
     network_state.smbd = config_flag_get(".smbdState");
     network_state.http = config_flag_get(".httpState");
-    network_state.ssh = config_flag_get(".sshState");
     network_state.telnet = config_flag_get(".telnetState");
     network_state.ftp = config_flag_get(".ftpState");
     network_state.hotspot = config_flag_get(".hotspotState");
@@ -66,7 +63,6 @@ void network_loadState(void)
     network_state.force_wifi_on_startup = config_flag_get(".ntpForce");
     network_state.auth_ftp = config_flag_get(".authftpState");
     network_state.auth_http = config_flag_get(".authhttpState");
-    network_state.auth_ssh = config_flag_get(".authsshState");
     network_state.manual_tz = config_flag_get(".manual_tz");
     network_state.check_updates = config_flag_get(".checkUpdates");
     network_state.keep_alive = config_flag_get(".keepServicesAlive");
@@ -259,11 +255,6 @@ void network_setHttpState(void *pt)
     network_commonEnableToggle(&_menu_http, (ListItem *)pt, &network_state.http, "http", ".httpState");
 }
 
-void network_setSshState(void *pt)
-{
-    network_commonEnableToggle(&_menu_ssh, (ListItem *)pt, &network_state.ssh, "ssh", ".sshState");
-}
-
 void network_setFtpState(void *pt)
 {
     network_commonEnableToggle(&_menu_ftp, (ListItem *)pt, &network_state.ftp, "ftp", ".ftpState");
@@ -321,12 +312,6 @@ void network_setHttpAuthState(void *pt)
 {
     network_setState(&network_state.auth_http, ".authhttpState", ((ListItem *)pt)->value);
     network_execServiceAuth("http");
-}
-
-void network_setSshAuthState(void *pt)
-{
-    network_setState(&network_state.auth_ssh, ".authsshState", ((ListItem *)pt)->value);
-    network_execServiceAuth("ssh");
 }
 
 void network_wpsConnect(void *pt)
@@ -529,37 +514,6 @@ void menu_wps(void *_)
     header_changed = true;
 }
 
-void menu_ssh(void *pt)
-{
-    ListItem *item = (ListItem *)pt;
-    item->value = (int)network_state.ssh;
-    if (!_menu_ssh._created) {
-        _menu_ssh = list_create(2, LIST_SMALL);
-        strcpy(_menu_ssh.title, "SSH");
-        list_addItemWithInfoNote(&_menu_ssh,
-                                 (ListItem){
-                                     .label = "Enable",
-                                     .item_type = TOGGLE,
-                                     .value = (int)network_state.ssh,
-                                     .action = network_setSshState},
-                                 item->info_note);
-        list_addItemWithInfoNote(&_menu_ssh,
-                                 (ListItem){
-                                     .label = "Enable authentication",
-                                     .item_type = TOGGLE,
-                                     .disabled = !network_state.ssh,
-                                     .value = (int)network_state.auth_ssh,
-                                     .action = network_setSshAuthState},
-                                 "Username: onion\n"
-                                 "Password: onion\n"
-                                 " \n"
-                                 "We're using a new auth system. User defined\n"
-                                 "passwords will come in a future update.");
-    }
-    menu_stack[++menu_level] = &_menu_ssh;
-    header_changed = true;
-}
-
 void menu_vnc(void *pt)
 {
     ListItem *item = (ListItem *)pt;
@@ -632,7 +586,7 @@ void menu_wifi(void *_)
 void menu_network(void *_)
 {
     if (!_menu_network._created) {
-        _menu_network = list_create(9, LIST_SMALL);
+        _menu_network = list_create(8, LIST_SMALL);
         strcpy(_menu_network.title, "Network");
 
         network_loadState();
@@ -676,19 +630,6 @@ void menu_network(void *_)
                                  " \n"
                                  "Think of it as a website hosted by Onion,\n"
                                  "simply enter the IP address in your browser.");
-        list_addItemWithInfoNote(&_menu_network,
-                                 (ListItem){
-                                     .label = "SSH: Secure shell...",
-                                     .item_type = TOGGLE,
-                                     .disabled = !settings.wifi_on,
-                                     .alternative_arrow_action = true,
-                                     .arrow_action = network_setSshState,
-                                     .value = (int)network_state.ssh,
-                                     .action = menu_ssh},
-                                 "SSH provides a secure command line host\n"
-                                 "for communicating with your device remotely.\n"
-                                 " \n"
-                                 "SFTP provides a secure file transfer protocol.");
         list_addItemWithInfoNote(&_menu_network,
                                  (ListItem){
                                      .label = "FTP: File server...",

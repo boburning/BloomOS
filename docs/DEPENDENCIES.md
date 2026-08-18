@@ -31,6 +31,11 @@ unfinished patch helper that resolved Onion's moving latest release has been
 removed; Bloom release tooling now consumes only reviewed source and explicitly
 pinned build inputs.
 
+Bloom does not ship the inherited parallel Dropbear server or OpenSSH SFTP
+helper. Their legacy password and passwordless toggles are removed; remote shell
+access is provided only by the source-built Dropbear entry above, gated by
+explicit developer mode and a provisioned public key.
+
 Shell tests no longer resolve packages from the live Alpine repository. The
 complete signed APK closure is retained as the `shell-test-inputs-v1` release
 asset, with archive and per-package digests recorded in
@@ -82,7 +87,7 @@ it from reviewed inputs; binary hashes alone are never accepted as historical
 source evidence.
 
 `build/legacy-manifest.json` decomposes the remaining inherited runtime and
-package payload into 147 independently resolvable components covering 2,177
+package payload into 147 independently resolvable components covering 2,128
 files. Each entry locks its path, file count, checkout-normalized byte count,
 and canonical tree SHA-256 while leaving unknown source, revision, license, and build recipe
 explicitly `null`. Its resolution must eventually become either a complete

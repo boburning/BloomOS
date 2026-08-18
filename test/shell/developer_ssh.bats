@@ -2,6 +2,14 @@
 
 load 'support/test_helper'
 
+@test "legacy SSH binaries and password toggles are excluded" {
+    [ ! -e /workspace/static/build/.tmp_update/bin/dropbear ]
+    [ ! -e /workspace/static/build/.tmp_update/bin/sftp-server ]
+    ! grep -F 'ftp | telnet | http | ssh | smbd' /workspace/static/build/.tmp_update/script/network/update_networking.sh
+    ! grep -F '.authsshState' /workspace/src/tweaks/network.h
+    ! grep -F 'menu_ssh' /workspace/src/tweaks/network.h
+}
+
 setup() {
     setup_bloom_fixture
     export SSH_HELPER=/workspace/static/build/.tmp_update/bin/bloom-dev-ssh
