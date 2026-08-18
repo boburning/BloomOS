@@ -39,6 +39,11 @@ teardown() { teardown_bloom_fixture; }
     grep -F 'reboot_command=kernel' "$SHUTDOWN_HELPER"
 }
 
+@test "detached shutdown preserves the requested reboot mode" {
+    grep -F '/usr/bin/nohup /tmp/_shutdown "${1:-}"' "$SHUTDOWN_HELPER"
+    ! grep -F 'su root -c "/usr/bin/nohup /tmp/_shutdown' "$SHUTDOWN_HELPER"
+}
+
 @test "all BloomOS shutdown paths use the detached clean shutdown script" {
     grep -F 'system("shutdown")' /workspace/src/keymon/keymon.c
     grep -F 'system("shutdown; sleep 10")' /workspace/src/chargingState/chargingState.c
