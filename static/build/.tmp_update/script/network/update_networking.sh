@@ -11,7 +11,7 @@ export PATH="$sysdir/bin:$PATH"
 is_booting=$([ -f /tmp/is_booting ] && echo 1 || echo 0)
 
 # add service flags here to be remembered when wifi change is detected
-services="httpState ftpState smbdState sshState authsshState authftpState authhttpState"
+services="httpState ftpState smbdState authftpState authhttpState"
 
 logfile=$(basename "$0" .sh)
 . $sysdir/script/log.sh
@@ -24,7 +24,7 @@ main() {
         check) # called by runtime.sh::check_networking
             check
             ;;
-        ftp | telnet | http | ssh | smbd)
+        ftp | telnet | http | smbd)
             service=$1
             case "$2" in
                 toggle)
@@ -267,7 +267,7 @@ ftp_authed() {
     fi
 }
 
-# Starts dropbear if the toggle is set to on
+# Starts only Bloom's explicit developer-mode, key-only SSH service.
 check_sshstate() {
     if [ -f /mnt/SDCARD/.bloom-dev ]; then
         if $sysdir/bin/bloom-dev-ssh start; then
@@ -278,48 +278,9 @@ check_sshstate() {
         return
     fi
 
-    if flag_enabled sshState; then
-        if is_running dropbear; then
-            if wifi_disabled; then
-                log "SSH: Wifi is turned off, disabling the toggle for dropbear and killing the process"
-                disable_flag sshState
-                killall -9 dropbear
-            fi
-        else
-            if wifi_enabled; then
-                mkdir -p $sysdir/etc/dropbear
-                sync
-                if flag_enabled authsshState; then
-                    ssh_authed
-                else
-                    log "SSH: Starting dropbear without auth"
-                    dropbear -R -B
-                fi
-            else
-                disable_flag sshState
-            fi
-        fi
-    else
-        if is_running dropbear; then
-            killall -9 dropbear
-            log "SSH: Killed"
-        fi
-    fi
-}
-
-# Called by above function on boot or when auth state is toggled in tweaks
-ssh_authed() {
-    if flag_enabled sshState; then
-        if is_running_exact "dropbear -R -B" || flag_enabled authsshState; then
-            killall -9 dropbear
-            log "SSH: Starting dropbear with auth"
-            dropbear -R
-        else
-            log "SSH: Starting dropbear without auth"
-            killall -9 dropbear
-            dropbear -R -B
-        fi
-    fi
+    disable_flag sshState
+    disable_flag authsshState
+    $sysdir/bin/bloom-dev-ssh stop
 }
 
 # Starts telnet if the toggle is set to on
@@ -646,7 +607,7 @@ restore_state() {
     [ ! -f "$jsonfile" ] && return
     log "Network Checker: Restoring state from $jsonfile"
 
-    grep -E '"(httpState|ftpState|smbdState|sshState|authsshState|authftpState|authhttpState)":\s*"[01]"' "$jsonfile" | while IFS=":" read -r key value; do
+    grep -E '"(httpState|ftpState|smbdState|authftpState|authhttpState)":\s*"[01]"' "$jsonfile" | while IFS=":" read -r key value; do
         key=$(echo "$key" | tr -d ' "{}')
         value=$(echo "$value" | tr -d ' ",')
 
@@ -699,7 +660,7 @@ is_noauth_enabled() { # Used to check authMethod val for HTTPFS
 }
 
 print_usage() {
-    echo "Usage: $0 {check|ftp|telnet|http|ssh|smbd|disableall|save|restore|full_reset} [toggle|authed]"
+    echo "Usage: $0 {check|ftp|telnet|http|smbd|disableall|save|restore|full_reset} [toggle|authed]"
     echo "       - For {ftp|telnet|http|ssh|smbd}, [toggle|authed] can be specified."
     echo "       - Commands {ntp|hotspot} only accept 'toggle'."
     echo "       - Commands {save|restore|full_reset} do not require additional args."
