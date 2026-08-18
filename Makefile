@@ -216,8 +216,6 @@ external: $(CACHE)/.setup $(THIRD_PARTY_DIR)/RetroArch-patch/bin/retroarch_miyoo
 		cp ./platform/miyoomini/FAKE08 "$(PACKAGES_RAPP_DEST)/PICO-8 (Fake8 standalone)/RApp/PICO/FAKE08"
 	@$(ECHO) $(COLOR_BLUE)"\n-- Build Terminal"$(COLOR_NORMAL)
 	@cd $(THIRD_PARTY_DIR)/Terminal && make && cp ./st "$(BIN_DIR)"
-	@$(ECHO) $(COLOR_BLUE)"\n-- Build DinguxCommander"$(COLOR_NORMAL)
-	@cd $(THIRD_PARTY_DIR)/DinguxCommander && make && cp ./output/DinguxCommander "$(PACKAGES_APP_DEST)/File Explorer (DinguxCommander)/App/Commander_Italic"
 
 openbor:
 	@./build/openbor/build.sh
@@ -310,7 +308,6 @@ deepclean: clean
 	@cd $(THIRD_PARTY_DIR)/RetroArch-patch && make clean
 	@cd $(THIRD_PARTY_DIR)/SearchFilter && make clean
 	@cd $(THIRD_PARTY_DIR)/Terminal && make clean
-	@cd $(THIRD_PARTY_DIR)/DinguxCommander && make clean
 	@cd $(THIRD_PARTY_DIR)/fake-08 && make clean-miyoomini
 
 dev: clean

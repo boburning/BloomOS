@@ -19,7 +19,7 @@ setup() {
     [ "$status" -ne 0 ]
     [[ "$output" == *"inherited-libretro-cores (legacy)"* ]]
     [[ "$output" == *"runtime-tmp-update (unresolved inventory)"* ]]
-    [[ "$output" == *"app-file-explorer--dinguxcommander (unresolved inventory)"* ]]
+    [[ "$output" == *"app-music-player--gmu (unresolved inventory)"* ]]
     [[ "$output" != *"app-quick-guide"* ]]
 }
 
