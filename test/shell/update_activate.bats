@@ -97,7 +97,9 @@ EOF
         /workspace/static/build/.tmp_update/bin/bloom-update-stage
     grep -F 'UPDATE_ROOT="${BLOOM_UPDATE_ROOT:-$SD_ROOT/.bloom/update}"' \
         /workspace/static/build/.tmp_update/bin/bloom-update-prepare
-    grep -F 'UPDATE_ROOT="${BLOOM_UPDATE_ROOT:-$SD_ROOT/.bloom/update}"' \
+    grep -F 'DEFAULT_UPDATE_ROOT="$SD_ROOT/.bloom/update"' \
+        /workspace/static/build/.tmp_update/bin/bloom-update-state
+    grep -F 'UPDATE_ROOT="${BLOOM_UPDATE_ROOT:-$DEFAULT_UPDATE_ROOT}"' \
         /workspace/static/build/.tmp_update/bin/bloom-update-state
     grep -F 'UPDATE_ROOT="${BLOOM_UPDATE_ROOT:-$SD_ROOT/.bloom/update}"' "$ACTIVATE"
 }

@@ -263,6 +263,12 @@ bootstrap VERSION`. Bootstrap accepts only a signed, staged, prepared release
 whose version matches the running system, requires structured health checks,
 and refuses to replace an existing known-good record.
 
+Early development builds stored update state under the replaceable
+`.tmp_update` runtime tree. On first use, the current state service atomically
+adopts that complete legacy directory into `.bloom/update` before reading or
+mutating state. It fails closed when both roots exist or either boundary is a
+symlink, preserving boot-attempt reconciliation across the upgrade boundary.
+
 Candidate preparation re-verifies the staged archive, rejects links, traversal,
 and content outside the `miyoo` and `RetroArch` release roots, then extracts to
 an isolated versioned candidate directory. Required installer payloads are

@@ -51,6 +51,31 @@ PY
     printf '%s' "$output" | grep -F '"phase":"idle"'
 }
 
+@test "atomically adopts legacy update state before boot reconciliation" {
+    legacy="$SDCARD/.tmp_update/update"
+    durable="$SDCARD/.bloom/update"
+    mkdir -p "$legacy"
+    printf '%s\n' '{"schema":1,"phase":"activation_pending","pending_version":"1.2.3","boot_attempts":0}' >"$legacy/state.json"
+
+    run env BLOOM_UPDATE_ROOT= "$STATE" status
+
+    [ "$status" -eq 0 ]
+    printf '%s' "$output" | grep -F '"phase":"activation_pending"'
+    [ -f "$durable/state.json" ]
+    [ ! -e "$legacy" ]
+}
+
+@test "refuses ambiguous legacy and durable update roots" {
+    legacy="$SDCARD/.tmp_update/update"
+    durable="$SDCARD/.bloom/update"
+    mkdir -p "$legacy" "$durable"
+
+    run env BLOOM_UPDATE_ROOT= "$STATE" status
+
+    [ "$status" -eq 1 ]
+    printf '%s' "$output" | grep -F 'legacy and durable update roots both exist'
+}
+
 @test "bootstraps the installed signed release as the initial known good" {
     stage_release 1.2.3
     printf 'v1.2.3' >"$SDCARD/.tmp_update/onionVersion/version.txt"
