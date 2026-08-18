@@ -29,6 +29,11 @@ info_zip = "3.0"
 "third-party/SDL2" = "b424665e0899769b200231ba943353a5fee1b6b6"
 "third-party/ogg" = "e1774cd77f471443541596e09078e78fdc342e4f"
 "third-party/tremor" = "820fb3237ea81af44c9cc468c8b4e20128e3e5ad"
+"third-party/pcsx_rearmed" = "8987ee208f057b59a35815f4e6a805935faf2fc8"
+"third-party/pcsx_rearmed/frontend/libpicofe" = "7167e5f3376f0d0692ae102ed2df1ef5d2cc199a"
+"third-party/pcsx_rearmed/frontend/warm" = "a6f015da3b10b82a476250793645c071340decbc"
+"third-party/pcsx_rearmed/libchdr" = "a03e69319164f69d781ab8e453f8cf407387bd13"
+"third-party/SDL-1.2" = "0e0919585f2f809471ba45bdc16624ef4e887bc0"
 "third-party/RetroArch-patch/submodules/RetroArch" = "69a4f0ea1e8aaf442ae4858f2e7f2b31a1776576"
 "third-party/SearchFilter/include/pugixml" = "2639dfd053221d3e8c9e9ff013e58699d9c1af15"
 "third-party/SearchFilter/include/sqlite3" = "a050cf6e5787d8dd341f7c0038247a3206ba6cf1"
@@ -82,6 +87,22 @@ license_file = "static/packages/RApp/Game engine - Open Beats of Rage/RApp/OpenB
 build_recipe = "build/openbor/build.sh"
 binary_sha256 = "41ef99389f37a943eb67b9f50cb2847ff00c646f0f3d63598611684053b19c57"
 
+[pcsx]
+version = "r23-98-g8987ee2"
+source = "https://github.com/notaz/pcsx_rearmed"
+source_revision = "8987ee208f057b59a35815f4e6a805935faf2fc8"
+sdl_source = "https://github.com/shauninman/SDL-1.2"
+sdl_revision = "0e0919585f2f809471ba45bdc16624ef4e887bc0"
+license = "GPL-2.0-or-later AND BSD-3-Clause AND LicenseRef-Public-Domain AND LGPL-2.1-or-later AND GPL-3.0-only"
+license_file = "static/packages/RApp/Sony - PlayStation (PCSX standalone)/RApp/PCSX-ReARMed/LICENSE.MD"
+build_recipe = "build/pcsx/build.sh"
+binary_sha256 = "ab0a2048b2b54aa357cc172e94ef6a611a35c571853155bcef5f27d962f66da4"
+sdl_sha256 = "8fef9e7d38dfce315fd1c9c7dee78a6926228eaf4dbbe42b26e069c8f511b4a5"
+gpu_peops_sha256 = "3db58855017dde72c5a7709cc41f150ee81a378991520cdd142bccc2ee7794c6"
+gpu_senquack_sha256 = "8a048109df58b6f64e0804d3acc715657cc61f74522f2bce78fb7beed2fa5ea1"
+gpu_unai_sha256 = "b14030ec1b3714b36347ab93d90fb2c36032ad367f6b83d49930f11d6571f480"
+spunull_sha256 = "3971303c3311a59ecc4179fbda05d32f8ef1a034e2ed0ef86c5de5bc420b5d92"
+
 [fonts.dejavu_sans]
 version = "2.37"
 source = "https://github.com/dejavu-fonts/dejavu-fonts/releases/tag/version_2_37"
@@ -105,10 +126,10 @@ legacy_channels = ["development"]
 manifest = "build/legacy-manifest.json"
 schema = 1
 component_count = 153
-file_count = 2527
-byte_count = 414047900
-source_build_components = 144
-unresolved_components = 9
+file_count = 2517
+byte_count = 400192570
+source_build_components = 145
+unresolved_components = 8
 inherited_baseline = "07505ea58c7bba698d6b9220ff43946a43cac76b"
 
 [themes]

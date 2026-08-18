@@ -1,0 +1,15 @@
+diff --git a/config.sh b/config.sh
+--- a/config.sh
++++ b/config.sh
+@@ -7 +7 @@
+-export LDFLAGS=" -lmi_sys -lmi_ao -lmi_gfx -lcam_os_wrapper -lmsettings -Wl,--gc-sections"
++export LDFLAGS=" -lmi_sys -lmi_ao -lmi_gfx -lcam_os_wrapper -Wl,--gc-sections"
+diff --git a/src/audio/miao/SDL_miaoaudio.c b/src/audio/miao/SDL_miaoaudio.c
+--- a/src/audio/miao/SDL_miaoaudio.c
++++ b/src/audio/miao/SDL_miaoaudio.c
+@@ -29 +28,0 @@
+-#include <msettings.h> // TODO: remove me
+@@ -190 +188,0 @@
+-	QuitSettings();
+@@ -235 +232,0 @@
+-	InitSettings(); // restores volume

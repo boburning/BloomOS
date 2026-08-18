@@ -20,6 +20,14 @@ Exact device revisions, firmware versions, build commits, test dates, contributo
 
 The V2 result is a maintainer validation baseline, not certification of V2 or evidence for V1, V3, or V4. The first Plus shutdown retest was invalid because the card entered Linux dirty after a failed Windows command-line eject. After repairing and using Windows Safely Remove Hardware, the card entered Linux without the not-properly-unmounted warning and returned to Windows clean after BloomOS shutdown.
 
+On 2026-08-18, the source-built PCSX-ReARMed standalone executable and its
+source-built package-private SDL were copied to a temporary Plus directory with
+their locked hashes intact. With BloomOS and firmware library paths supplied,
+`pcsx -h` loaded successfully and reported revision `8987ee2`. This proves the
+ARM ABI and dynamic-library closure for the executable without changing the
+installed package. It does not replace the deferred physical game, rendering,
+audio, input, memory-card, or save-state validation.
+
 On 2026-08-17, a Plus test invoked BloomOS's clean `shutdown -r` path
 over SSH. The helper quiesced SD-card consumers and disconnected normally, but
 the device did not return to its prior address within five minutes and a subnet

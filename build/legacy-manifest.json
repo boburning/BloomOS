@@ -1930,14 +1930,14 @@
       "id": "rapp-sony---playstation--pcsx-standalone",
       "kind": "package",
       "path": "static/packages/RApp/Sony - PlayStation (PCSX standalone)",
-      "file_count": 28,
-      "byte_count": 15998724,
-      "tree_sha256": "4f425a404e350be57465219c0b0e027fa1db68af1aa8524c04dc914023137f1f",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "file_count": 18,
+      "byte_count": 2143394,
+      "tree_sha256": "430a35ef3ea451e68f1505f6d2d01aeb0f0deea9d1e80b9e39e9e604f4204fec",
+      "source": "https://github.com/notaz/pcsx_rearmed",
+      "source_revision": "8987ee208f057b59a35815f4e6a805935faf2fc8",
+      "license": "GPL-2.0-or-later AND BSD-3-Clause AND LicenseRef-Public-Domain AND LGPL-2.1-or-later AND GPL-3.0-only",
+      "build_recipe": "build/pcsx/build.sh",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-sony---playstation--swanstation",

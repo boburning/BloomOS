@@ -59,7 +59,7 @@ include ./src/common/commands.mk
 
 ###########################################################
 
-.PHONY: all version core apps external openbor release unsigned-release package-release package-release-unsigned sign-release clean deepclean git-clean with-toolchain lib test test-shell rebuild-shell-test-image
+.PHONY: all version core apps external openbor pcsx release unsigned-release package-release package-release-unsigned sign-release clean deepclean git-clean with-toolchain lib test test-shell rebuild-shell-test-image
 
 all: dist
 
@@ -207,6 +207,8 @@ external: $(CACHE)/.setup $(THIRD_PARTY_DIR)/RetroArch-patch/bin/retroarch_miyoo
 # Other
 	@$(ECHO) $(COLOR_BLUE)"\n-- Build OpenBOR standalone"$(COLOR_NORMAL)
 	@./build/openbor/build.sh
+	@$(ECHO) $(COLOR_BLUE)"\n-- Build PCSX-ReARMed standalone"$(COLOR_NORMAL)
+	@./build/pcsx/build.sh
 	@$(ECHO) $(COLOR_BLUE)"\n-- Build Fake-08 standalone"$(COLOR_NORMAL)
 	@cd $(THIRD_PARTY_DIR)/fake-08 && make miyoomini && \
 		cp ./platform/miyoomini/FAKE08 "$(PACKAGES_RAPP_DEST)/PICO-8 (Fake8 standalone)/RApp/PICO/FAKE08"
@@ -217,6 +219,9 @@ external: $(CACHE)/.setup $(THIRD_PARTY_DIR)/RetroArch-patch/bin/retroarch_miyoo
 
 openbor:
 	@./build/openbor/build.sh
+
+pcsx:
+	@./build/pcsx/build.sh
 
 dist: build
 	@$(ECHO) $(PRINT_RECIPE)
