@@ -7,6 +7,3 @@
 shopt -s dotglob
 
 packages="./build/App/PackageManager/data"
-
-# DraStic
-touch "$packages/Emu/Nintendo - DS (Drastic)/Emu/NDS/full_resolution"

@@ -10,9 +10,12 @@ These reports describe a 4.4 regression, save-corruption risk, shutdown failure,
 |---|---|
 | [#1930](https://github.com/OnionUI/Onion/issues/1930), [#1906](https://github.com/OnionUI/Onion/issues/1906), [#1905](https://github.com/OnionUI/Onion/issues/1905) | Explicit latest-beta display or crash regressions. |
 | [#1926](https://github.com/OnionUI/Onion/issues/1926) | Inconsistent shutdown behavior. |
-| [#1916](https://github.com/OnionUI/Onion/issues/1916), [#1406](https://github.com/OnionUI/Onion/issues/1406) | DraStic freezes at GameSwitcher/quit/resume boundaries. |
-| [#1367](https://github.com/OnionUI/Onion/issues/1367) | Multiple DraStic states and reported save corruption. |
 | [#1152](https://github.com/OnionUI/Onion/issues/1152) | Save-state regression across an Onion upgrade despite unchanged cores. |
+
+DraStic issues #1916, #1406, and #1367 remain useful historical compatibility
+evidence, but are no longer Bloom 1.0 blockers because BloomOS excludes the
+inherited proprietary package. They become relevant again only after a
+reproducible, licensed Nintendo DS implementation is selected.
 
 ## Bloom 1.0
 
