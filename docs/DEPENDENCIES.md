@@ -7,7 +7,6 @@ Baseline: Onion `07505ea58c7bba698d6b9220ff43946a43cac76b`, audited 2026-08-15.
 | Input | Baseline reference | Pin status | Required action |
 |---|---|---|---|
 | Miyoo toolchain container | OCI index `sha256:e5123590ad75d27f0f4c91196e3119a255cad45f3ae15243e29a8e0a2ec50132` (Linux/amd64 manifest `sha256:a8da1021449c80c0ccb75e263f1dfc75b5a004278fefa8a54151e55698a352f4`) | Pinned | GCC/G++ 8.3.0, GNU ld/assembler 2.32.0.20190321, Python 3.7.3, p7zip 16.02, and Info-ZIP 3.0 are recorded in the lock. |
-| SearchFilter submodule | `fc95ef8a3e67b54046fd03228df5b922f7bde834` | Commit-pinned | Record license and recursive dependencies in `build/dependencies.lock`. |
 | Terminal submodule | `b8d6f98ed0d4f95542dd0acb7ec683482d0a4029` | Commit-pinned | Record license and build provenance. |
 | RetroArch-patch submodule | `f9e959f7445d2ba0a4dd6279da41a095163767f2` | Commit-pinned | Patch revision is related to its recursive RetroArch source commit; core revisions and licenses remain to be inventoried. |
 | RetroArch source submodule | `69a4f0ea1e8aaf442ae4858f2e7f2b31a1776576` | Commit-pinned | Record the resulting binary hashes and core/state compatibility notes in release provenance. |
@@ -83,7 +82,7 @@ it from reviewed inputs; binary hashes alone are never accepted as historical
 source evidence.
 
 `build/legacy-manifest.json` decomposes the remaining inherited runtime and
-package payload into 149 independently resolvable components covering 2,184
+package payload into 147 independently resolvable components covering 2,181
 files. Each entry locks its path, file count, checkout-normalized byte count,
 and canonical tree SHA-256 while leaving unknown source, revision, license, and build recipe
 explicitly `null`. Its resolution must eventually become either a complete
@@ -96,7 +95,7 @@ symlinks by their target bytes so Windows and Linux produce the same inventory.
 This normalization is limited to the replacement queue; release payload
 manifests continue to hash every final shipped byte exactly.
 
-The source-wrapper and replacement pass identifies 139 package components and
+The source-wrapper and replacement pass identifies 137 package components and
 shared package assembly scripts containing only
 UTF-8 `.sh`/`.json` source, `.miyoocmd` command wrappers, `.notfound` port
 definitions, and optional empty marker files. Those trees are
@@ -189,11 +188,12 @@ than a reproducible source toolchain. Bloom retains ordinary SNES support. A
 future calibration app must rebuild both its test payload and every required
 host tool from reviewed source, or use independently authored Bloom patterns.
 
-The pinned SearchFilter repository remains a separate legacy blocker because
+The SearchFilter repository and both package integrations are excluded because
 upstream does not declare a project license. Source availability and commit
-identity therefore do not establish public redistribution rights; Bloom must
-replace it with a clearly licensed implementation or exclude its output from
-public channels.
+identity therefore do not establish public redistribution rights. Bloom keeps
+its independently licensed per-system ROM cache refresh action, while global
+search and keyword filtering require a clean-room or authoritatively licensed
+replacement before they can return.
 
 DinguxCommander and its package are excluded. The upstream repository contains
 source but no project license, so neither that source nor the inherited package

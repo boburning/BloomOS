@@ -192,16 +192,6 @@ main() {
         fi
     fi # skip_game_options
 
-    if [ $current_tab -eq $TAB_GAMES ]; then
-        if [ -f "$emupath/active_filter" ]; then
-            filter_kw=$(cat "$emupath/active_filter")
-            add_menu_option clear_filter "Clear filter" "Clear the current rom list filter"
-            add_menu_option filter_roms "Current filter: $filter_kw" "Change the rom list filter"
-        else
-            add_menu_option filter_roms "Filter list" "Filter the rom list by keyword"
-        fi
-    fi
-
     if [ $current_tab -eq $TAB_GAMES ] || [ $current_tab -eq $TAB_EXPERT ]; then
         add_menu_option refresh_roms "Refresh list" "Refresh the rom list\n(re-scan for new games)"
     fi
@@ -572,22 +562,8 @@ rename_rom() {
     ./bin/renameRom "$rompath" "$new_name"
 }
 
-clear_filter() {
-    log ":: clear_filter $*"
-    log "./bin/filter clear_filter \"$emupath\""
-    filter clear_filter "$emupath"
-}
-
-filter_roms() {
-    log ":: filter_roms $*"
-    log "./bin/filter filter \"$emupath\""
-    filter filter "$emupath"
-}
-
 refresh_roms() {
     log ":: refresh_roms $*"
-    log "./bin/filter refresh \"$emupath\""
-    filter refresh "$emupath"
     ./script/reset_list.sh "$romroot"
 }
 

@@ -9,7 +9,7 @@ setup() {
         --policy "$POLICY" --repository /workspace --channel development
 
     [ "$status" -eq 0 ]
-    [[ "$output" == "provenance policy check-channel: 8 components" ]]
+    [[ "$output" == "provenance policy check-channel: 7 components" ]]
 }
 
 @test "stable artifacts fail closed for exact unresolved inventory components" {
@@ -19,6 +19,7 @@ setup() {
     [ "$status" -ne 0 ]
     [[ "$output" == *"inherited-libretro-cores (legacy)"* ]]
     [[ "$output" == *"runtime-tmp-update (unresolved inventory)"* ]]
+    [[ "$output" != *"search-filter"* ]]
     [[ "$output" != *"emu-nintendo---ds--drastic"* ]]
     [[ "$output" != *"app-quick-guide"* ]]
 }

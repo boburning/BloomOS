@@ -8,7 +8,7 @@ slug: /apps/game-list-options
 
 ## Presentation
 Game List Options (GLO menu) is a tool for performing actions for the selected game or for the entire list. <br />
-Press <kbd>Y</kbd> in a game list then from this menu you can choose the RetroArch core, download the image cover of your game (WiFi/MMP required), launch a Netplay session, reset your game (to skip the last save state), filter the list of games with a keyword,...
+Press <kbd>Y</kbd> in a game list then from this menu you can choose the RetroArch core, download the image cover of your game (WiFi/MMP required), launch a Netplay session, reset your game (to skip the last save state), refresh the game list, and more.
 
 Thanks to GLO menu flexibility, you can even add your own scripts here!
 
@@ -30,7 +30,6 @@ GLO Menu is a native application of Onion, it is installed by default.
 
 - **Reset game**: *load game without save state, useful to start a game from beginning*
 - **Game core**: *set custom Retroarch core per game, useful to switch from mGBA to gPSP for example*
-- **Filter list**: *use a keyword to filter the list*
 - **Refresh roms**: *refresh the list’s game cache, useful when you have added some games*
 - *Custom scripts:*
   - **Random game**: *added by Random Game app - launches a random game from the list*

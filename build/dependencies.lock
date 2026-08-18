@@ -18,7 +18,6 @@ p7zip = "16.02"
 info_zip = "3.0"
 
 [submodules]
-"third-party/SearchFilter" = "fc95ef8a3e67b54046fd03228df5b922f7bde834"
 "third-party/Terminal" = "b8d6f98ed0d4f95542dd0acb7ec683482d0a4029"
 "third-party/RetroArch-patch" = "f9e959f7445d2ba0a4dd6279da41a095163767f2"
 "third-party/dropbear" = "887241694277b3816da5d174932c10546ea9d2c5"
@@ -39,8 +38,6 @@ info_zip = "3.0"
 "third-party/libxml2" = "02d577715e1951cf114ca4e9adaf5605156c4f4c"
 "third-party/libzip" = "f30f5290de485348442d168cd7b2eb714d1f20f9"
 "third-party/RetroArch-patch/submodules/RetroArch" = "69a4f0ea1e8aaf442ae4858f2e7f2b31a1776576"
-"third-party/SearchFilter/include/pugixml" = "2639dfd053221d3e8c9e9ff013e58699d9c1af15"
-"third-party/SearchFilter/include/sqlite3" = "a050cf6e5787d8dd341f7c0038247a3206ba6cf1"
 
 [github_actions]
 "actions/checkout@v7.0.1" = "3d3c42e5aac5ba805825da76410c181273ba90b1"
@@ -140,10 +137,10 @@ legacy_channels = ["development"]
 [legacy_inventory]
 manifest = "build/legacy-manifest.json"
 schema = 1
-component_count = 149
-file_count = 2184
-byte_count = 343953081
-source_build_components = 146
+component_count = 147
+file_count = 2181
+byte_count = 343951989
+source_build_components = 144
 unresolved_components = 3
 inherited_baseline = "07505ea58c7bba698d6b9220ff43946a43cac76b"
 

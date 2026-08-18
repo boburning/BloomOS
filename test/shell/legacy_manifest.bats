@@ -6,13 +6,19 @@
         --manifest /workspace/build/legacy-manifest.json
 
     [ "$status" -eq 0 ]
-    [[ "$output" == "legacy manifest validate: 149 components" ]]
+    [[ "$output" == "legacy manifest validate: 147 components" ]]
     [ ! -e "/workspace/static/packages/RApp/SNK - Neo Geo (GnGeo)" ]
     [ ! -e "/workspace/static/packages/RApp/PICO-8 (PICO-8 standalone)" ]
     [ ! -e "/workspace/static/packages/RApp/SCUMM (ScummVM standalone)" ]
     [ ! -e "/workspace/static/packages/Emu/Nintendo - DS (Drastic)" ]
+    [ ! -e "/workspace/static/packages/App/Search (Find your games)" ]
+    [ ! -e "/workspace/static/packages/App/List shortcuts (Filter+Refresh)" ]
+    [ ! -e "/workspace/third-party/SearchFilter" ]
     ! grep -F 'GnGeo' /workspace/.github/create_fullres_files.sh
     ! grep -F 'DraStic' /workspace/.github/create_fullres_files.sh
+    ! grep -F 'SearchFilter' /workspace/Makefile
+    ! grep -F 'bin/filter' /workspace/static/build/.tmp_update/script/game_list_options.sh
+    grep -F './script/reset_list.sh "$romroot"' /workspace/static/build/.tmp_update/script/game_list_options.sh
 }
 
 @test "legacy manifest rejects modified inventory metadata" {
