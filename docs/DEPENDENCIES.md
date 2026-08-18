@@ -16,9 +16,7 @@ Baseline: Onion `07505ea58c7bba698d6b9220ff43946a43cac76b`, audited 2026-08-15.
 | GCC `libatomic.so.1` runtime | Miyoo Mini cross-toolchain image pinned by digest | Image and in-image path pinned | Copied from the ARM sysroot during release assembly because the bundled OpenSSL 3 executable requires it. Covered by the GCC Runtime Library Exception; exact binary hashing is recorded by release packaging. |
 | Shell-test packages | `shell-test-inputs-v1`, archive SHA-256 `97a048903e55131877f44203103e33f28b84d6e0fe22c1588bb820b6075b6921` | Complete 38-APK closure archived with checksums and declared licenses | The image rebuild verifies the archive and every APK, removes Alpine repositories, and installs with Docker networking disabled. |
 | Battery Monitor font | DejaVu Sans 2.37, archive SHA-256 `7576310b219e04159d35ff61dd4a4ec4cdba4f35c00e002a136f00e96a908b0a`, font SHA-256 `7da195a74c55bef988d0d48f9508bd5d849425c1770dba5d7bfc6ce9ed848954` | Official release and license pinned | Replaces the inherited Arkhip file whose embedded notice reserves all rights. Visual layout remains pending device validation. |
-| Fake-08 standalone | `jtothebell/fake-08` v0.0.2.19 commit `18a1c8ab686f87f00a418add448ebe872b87869a` with recursive z8lua commit `abd65e3b05e285da0c6f86912b2817e7dc6bf6ea` | Source, recursive dependency, composite license, toolchain, and output hash pinned | Bloom rebuilds the Miyoo Mini executable instead of carrying the historically unexplained binary. Device game compatibility remains pending physical validation. |
 | OpenBOR standalone | `DCurrent/openbor` commit `b00efbc7752cb55709dfc9fdfdfc7cfe78ddfb90`, SDL 2.0.20 commit `b424665e0899769b200231ba943353a5fee1b6b6`, libogg 1.3.5 commit `e1774cd77f471443541596e09078e78fdc342e4f`, and Tremor commit `820fb3237ea81af44c9cc468c8b4e20128e3e5ad` | Source, Miyoo patch provenance, licenses, toolchain, and output hash pinned | Bloom applies the reviewed Steward-Fu Miyoo patch to pinned OpenBOR source, statically links source-built codecs, and uses official SDL only as the link-time ABI. The device supplies Bloom's existing Miyoo SDL runtime. Physical validation remains pending. |
-| PCSX-ReARMed standalone | `notaz/pcsx_rearmed` commit `8987ee208f057b59a35815f4e6a805935faf2fc8`, its three recursive source revisions, and `shauninman/SDL-1.2` commit `0e0919585f2f809471ba45bdc16624ef4e887bc0` | Source, recursive dependencies, Miyoo SDL patch, composite license, toolchain, and output hashes pinned | Replaces the inherited executable, plugins, private SDL, skin, and unreachable stock fallback. The unattributed cheat database and pre-created memory cards are not shipped; PCSX creates user memory cards when needed. Physical game validation remains pending. |
 | PixelReader | `ealang/pixel-reader` v0.6 commit `762ed8ee40bf24fc05af1b0df1a95d30acd56b5b`, zlib 1.3.1 commit `51b7f2abdade71cd9bb0e7a373ef2610ec6f9daf`, libxml2 2.12.10 commit `02d577715e1951cf114ca4e9adaf5605156c4f4c`, and libzip 1.11.3 commit `f30f5290de485348442d168cd7b2eb714d1f20f9` | Source, static private dependencies, licenses, toolchain, and output hash pinned | Replaces the inherited executable and six private shared libraries. zlib, libxml2, and libzip are linked statically; the app uses Bloom's shared SDL, SDL_ttf, and SDL_image runtime. Text and EPUB behavior remains pending physical validation. |
 
 ## GitHub Actions
@@ -142,11 +140,6 @@ the SD-card package; they were not used by the device launcher and did not have
 complete component-level provenance. A future desktop companion must rebuild
 equivalent conversion tools from reviewed source rather than copying them back.
 
-Fake-08 standalone is rebuilt from the pinned upstream v0.0.2.19 source and
-its recursive z8lua revision using Bloom's immutable ARM toolchain. The complete
-upstream composite license is shipped beside the executable, and the resulting
-binary hash is locked after two clean builds produced identical output.
-
 OpenBOR standalone is rebuilt from pinned upstream commit `b00efbc` with the
 small Miyoo-specific Makefile, input, menu, and renderer patch recovered from
 Steward-Fu's checksum-locked source release. Official SDL 2.0.20 supplies only
@@ -156,16 +149,12 @@ their licenses ship beside OpenBOR, and two clean ARM builds produced the same
 locked executable hash. Startup, controls, audio, rendering, and game behavior
 still require physical validation.
 
-PCSX-ReARMed standalone is rebuilt from the exact `8987ee2` revision recorded
-by Onion, including its pinned libpicofe, warm, and libchdr revisions. Bloom
-also rebuilds the package-private Miyoo SDL 1.2 from Shauninman's pinned source
-with a minimal patch that removes the unavailable MinUI settings dependency;
-system volume remains controlled by BloomOS. The executable, four external GPU
-plugins, and SDL library are stripped and hash-locked after repeat clean builds.
-The menu skin now comes directly from the same PCSX source. The unused literal
-`xxxxxxxxx` stock-binary fallback, unattributed cheat database, and pre-created
-memory cards are removed. Startup, rendering, audio, input, memory-card, state,
-and representative game behavior remain pending physical validation.
+The optional Fake-08 and PCSX-ReARMed standalone packages are excluded as
+redundant. Bloom retains the existing Fake-08 and PCSX-ReARMed libretro cores,
+launchers, ROM paths, and normal save integration instead of maintaining second
+native engines and private runtime libraries. The retained cores remain in the
+shared source-to-binary provenance backlog with the other inherited libretro
+cores.
 
 The optional standalone GnGeo package is excluded. Onion introduced its binary
 from the MiyooCFW v2021-08-14 release, whose maintainers later documented that
@@ -177,7 +166,7 @@ The optional native PICO-8 wrapper is also excluded. It correctly required
 users to supply their own purchased PICO-8 executable and data, but the wrapper
 itself bundled shared libraries, a preload hook, and artwork from an upstream
 repository with no declared license. Bloom retains PICO-8 support through the
-source-built Fake-08 libretro and standalone packages; a future native wrapper
+existing Fake-08 libretro package; a future native wrapper
 must be reconstructed entirely from reviewed, redistributable inputs.
 
 The optional ScummVM standalone package is excluded as redundant. Bloom keeps

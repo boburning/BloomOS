@@ -6,11 +6,13 @@
         --manifest /workspace/build/legacy-manifest.json
 
     [ "$status" -eq 0 ]
-    [[ "$output" == "legacy manifest validate: 147 components" ]]
+    [[ "$output" == "legacy manifest validate: 145 components" ]]
     [ ! -e "/workspace/static/packages/RApp/SNK - Neo Geo (GnGeo)" ]
     [ ! -e "/workspace/static/packages/RApp/PICO-8 (PICO-8 standalone)" ]
     [ ! -e "/workspace/static/packages/RApp/SCUMM (ScummVM standalone)" ]
     [ ! -e "/workspace/static/packages/Emu/Nintendo - DS (Drastic)" ]
+    [ ! -e "/workspace/static/packages/RApp/PICO-8 (Fake8 standalone)" ]
+    [ ! -e "/workspace/static/packages/RApp/Sony - PlayStation (PCSX standalone)" ]
     [ ! -e "/workspace/static/build/.tmp_update/script/drastic_migration.sh" ]
     [ ! -e "/workspace/static/build/.tmp_update/script/migration/00017_drastic_migration.sh" ]
     [ ! -e "/workspace/static/packages/App/Search (Find your games)" ]
@@ -21,6 +23,22 @@
     ! grep -F 'SearchFilter' /workspace/Makefile
     ! grep -F 'bin/filter' /workspace/static/build/.tmp_update/script/game_list_options.sh
     grep -F './script/reset_list.sh "$romroot"' /workspace/static/build/.tmp_update/script/game_list_options.sh
+}
+
+@test "libretro integrations replace the excluded Fake-08 and PCSX standalones" {
+    grep -F 'fake08_libretro.so' /workspace/build/core-manifest.json
+    grep -F 'pcsx_rearmed_libretro.so' /workspace/build/core-manifest.json
+    grep -F 'fake08_libretro.so' "/workspace/static/packages/Emu/PICO-8 (Fake8)/Emu/PICO/launch.sh"
+    grep -F 'pcsx_rearmed_libretro.so' "/workspace/static/packages/Emu/Sony - PlayStation (PCSX ReARMed)/Emu/PSX/launch.sh"
+}
+
+@test "release builds replace inherited standalones only in package staging" {
+    grep -F 'OPENBOR_PACKAGE_DIR="$(PACKAGES_RAPP_DEST)/Game engine - Open Beats of Rage/RApp/OpenBOR"' \
+        /workspace/Makefile
+    grep -F 'PIXELREADER_PACKAGE_DIR="$(PACKAGES_APP_DEST)/Ebook Reader (PixelReader)/App/PixelReader"' \
+        /workspace/Makefile
+    grep -F 'OPENBOR_PACKAGE_DIR:-$repository_root/static/packages/' /workspace/build/openbor/build.sh
+    grep -F 'PIXELREADER_PACKAGE_DIR:-$root/static/packages/' /workspace/build/pixelreader/build.sh
 }
 
 @test "legacy manifest rejects modified inventory metadata" {
@@ -233,41 +251,6 @@ PY
     [ "$status" -eq 0 ]
 }
 
-@test "verified source-built Fake-08 receives upstream provenance" {
-    manifest="$BATS_TEST_TMPDIR/legacy-manifest.json"
-    cp /workspace/build/legacy-manifest.json "$manifest"
-    python3 - "$manifest" <<'PY'
-import json
-import sys
-path = sys.argv[1]
-data = json.load(open(path, encoding="utf-8"))
-component = next(item for item in data["components"] if item["id"] == "rapp-pico-8--fake8-standalone")
-for field in ("source", "source_revision", "license", "build_recipe"):
-    component[field] = None
-component["resolution"] = "replace-source-build-or-exclude"
-with open(path, "w", encoding="utf-8", newline="\n") as stream:
-    json.dump(data, stream, ensure_ascii=False, indent=2)
-    stream.write("\n")
-PY
-
-    run python3 /workspace/tools/legacy_manifest.py annotate-bloom-replacements \
-        --repository /workspace --manifest "$manifest"
-
-    [ "$status" -eq 0 ]
-    [[ "$output" == "legacy manifest annotated: 1 Bloom source replacements" ]]
-    run python3 - "$manifest" <<'PY'
-import json
-import sys
-components = {item["id"]: item for item in json.load(open(sys.argv[1], encoding="utf-8"))["components"]}
-component = components["rapp-pico-8--fake8-standalone"]
-assert component["resolution"] == "source-build"
-assert component["source"] == "https://github.com/jtothebell/fake-08"
-assert component["source_revision"] == "18a1c8ab686f87f00a418add448ebe872b87869a"
-assert component["build_recipe"] == "Makefile"
-PY
-    [ "$status" -eq 0 ]
-}
-
 @test "verified source-built OpenBOR receives upstream provenance" {
     manifest="$BATS_TEST_TMPDIR/legacy-manifest.json"
     cp /workspace/build/legacy-manifest.json "$manifest"
@@ -300,41 +283,6 @@ assert component["source"] == "https://github.com/DCurrent/openbor"
 assert component["source_revision"] == "b00efbc7752cb55709dfc9fdfdfc7cfe78ddfb90"
 assert component["license"] == "BSD-3-Clause"
 assert component["build_recipe"] == "build/openbor/build.sh"
-PY
-    [ "$status" -eq 0 ]
-}
-
-@test "verified source-built PCSX receives upstream provenance" {
-    manifest="$BATS_TEST_TMPDIR/legacy-manifest.json"
-    cp /workspace/build/legacy-manifest.json "$manifest"
-    python3 - "$manifest" <<'PY'
-import json
-import sys
-path = sys.argv[1]
-data = json.load(open(path, encoding="utf-8"))
-component = next(item for item in data["components"] if item["id"] == "rapp-sony---playstation--pcsx-standalone")
-for field in ("source", "source_revision", "license", "build_recipe"):
-    component[field] = None
-component["resolution"] = "replace-source-build-or-exclude"
-with open(path, "w", encoding="utf-8", newline="\n") as stream:
-    json.dump(data, stream, ensure_ascii=False, indent=2)
-    stream.write("\n")
-PY
-
-    run python3 /workspace/tools/legacy_manifest.py annotate-bloom-replacements \
-        --repository /workspace --manifest "$manifest"
-
-    [ "$status" -eq 0 ]
-    [[ "$output" == "legacy manifest annotated: 1 Bloom source replacements" ]]
-    run python3 - "$manifest" <<'PY'
-import json
-import sys
-components = {item["id"]: item for item in json.load(open(sys.argv[1], encoding="utf-8"))["components"]}
-component = components["rapp-sony---playstation--pcsx-standalone"]
-assert component["resolution"] == "source-build"
-assert component["source"] == "https://github.com/notaz/pcsx_rearmed"
-assert component["source_revision"] == "8987ee208f057b59a35815f4e6a805935faf2fc8"
-assert component["build_recipe"] == "build/pcsx/build.sh"
 PY
     [ "$status" -eq 0 ]
 }
