@@ -41,6 +41,9 @@ EOF
 teardown() { teardown_bloom_fixture; }
 
 @test "publishes installer payloads before the boot trigger" {
+    mkdir -p "$SDCARD/miyoo/app"
+    printf 'installed MainUI binary\n' >"$SDCARD/miyoo/app/MainUI"
+
     run "$ACTIVATE" "$VERSION"
 
     [ "$status" -eq 0 ]
@@ -82,7 +85,7 @@ EOF
 
 @test "refuses to replace any pending installer" {
     mkdir -p "$SDCARD/miyoo/app"
-    printf 'existing\n' >"$SDCARD/miyoo/app/MainUI"
+    printf '#!/bin/sh\nexisting\n' >"$SDCARD/miyoo/app/MainUI"
 
     run "$ACTIVATE" "$VERSION"
 
