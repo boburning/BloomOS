@@ -166,6 +166,10 @@ merged; it does not imply unrecorded hardware certification.
   of SQLite 3.39.0 and SDL_rotozoom from repository source; remove unused
   `libgfx` and the unused unlicensed keyboard wrapper, and rely on the Miyoo
   runtime layer instead of duplicating its `libpng` and `libshmvar` binaries.
+- [x] Stop redistributing 44 byte-identical Miyoo firmware libraries and one
+  obsolete zlib copy in the SD-card runtime; load stock libraries from
+  `/customer/lib` while retaining Bloom's generated `libgamename` override and
+  the audio preload shim required by existing launch commands.
 
 The hardware-sensitive BloomOS 1.0/1.1 implementation queue is at its
 physical-validation boundary. Source-provenance replacement work can continue
