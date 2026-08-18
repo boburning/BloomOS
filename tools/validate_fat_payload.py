@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Reject build-tree entries that cannot be extracted onto the FAT SD card."""
 
+from __future__ import annotations
+
 import argparse
 import os
 import pathlib

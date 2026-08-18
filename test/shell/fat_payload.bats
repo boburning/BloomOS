@@ -1,5 +1,9 @@
 #!/usr/bin/env bats
 
+@test "defers annotations for the pinned Python 3.8 build runtime" {
+    grep -Fx 'from __future__ import annotations' /workspace/tools/validate_fat_payload.py
+}
+
 @test "accepts a regular FAT-compatible payload" {
     payload="$BATS_TEST_TMPDIR/payload"
     mkdir -p "$payload/.tmp_update/bin"
