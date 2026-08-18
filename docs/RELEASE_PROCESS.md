@@ -1,6 +1,6 @@
 # Release Process
 
-BloomOS has no public release process in operation yet. Release builds now produce a version-scoped bundle containing:
+BloomOS has no public release process in operation yet. Release builds now produce a version-scoped OTA bundle containing:
 
 - `BloomOS-v<version>.zip` with Onion-compatible internal paths;
 - `SHA256SUMS`;
@@ -12,6 +12,10 @@ BloomOS has no public release process in operation yet. Release builds now produ
   dependency-lock and payload-manifest digests, and compatible device targets.
 - `payload-manifest.json` with the exact type, size, and SHA-256 digest of every
   archived file or symlink.
+
+The signed archive intentionally contains only the updater-supported `miyoo/`
+and `RetroArch/` roots. A future first-install distribution must be assembled
+and labeled separately; it must not be passed to the OTA preparation path.
 
 Packaging normalizes distribution-tree timestamps to the source commit time,
 sorts the archive input list, suppresses archive timestamp metadata, and
