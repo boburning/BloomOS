@@ -79,3 +79,26 @@
         /workspace/Makefile /workspace/.github /workspace/tools
     [ "$status" -ne 0 ]
 }
+
+@test "legacy inventory totals match the dependency lock" {
+    python3 - <<'PY'
+import json
+import pathlib
+import re
+
+root = pathlib.Path('/workspace')
+manifest = json.loads((root / 'build/legacy-manifest.json').read_text(encoding='utf-8'))
+lock = (root / 'build/dependencies.lock').read_text(encoding='utf-8')
+components = manifest['components']
+expected = {
+    'component_count': len(components),
+    'file_count': sum(item['file_count'] for item in components),
+    'byte_count': sum(item['byte_count'] for item in components),
+    'source_build_components': sum(item['resolution'] == 'source-build' for item in components),
+    'unresolved_components': sum(item['resolution'] == 'replace-source-build-or-exclude' for item in components),
+}
+for key, value in expected.items():
+    match = re.search(rf'^{key} = (\d+)$', lock, re.MULTILINE)
+    assert match and int(match.group(1)) == value, (key, value)
+PY
+}
