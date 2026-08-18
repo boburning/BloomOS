@@ -33,7 +33,11 @@ source_ra="$candidate/RetroArch"
 target_app="$SD_ROOT/miyoo/app"
 target_ra="$SD_ROOT/RetroArch"
 mkdir -p "$target_app" "$target_ra" || fail "cannot create activation targets"
-[ ! -e "$target_app/MainUI" ] && [ ! -e "$target_app/.tmp_update" ] || fail "an installer is already pending"
+[ ! -L "$target_app/MainUI" ] || fail "an installer is already pending"
+if [ -f "$target_app/MainUI" ] && grep -Fq '#!/bin/sh' "$target_app/MainUI"; then
+    fail "an installer is already pending"
+fi
+[ ! -e "$target_app/.tmp_update" ] || fail "an installer is already pending"
 [ ! -e "$target_ra/retroarch.pak" ] || fail "a RetroArch installer is already pending"
 
 snapshot="$($SNAPSHOT_BIN create pre-update)" || fail "pre-update save snapshot failed"

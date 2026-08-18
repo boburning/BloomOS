@@ -282,7 +282,9 @@ the boot installer trigger into place. The guarded operation is exposed as
 `bloomctl update activate VERSION` so an offline or future network update
 orchestrator can complete the state transition without bypassing these checks.
 Existing installer state is never
-overwritten. The next boot is the first counted validation attempt.
+overwritten. The normal installed MainUI binary is replaced only by the final
+atomic shell-trigger rename; an existing shell trigger or symlink fails closed.
+The next boot is the first counted validation attempt.
 
 The installed runtime reconciles that durable state immediately after the
 installer boundary and before mutable services start. `activation_pending` and
