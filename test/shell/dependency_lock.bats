@@ -92,6 +92,24 @@
     grep -F './build/pcsx/build.sh' /workspace/Makefile
 }
 
+@test "PixelReader and private data libraries are source-pinned and reproducible" {
+    lock=/workspace/build/dependencies.lock
+    package="/workspace/static/packages/App/Ebook Reader (PixelReader)/App/PixelReader"
+
+    grep -F 'source_revision = "762ed8ee40bf24fc05af1b0df1a95d30acd56b5b"' "$lock"
+    grep -F 'zlib_revision = "51b7f2abdade71cd9bb0e7a373ef2610ec6f9daf"' "$lock"
+    grep -F 'libxml2_revision = "02d577715e1951cf114ca4e9adaf5605156c4f4c"' "$lock"
+    grep -F 'libzip_revision = "f30f5290de485348442d168cd7b2eb714d1f20f9"' "$lock"
+    [ "$(sha256sum "$package/reader" | cut -d' ' -f1)" = \
+        "08d7aa1f9a259becff7b8d3ef15a8bf296bda90dd74e15cf0d734c7229b04974" ]
+    [ ! -e "$package/lib" ]
+    cmp /workspace/third-party/pixel-reader/LICENSE "$package/LICENSE.PixelReader"
+    cmp /workspace/third-party/zlib/LICENSE "$package/LICENSE.zlib"
+    cmp /workspace/third-party/libxml2/Copyright "$package/LICENSE.libxml2"
+    cmp /workspace/third-party/libzip/LICENSE "$package/LICENSE.libzip"
+    grep -F './build/pixelreader/build.sh' /workspace/Makefile
+}
+
 @test "OpenSSL runtime dependency comes from the pinned ARM toolchain" {
     grep -F 'cp -L /opt/miyoomini-toolchain/arm-linux-gnueabihf/libc/usr/lib/libatomic.so.1' /workspace/Makefile
     ! grep -F 'libatomic.so.1' /workspace/Makefile | grep -F 'http'

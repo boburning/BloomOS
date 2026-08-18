@@ -139,6 +139,10 @@ merged; it does not imply unrecorded hardware certification.
   Miyoo SDL, and menu skin with deterministic builds/assets from pinned source;
   remove the unreachable stock fallback, unattributed cheat database, and
   pre-created memory cards.
+- [x] Replace PixelReader and its six inherited private shared libraries with a
+  deterministic source build using statically linked, commit-pinned zlib,
+  libxml2, and libzip; retain the pinned upstream DejaVu fonts and use Bloom's
+  shared SDL runtime.
 
 The hardware-sensitive BloomOS 1.0/1.1 implementation queue is at its
 physical-validation boundary. Source-provenance replacement work can continue

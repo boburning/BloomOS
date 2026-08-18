@@ -123,14 +123,14 @@
       "id": "app-ebook-reader--pixelreader",
       "kind": "package",
       "path": "static/packages/App/Ebook Reader (PixelReader)",
-      "file_count": 14,
-      "byte_count": 6456770,
-      "tree_sha256": "f0336472c4a1423bad0c3f8e9b1c6b7ca48c0a6378db773edaf6586f5ef6266a",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "file_count": 12,
+      "byte_count": 3208874,
+      "tree_sha256": "cb7955b1420cdc718bcdac82a392d003dab3f670496c2dcede5b9416948ed658",
+      "source": "https://github.com/ealang/pixel-reader",
+      "source_revision": "762ed8ee40bf24fc05af1b0df1a95d30acd56b5b",
+      "license": "GPL-3.0-only AND Zlib AND MIT AND BSD-3-Clause AND LicenseRef-DejaVu-Fonts",
+      "build_recipe": "build/pixelreader/build.sh",
+      "resolution": "source-build"
     },
     {
       "id": "app-expert--shortcut",

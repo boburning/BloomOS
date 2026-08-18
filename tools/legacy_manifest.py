@@ -43,6 +43,10 @@ PCSX_BINARY_HASHES = {
     "RApp/PCSX-ReARMed/plugins/gpu_unai.so": "b14030ec1b3714b36347ab93d90fb2c36032ad367f6b83d49930f11d6571f480",
     "RApp/PCSX-ReARMed/plugins/spunull.so": "3971303c3311a59ecc4179fbda05d32f8ef1a034e2ed0ef86c5de5bc420b5d92",
 }
+PIXELREADER_ID = "app-ebook-reader--pixelreader"
+PIXELREADER_SOURCE = "https://github.com/ealang/pixel-reader"
+PIXELREADER_REVISION = "762ed8ee40bf24fc05af1b0df1a95d30acd56b5b"
+PIXELREADER_BINARY_SHA256 = "08d7aa1f9a259becff7b8d3ef15a8bf296bda90dd74e15cf0d734c7229b04974"
 BATTERY_MONITOR_ID = "app-battery-monitor"
 BATTERY_MONITOR_PACKAGE_ROOT = pathlib.PurePosixPath("App/BatteryMonitorUI")
 BATTERY_MONITOR_SOURCE_ROOT = pathlib.PurePosixPath("src/batteryMonitorUI")
@@ -386,6 +390,55 @@ def is_source_built_pcsx(repository, component):
     return b"third-party/pcsx_rearmed" in build_script and b"third-party/SDL-1.2" in build_script
 
 
+def is_source_built_pixelreader(repository, component):
+    if component["id"] != PIXELREADER_ID or component["kind"] != "package":
+        return False
+    root = repository / component["path"]
+    expected_files = {
+        "App/PixelReader/LICENSE.PixelReader",
+        "App/PixelReader/LICENSE.libxml2",
+        "App/PixelReader/LICENSE.libzip",
+        "App/PixelReader/LICENSE.zlib",
+        "App/PixelReader/config.json",
+        "App/PixelReader/launch.sh",
+        "App/PixelReader/reader",
+        "App/PixelReader/reader.cfg",
+        "App/PixelReader/resources/fonts/DejaVu_License.txt",
+        "App/PixelReader/resources/fonts/DejaVuSans.ttf",
+        "App/PixelReader/resources/fonts/DejaVuSansMono.ttf",
+        "App/PixelReader/resources/fonts/DejaVuSerif.ttf",
+    }
+    files = {
+        path.relative_to(root).as_posix(): path
+        for path in root.rglob("*")
+        if path.is_file()
+    }
+    if set(files) != expected_files:
+        return False
+    if hashlib.sha256(files["App/PixelReader/reader"].read_bytes()).hexdigest() != PIXELREADER_BINARY_SHA256:
+        return False
+    license_sources = {
+        "App/PixelReader/LICENSE.PixelReader": repository / "third-party/pixel-reader/LICENSE",
+        "App/PixelReader/LICENSE.zlib": repository / "third-party/zlib/LICENSE",
+        "App/PixelReader/LICENSE.libxml2": repository / "third-party/libxml2/Copyright",
+        "App/PixelReader/LICENSE.libzip": repository / "third-party/libzip/LICENSE",
+    }
+    for relative, source in license_sources.items():
+        if not source.is_file() or canonical_file(files[relative]) != canonical_file(source):
+            return False
+    source_fonts = repository / "third-party/pixel-reader/resources/fonts"
+    for relative in expected_files:
+        if "/resources/fonts/" not in relative:
+            continue
+        if canonical_file(files[relative]) != canonical_file(source_fonts / pathlib.PurePosixPath(relative).name):
+            return False
+    build_script = canonical_file(repository / "build/pixelreader/build.sh")
+    return all(
+        marker in build_script
+        for marker in (b"third-party/pixel-reader", b"third-party/zlib", b"third-party/libxml2", b"third-party/libzip")
+    )
+
+
 def annotate_bloom_replacements(repository, manifest):
     count = 0
     for component in manifest["components"]:
@@ -437,6 +490,14 @@ def annotate_bloom_replacements(repository, manifest):
                 "source_revision": PCSX_REVISION,
                 "license": "GPL-2.0-or-later AND BSD-3-Clause AND LicenseRef-Public-Domain AND LGPL-2.1-or-later AND GPL-3.0-only",
                 "build_recipe": "build/pcsx/build.sh",
+                "resolution": "source-build",
+            })
+        elif is_source_built_pixelreader(repository, component):
+            component.update({
+                "source": PIXELREADER_SOURCE,
+                "source_revision": PIXELREADER_REVISION,
+                "license": "GPL-3.0-only AND Zlib AND MIT AND BSD-3-Clause AND LicenseRef-DejaVu-Fonts",
+                "build_recipe": "build/pixelreader/build.sh",
                 "resolution": "source-build",
             })
         else:

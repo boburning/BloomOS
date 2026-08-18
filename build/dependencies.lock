@@ -34,6 +34,11 @@ info_zip = "3.0"
 "third-party/pcsx_rearmed/frontend/warm" = "a6f015da3b10b82a476250793645c071340decbc"
 "third-party/pcsx_rearmed/libchdr" = "a03e69319164f69d781ab8e453f8cf407387bd13"
 "third-party/SDL-1.2" = "0e0919585f2f809471ba45bdc16624ef4e887bc0"
+"third-party/pixel-reader" = "762ed8ee40bf24fc05af1b0df1a95d30acd56b5b"
+"third-party/pixel-reader/cross-compile/miyoo-mini/union-miyoomini-toolchain" = "90ce1ec3c3560aac63003942511054d4aab33728"
+"third-party/zlib" = "51b7f2abdade71cd9bb0e7a373ef2610ec6f9daf"
+"third-party/libxml2" = "02d577715e1951cf114ca4e9adaf5605156c4f4c"
+"third-party/libzip" = "f30f5290de485348442d168cd7b2eb714d1f20f9"
 "third-party/RetroArch-patch/submodules/RetroArch" = "69a4f0ea1e8aaf442ae4858f2e7f2b31a1776576"
 "third-party/SearchFilter/include/pugixml" = "2639dfd053221d3e8c9e9ff013e58699d9c1af15"
 "third-party/SearchFilter/include/sqlite3" = "a050cf6e5787d8dd341f7c0038247a3206ba6cf1"
@@ -103,6 +108,17 @@ gpu_senquack_sha256 = "8a048109df58b6f64e0804d3acc715657cc61f74522f2bce78fb7beed
 gpu_unai_sha256 = "b14030ec1b3714b36347ab93d90fb2c36032ad367f6b83d49930f11d6571f480"
 spunull_sha256 = "3971303c3311a59ecc4179fbda05d32f8ef1a034e2ed0ef86c5de5bc420b5d92"
 
+[pixelreader]
+version = "0.6"
+source = "https://github.com/ealang/pixel-reader"
+source_revision = "762ed8ee40bf24fc05af1b0df1a95d30acd56b5b"
+zlib_revision = "51b7f2abdade71cd9bb0e7a373ef2610ec6f9daf"
+libxml2_revision = "02d577715e1951cf114ca4e9adaf5605156c4f4c"
+libzip_revision = "f30f5290de485348442d168cd7b2eb714d1f20f9"
+license = "GPL-3.0-only AND Zlib AND MIT AND BSD-3-Clause AND LicenseRef-DejaVu-Fonts"
+build_recipe = "build/pixelreader/build.sh"
+binary_sha256 = "08d7aa1f9a259becff7b8d3ef15a8bf296bda90dd74e15cf0d734c7229b04974"
+
 [fonts.dejavu_sans]
 version = "2.37"
 source = "https://github.com/dejavu-fonts/dejavu-fonts/releases/tag/version_2_37"
@@ -126,10 +142,10 @@ legacy_channels = ["development"]
 manifest = "build/legacy-manifest.json"
 schema = 1
 component_count = 153
-file_count = 2517
-byte_count = 400192570
-source_build_components = 145
-unresolved_components = 8
+file_count = 2515
+byte_count = 396944674
+source_build_components = 146
+unresolved_components = 7
 inherited_baseline = "07505ea58c7bba698d6b9220ff43946a43cac76b"
 
 [themes]

@@ -34,3 +34,15 @@
 [submodule "third-party/SDL-1.2"]
 	path = third-party/SDL-1.2
 	url = https://github.com/shauninman/SDL-1.2.git
+[submodule "third-party/pixel-reader"]
+	path = third-party/pixel-reader
+	url = https://github.com/ealang/pixel-reader.git
+[submodule "third-party/zlib"]
+	path = third-party/zlib
+	url = https://github.com/madler/zlib.git
+[submodule "third-party/libxml2"]
+	path = third-party/libxml2
+	url = https://github.com/GNOME/libxml2.git
+[submodule "third-party/libzip"]
+	path = third-party/libzip
+	url = https://github.com/nih-at/libzip.git
