@@ -25,6 +25,18 @@ teardown() { teardown_bloom_fixture; }
     grep -F 'remount_ro_final=' "$SHUTDOWN_HELPER"
     grep -F 'umount_final=' "$SHUTDOWN_HELPER"
     grep -F 'SHUTDOWN_LOG_ENABLED=1' "$SHUTDOWN_HELPER"
+    grep -F 'shutdown_mode=${1:-poweroff}' "$SHUTDOWN_HELPER"
+}
+
+@test "reboot falls back to the direct kernel syscall after clean unmount" {
+    recursive_unmount_line="$(grep -n 'umount -r /mnt/SDCARD' "$SHUTDOWN_HELPER" | cut -d: -f1)"
+    reboot_call_line="$(grep -n '^\t\trun_reboot' "$SHUTDOWN_HELPER" | head -n 1 | cut -d: -f1)"
+    init_reboot_line="$(grep -n '^\t/sbin/reboot$' "$SHUTDOWN_HELPER" | cut -d: -f1)"
+    kernel_reboot_line="$(grep -n '^\t/sbin/reboot -f$' "$SHUTDOWN_HELPER" | cut -d: -f1)"
+    [ "$recursive_unmount_line" -lt "$reboot_call_line" ]
+    [ "$init_reboot_line" -lt "$kernel_reboot_line" ]
+    grep -F 'reboot_command=init' "$SHUTDOWN_HELPER"
+    grep -F 'reboot_command=kernel' "$SHUTDOWN_HELPER"
 }
 
 @test "all BloomOS shutdown paths use the detached clean shutdown script" {

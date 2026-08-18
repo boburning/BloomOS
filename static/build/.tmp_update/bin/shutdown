@@ -45,12 +45,27 @@ remount_sd_read_only() {
 	return $rc
 }
 
+run_reboot() {
+	shutdown_log "reboot_command=init"
+	/sbin/reboot
+	shutdown_log "reboot_init_returned=$?"
+	# BusyBox normally asks PID 1 to restart the system and returns. Some Miyoo
+	# firmware revisions instead finish shutdown without restarting. Storage is
+	# already unmounted here, so use the direct kernel syscall if the system is
+	# still running after a short handoff window.
+	sleep 2
+	shutdown_log "reboot_command=kernel"
+	/sbin/reboot -f
+	shutdown_log "reboot_kernel_returned=$?"
+}
+
 if [ "$0" = "/tmp/_shutdown" ]; then
 	if [ -f /mnt/SDCARD/.bloom-dev ]; then
 		SHUTDOWN_LOG_ENABLED=1
 		: > /appconfigs/bloom-shutdown.log
 	fi
 	shutdown_log "shutdown_started=1"
+	shutdown_log "shutdown_mode=${1:-poweroff}"
 
 	killall -9 main # mandatory to avoid the suppression of .tmp_update !
 	killall -9 updater
@@ -96,10 +111,10 @@ if [ "$0" = "/tmp/_shutdown" ]; then
 	#################################
 
 	if [ "$1" = "-r" ]; then
-		/sbin/reboot
+		run_reboot
 	else
 		if [ "$(cat /tmp/deviceModel)" = "283" ]; then
-			/sbin/reboot # no poweroff command on Miyoo Mini
+			run_reboot # no poweroff command on Miyoo Mini
 		else
 			/sbin/poweroff
 		fi
