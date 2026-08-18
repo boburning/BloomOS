@@ -156,8 +156,9 @@ merged; it does not imply unrecorded hardware certification.
   music playback.
 - [x] Exclude the inherited proprietary DraStic package and its incompletely
   attributable libraries, firmware, databases, fonts, and interface assets;
-  reserve the `NDS` library path while requiring a reproducible, licensed,
-  device-qualified emulator before Nintendo DS support returns.
+  remove the now-invalid legacy migration scripts, reserve the `NDS` library
+  path, and require a reproducible, licensed, device-qualified emulator before
+  Nintendo DS support returns.
 - [x] Exclude the Search/Filter source and package integration because the
   upstream project has no authoritative license; retain per-system ROM cache
   refresh through Bloom's licensed shell implementation and require a clean-room
@@ -166,6 +167,10 @@ merged; it does not imply unrecorded hardware certification.
   of SQLite 3.39.0 and SDL_rotozoom from repository source; remove unused
   `libgfx` and the unused unlicensed keyboard wrapper, and rely on the Miyoo
   runtime layer instead of duplicating its `libpng` and `libshmvar` binaries.
+- [x] Stop redistributing 44 byte-identical Miyoo firmware libraries and one
+  obsolete zlib copy in the SD-card runtime; load stock libraries from
+  `/customer/lib` while retaining Bloom's generated `libgamename` override and
+  the audio preload shim required by existing launch commands.
 
 The hardware-sensitive BloomOS 1.0/1.1 implementation queue is at its
 physical-validation boundary. Source-provenance replacement work can continue

@@ -11,6 +11,8 @@
     [ ! -e "/workspace/static/packages/RApp/PICO-8 (PICO-8 standalone)" ]
     [ ! -e "/workspace/static/packages/RApp/SCUMM (ScummVM standalone)" ]
     [ ! -e "/workspace/static/packages/Emu/Nintendo - DS (Drastic)" ]
+    [ ! -e "/workspace/static/build/.tmp_update/script/drastic_migration.sh" ]
+    [ ! -e "/workspace/static/build/.tmp_update/script/migration/00017_drastic_migration.sh" ]
     [ ! -e "/workspace/static/packages/App/Search (Find your games)" ]
     [ ! -e "/workspace/static/packages/App/List shortcuts (Filter+Refresh)" ]
     [ ! -e "/workspace/third-party/SearchFilter" ]

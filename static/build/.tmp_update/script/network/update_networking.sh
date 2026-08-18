@@ -6,7 +6,7 @@ jsonfile="$confdir/.net_service_restart.json"
 filebrowserbin=$sysdir/bin/filebrowser
 filebrowserdb=$sysdir/config/filebrowser/filebrowser.db
 netscript=/mnt/SDCARD/.tmp_update/script/network
-export LD_LIBRARY_PATH="/lib:/config/lib:$miyoodir/lib:$sysdir/lib:$sysdir/lib/parasyte"
+export LD_LIBRARY_PATH="/lib:/config/lib:$miyoodir/lib:/customer/lib:$sysdir/lib:$sysdir/lib/parasyte"
 export PATH="$sysdir/bin:$PATH"
 is_booting=$([ -f /tmp/is_booting ] && echo 1 || echo 0)
 
