@@ -2,6 +2,11 @@
 
 load 'support/test_helper'
 
+@test "release packaging emits only updater-supported top-level roots" {
+    grep -F 'find miyoo RetroArch \( -type f -o -type l \) -print' /workspace/Makefile
+    ! grep -F 'find . \( -type f -o -type l \) -print' /workspace/Makefile
+}
+
 setup() {
     setup_bloom_fixture
     export VERIFY=/workspace/static/build/.tmp_update/bin/bloom-update-verify

@@ -261,7 +261,7 @@ package-release-unsigned:
 	@rm -rf $(RELEASE_VERSION_DIR)
 	@mkdir -p $(RELEASE_VERSION_DIR)
 	@find $(DIST_DIR) -exec touch -h -d "@$(SOURCE_DATE_EPOCH)" {} +
-	@cd $(DIST_DIR) && find . \( -type f -o -type l \) -print | LC_ALL=C sort > $(RELEASE_VERSION_DIR)/archive-files.txt
+	@cd $(DIST_DIR) && find miyoo RetroArch \( -type f -o -type l \) -print | LC_ALL=C sort > $(RELEASE_VERSION_DIR)/archive-files.txt
 	@cd $(DIST_DIR) && zip -X -q $(RELEASE_ARCHIVE) -@ < $(RELEASE_VERSION_DIR)/archive-files.txt
 	@rm -f $(RELEASE_VERSION_DIR)/archive-files.txt
 	@python3 $(ROOT_DIR)/tools/release_metadata.py create \

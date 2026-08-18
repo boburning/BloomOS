@@ -145,6 +145,8 @@ merged; it does not imply unrecorded hardware certification.
 - [x] Keep the inherited provenance inventory immutable during release builds
   and route the OpenBOR and PixelReader replacements directly
   into package staging so the signed payload contains the rebuilt artifacts.
+- [x] Restrict signed OTA archives to the updater-supported `miyoo/` and
+  `RetroArch/` roots, keeping future first-install media as a separate artifact.
 - [x] Exclude the optional 240pSuite shortcut rather than ship an inherited ROM
   and dedicated SNES core without exact source-to-binary evidence. Upstream's
   GPL source remains a candidate once its complete host toolchain can be rebuilt
