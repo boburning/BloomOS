@@ -4,7 +4,7 @@
 # Env setup
 sysdir=/mnt/SDCARD/.tmp_update
 miyoodir=/mnt/SDCARD/miyoo
-LD_LIBRARY_PATH="/lib:/config/lib:$miyoodir/lib:$sysdir/lib:$sysdir/lib/parasyte"
+LD_LIBRARY_PATH="/lib:/config/lib:$miyoodir/lib:/customer/lib:$sysdir/lib:$sysdir/lib/parasyte"
 
 logfile=pokemon_link
 . $sysdir/script/log.sh

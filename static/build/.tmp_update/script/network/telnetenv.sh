@@ -4,7 +4,7 @@
 
 export sysdir="/mnt/SDCARD/.tmp_update"
 export miyoodir="/mnt/SDCARD/miyoo"
-export LD_LIBRARY_PATH="/lib:/config/lib:$miyoodir/lib:$sysdir/lib:$sysdir/lib/parasyte:/sbin:/usr/sbin:/bin:/usr/bin"
+export LD_LIBRARY_PATH="/lib:/config/lib:$miyoodir/lib:/customer/lib:$sysdir/lib:$sysdir/lib/parasyte:/sbin:/usr/sbin:/bin:/usr/bin"
 export PATH="$sysdir/bin:$PATH"
 export USER=root
 export TERM=vt102

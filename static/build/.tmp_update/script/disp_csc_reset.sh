@@ -1,7 +1,7 @@
 #!/bin/sh
 export sysdir="/mnt/SDCARD/.tmp_update"
 export miyoodir="/mnt/SDCARD/miyoo"
-export LD_LIBRARY_PATH="/lib:/config/lib:$miyoodir/lib:$sysdir/lib:$sysdir/lib/parasyte:/sbin:/usr/sbin:/bin:/usr/bin"
+export LD_LIBRARY_PATH="/lib:/config/lib:$miyoodir/lib:/customer/lib:$sysdir/lib:$sysdir/lib/parasyte:/sbin:/usr/sbin:/bin:/usr/bin"
 export PATH="$sysdir/bin:$PATH"
 
 # to push the default display values into mi_disp when a soft reset of mi_disp is done (if /dev/l doesn't exist for some reason)

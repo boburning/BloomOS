@@ -1,7 +1,7 @@
 sysdir=/mnt/SDCARD/.tmp_update
 miyoodir=/mnt/SDCARD/miyoo
 icondir=$sysdir/res
-export LD_LIBRARY_PATH="/lib:/config/lib:$miyoodir/lib:$sysdir/lib:$sysdir/lib/parasyte"
+export LD_LIBRARY_PATH="/lib:/config/lib:$miyoodir/lib:/customer/lib:$sysdir/lib:$sysdir/lib/parasyte"
 export WPACLI=/customer/app/wpa_cli
 export IMGPOP=$sysdir/bin/imgpop
 # Syntax: ./imgpop duration delay image_path x_position y_position.
