@@ -13,7 +13,8 @@ STATE_FILE="$ROOT/tmp/bloom-dev-ssh.state"
 PID_FILE="$ROOT/tmp/bloom-dev-ssh.pid"
 PORT="${BLOOM_DEV_SSH_PORT:-22}"
 DROPBEAR="${BLOOM_DROPBEAR:-$SYS_DIR/bin/bloom-dropbearmulti}"
-HOST_KEY="$SYS_DIR/etc/dropbear/dropbear_ed25519_host_key"
+HOST_KEY_DIR="$SD_ROOT/.bloom/ssh"
+HOST_KEY="$HOST_KEY_DIR/dropbear_ed25519_host_key"
 
 state() {
     mkdir -p "$(dirname "$STATE_FILE")"
@@ -107,7 +108,12 @@ start_ssh() {
     fi
 
     stop_dropbear
-    mkdir -p "$SYS_DIR/etc/dropbear" "$SYS_DIR/logs"
+    mkdir -p "$HOST_KEY_DIR" "$SYS_DIR/logs"
+    chmod 700 "$HOST_KEY_DIR" || {
+        stop_dropbear
+        state host_key_failed
+        return 1
+    }
     if ! prepare_runtime_key; then
         stop_dropbear
         state runtime_key_failed

@@ -10,6 +10,8 @@ setup() {
     export BLOOM_JQ_BIN=/usr/bin/jq
     export BLOOM_UPDATE_STATE_BIN="$BLOOM_TEST_ROOT/mock-state"
     export BLOOM_SAVE_SNAPSHOT_BIN="$BLOOM_TEST_ROOT/mock-snapshot"
+    export BLOOM_MOUNT_BIN="$BLOOM_TEST_ROOT/mock-mount"
+    export BLOOM_UMOUNT_BIN="$BLOOM_TEST_ROOT/mock-umount"
     export VERSION=1.2.3
     mkdir -p \
         "$BLOOM_UPDATE_ROOT/candidates/$VERSION/miyoo/app/.tmp_update" \
@@ -18,6 +20,8 @@ setup() {
     printf 'trigger\n' >"$BLOOM_UPDATE_ROOT/candidates/$VERSION/miyoo/app/MainUI"
     printf 'core\n' >"$BLOOM_UPDATE_ROOT/candidates/$VERSION/miyoo/app/.tmp_update/onion.pak"
     printf 'retroarch\n' >"$BLOOM_UPDATE_ROOT/candidates/$VERSION/RetroArch/retroarch.pak"
+    mkdir -p "$SDCARD/.tmp_update/etc/dropbear"
+    printf 'stable-host-key\n' >"$SDCARD/.tmp_update/etc/dropbear/dropbear_ed25519_host_key"
     printf '{"schema":1,"version":"1.2.2","path":"%s"}\n' \
         "$BLOOM_UPDATE_ROOT/staged/1.2.2" >"$BLOOM_UPDATE_ROOT/known-good.json"
     cat >"$BLOOM_UPDATE_STATE_BIN" <<EOF
@@ -36,6 +40,15 @@ printf '%s:%s\n' "\$1" "\$2" >>"$BLOOM_TEST_ROOT/calls"
 printf '%s\n' '{"schema":1,"status":"created","id":"snapshot-1"}'
 EOF
     chmod +x "$BLOOM_UPDATE_STATE_BIN" "$BLOOM_SAVE_SNAPSHOT_BIN"
+    cat >"$BLOOM_MOUNT_BIN" <<EOF
+#!/bin/sh
+printf '/dev/mmcblk0p1 on $SDCARD/miyoo/app/MainUI type vfat (rw)\n'
+EOF
+    cat >"$BLOOM_UMOUNT_BIN" <<'EOF'
+#!/bin/sh
+printf 'umount:%s:%s\n' "$1" "$2" >>"$BLOOM_TEST_ROOT/calls"
+EOF
+    chmod +x "$BLOOM_MOUNT_BIN" "$BLOOM_UMOUNT_BIN"
 }
 
 teardown() { teardown_bloom_fixture; }
@@ -53,6 +66,9 @@ teardown() { teardown_bloom_fixture; }
     [ -f "$SDCARD/miyoo/app/MainUI" ]
     [ "$(sed -n '1p' "$BLOOM_TEST_ROOT/calls")" = 'create:pre-update' ]
     [ "$(sed -n '2p' "$BLOOM_TEST_ROOT/calls")" = 'activation-start:1.2.3:snapshot-1' ]
+    [ "$(sed -n '3p' "$BLOOM_TEST_ROOT/calls")" = "umount:-l:$SDCARD/miyoo/app/MainUI" ]
+    [ "$(cat "$SDCARD/.bloom/ssh/dropbear_ed25519_host_key")" = stable-host-key ]
+    [ "$(stat -c '%a' "$SDCARD/.bloom/ssh/dropbear_ed25519_host_key")" = 600 ]
 }
 
 @test "refuses activation without a retained known-good release" {

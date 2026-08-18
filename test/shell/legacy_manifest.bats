@@ -39,6 +39,8 @@
         /workspace/Makefile
     grep -F 'OPENBOR_PACKAGE_DIR:-$repository_root/static/packages/' /workspace/build/openbor/build.sh
     grep -F 'PIXELREADER_PACKAGE_DIR:-$root/static/packages/' /workspace/build/pixelreader/build.sh
+    grep -F 'work="$root/cache/pixelreader-work"' /workspace/build/pixelreader/build.sh
+    ! grep -F 'work="$root/build/pixelreader/work"' /workspace/build/pixelreader/build.sh
 }
 
 @test "legacy manifest rejects modified inventory metadata" {

@@ -658,15 +658,15 @@ unzip_progress() {
 
     sleep 1
 
-    # Run the 7z extraction command in the background and redirect output to /tmp/.extraction_output
-    (
-        7z x -aoa -o"$dest" "$zipfile" -bsp1 -bb > /tmp/.extraction_output
-        echo $? > "/tmp/extraction_status"
-    ) &
+    # Track this extraction by PID. Global pgrep checks can observe an
+    # unrelated 7z process and then consume a stale status file.
+    rm -f /tmp/.extraction_output /tmp/extraction_status
+    7z x -aoa -o"$dest" "$zipfile" -bsp1 -bb > /tmp/.extraction_output 2>&1 &
+    extraction_pid=$!
 
     sleep 1
 
-    if pgrep 7z > /dev/null; then
+    if kill -0 "$extraction_pid" 2> /dev/null; then
         echo "7Z is running"
         sleep 1
     else
@@ -684,8 +684,7 @@ unzip_progress() {
     fi
 
     # Continuously update /tmp/.update_msg every 500 milliseconds until the command line finishes
-    a=$(pgrep 7z)
-    while [ -n "$a" ]; do
+    while kill -0 "$extraction_pid" 2> /dev/null; do
         last_line=$(tail -n 1 /tmp/.extraction_output)
         value=$(echo "$last_line" | sed 's/.* \([0-9]\+\)%.*/\1/')
         if [ "$value" -eq "$value" ] 2> /dev/null; then # check if the value is numeric
@@ -695,15 +694,17 @@ unzip_progress() {
                 echo "$msg $value%" > /tmp/.update_msg # Now we can show completion percentage
             fi
         fi
-        > /tmp/.extraction_output # to avoid to parse a too big file
         sleep 0.5
-        a=$(pgrep 7z)
     done
 
     # Check the exit status of the extraction command
-    extraction_status=$(cat "/tmp/extraction_status")
+    wait "$extraction_pid"
+    extraction_status=$?
+    echo "$extraction_status" > /tmp/extraction_status
     if [ "$extraction_status" -ne 0 ]; then
         touch $sysdir/.installFailed
+        mkdir -p "$sysdir/logs"
+        cp /tmp/.extraction_output "$sysdir/logs/install-extraction-failed.log"
         echo ":: Installation failed!"
         sync
         reboot
