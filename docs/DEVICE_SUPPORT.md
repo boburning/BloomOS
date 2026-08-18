@@ -23,6 +23,11 @@ The V2 result is a maintainer validation baseline, not certification of V2 or ev
 On 2026-08-17, a later Plus test invoked BloomOS's clean `shutdown -r` path
 over SSH. The helper quiesced SD-card consumers and disconnected normally, but
 the device did not return to its prior address within five minutes and a subnet
-SSH scan found no replacement address. Physical inspection and power-on are
-deferred until the maintainer returns; the persistent shutdown log must be
-collected before the reboot path is changed.
+SSH scan found no replacement address. After manual power-on, the device
+returned at `192.168.1.180` with the same card-pinned host key and passed the
+guarded identity and read-only smoke checks. The persistent internal shutdown
+log records `swapoff_complete=1`, successful first-attempt read-only remount,
+`remount_ro_final=0`, and `umount_recursive=0`; the subsequent redundant final
+unmount returned `1` after the recursive unmount had already succeeded. This
+isolates the remaining defect to reboot/power control after clean storage
+quiescing. Another remote reboot must wait until local recovery is available.

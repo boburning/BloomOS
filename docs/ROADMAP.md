@@ -152,9 +152,13 @@ guessed from inherited bytes.
 
 ### Deferred physical validation
 
-- [ ] Inspect and power on the Miyoo Mini Plus after the 2026-08-17 remote
-  reboot command completed shutdown but did not return to Wi-Fi; collect the
-  persistent shutdown log before changing reboot behavior.
+- [x] Inspect and power on the Miyoo Mini Plus after the 2026-08-17 remote
+  reboot command completed shutdown but did not return to Wi-Fi; the recovered
+  persistent log proves swapoff, read-only FAT remount, and recursive unmount
+  completed before the device required manual power-on.
+- [ ] Diagnose the Plus reboot/power-control handoff without changing the
+  proven clean SD-card quiescing path; repeat reboot only while local recovery
+  is available.
 - [ ] Run real signed update activation, boot confirmation, bounded-failure,
   and rollback tests on Plus, then repeat applicable coverage on Mini V2 and
   Flip.
