@@ -198,12 +198,6 @@ external: $(CACHE)/.setup $(THIRD_PARTY_DIR)/RetroArch-patch/bin/retroarch_miyoo
 	@cp $(THIRD_PARTY_DIR)/RetroArch-patch/bin/* $(BUILD_DIR)/RetroArch/
 	@echo $(RA_SUBVERSION) > $(BUILD_DIR)/RetroArch/onion_ra_version.txt
 	@$(BUILD_DIR)/.tmp_update/script/build_ext_cache.sh $(BUILD_DIR)/RetroArch/.retroarch
-# SearchFilter
-	@$(ECHO) $(COLOR_BLUE)"\n-- Build SearchFilter"$(COLOR_NORMAL)
-	@cd $(THIRD_PARTY_DIR)/SearchFilter && make build && cp -a build/. $(BUILD_DIR)
-	@cp -a $(BUILD_DIR)/App/Search/. "$(PACKAGES_APP_DEST)/Search (Find your games)/App/Search"
-	@mv -f $(BUILD_DIR)/App/Filter/* "$(PACKAGES_APP_DEST)/List shortcuts (Filter+Refresh)/App/Filter"
-	@rmdir $(BUILD_DIR)/App/Filter
 # Other
 	@$(ECHO) $(COLOR_BLUE)"\n-- Build OpenBOR standalone"$(COLOR_NORMAL)
 	@./build/openbor/build.sh
@@ -306,7 +300,6 @@ clean:
 deepclean: clean
 	@rm -rf $(CACHE)
 	@cd $(THIRD_PARTY_DIR)/RetroArch-patch && make clean
-	@cd $(THIRD_PARTY_DIR)/SearchFilter && make clean
 	@cd $(THIRD_PARTY_DIR)/Terminal && make clean
 	@cd $(THIRD_PARTY_DIR)/fake-08 && make clean-miyoomini
 

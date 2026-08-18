@@ -13,7 +13,6 @@ description: Overview of the most important features
 <a href="#gameswitcher"><img title="GameSwitcher" src="https://user-images.githubusercontent.com/44569252/179301923-635b60fa-22de-4cf3-894a-2f3c34702d64.png" width="48" /></a>
 <a href="#package-manager"><img title="Package Manager" src="https://user-images.githubusercontent.com/44569252/179315622-e29e0971-87c8-4855-85e6-fc8de4ccd940.png" width="48" /></a>
 <a href="#tweaks"><img title="Tweaks" src="https://user-images.githubusercontent.com/44569252/189439761-e03a9684-ade4-4dcc-8fdd-c006a1663c05.png" width="48" /></a>
-<a href="#search"><img title="Search" src="https://user-images.githubusercontent.com/44569252/189498482-2590f31f-cca2-46e9-a316-3af98828446a.png" width="48" /></a>
 <a href="#themes"><img title="Themes" src="https://user-images.githubusercontent.com/44569252/179304061-647e63ff-5113-4a8a-aaa9-4dfda248d54e.png" width="48" /></a>
 <a href="#activity-tracker"><img title="Activity Tracker" src="https://user-images.githubusercontent.com/44569252/179302722-7fa82e4d-d72d-4b1e-bb4d-96a2a52aaa62.png" width="48" /></a>
 <a href="#blue-light-filter"><img title="Blue light filter" src={require('./assets/blue-light-filter.webp').default} style={{width: 48}} /></a>
@@ -79,17 +78,6 @@ The **Package Manager** app is a powerful tool that allows users to easily insta
 **Tweaks** is the backbone of onion's configuration and personalization! With Tweaks you can adjust **System Settings**, enable **Network Services**, configure your **Button Shortcuts** and more!
 :::
 
-
-
-## <sup><img align="left" src="https://user-images.githubusercontent.com/44569252/189498482-2590f31f-cca2-46e9-a316-3af98828446a.png" width="54" /></sup>Search
-
-<p align="center"><img src="https://user-images.githubusercontent.com/44569252/189498639-8e2a43a6-4020-4492-b4b1-6e3f0c0d5fd6.png" width="320" /></p>
-
-
-:::note <a href="apps/search">Search overview</a>
-The **Search** application is the perfect companion for large game collections. It lets you find all the games containing the keyword you've entered.
-**Search** also allows to filter a game list to include only games containing a specific keyword.
-:::
 
 
 ## <sup><img align="left" src="https://user-images.githubusercontent.com/44569252/179304061-647e63ff-5113-4a8a-aaa9-4dfda248d54e.png" width="54" /></sup>Themes

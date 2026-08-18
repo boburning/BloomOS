@@ -158,6 +158,10 @@ merged; it does not imply unrecorded hardware certification.
   attributable libraries, firmware, databases, fonts, and interface assets;
   reserve the `NDS` library path while requiring a reproducible, licensed,
   device-qualified emulator before Nintendo DS support returns.
+- [x] Exclude the Search/Filter source and package integration because the
+  upstream project has no authoritative license; retain per-system ROM cache
+  refresh through Bloom's licensed shell implementation and require a clean-room
+  or authoritatively licensed replacement before global search returns.
 
 The hardware-sensitive BloomOS 1.0/1.1 implementation queue is at its
 physical-validation boundary. Source-provenance replacement work can continue

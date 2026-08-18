@@ -76,12 +76,6 @@
       "inventory": "build/legacy-manifest.json",
       "inventory_kinds": ["package", "package-common"],
       "reason": "Standalone emulators and applications require component-level source, license, and build provenance."
-    },
-    {
-      "id": "search-filter",
-      "tier": "legacy",
-      "paths": ["third-party/SearchFilter"],
-      "reason": "Pinned source is present, but the component repository does not contain an authoritative top-level license declaration."
     }
   ]
 }
