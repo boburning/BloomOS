@@ -35,6 +35,10 @@ merged; it does not imply unrecorded hardware certification.
 
 ### Completed hardening increments
 
+- [x] Close the first-update lifecycle gap with signed initial-baseline
+  bootstrap, guarded operator activation, newline-safe installed-version
+  confirmation, and automatic cleanup of retired Fake-08 and PCSX-ReARMed
+  standalones during migration.
 - [x] Reconcile activated update boots, count bounded validation attempts, and
   require installed-version plus structured-health confirmation before
   promotion ([PR #54](https://github.com/boburning/BloomOS/pull/54)).

@@ -1,0 +1,15 @@
+#!/bin/sh
+set -u
+
+SD_ROOT="${BLOOM_SD_ROOT:-/mnt/SDCARD}"
+STATE_BIN="${BLOOM_UPDATE_STATE_BIN:-$SD_ROOT/.tmp_update/bin/bloom-update-state}"
+HEALTH_BIN="${BLOOM_HEALTH_BIN:-$SD_ROOT/.tmp_update/bin/bloomctl}"
+
+fail() { printf 'bloom-update-bootstrap: %s\n' "$*" >&2; exit 1; }
+
+[ "$#" -eq 1 ] || fail "expected VERSION"
+[ -x "$STATE_BIN" ] || fail "update state service is unavailable"
+[ -x "$HEALTH_BIN" ] || fail "health service is unavailable"
+
+"$HEALTH_BIN" health --json >/dev/null || fail "device health checks failed"
+"$STATE_BIN" bootstrap "$1"

@@ -30,7 +30,8 @@ case "${1:-}" in
             fail "no booted update is awaiting confirmation"
         pending="$(printf '%s\n' "$state" | "$JQ" -er '.pending_version')" || fail "pending version is invalid"
         [ -r "$VERSION_FILE" ] || fail "installed version is unavailable"
-        IFS= read -r installed <"$VERSION_FILE" || fail "installed version is unavailable"
+        installed=""
+        IFS= read -r installed <"$VERSION_FILE" || [ -n "$installed" ] || fail "installed version is unavailable"
         [ "$(normalize_version "$installed")" = "$(normalize_version "$pending")" ] ||
             fail "installed version does not match pending update"
         [ -x "$HEALTH_BIN" ] || fail "health service is unavailable"

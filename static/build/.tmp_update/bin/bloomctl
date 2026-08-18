@@ -8,6 +8,8 @@ BLOOM_PLATFORM="$SCRIPT_DIR/bloom-platform"
 BLOOM_UPDATE_STAGE="${BLOOM_UPDATE_STAGE_BIN:-$SCRIPT_DIR/bloom-update-stage}"
 BLOOM_UPDATE_PREPARE="${BLOOM_UPDATE_PREPARE_BIN:-$SCRIPT_DIR/bloom-update-prepare}"
 BLOOM_UPDATE_STATE="${BLOOM_UPDATE_STATE_BIN:-$SCRIPT_DIR/bloom-update-state}"
+BLOOM_UPDATE_ACTIVATE="${BLOOM_UPDATE_ACTIVATE_BIN:-$SCRIPT_DIR/bloom-update-activate}"
+BLOOM_UPDATE_BOOTSTRAP="${BLOOM_UPDATE_BOOTSTRAP_BIN:-$SCRIPT_DIR/bloom-update-bootstrap}"
 BLOOM_UPDATE_BOOT="${BLOOM_UPDATE_BOOT_BIN:-$SCRIPT_DIR/bloom-update-boot}"
 BLOOM_UPDATE_ROLLBACK="${BLOOM_UPDATE_ROLLBACK_BIN:-$SCRIPT_DIR/bloom-update-rollback}"
 BLOOM_UPDATE_CHANNEL="${BLOOM_UPDATE_CHANNEL_BIN:-$SCRIPT_DIR/bloom-update-channel}"
@@ -190,7 +192,7 @@ print_health_text() {
 
 usage() {
     printf 'Usage: bloomctl {info|health} [--json]\n' >&2
-    printf '       bloomctl update {status|channel [stable|beta|nightly]|stage MANIFEST SIGNATURE ARCHIVE|prepare VERSION|arm VERSION|confirm|rollback}\n' >&2
+    printf '       bloomctl update {status|channel [stable|beta|nightly]|stage MANIFEST SIGNATURE ARCHIVE|prepare VERSION|bootstrap VERSION|arm VERSION|activate VERSION|confirm|rollback}\n' >&2
     printf '       bloomctl saves snapshots\n' >&2
     printf '       bloomctl logs export\n' >&2
     printf '       bloomctl platform capabilities\n' >&2
@@ -271,10 +273,20 @@ update_command() {
             [ -x "$BLOOM_UPDATE_PREPARE" ] || { printf 'bloomctl: update candidate service is unavailable\n' >&2; return 1; }
             "$BLOOM_UPDATE_PREPARE" "$2"
             ;;
+        bootstrap)
+            [ "$#" -eq 2 ] || { usage; return 2; }
+            [ -x "$BLOOM_UPDATE_BOOTSTRAP" ] || { printf 'bloomctl: update bootstrap service is unavailable\n' >&2; return 1; }
+            "$BLOOM_UPDATE_BOOTSTRAP" "$2"
+            ;;
         arm)
             [ "$#" -eq 2 ] || { usage; return 2; }
             [ -x "$BLOOM_UPDATE_STATE" ] || { printf 'bloomctl: update state service is unavailable\n' >&2; return 1; }
             "$BLOOM_UPDATE_STATE" arm "$2"
+            ;;
+        activate)
+            [ "$#" -eq 2 ] || { usage; return 2; }
+            [ -x "$BLOOM_UPDATE_ACTIVATE" ] || { printf 'bloomctl: update activation service is unavailable\n' >&2; return 1; }
+            "$BLOOM_UPDATE_ACTIVATE" "$2"
             ;;
         confirm)
             [ "$#" -eq 1 ] || { usage; return 2; }

@@ -8,9 +8,11 @@ JQ="${BLOOM_JQ_BIN:-$SD_ROOT/.tmp_update/bin/jq}"
 STATE="$UPDATE_ROOT/state.json"
 KNOWN_GOOD="$UPDATE_ROOT/known-good.json"
 MAX_BOOT_ATTEMPTS="${BLOOM_UPDATE_MAX_BOOT_ATTEMPTS:-3}"
+VERSION_FILE="${BLOOM_VERSION_FILE:-$SD_ROOT/.tmp_update/onionVersion/version.txt}"
 
 fail() { printf 'bloom-update-state: %s\n' "$*" >&2; exit 1; }
 safe_version() { case "$1" in ''|*[!A-Za-z0-9._+-]*) return 1 ;; *) return 0 ;; esac; }
+normalize_version() { printf '%s' "$1" | sed 's/^v//'; }
 
 atomic_json() {
     destination="$1"
@@ -34,6 +36,34 @@ case "${1:-}" in
     status)
         [ "$#" -eq 1 ] || fail "status takes no arguments"
         if [ -f "$STATE" ] && [ ! -L "$STATE" ]; then "$JQ" -c . "$STATE"; else printf '%s\n' '{"schema":1,"phase":"idle"}'; fi
+        ;;
+    bootstrap)
+        [ "$#" -eq 2 ] || fail "bootstrap expects VERSION"
+        version="$2"
+        safe_version "$version" || fail "version is unsafe"
+        [ ! -e "$KNOWN_GOOD" ] || fail "known-good release already exists"
+        if [ -f "$STATE" ]; then
+            [ ! -L "$STATE" ] && [ "$(read_field "$STATE" '.phase')" = idle ] || fail "update state is not idle"
+        fi
+        [ -r "$VERSION_FILE" ] && [ ! -L "$VERSION_FILE" ] || fail "installed version is unavailable"
+        installed=""
+        IFS= read -r installed <"$VERSION_FILE" || [ -n "$installed" ] || fail "installed version is unavailable"
+        [ "$(normalize_version "$installed")" = "$(normalize_version "$version")" ] || fail "installed version does not match baseline"
+        staged="$UPDATE_ROOT/staged/$version"
+        candidate="$UPDATE_ROOT/candidates/$version"
+        [ -d "$staged" ] && [ ! -L "$staged" ] || fail "staged version is unavailable"
+        [ -d "$candidate" ] && [ ! -L "$candidate" ] || fail "prepared candidate is unavailable"
+        [ -f "$candidate/miyoo/app/MainUI" ] && \
+            [ -f "$candidate/miyoo/app/.tmp_update/onion.pak" ] && \
+            [ -f "$candidate/RetroArch/retroarch.pak" ] || fail "prepared candidate is incomplete"
+        [ -x "$VERIFY" ] || fail "update verifier is unavailable"
+        filename="$(read_field "$staged/verified.json" '.filename')" || fail "staged record is invalid"
+        verified="$($VERIFY "$staged/manifest.json" "$staged/manifest.sig" "$staged/$filename")" || fail "staged version failed verification"
+        [ "$(printf '%s\n' "$verified" | "$JQ" -er '.version')" = "$version" ] || fail "staged version does not match"
+        "$JQ" -cn --arg version "$version" --arg path "$staged" \
+            '{schema:1,version:$version,path:$path,previous_version:null}' | atomic_json "$KNOWN_GOOD"
+        "$JQ" -cn --arg version "$version" '{schema:1,phase:"known_good",version:$version,bootstrap:true}' | atomic_json "$STATE"
+        "$JQ" -c . "$STATE"
         ;;
     arm)
         [ "$#" -eq 2 ] || fail "arm expects VERSION"
@@ -133,5 +163,5 @@ case "${1:-}" in
         [ -d "$path" ] && [ ! -L "$path" ] || fail "known-good payload is unavailable"
         "$JQ" -c --arg status recovery_available '. + {status:$status}' "$KNOWN_GOOD"
         ;;
-    *) fail "expected {status|arm VERSION|activation-start VERSION SNAPSHOT_ID|rollback-start VERSION SNAPSHOT_ID|boot-attempt|mark-good VERSION|recovery}" ;;
+    *) fail "expected {status|bootstrap VERSION|arm VERSION|activation-start VERSION SNAPSHOT_ID|rollback-start VERSION SNAPSHOT_ID|boot-attempt|mark-good VERSION|recovery}" ;;
 esac

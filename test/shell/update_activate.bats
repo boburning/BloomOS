@@ -63,6 +63,23 @@ teardown() { teardown_bloom_fixture; }
     [ ! -e "$BLOOM_TEST_ROOT/calls" ]
 }
 
+@test "bloomctl exposes guarded activation after arm" {
+    mock_activate="$BLOOM_TEST_ROOT/mock-activate"
+    cat >"$mock_activate" <<'EOF'
+#!/bin/sh
+printf '%s\n' "$*" >"$BLOOM_TEST_ROOT/activate-call"
+EOF
+    chmod +x "$mock_activate"
+
+    run env \
+        BLOOM_UPDATE_ACTIVATE_BIN="$mock_activate" \
+        BLOOM_TEST_ROOT="$BLOOM_TEST_ROOT" \
+        /workspace/static/build/.tmp_update/bin/bloomctl update activate 1.2.3
+
+    [ "$status" -eq 0 ]
+    grep -Fx '1.2.3' "$BLOOM_TEST_ROOT/activate-call"
+}
+
 @test "refuses to replace any pending installer" {
     mkdir -p "$SDCARD/miyoo/app"
     printf 'existing\n' >"$SDCARD/miyoo/app/MainUI"
