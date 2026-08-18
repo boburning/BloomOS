@@ -68,12 +68,21 @@ the release ZIP, `manifest.json`, and `manifest.sig` to the SD card, then run
 `bloomctl update prepare VERSION` to validate the archive inventory and create
 an isolated candidate. After reviewing `bloomctl update status`,
 `bloomctl update arm VERSION` records the prepared, re-verified payload as
-pending. Activation is an internal installer operation rather than a public
-CLI shortcut. On the first installed boot, BloomOS records a durable validation
+pending. `bloomctl update activate VERSION` then creates the pre-update save
+snapshot and publishes the installer trigger; it refuses to proceed unless a
+retained signed known-good release is available. On the first installed boot,
+BloomOS records a durable validation
 attempt. After checking the device, `bloomctl update confirm` verifies that the
 installed and pending versions match, runs structured health checks, and only
 then promotes the release to known-good. These commands do not extract directly
 over the running OS.
+
+A fresh installation must retain its own signed release triplet. After staging
+and preparing that same version, `bloomctl update bootstrap VERSION` verifies
+that the signed payload exactly matches the running version, requires healthy
+system state, and records it as the initial known-good rollback source. The
+operation fails once any known-good release exists and cannot be used to bless
+a different running payload.
 
 If the attempt limit enters `recovery_required`, `bloomctl update rollback`
 rebuilds the last known-good candidate from its retained signed release triplet,

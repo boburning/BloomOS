@@ -51,6 +51,29 @@ PY
     printf '%s' "$output" | grep -F '"phase":"idle"'
 }
 
+@test "bootstraps the installed signed release as the initial known good" {
+    stage_release 1.2.3
+    printf 'v1.2.3' >"$SDCARD/.tmp_update/onionVersion/version.txt"
+
+    run "$STATE" bootstrap 1.2.3
+
+    [ "$status" -eq 0 ]
+    printf '%s' "$output" | grep -F '"phase":"known_good"'
+    printf '%s' "$output" | grep -F '"bootstrap":true'
+    grep -F '"version":"1.2.3"' "$BLOOM_UPDATE_ROOT/known-good.json"
+}
+
+@test "bootstrap rejects a payload that is not the installed release" {
+    stage_release 1.2.3
+    printf 'v1.2.2' >"$SDCARD/.tmp_update/onionVersion/version.txt"
+
+    run "$STATE" bootstrap 1.2.3
+
+    [ "$status" -eq 1 ]
+    printf '%s' "$output" | grep -F 'installed version does not match baseline'
+    [ ! -e "$BLOOM_UPDATE_ROOT/known-good.json" ]
+}
+
 @test "promotes a verified staged release to known good" {
     stage_release 1.2.3
 

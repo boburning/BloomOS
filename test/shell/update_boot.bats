@@ -79,3 +79,14 @@ teardown() { teardown_bloom_fixture; }
     [ "$reconcile_line" -gt "$installer_line" ]
     [ "$reconcile_line" -lt $((installer_line + 10)) ]
 }
+
+@test "confirm accepts the release version file without a trailing newline" {
+    export PHASE=testing
+    export PENDING=1.2.3
+    printf 'v1.2.3' >"$BLOOM_VERSION_FILE"
+
+    run "$BOOT" confirm
+
+    [ "$status" -eq 0 ]
+    grep -Fx 'mark-good:1.2.3' "$BLOOM_TEST_ROOT/calls"
+}

@@ -258,6 +258,11 @@ known-good only through an explicit successful-health promotion. Until then,
 the prior known-good staged payload and its signed metadata remain addressable
 as the recovery source.
 
+The initial installation establishes that chain with `bloomctl update
+bootstrap VERSION`. Bootstrap accepts only a signed, staged, prepared release
+whose version matches the running system, requires structured health checks,
+and refuses to replace an existing known-good record.
+
 Candidate preparation re-verifies the staged archive, rejects links, traversal,
 and content outside the `miyoo` and `RetroArch` release roots, then extracts to
 an isolated versioned candidate directory. Required installer payloads are
@@ -267,7 +272,10 @@ operation writes into the live OS tree.
 Activation requires an armed candidate and a retained prior known-good release.
 It creates a verified pre-update save snapshot, durably records
 `activation_pending`, and publishes package payloads before atomically renaming
-the boot installer trigger into place. Existing installer state is never
+the boot installer trigger into place. The guarded operation is exposed as
+`bloomctl update activate VERSION` so an offline or future network update
+orchestrator can complete the state transition without bypassing these checks.
+Existing installer state is never
 overwritten. The next boot is the first counted validation attempt.
 
 The installed runtime reconciles that durable state immediately after the
