@@ -84,7 +84,7 @@ it from reviewed inputs; binary hashes alone are never accepted as historical
 source evidence.
 
 `build/legacy-manifest.json` decomposes the remaining inherited runtime and
-package payload into 153 independently resolvable components covering 2,517
+package payload into 152 independently resolvable components covering 2,511
 files. Each entry locks its path, file count, checkout-normalized byte count,
 and canonical tree SHA-256 while leaving unknown source, revision, license, and build recipe
 explicitly `null`. Its resolution must eventually become either a complete
@@ -182,6 +182,13 @@ all supported device models. The inherited core remains subject to the same
 source-to-binary provenance backlog as the other shipped libretro cores; this
 decision avoids maintaining a second ScummVM executable and private codec
 bundle without reducing supported game access.
+
+The optional 240pSuite shortcut is excluded. Its inherited SNES ROM and
+package-private Snes9x core do not have an exact source-to-binary mapping, and
+the historical SNES build-kit fork carries unattributed host executables rather
+than a reproducible source toolchain. Bloom retains ordinary SNES support. A
+future calibration app must rebuild both its test payload and every required
+host tool from reviewed source, or use independently authored Bloom patterns.
 
 The pinned SearchFilter and DinguxCommander repositories remain a separate
 legacy blocker: neither upstream repository declares a project license. Their

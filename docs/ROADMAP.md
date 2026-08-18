@@ -143,6 +143,10 @@ merged; it does not imply unrecorded hardware certification.
   deterministic source build using statically linked, commit-pinned zlib,
   libxml2, and libzip; retain the pinned upstream DejaVu fonts and use Bloom's
   shared SDL runtime.
+- [x] Exclude the optional 240pSuite shortcut rather than ship an inherited ROM
+  and dedicated SNES core without exact source-to-binary evidence. Upstream's
+  GPL source remains a candidate once its complete host toolchain can be rebuilt
+  from attributable source; Bloom retains normal SNES support meanwhile.
 
 The hardware-sensitive BloomOS 1.0/1.1 implementation queue is at its
 physical-validation boundary. Source-provenance replacement work can continue
