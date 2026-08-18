@@ -28,3 +28,6 @@
 [submodule "third-party/tremor"]
 	path = third-party/tremor
 	url = https://gitlab.xiph.org/xiph/tremor.git
+[submodule "third-party/scummvm"]
+	path = third-party/scummvm
+	url = https://github.com/XK9274/scummvm-miyoo.git
