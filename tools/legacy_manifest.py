@@ -47,6 +47,12 @@ PIXELREADER_ID = "app-ebook-reader--pixelreader"
 PIXELREADER_SOURCE = "https://github.com/ealang/pixel-reader"
 PIXELREADER_REVISION = "762ed8ee40bf24fc05af1b0df1a95d30acd56b5b"
 PIXELREADER_BINARY_SHA256 = "08d7aa1f9a259becff7b8d3ef15a8bf296bda90dd74e15cf0d734c7229b04974"
+SHARED_LIBRARIES_ID = "runtime-shared-libraries"
+SHARED_LIBRARY_HASHES = {
+    "libSDL_rotozoom.so": "6fd48052173aecb8e6b65c005c9e1c8027dc2fc6173f964703ee066762870a3a",
+    "libsqlite3.so": "9e61ae98e776671f6a0cb5bd76faccdb78d61d4b5b2254ffd5bf0cb44d172bfa",
+    "libsqlite3.so.0": "9e61ae98e776671f6a0cb5bd76faccdb78d61d4b5b2254ffd5bf0cb44d172bfa",
+}
 BATTERY_MONITOR_ID = "app-battery-monitor"
 BATTERY_MONITOR_PACKAGE_ROOT = pathlib.PurePosixPath("App/BatteryMonitorUI")
 BATTERY_MONITOR_SOURCE_ROOT = pathlib.PurePosixPath("src/batteryMonitorUI")
@@ -439,6 +445,27 @@ def is_source_built_pixelreader(repository, component):
     )
 
 
+def is_source_built_shared_libraries(repository, component):
+    if component["id"] != SHARED_LIBRARIES_ID or component["kind"] != "runtime":
+        return False
+    root = repository / component["path"]
+    files = {
+        path.relative_to(root).as_posix(): path
+        for path in root.rglob("*")
+        if path.is_file()
+    }
+    if set(files) != set(SHARED_LIBRARY_HASHES):
+        return False
+    for relative, expected_hash in SHARED_LIBRARY_HASHES.items():
+        if hashlib.sha256(files[relative].read_bytes()).hexdigest() != expected_hash:
+            return False
+    build_script = canonical_file(repository / "build/shared-libs/build.sh")
+    return all(
+        marker in build_script
+        for marker in (b"include/sqlite3/sqlite3.c", b"include/SDL/SDL_rotozoom.c", b"--build-id=none")
+    )
+
+
 def annotate_bloom_replacements(repository, manifest):
     count = 0
     for component in manifest["components"]:
@@ -498,6 +525,14 @@ def annotate_bloom_replacements(repository, manifest):
                 "source_revision": PIXELREADER_REVISION,
                 "license": "GPL-3.0-only AND Zlib AND MIT AND BSD-3-Clause AND LicenseRef-DejaVu-Fonts",
                 "build_recipe": "build/pixelreader/build.sh",
+                "resolution": "source-build",
+            })
+        elif is_source_built_shared_libraries(repository, component):
+            component.update({
+                "source": BLOOM_SOURCE,
+                "source_revision": "release-commit",
+                "license": "LicenseRef-SQLite-Public-Domain AND LGPL-2.0-or-later",
+                "build_recipe": "build/shared-libs/build.sh",
                 "resolution": "source-build",
             })
         else:

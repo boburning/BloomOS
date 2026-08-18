@@ -162,6 +162,10 @@ merged; it does not imply unrecorded hardware certification.
   upstream project has no authoritative license; retain per-system ROM cache
   refresh through Bloom's licensed shell implementation and require a clean-room
   or authoritatively licensed replacement before global search returns.
+- [x] Replace the shared application-library bundle with deterministic builds
+  of SQLite 3.39.0 and SDL_rotozoom from repository source; remove unused
+  `libgfx` and the unused unlicensed keyboard wrapper, and rely on the Miyoo
+  runtime layer instead of duplicating its `libpng` and `libshmvar` binaries.
 
 The hardware-sensitive BloomOS 1.0/1.1 implementation queue is at its
 physical-validation boundary. Source-provenance replacement work can continue

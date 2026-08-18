@@ -82,7 +82,7 @@ it from reviewed inputs; binary hashes alone are never accepted as historical
 source evidence.
 
 `build/legacy-manifest.json` decomposes the remaining inherited runtime and
-package payload into 147 independently resolvable components covering 2,181
+package payload into 147 independently resolvable components covering 2,177
 files. Each entry locks its path, file count, checkout-normalized byte count,
 and canonical tree SHA-256 while leaving unknown source, revision, license, and build recipe
 explicitly `null`. Its resolution must eventually become either a complete
@@ -102,9 +102,10 @@ definitions, and optional empty marker files. Those trees are
 unchanged from the pinned Onion baseline and are recorded as GPL-3.0-only
 source assemblies through the repository Makefile. This attribution applies
 only to the wrapper files; it does not confer provenance on the emulator/core
-binaries they select. Seven additional packages have complete Bloom replacement
-records. The remaining three components are shared runtime trees that still
-require component-specific evidence, source replacement, or exclusion.
+binaries they select. Eight additional package or runtime components have
+complete Bloom replacement records. The remaining two components are the
+`.tmp_update` and Miyoo runtime trees, which still require component-specific
+evidence, source replacement, or exclusion.
 
 The FFplay package no longer ships its unreferenced inherited controls video.
 That optional sample entered the Onion tree without license metadata and was

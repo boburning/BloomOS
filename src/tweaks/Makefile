@@ -4,7 +4,7 @@ include ../common/config.mk
 
 TARGET = tweaks
 CFLAGS := $(CFLAGS) -D_DEFAULT_SOURCE -DHAS_AUDIO
-LDFLAGS := $(LDFLAGS) -lSDL -lSDL_ttf -lSDL_image -lSDL_mixer -lSDL_rotozoom -pthread -lkbinput
+LDFLAGS := $(LDFLAGS) -lSDL -lSDL_ttf -lSDL_image -lSDL_mixer -lSDL_rotozoom -pthread
 
 include ../common/commands.mk
 include ../common/recipes.mk

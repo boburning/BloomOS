@@ -370,3 +370,38 @@ assert component["build_recipe"] == "build/pixelreader/build.sh"
 PY
     [ "$status" -eq 0 ]
 }
+
+@test "verified source-built shared libraries receive composite provenance" {
+    manifest="$BATS_TEST_TMPDIR/legacy-manifest.json"
+    cp /workspace/build/legacy-manifest.json "$manifest"
+    python3 - "$manifest" <<'PY'
+import json
+import sys
+path = sys.argv[1]
+data = json.load(open(path, encoding="utf-8"))
+component = next(item for item in data["components"] if item["id"] == "runtime-shared-libraries")
+for field in ("source", "source_revision", "license", "build_recipe"):
+    component[field] = None
+component["resolution"] = "replace-source-build-or-exclude"
+with open(path, "w", encoding="utf-8", newline="\n") as stream:
+    json.dump(data, stream, ensure_ascii=False, indent=2)
+    stream.write("\n")
+PY
+
+    run python3 /workspace/tools/legacy_manifest.py annotate-bloom-replacements \
+        --repository /workspace --manifest "$manifest"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == "legacy manifest annotated: 1 Bloom source replacements" ]]
+    run python3 - "$manifest" <<'PY'
+import json
+import sys
+components = {item["id"]: item for item in json.load(open(sys.argv[1], encoding="utf-8"))["components"]}
+component = components["runtime-shared-libraries"]
+assert component["resolution"] == "source-build"
+assert component["source"] == "https://github.com/boburning/BloomOS"
+assert component["license"] == "LicenseRef-SQLite-Public-Domain AND LGPL-2.0-or-later"
+assert component["build_recipe"] == "build/shared-libs/build.sh"
+PY
+    [ "$status" -eq 0 ]
+}
