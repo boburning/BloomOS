@@ -65,6 +65,7 @@
 
     [ "$status" -ne 0 ]
     [[ "$output" == *"stale or non-canonical"* ]]
+    [[ "$output" == *"app-demo: changed file_count, byte_count, tree_sha256"* ]]
 }
 
 @test "only UTF-8 Onion script wrappers receive source provenance" {

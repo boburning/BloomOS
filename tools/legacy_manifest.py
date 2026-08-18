@@ -146,6 +146,32 @@ def canonical(value):
     return json.dumps(value, ensure_ascii=False, indent=2, sort_keys=False) + "\n"
 
 
+def manifest_differences(current, generated):
+    """Describe component inventory drift without dumping payload contents."""
+    differences = []
+    current_components = {
+        item.get("id"): item
+        for item in current.get("components", [])
+        if isinstance(item, dict) and isinstance(item.get("id"), str)
+    }
+    generated_components = {item["id"]: item for item in generated["components"]}
+    for identifier in sorted(set(current_components) | set(generated_components)):
+        previous = current_components.get(identifier)
+        replacement = generated_components.get(identifier)
+        if previous is None:
+            differences.append(f"{identifier}: added component")
+            continue
+        if replacement is None:
+            differences.append(f"{identifier}: removed component")
+            continue
+        changed = [field for field in replacement if previous.get(field) != replacement.get(field)]
+        if changed:
+            differences.append(f"{identifier}: changed {', '.join(changed)}")
+    if not differences and current != generated:
+        differences.append("manifest formatting or top-level metadata differs")
+    return differences
+
+
 def apply_annotations(generated, current):
     existing = current.get("components")
     if not isinstance(existing, list):
@@ -574,7 +600,8 @@ def main():
         if args.command == "create":
             args.manifest.write_text(rendered, encoding="utf-8", newline="\n")
         elif current != rendered:
-            raise ValueError("legacy manifest is stale or non-canonical")
+            detail = "; ".join(manifest_differences(parsed, generated))
+            raise ValueError(f"legacy manifest is stale or non-canonical: {detail}")
         print(f"legacy manifest {args.command}: {len(generated['components'])} components")
     except (OSError, UnicodeError, ValueError, json.JSONDecodeError) as error:
         print(str(error), file=sys.stderr)
