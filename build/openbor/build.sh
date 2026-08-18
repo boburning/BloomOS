@@ -8,7 +8,7 @@ sdl_source_dir="$work_dir/sdl2-source"
 sdl_build_dir="$work_dir/sdl2"
 sdl_install_dir="$work_dir/sdl2-install"
 codec_install_dir="$work_dir/codecs-install"
-package_dir="$repository_root/static/packages/RApp/Game engine - Open Beats of Rage/RApp/OpenBOR"
+package_dir="${OPENBOR_PACKAGE_DIR:-$repository_root/static/packages/RApp/Game engine - Open Beats of Rage/RApp/OpenBOR}"
 
 openbor_revision=b00efbc7752cb55709dfc9fdfdfc7cfe78ddfb90
 sdl_revision=b424665e0899769b200231ba943353a5fee1b6b6

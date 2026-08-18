@@ -39,19 +39,6 @@
         "/workspace/static/packages/App/Battery Monitor/App/BatteryMonitorUI/res/DejaVu_LICENSE.txt"
 }
 
-@test "Fake-08 standalone is source-pinned and license-complete" {
-    lock=/workspace/build/dependencies.lock
-    package="/workspace/static/packages/RApp/PICO-8 (Fake8 standalone)/RApp/PICO"
-
-    grep -F 'version = "0.0.2.19"' "$lock"
-    grep -F 'source_revision = "18a1c8ab686f87f00a418add448ebe872b87869a"' "$lock"
-    grep -F 'binary_sha256 = "e3d5f948413d181b98ae8b0883a72938fac38ea9013ae587fffee384a1a0f9b4"' "$lock"
-    [ "$(sha256sum "$package/FAKE08" | cut -d' ' -f1)" = \
-        "e3d5f948413d181b98ae8b0883a72938fac38ea9013ae587fffee384a1a0f9b4" ]
-    cmp /workspace/third-party/fake-08/LICENSE.MD "$package/LICENSE.MD"
-    grep -F 'cd $(THIRD_PARTY_DIR)/fake-08 && make miyoomini' /workspace/Makefile
-}
-
 @test "OpenBOR standalone is source-pinned and license-complete" {
     lock=/workspace/build/dependencies.lock
     package="/workspace/static/packages/RApp/Game engine - Open Beats of Rage/RApp/OpenBOR"
@@ -67,29 +54,6 @@
     grep -F '## libogg' "$package/LICENSE.MD"
     grep -F '## Tremor' "$package/LICENSE.MD"
     grep -F './build/openbor/build.sh' /workspace/Makefile
-}
-
-@test "PCSX standalone and private SDL are source-pinned and reproducible" {
-    lock=/workspace/build/dependencies.lock
-    package="/workspace/static/packages/RApp/Sony - PlayStation (PCSX standalone)/RApp/PCSX-ReARMed"
-
-    grep -F 'source_revision = "8987ee208f057b59a35815f4e6a805935faf2fc8"' "$lock"
-    grep -F 'sdl_revision = "0e0919585f2f809471ba45bdc16624ef4e887bc0"' "$lock"
-    grep -F 'binary_sha256 = "ab0a2048b2b54aa357cc172e94ef6a611a35c571853155bcef5f27d962f66da4"' "$lock"
-    grep -F 'sdl_sha256 = "8fef9e7d38dfce315fd1c9c7dee78a6926228eaf4dbbe42b26e069c8f511b4a5"' "$lock"
-    [ "$(sha256sum "$package/pcsx" | cut -d' ' -f1)" = \
-        "ab0a2048b2b54aa357cc172e94ef6a611a35c571853155bcef5f27d962f66da4" ]
-    [ "$(sha256sum "$package/lib/libSDL-1.2.so.0" | cut -d' ' -f1)" = \
-        "8fef9e7d38dfce315fd1c9c7dee78a6926228eaf4dbbe42b26e069c8f511b4a5" ]
-    grep -F '## PCSX-ReARMed' "$package/LICENSE.MD"
-    grep -F '## SDL 1.2' "$package/LICENSE.MD"
-    grep -F '## BloomOS and Onion package wrappers' "$package/LICENSE.MD"
-    cmp -s /workspace/third-party/pcsx_rearmed/frontend/320240/skin/background.png \
-        "$package/skin/background.png"
-    [ ! -e "$package/pcsx-fromMiyoo" ]
-    [ ! -e "$package/cheatpops.db" ]
-    [ ! -e "$package/.pcsx/memcards" ]
-    grep -F './build/pcsx/build.sh' /workspace/Makefile
 }
 
 @test "PixelReader and private data libraries are source-pinned and reproducible" {

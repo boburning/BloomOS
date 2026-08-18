@@ -7,9 +7,6 @@
 [submodule "third-party/dropbear"]
 	path = third-party/dropbear
 	url = https://github.com/mkj/dropbear.git
-[submodule "third-party/fake-08"]
-	path = third-party/fake-08
-	url = https://github.com/jtothebell/fake-08.git
 [submodule "third-party/openbor"]
 	path = third-party/openbor
 	url = https://github.com/DCurrent/openbor.git
@@ -22,12 +19,6 @@
 [submodule "third-party/tremor"]
 	path = third-party/tremor
 	url = https://gitlab.xiph.org/xiph/tremor.git
-[submodule "third-party/pcsx_rearmed"]
-	path = third-party/pcsx_rearmed
-	url = https://github.com/notaz/pcsx_rearmed.git
-[submodule "third-party/SDL-1.2"]
-	path = third-party/SDL-1.2
-	url = https://github.com/shauninman/SDL-1.2.git
 [submodule "third-party/pixel-reader"]
 	path = third-party/pixel-reader
 	url = https://github.com/ealang/pixel-reader.git

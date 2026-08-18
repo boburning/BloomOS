@@ -59,7 +59,7 @@ include ./src/common/commands.mk
 
 ###########################################################
 
-.PHONY: all version core apps external shared-libs openbor pcsx pixelreader release unsigned-release package-release package-release-unsigned sign-release clean deepclean git-clean with-toolchain lib test test-shell rebuild-shell-test-image
+.PHONY: all version core apps external shared-libs openbor pixelreader release unsigned-release package-release package-release-unsigned sign-release clean deepclean git-clean with-toolchain lib test test-shell rebuild-shell-test-image
 
 all: dist
 
@@ -203,22 +203,16 @@ external: $(CACHE)/.setup $(THIRD_PARTY_DIR)/RetroArch-patch/bin/retroarch_miyoo
 	@$(BUILD_DIR)/.tmp_update/script/build_ext_cache.sh $(BUILD_DIR)/RetroArch/.retroarch
 # Other
 	@$(ECHO) $(COLOR_BLUE)"\n-- Build OpenBOR standalone"$(COLOR_NORMAL)
-	@./build/openbor/build.sh
-	@$(ECHO) $(COLOR_BLUE)"\n-- Build PCSX-ReARMed standalone"$(COLOR_NORMAL)
-	@./build/pcsx/build.sh
+	@OPENBOR_PACKAGE_DIR="$(PACKAGES_RAPP_DEST)/Game engine - Open Beats of Rage/RApp/OpenBOR" \
+		./build/openbor/build.sh
 	@$(ECHO) $(COLOR_BLUE)"\n-- Build PixelReader"$(COLOR_NORMAL)
-	@./build/pixelreader/build.sh
-	@$(ECHO) $(COLOR_BLUE)"\n-- Build Fake-08 standalone"$(COLOR_NORMAL)
-	@cd $(THIRD_PARTY_DIR)/fake-08 && make miyoomini && \
-		cp ./platform/miyoomini/FAKE08 "$(PACKAGES_RAPP_DEST)/PICO-8 (Fake8 standalone)/RApp/PICO/FAKE08"
+	@PIXELREADER_PACKAGE_DIR="$(PACKAGES_APP_DEST)/Ebook Reader (PixelReader)/App/PixelReader" \
+		./build/pixelreader/build.sh
 	@$(ECHO) $(COLOR_BLUE)"\n-- Build Terminal"$(COLOR_NORMAL)
 	@cd $(THIRD_PARTY_DIR)/Terminal && make && cp ./st "$(BIN_DIR)"
 
 openbor:
 	@./build/openbor/build.sh
-
-pcsx:
-	@./build/pcsx/build.sh
 
 pixelreader:
 	@./build/pixelreader/build.sh
@@ -304,7 +298,6 @@ deepclean: clean
 	@rm -rf $(CACHE)
 	@cd $(THIRD_PARTY_DIR)/RetroArch-patch && make clean
 	@cd $(THIRD_PARTY_DIR)/Terminal && make clean
-	@cd $(THIRD_PARTY_DIR)/fake-08 && make clean-miyoomini
 
 dev: clean
 	@$(MAKE_DEV)

@@ -23,26 +23,10 @@ ONION_SOURCE = "https://github.com/OnionUI/Onion"
 ONION_WRAPPER_SUFFIXES = (".json", ".miyoocmd", ".notfound", ".sh")
 BLOOM_SOURCE = "https://github.com/boburning/BloomOS"
 ADVANCEMENU_ID = "app-advancemenu--alternative-frontend"
-FAKE08_ID = "rapp-pico-8--fake8-standalone"
-FAKE08_SOURCE = "https://github.com/jtothebell/fake-08"
-FAKE08_REVISION = "18a1c8ab686f87f00a418add448ebe872b87869a"
-FAKE08_LICENSE = "MIT AND Zlib AND ISC AND WTFPL AND LicenseRef-LodePNG AND CC-BY-SA-3.0 AND LicenseRef-Public-Domain"
-FAKE08_BINARY_SHA256 = "e3d5f948413d181b98ae8b0883a72938fac38ea9013ae587fffee384a1a0f9b4"
 OPENBOR_ID = "rapp-game-engine---open-beats-of-rage"
 OPENBOR_SOURCE = "https://github.com/DCurrent/openbor"
 OPENBOR_REVISION = "b00efbc7752cb55709dfc9fdfdfc7cfe78ddfb90"
 OPENBOR_BINARY_SHA256 = "41ef99389f37a943eb67b9f50cb2847ff00c646f0f3d63598611684053b19c57"
-PCSX_ID = "rapp-sony---playstation--pcsx-standalone"
-PCSX_SOURCE = "https://github.com/notaz/pcsx_rearmed"
-PCSX_REVISION = "8987ee208f057b59a35815f4e6a805935faf2fc8"
-PCSX_BINARY_HASHES = {
-    "RApp/PCSX-ReARMed/pcsx": "ab0a2048b2b54aa357cc172e94ef6a611a35c571853155bcef5f27d962f66da4",
-    "RApp/PCSX-ReARMed/lib/libSDL-1.2.so.0": "8fef9e7d38dfce315fd1c9c7dee78a6926228eaf4dbbe42b26e069c8f511b4a5",
-    "RApp/PCSX-ReARMed/plugins/gpu_peops.so": "3db58855017dde72c5a7709cc41f150ee81a378991520cdd142bccc2ee7794c6",
-    "RApp/PCSX-ReARMed/plugins/gpu_senquack.so": "8a048109df58b6f64e0804d3acc715657cc61f74522f2bce78fb7beed2fa5ea1",
-    "RApp/PCSX-ReARMed/plugins/gpu_unai.so": "b14030ec1b3714b36347ab93d90fb2c36032ad367f6b83d49930f11d6571f480",
-    "RApp/PCSX-ReARMed/plugins/spunull.so": "3971303c3311a59ecc4179fbda05d32f8ef1a034e2ed0ef86c5de5bc420b5d92",
-}
 PIXELREADER_ID = "app-ebook-reader--pixelreader"
 PIXELREADER_SOURCE = "https://github.com/ealang/pixel-reader"
 PIXELREADER_REVISION = "762ed8ee40bf24fc05af1b0df1a95d30acd56b5b"
@@ -324,35 +308,6 @@ def is_bloom_advancemenu_wrapper(repository, component):
     return b"cd $sysdir/bin/adv" in launch and b"./run_advmenu.sh" in launch
 
 
-def is_source_built_fake08(repository, component):
-    if component["id"] != FAKE08_ID or component["kind"] != "package":
-        return False
-    root = repository / component["path"]
-    expected_files = {
-        "RApp/PICO/FAKE08",
-        "RApp/PICO/LICENSE.MD",
-        "RApp/PICO/config.json",
-        "RApp/PICO/cpufreq.sh",
-        "RApp/PICO/launch.sh",
-        "Roms/PICO/.gitkeep",
-    }
-    files = {
-        path.relative_to(root).as_posix(): path
-        for path in root.rglob("*")
-        if path.is_file()
-    }
-    if set(files) != expected_files:
-        return False
-    binary_hash = hashlib.sha256(files["RApp/PICO/FAKE08"].read_bytes()).hexdigest()
-    if binary_hash != FAKE08_BINARY_SHA256:
-        return False
-    source_license = repository / "third-party/fake-08/LICENSE.MD"
-    if not source_license.is_file() or canonical_file(source_license) != canonical_file(files["RApp/PICO/LICENSE.MD"]):
-        return False
-    makefile = canonical_file(repository / "Makefile")
-    return b"cd $(THIRD_PARTY_DIR)/fake-08 && make miyoomini" in makefile
-
-
 def is_source_built_openbor(repository, component):
     if component["id"] != OPENBOR_ID or component["kind"] != "package":
         return False
@@ -376,50 +331,6 @@ def is_source_built_openbor(repository, component):
         return False
     build_script = canonical_file(repository / "build/openbor/build.sh")
     return b"third-party/openbor" in build_script and b"openbor-mmiyoo.patch" in build_script
-
-
-def is_source_built_pcsx(repository, component):
-    if component["id"] != PCSX_ID or component["kind"] != "package":
-        return False
-    root = repository / component["path"]
-    expected_files = {
-        "RApp/PCSX-ReARMed/.pcsx/pcsx.cfg",
-        "RApp/PCSX-ReARMed/LICENSE.MD",
-        "RApp/PCSX-ReARMed/config.json",
-        "RApp/PCSX-ReARMed/cpufreq.sh",
-        "RApp/PCSX-ReARMed/launch.sh",
-        "RApp/PCSX-ReARMed/lib/libSDL-1.2.so.0",
-        "RApp/PCSX-ReARMed/pcsx",
-        "RApp/PCSX-ReARMed/plugins/gpu_peops.so",
-        "RApp/PCSX-ReARMed/plugins/gpu_senquack.so",
-        "RApp/PCSX-ReARMed/plugins/gpu_unai.so",
-        "RApp/PCSX-ReARMed/plugins/spunull.so",
-        "RApp/PCSX-ReARMed/skin/background.png",
-        "RApp/PCSX-ReARMed/skin/font.png",
-        "RApp/PCSX-ReARMed/skin/readme.txt",
-        "RApp/PCSX-ReARMed/skin/selector.png",
-        "RApp/PCSX-ReARMed/skin/skin.txt",
-        "RApp/PCSX-ReARMed/uninstall.sh",
-        "Roms/PS/.gitkeep",
-    }
-    files = {
-        path.relative_to(root).as_posix(): path
-        for path in root.rglob("*")
-        if path.is_file()
-    }
-    if set(files) != expected_files:
-        return False
-    for relative, expected_hash in PCSX_BINARY_HASHES.items():
-        if hashlib.sha256(files[relative].read_bytes()).hexdigest() != expected_hash:
-            return False
-    source_skin = repository / "third-party/pcsx_rearmed/frontend/320240/skin"
-    for relative in expected_files:
-        if "/skin/" not in relative:
-            continue
-        if canonical_file(files[relative]) != canonical_file(source_skin / pathlib.PurePosixPath(relative).name):
-            return False
-    build_script = canonical_file(repository / "build/pcsx/build.sh")
-    return b"third-party/pcsx_rearmed" in build_script and b"third-party/SDL-1.2" in build_script
 
 
 def is_source_built_pixelreader(repository, component):
@@ -521,28 +432,12 @@ def annotate_bloom_replacements(repository, manifest):
                 "build_recipe": "Makefile",
                 "resolution": "source-build",
             })
-        elif is_source_built_fake08(repository, component):
-            component.update({
-                "source": FAKE08_SOURCE,
-                "source_revision": FAKE08_REVISION,
-                "license": FAKE08_LICENSE,
-                "build_recipe": "Makefile",
-                "resolution": "source-build",
-            })
         elif is_source_built_openbor(repository, component):
             component.update({
                 "source": OPENBOR_SOURCE,
                 "source_revision": OPENBOR_REVISION,
                 "license": "BSD-3-Clause",
                 "build_recipe": "build/openbor/build.sh",
-                "resolution": "source-build",
-            })
-        elif is_source_built_pcsx(repository, component):
-            component.update({
-                "source": PCSX_SOURCE,
-                "source_revision": PCSX_REVISION,
-                "license": "GPL-2.0-or-later AND BSD-3-Clause AND LicenseRef-Public-Domain AND LGPL-2.1-or-later AND GPL-3.0-only",
-                "build_recipe": "build/pcsx/build.sh",
                 "resolution": "source-build",
             })
         elif is_source_built_pixelreader(repository, component):

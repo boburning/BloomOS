@@ -8,7 +8,7 @@ pixel_source="$work/pixel-reader-src"
 zlib_source="$work/zlib-src"
 libxml2_source="$work/libxml2-src"
 libzip_source="$work/libzip-src"
-package="$root/static/packages/App/Ebook Reader (PixelReader)/App/PixelReader"
+package="${PIXELREADER_PACKAGE_DIR:-$root/static/packages/App/Ebook Reader (PixelReader)/App/PixelReader}"
 cross=arm-linux-gnueabihf-
 jobs=${JOBS:-$(getconf _NPROCESSORS_ONLN 2>/dev/null || printf '1')}
 

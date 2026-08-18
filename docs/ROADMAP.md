@@ -118,9 +118,9 @@ merged; it does not imply unrecorded hardware certification.
   desktop executables, archives, scripts, and sample media without complete
   component provenance
   ([PR #85](https://github.com/boburning/BloomOS/pull/85)).
-- [x] Replace the inherited Fake-08 standalone executable with a deterministic
-  ARM build from pinned upstream source and ship its complete composite license
-  ([PR #86](https://github.com/boburning/BloomOS/pull/86)).
+- [x] Exclude the redundant Fake-08 standalone package after proving a
+  reproducible replacement, retaining PICO-8 support through the existing
+  Fake-08 libretro integration.
 - [x] Exclude the optional standalone GnGeo package whose exact released source
   was documented as lost, while retaining Neo Geo support through libretro
   ([PR #87](https://github.com/boburning/BloomOS/pull/87)).
@@ -129,20 +129,22 @@ merged; it does not imply unrecorded hardware certification.
   source-built codec dependencies; defer device behavior to the hardware matrix
   ([PR #88](https://github.com/boburning/BloomOS/pull/88)).
 - [x] Exclude the optional native PICO-8 wrapper whose support payload has no
-  declared upstream license, while retaining both source-built Fake-08 options
+  declared upstream license, while retaining the Fake-08 libretro option
   and leaving a clean path for a future independently licensed native wrapper
   ([PR #89](https://github.com/boburning/BloomOS/pull/89)).
 - [x] Exclude the redundant inherited ScummVM standalone package and retain the
   existing ScummVM libretro integration, avoiding a second engine and codec
   stack while core source-to-binary provenance remains in the shared backlog.
-- [x] Replace PCSX-ReARMed standalone, its external GPU plugins, package-private
-  Miyoo SDL, and menu skin with deterministic builds/assets from pinned source;
-  remove the unreachable stock fallback, unattributed cheat database, and
-  pre-created memory cards.
+- [x] Exclude the redundant PCSX-ReARMed standalone package, private SDL,
+  plugins, and assets while retaining PlayStation support through the existing
+  PCSX-ReARMed libretro integration.
 - [x] Replace PixelReader and its six inherited private shared libraries with a
   deterministic source build using statically linked, commit-pinned zlib,
   libxml2, and libzip; retain the pinned upstream DejaVu fonts and use Bloom's
   shared SDL runtime.
+- [x] Keep the inherited provenance inventory immutable during release builds
+  and route the OpenBOR and PixelReader replacements directly
+  into package staging so the signed payload contains the rebuilt artifacts.
 - [x] Exclude the optional 240pSuite shortcut rather than ship an inherited ROM
   and dedicated SNES core without exact source-to-binary evidence. Upstream's
   GPL source remains a candidate once its complete host toolchain can be rebuilt
@@ -221,13 +223,12 @@ guessed from inherited bytes.
   after replacing Arkhip with DejaVu Sans 2.37.
 - [ ] Validate Quick Guide page readability and shortcut accuracy on V2, Plus,
   and Flip after replacing the inherited artwork.
-- [ ] Validate source-built Fake-08 startup, audio, input, save behavior, and
+- [ ] Validate Fake-08 libretro startup, audio, input, save behavior, and
   representative cartridge compatibility on V2, Plus, and Flip.
 - [ ] Validate source-built OpenBOR startup, rendering, audio, input mappings,
   PAK loading, and save behavior on V2, Plus, and Flip.
-- [ ] Validate source-built PCSX-ReARMed standalone startup, rendering, audio,
-  input, memory-card creation, save states, and representative games on V2,
-  Plus, and Flip.
+- [ ] Validate PCSX-ReARMed libretro startup, rendering, audio, input, memory
+  cards, save states, and representative games on V2, Plus, and Flip.
 - [ ] Collect equivalent external physical evidence for original Mini V1, V3,
   and V4 before claiming stable support for those revisions.
 
