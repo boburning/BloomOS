@@ -32,14 +32,14 @@
       "id": "runtime-shared-libraries",
       "kind": "runtime",
       "path": "lib",
-      "file_count": 7,
-      "byte_count": 11649963,
-      "tree_sha256": "fb54e148298ff8e5b13584b54b8fcc62aef4f1917aa543ac076d2f3a6dbae6d6",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "file_count": 3,
+      "byte_count": 1529464,
+      "tree_sha256": "acb064058f5838e552b8965188ef9c684c03b63763efaa3a3b2050c3538d19b9",
+      "source": "https://github.com/boburning/BloomOS",
+      "source_revision": "release-commit",
+      "license": "LicenseRef-SQLite-Public-Domain AND LGPL-2.0-or-later",
+      "build_recipe": "build/shared-libs/build.sh",
+      "resolution": "source-build"
     },
     {
       "id": "package-common",

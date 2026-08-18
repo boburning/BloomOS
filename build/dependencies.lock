@@ -115,6 +115,16 @@ license = "GPL-3.0-only AND Zlib AND MIT AND BSD-3-Clause AND LicenseRef-DejaVu-
 build_recipe = "build/pixelreader/build.sh"
 binary_sha256 = "08d7aa1f9a259becff7b8d3ef15a8bf296bda90dd74e15cf0d734c7229b04974"
 
+[shared_runtime_libraries]
+sqlite_version = "3.39.0"
+sqlite_source = "include/sqlite3/sqlite3.c"
+sqlite_license = "LicenseRef-SQLite-Public-Domain"
+sqlite_sha256 = "9e61ae98e776671f6a0cb5bd76faccdb78d61d4b5b2254ffd5bf0cb44d172bfa"
+rotozoom_source = "include/SDL/SDL_rotozoom.c"
+rotozoom_license = "LGPL-2.0-or-later"
+rotozoom_sha256 = "6fd48052173aecb8e6b65c005c9e1c8027dc2fc6173f964703ee066762870a3a"
+build_recipe = "build/shared-libs/build.sh"
+
 [fonts.dejavu_sans]
 version = "2.37"
 source = "https://github.com/dejavu-fonts/dejavu-fonts/releases/tag/version_2_37"
@@ -138,10 +148,10 @@ legacy_channels = ["development"]
 manifest = "build/legacy-manifest.json"
 schema = 1
 component_count = 147
-file_count = 2181
-byte_count = 343951989
-source_build_components = 144
-unresolved_components = 3
+file_count = 2177
+byte_count = 333831490
+source_build_components = 145
+unresolved_components = 2
 inherited_baseline = "07505ea58c7bba698d6b9220ff43946a43cac76b"
 
 [themes]

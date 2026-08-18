@@ -59,7 +59,7 @@ include ./src/common/commands.mk
 
 ###########################################################
 
-.PHONY: all version core apps external openbor pcsx pixelreader release unsigned-release package-release package-release-unsigned sign-release clean deepclean git-clean with-toolchain lib test test-shell rebuild-shell-test-image
+.PHONY: all version core apps external shared-libs openbor pcsx pixelreader release unsigned-release package-release package-release-unsigned sign-release clean deepclean git-clean with-toolchain lib test test-shell rebuild-shell-test-image
 
 all: dist
 
@@ -120,7 +120,10 @@ $(CACHE)/.setup:
 build: core apps external
 	@$(ECHO) $(PRINT_DONE)
 
-core: $(CACHE)/.setup
+shared-libs:
+	@./build/shared-libs/build.sh
+
+core: $(CACHE)/.setup shared-libs
 	@$(ECHO) $(PRINT_RECIPE)
 # Build the developer SSH server with public-key authentication enabled.
 	@$(ROOT_DIR)/tools/build-dropbear.sh $(BIN_DIR)/bloom-dropbearmulti

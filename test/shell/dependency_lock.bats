@@ -115,6 +115,24 @@
     ! grep -F 'libatomic.so.1' /workspace/Makefile | grep -F 'http'
 }
 
+@test "shared application libraries are source-built and checksum-locked" {
+    lock=/workspace/build/dependencies.lock
+
+    grep -F 'sqlite_version = "3.39.0"' "$lock"
+    grep -F 'sqlite_license = "LicenseRef-SQLite-Public-Domain"' "$lock"
+    grep -F 'rotozoom_license = "LGPL-2.0-or-later"' "$lock"
+    [ "$(sha256sum /workspace/lib/libsqlite3.so | cut -d' ' -f1)" = \
+        "9e61ae98e776671f6a0cb5bd76faccdb78d61d4b5b2254ffd5bf0cb44d172bfa" ]
+    cmp /workspace/lib/libsqlite3.so /workspace/lib/libsqlite3.so.0
+    [ "$(sha256sum /workspace/lib/libSDL_rotozoom.so | cut -d' ' -f1)" = \
+        "6fd48052173aecb8e6b65c005c9e1c8027dc2fc6173f964703ee066762870a3a" ]
+    [ ! -e /workspace/lib/libgfx.so ]
+    [ ! -e /workspace/lib/libkbinput.so ]
+    [ ! -e /workspace/lib/libpng.so ]
+    [ ! -e /workspace/lib/libshmvar.so ]
+    grep -F './build/shared-libs/build.sh' /workspace/Makefile
+}
+
 @test "release tooling does not resolve a moving upstream latest release" {
     run grep -R -E 'api\.github\.com/.*/releases/latest|Onion-latest\.zip|create_patch\.sh' \
         /workspace/Makefile /workspace/.github /workspace/tools
