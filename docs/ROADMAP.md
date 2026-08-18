@@ -155,7 +155,8 @@ guessed from inherited bytes.
 - [x] Inspect and power on the Miyoo Mini Plus after the 2026-08-17 remote
   reboot command completed shutdown but did not return to Wi-Fi; the recovered
   persistent log proves swapoff, read-only FAT remount, and recursive unmount
-  completed before the device required manual power-on.
+  completed before the device required manual power-on
+  ([PR #90](https://github.com/boburning/BloomOS/pull/90)).
 - [ ] Diagnose the Plus reboot/power-control handoff without changing the
   proven clean SD-card quiescing path; repeat reboot only while local recovery
   is available.
