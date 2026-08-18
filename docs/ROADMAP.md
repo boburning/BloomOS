@@ -150,6 +150,10 @@ merged; it does not imply unrecorded hardware certification.
 - [x] Exclude DinguxCommander and its package because the upstream repository
   has no declared project license; require an independently implemented or
   authoritatively licensed file manager before restoring the feature.
+- [x] Exclude the inherited GMU package, whose GPL application is bundled with
+  an incompletely mapped frontend, decoder/codec stack, themes, and sample
+  music; require an all-source, license-complete replacement before restoring
+  music playback.
 
 The hardware-sensitive BloomOS 1.0/1.1 implementation queue is at its
 physical-validation boundary. Source-provenance replacement work can continue

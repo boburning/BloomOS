@@ -185,19 +185,6 @@
       "resolution": "source-build"
     },
     {
-      "id": "app-music-player--gmu",
-      "kind": "package",
-      "path": "static/packages/App/Music Player (GMU)",
-      "file_count": 76,
-      "byte_count": 9112212,
-      "tree_sha256": "d45173b9e85d8fd8be2204bed9daacc9de4a4e40a11694213e8d943ae6bea894",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
-    },
-    {
       "id": "app-onion-ota-update",
       "kind": "package",
       "path": "static/packages/App/Onion OTA update",
