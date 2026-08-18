@@ -25,7 +25,7 @@ teardown() { teardown_bloom_fixture; }
     grep -F 'remount_ro_final=' "$SHUTDOWN_HELPER"
     grep -F 'umount_final=' "$SHUTDOWN_HELPER"
     grep -F 'SHUTDOWN_LOG_ENABLED=1' "$SHUTDOWN_HELPER"
-    grep -F 'shutdown_mode=${1:-poweroff}' "$SHUTDOWN_HELPER"
+    grep -F 'shutdown_mode=$shutdown_mode' "$SHUTDOWN_HELPER"
 }
 
 @test "reboot falls back to the direct kernel syscall after clean unmount" {
@@ -39,8 +39,11 @@ teardown() { teardown_bloom_fixture; }
     grep -F 'reboot_command=kernel' "$SHUTDOWN_HELPER"
 }
 
-@test "detached shutdown preserves the requested reboot mode" {
-    grep -F '/usr/bin/nohup /tmp/_shutdown "${1:-}"' "$SHUTDOWN_HELPER"
+@test "detached shutdown persists the validated mode across process boundaries" {
+    grep -F "printf '%s\\n' reboot > /tmp/_shutdown.mode" "$SHUTDOWN_HELPER"
+    grep -F 'read -r shutdown_mode < /tmp/_shutdown.mode' "$SHUTDOWN_HELPER"
+    grep -F '[ "$shutdown_mode" = "reboot" ]' "$SHUTDOWN_HELPER"
+    grep -F '/usr/bin/nohup /tmp/_shutdown </dev/null' "$SHUTDOWN_HELPER"
     ! grep -F 'su root -c "/usr/bin/nohup /tmp/_shutdown' "$SHUTDOWN_HELPER"
 }
 

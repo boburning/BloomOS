@@ -60,12 +60,16 @@ run_reboot() {
 }
 
 if [ "$0" = "/tmp/_shutdown" ]; then
+	shutdown_mode=poweroff
+	if [ -f /tmp/_shutdown.mode ]; then
+		read -r shutdown_mode < /tmp/_shutdown.mode
+	fi
 	if [ -f /mnt/SDCARD/.bloom-dev ]; then
 		SHUTDOWN_LOG_ENABLED=1
 		: > /appconfigs/bloom-shutdown.log
 	fi
 	shutdown_log "shutdown_started=1"
-	shutdown_log "shutdown_mode=${1:-poweroff}"
+	shutdown_log "shutdown_mode=$shutdown_mode"
 
 	killall -9 main # mandatory to avoid the suppression of .tmp_update !
 	killall -9 updater
@@ -110,7 +114,7 @@ if [ "$0" = "/tmp/_shutdown" ]; then
 	# mount >> /appconfigs/shutdown.log
 	#################################
 
-	if [ "$1" = "-r" ]; then
+	if [ "$shutdown_mode" = "reboot" ]; then
 		run_reboot
 	else
 		if [ "$(cat /tmp/deviceModel)" = "283" ]; then
@@ -129,9 +133,11 @@ fi
 # run the script totally detached from current shell
 pgrep -f /tmp/_shutdown || (
 	set -m
-	# BusyBox su -c discards positional arguments supplied after the command.
-	# Launch directly so the requested reboot mode reaches the detached helper.
-	/usr/bin/nohup /tmp/_shutdown "${1:-}" </dev/null >/dev/null 2>&1 &
+	case "${1:-}" in
+		-r) printf '%s\n' reboot > /tmp/_shutdown.mode ;;
+		*) printf '%s\n' poweroff > /tmp/_shutdown.mode ;;
+	esac
+	/usr/bin/nohup /tmp/_shutdown </dev/null >/dev/null 2>&1 &
 )
 while true; do
 	sleep 10
