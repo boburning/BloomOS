@@ -2,7 +2,9 @@
 set -u
 
 SD_ROOT="${BLOOM_SD_ROOT:-/mnt/SDCARD}"
-UPDATE_ROOT="${BLOOM_UPDATE_ROOT:-$SD_ROOT/.bloom/update}"
+DEFAULT_UPDATE_ROOT="$SD_ROOT/.bloom/update"
+UPDATE_ROOT="${BLOOM_UPDATE_ROOT:-$DEFAULT_UPDATE_ROOT}"
+LEGACY_UPDATE_ROOT="$SD_ROOT/.tmp_update/update"
 VERIFY="${BLOOM_UPDATE_VERIFY_BIN:-$SD_ROOT/.tmp_update/bin/bloom-update-verify}"
 JQ="${BLOOM_JQ_BIN:-$SD_ROOT/.tmp_update/bin/jq}"
 STATE="$UPDATE_ROOT/state.json"
@@ -26,9 +28,22 @@ atomic_json() {
 
 read_field() { "$JQ" -er "$2" "$1" 2>/dev/null; }
 
+adopt_legacy_update_root() {
+    [ "$UPDATE_ROOT" = "$DEFAULT_UPDATE_ROOT" ] || return 0
+    [ -e "$LEGACY_UPDATE_ROOT" ] || return 0
+    [ -d "$LEGACY_UPDATE_ROOT" ] && [ ! -L "$LEGACY_UPDATE_ROOT" ] || fail "legacy update root is unsafe"
+    [ ! -e "$UPDATE_ROOT" ] || fail "legacy and durable update roots both exist"
+    durable_parent="${UPDATE_ROOT%/*}"
+    mkdir -p "$durable_parent" || fail "cannot create durable state root"
+    [ -d "$durable_parent" ] && [ ! -L "$durable_parent" ] || fail "durable state root is unsafe"
+    mv "$LEGACY_UPDATE_ROOT" "$UPDATE_ROOT" || fail "cannot adopt legacy update state"
+    sync
+}
+
 [ -x "$JQ" ] || fail "jq is unavailable"
 case "$MAX_BOOT_ATTEMPTS" in ''|*[!0-9]*) fail "boot-attempt limit is invalid" ;; esac
 [ "$MAX_BOOT_ATTEMPTS" -gt 0 ] || fail "boot-attempt limit is invalid"
+adopt_legacy_update_root
 mkdir -p "$UPDATE_ROOT" || fail "cannot create update root"
 [ ! -L "$UPDATE_ROOT" ] || fail "update root is unsafe"
 
