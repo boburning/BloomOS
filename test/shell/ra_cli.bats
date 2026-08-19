@@ -7,7 +7,7 @@ setup() {
     ra="$BLOOM_TEST_ROOT/bloom-ra"
     cat >"$ra" <<'EOF'
 #!/bin/sh
-printf '%s\n%s\n%s\n' "$1" "${2:-}" "${3:-}" >"$BLOOM_TEST_ROOT/ra-args"
+printf '%s\n%s\n%s\n%s\n' "$1" "${2:-}" "${3:-}" "${LD_LIBRARY_PATH:-}" >"$BLOOM_TEST_ROOT/ra-args"
 case "$1" in
     status) printf '%s\n' '{"schema":1,"service":"bloom-ra","enabled":false,"state":"not_configured"}' ;;
     game) printf '%s\n' "{\"schema\":1,\"game_id\":\"$2\",\"status\":\"unindexed\",\"has_ra_badge\":false}" ;;
@@ -61,6 +61,7 @@ teardown() {
     printf '%s' "$output" | grep -F '"state":"not_configured"'
     [ "$(sed -n '1p' "$BLOOM_TEST_ROOT/ra-args")" = status ]
     [ -z "$(sed -n '2p' "$BLOOM_TEST_ROOT/ra-args")" ]
+    [ "$(sed -n '4p' "$BLOOM_TEST_ROOT/ra-args")" = "/mnt/SDCARD/.tmp_update/lib" ]
 }
 
 @test "achievements game preserves a validated identity as one argument" {

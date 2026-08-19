@@ -25,6 +25,11 @@ path() {
     printf '%s%s' "$BLOOM_ROOT" "$1"
 }
 
+run_ra() {
+    library_dir="$(path /mnt/SDCARD/.tmp_update/lib)"
+    LD_LIBRARY_PATH="$library_dir${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" "$BLOOM_RA" "$@"
+}
+
 read_first_line() {
     target="$(path "$1")"
     if [ -r "$target" ]; then
@@ -139,7 +144,7 @@ retroachievements_health() {
         printf '%s' '{"schema":1,"healthy":false,"error":"unavailable"}'
         return 1
     fi
-    raw_ra=$("$BLOOM_RA" status 2>/dev/null)
+    raw_ra=$(run_ra status 2>/dev/null)
     ra_status=$?
     enabled=$(printf '%s' "$raw_ra" | sed -n 's/.*"enabled":\(true\|false\).*/\1/p')
     state=$(printf '%s' "$raw_ra" | sed -n 's/.*"state":"\([a-z_]*\)".*/\1/p')
@@ -256,23 +261,23 @@ achievements_command() {
     case "${1:-}" in
         status)
             [ "$#" -eq 1 ] || { usage; return 2; }
-            "$BLOOM_RA" status
+            run_ra status
             ;;
         game)
             [ "$#" -eq 2 ] || { usage; return 2; }
-            "$BLOOM_RA" game "$2"
+            run_ra game "$2"
             ;;
         collection)
             [ "$#" -eq 1 ] || { usage; return 2; }
-            "$BLOOM_RA" collection
+            run_ra collection
             ;;
         cores)
             [ "$#" -eq 1 ] || { usage; return 2; }
-            "$BLOOM_RA" cores
+            run_ra cores
             ;;
         account)
             [ "$#" -eq 2 ] && [ "$2" = status ] || { usage; return 2; }
-            "$BLOOM_RA" account status
+            run_ra account status
             ;;
         proxy)
             [ "$#" -eq 2 ] || { usage; return 2; }
@@ -287,12 +292,12 @@ achievements_command() {
             case "${2:-}" in
                 --changed|--all|--status|--cancel)
                     [ "$#" -eq 2 ] || { usage; return 2; }
-                    "$BLOOM_RA" scan "$2"
+                    run_ra scan "$2"
                     ;;
                 --system)
                     [ "$#" -eq 3 ] || { usage; return 2; }
                     case "$3" in ''|*[!A-Z0-9]*) usage; return 2 ;; esac
-                    "$BLOOM_RA" scan --system "$3"
+                    run_ra scan --system "$3"
                     ;;
                 *) usage; return 2 ;;
             esac
