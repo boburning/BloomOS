@@ -242,12 +242,18 @@ guessed from inherited bytes.
   pass consecutive structured health checks, preserve four verified save
   snapshots and both NDS ROMs, remove the retired DraStic package, and promote
   the candidate to known-good.
+- [x] Validate bounded automatic rollback on Plus with signed candidate
+  `4210275f` over retained known-good `65a9384a`. Deliberately leave two healthy
+  candidate boots unconfirmed, then verify that the third attempt publishes the
+  retained signed payload and reboots without physical input. The recovered
+  boot reported `operation: rollback`, preserved verified pre-update and
+  pre-rollback snapshots, passed structured health, and confirmed `65a9384a`
+  with `recovered_from: 4210275f`.
 - [ ] Repeat the applicable reboot/poweroff paths on Mini V2 and Flip. Confirm
   that ordinary USB cable insertion still enters charging-only mode while an
   explicit reboot bypasses it exactly once on each applicable model.
-- [ ] Run bounded-failure and automatic rollback tests on Plus, then repeat
-  applicable signed update activation, boot confirmation, failure, and
-  rollback coverage on Mini V2 and Flip.
+- [ ] Repeat applicable signed update activation, boot confirmation,
+  bounded-failure, and automatic rollback coverage on Mini V2 and Flip.
 - [ ] Complete visual/audio/input/SRAM/save-state and longer soak coverage on
   maintainer-owned V2, Plus, and Flip hardware.
 - [ ] Validate Battery Monitor text fit and readability on V2, Plus, and Flip
