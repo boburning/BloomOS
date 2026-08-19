@@ -12,6 +12,7 @@
 #include <sys/stat.h>
 
 static _Thread_local char active_hash_root[PATH_MAX];
+static void set_error(char *error, size_t size, const char *format, ...);
 
 static bool path_in_active_root(const char *path, char resolved[PATH_MAX])
 {
@@ -65,7 +66,62 @@ int bloom_ra_get_game(const char *game_id, BloomRaGame *game, char *error, size_
     game->game_id = game_id;
     game->status = "unindexed";
     game->has_ra_badge = 0;
+    game->ra_game_id = 0;
+    game->official_set = 0;
     game->achievement_count = 0;
+    return 0;
+}
+
+int bloom_ra_get_game_from_database(sqlite3 *database, const char *game_id, BloomRaGame *game, char *error,
+                                    size_t error_size)
+{
+    if (database == NULL)
+        return bloom_ra_get_game(game_id, game, error, error_size);
+    if (bloom_ra_get_game(game_id, game, error, error_size) != 0)
+        return -1;
+    sqlite3_stmt *statement = NULL;
+    int result = sqlite3_prepare_v2(
+        database,
+        "SELECT status,ra_game_id,official_set,achievement_count FROM library_games WHERE bloom_game_id=?1", -1,
+        &statement, NULL);
+    if (result != SQLITE_OK) {
+        set_error(error, error_size, "catalog query failed");
+        return -1;
+    }
+    sqlite3_bind_text(statement, 1, game_id, -1, SQLITE_STATIC);
+    int step = sqlite3_step(statement);
+    if (step == SQLITE_ROW) {
+        const unsigned char *status = sqlite3_column_text(statement, 0);
+        if (status == NULL) {
+            sqlite3_finalize(statement);
+            set_error(error, error_size, "catalog row is invalid");
+            return -1;
+        }
+        static const char *known_statuses[] = {"identified", "unmatched", "unsupported_system", "hash_error",
+                                               "deferred", "stale"};
+        game->status = NULL;
+        for (size_t i = 0; i < sizeof(known_statuses) / sizeof(known_statuses[0]); i++)
+            if (strcmp((const char *)status, known_statuses[i]) == 0)
+                game->status = known_statuses[i];
+        if (game->status == NULL) {
+            sqlite3_finalize(statement);
+            set_error(error, error_size, "catalog status is invalid");
+            return -1;
+        }
+        if (sqlite3_column_type(statement, 1) == SQLITE_INTEGER)
+            game->ra_game_id = sqlite3_column_int(statement, 1);
+        if (sqlite3_column_type(statement, 2) == SQLITE_INTEGER)
+            game->official_set = sqlite3_column_int(statement, 2) == 1;
+        if (sqlite3_column_type(statement, 3) == SQLITE_INTEGER)
+            game->achievement_count = (unsigned long)sqlite3_column_int(statement, 3);
+        game->has_ra_badge = game->ra_game_id > 0 && game->official_set && game->achievement_count > 0;
+    }
+    else if (step != SQLITE_DONE) {
+        sqlite3_finalize(statement);
+        set_error(error, error_size, "catalog query failed");
+        return -1;
+    }
+    sqlite3_finalize(statement);
     return 0;
 }
 

@@ -5,6 +5,7 @@
 #include <chrono>
 #include <filesystem>
 extern "C" {
+#include "../src/bloomRa/bloom_ra.h"
 #include "../src/bloomRa/bloom_ra_database.h"
 }
 
@@ -94,6 +95,47 @@ TEST(BloomRaDatabaseOpenTest, ConfiguresDurableDatabaseAndRejectsSymlinkBoundary
     EXPECT_EQ(SQLITE_CANTOPEN, bloom_ra_database_open(link.c_str(), &database));
     EXPECT_EQ(nullptr, database);
     std::filesystem::remove_all(root);
+}
+
+TEST_F(BloomRaDatabaseTest, BadgeRequiresExactOfficialGameWithAchievements)
+{
+    ASSERT_EQ(SQLITE_OK, bloom_ra_database_migrate(database_));
+    const char *game_id =
+        "bloom-game-v1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    ASSERT_EQ(SQLITE_OK,
+              sqlite3_exec(database_,
+                           "INSERT INTO library_games VALUES"
+                           "('bloom-game-v1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa','gba','GBA/a.gba',1,2,5,'hash',1234,1,42,3,1,1,'identified')",
+                           nullptr, nullptr, nullptr));
+    BloomRaGame game = {};
+    char error[128] = {};
+    ASSERT_EQ(0, bloom_ra_get_game_from_database(database_, game_id, &game, error, sizeof(error))) << error;
+    EXPECT_EQ(1, game.has_ra_badge);
+    EXPECT_EQ(1234, game.ra_game_id);
+    EXPECT_EQ(42UL, game.achievement_count);
+
+    ASSERT_EQ(SQLITE_OK,
+              sqlite3_exec(database_, "UPDATE library_games SET achievement_count=0 WHERE bloom_game_id LIKE 'bloom-game-v1:%'",
+                           nullptr, nullptr, nullptr));
+    ASSERT_EQ(0, bloom_ra_get_game_from_database(database_, game_id, &game, error, sizeof(error)));
+    EXPECT_EQ(0, game.has_ra_badge);
+}
+
+TEST_F(BloomRaDatabaseTest, CachedValidBadgeSurvivesStaleCatalogStatus)
+{
+    ASSERT_EQ(SQLITE_OK, bloom_ra_database_migrate(database_));
+    const char *game_id =
+        "bloom-game-v1:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+    ASSERT_EQ(SQLITE_OK,
+              sqlite3_exec(database_,
+                           "INSERT INTO library_games VALUES"
+                           "('bloom-game-v1:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb','snes','SFC/b.sfc',1,2,3,'hash',22,1,5,3,1,1,'stale')",
+                           nullptr, nullptr, nullptr));
+    BloomRaGame game = {};
+    char error[128] = {};
+    ASSERT_EQ(0, bloom_ra_get_game_from_database(database_, game_id, &game, error, sizeof(error))) << error;
+    EXPECT_STREQ("stale", game.status);
+    EXPECT_EQ(1, game.has_ra_badge);
 }
 
 } // namespace
