@@ -207,7 +207,8 @@ merged; it does not imply unrecorded hardware certification.
   ([#128](https://github.com/boburning/BloomOS/pull/128)).
 - [x] Decompose inherited runtime scripts by command or subsystem, resolve the
   exact Onion source revision for reviewed text, and isolate the mixed scraper
-  databases as a fail-closed payload.
+  databases as a fail-closed payload
+  ([#129](https://github.com/boburning/BloomOS/pull/129)).
 - [x] Retire the inherited parallel Dropbear/SFTP binaries and the legacy SSH
   password/no-password toggles; retain only Bloom's source-built, key-only SSH
   service behind explicit developer mode and a provisioned public key.
