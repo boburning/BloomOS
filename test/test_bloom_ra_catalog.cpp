@@ -69,4 +69,25 @@ TEST_F(BloomRaCatalogTest, RefreshReplacesOnlySelectedConsoleAtomically)
     EXPECT_EQ(12, game_id);
 }
 
+TEST_F(BloomRaCatalogTest, RefreshUpdatesMetadataReferencedByIndexedLibraryRows)
+{
+    const char *initial =
+        "[{\"Title\":\"Fixture\",\"ID\":5,\"ConsoleID\":5,\"NumAchievements\":1,"
+        "\"Hashes\":[\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"]}]";
+    const char *updated =
+        "[{\"Title\":\"Fixture Updated\",\"ID\":5,\"ConsoleID\":5,\"NumAchievements\":72,"
+        "\"Hashes\":[\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"]}]";
+    ASSERT_EQ(SQLITE_OK, provider_->import_console(database_, 5, "initial", initial));
+    ASSERT_EQ(SQLITE_OK,
+              sqlite3_exec(database_,
+                           "INSERT INTO library_games VALUES('bloom-game-v1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa','gba','GBA/a.zip',1,2,5,'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',5,1,1,3,1,2,'identified')",
+                           nullptr, nullptr, nullptr));
+    ASSERT_EQ(SQLITE_OK, provider_->import_console(database_, 5, "updated", updated));
+    int game_id = 0, achievements = 0;
+    ASSERT_EQ(SQLITE_OK,
+              bloom_ra_catalog_resolve(database_, 5, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", &game_id, &achievements));
+    EXPECT_EQ(5, game_id);
+    EXPECT_EQ(72, achievements);
+}
+
 } // namespace

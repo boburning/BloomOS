@@ -53,19 +53,12 @@ static int official_import_console(sqlite3 *database, int console_id, const char
         }
         sqlite3_finalize(delete_statement);
     }
-    if (result == SQLITE_OK) {
-        sqlite3_stmt *delete_statement = NULL;
-        result = sqlite3_prepare_v2(database, "DELETE FROM ra_games WHERE ra_console_id=?1", -1, &delete_statement, NULL);
-        if (result == SQLITE_OK) {
-            sqlite3_bind_int(delete_statement, 1, console_id);
-            result = sqlite3_step(delete_statement) == SQLITE_DONE ? SQLITE_OK : sqlite3_errcode(database);
-        }
-        sqlite3_finalize(delete_statement);
-    }
     if (result == SQLITE_OK)
         result = sqlite3_prepare_v2(database,
                                     "INSERT INTO ra_games(ra_game_id,ra_console_id,title,official_set,achievement_count) "
-                                    "VALUES(?1,?2,?3,1,?4)",
+                                    "VALUES(?1,?2,?3,1,?4) ON CONFLICT(ra_game_id) DO UPDATE SET "
+                                    "ra_console_id=excluded.ra_console_id,title=excluded.title,official_set=1,"
+                                    "achievement_count=excluded.achievement_count",
                                     -1, &game_statement, NULL);
     if (result == SQLITE_OK)
         result = sqlite3_prepare_v2(database,
@@ -102,6 +95,20 @@ static int official_import_console(sqlite3 *database, int console_id, const char
     }
     sqlite3_finalize(hash_statement);
     sqlite3_finalize(game_statement);
+    if (result == SQLITE_OK) {
+        sqlite3_stmt *cleanup = NULL;
+        result = sqlite3_prepare_v2(
+            database,
+            "DELETE FROM ra_games WHERE ra_console_id=?1 "
+            "AND NOT EXISTS(SELECT 1 FROM ra_hashes h WHERE h.ra_game_id=ra_games.ra_game_id) "
+            "AND NOT EXISTS(SELECT 1 FROM library_games l WHERE l.ra_game_id=ra_games.ra_game_id)",
+            -1, &cleanup, NULL);
+        if (result == SQLITE_OK) {
+            sqlite3_bind_int(cleanup, 1, console_id);
+            result = sqlite3_step(cleanup) == SQLITE_DONE ? SQLITE_OK : sqlite3_errcode(database);
+        }
+        sqlite3_finalize(cleanup);
+    }
     if (result == SQLITE_OK && imported > 0) {
         sqlite3_stmt *state = NULL;
         result = sqlite3_prepare_v2(

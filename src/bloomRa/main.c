@@ -1,10 +1,12 @@
 #include "bloom_ra.h"
 #include "bloom_ra_account.h"
+#include "bloom_ra_catalog.h"
 #include "bloom_ra_database.h"
 #include "bloom_ra_scanner.h"
 
 #include "cjson/cJSON.h"
 
+#include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
@@ -25,6 +27,7 @@
 #define ACCOUNT_SECRET_ROOT "/appconfigs/bloom"
 #define ACCOUNT_SECRET_DIRECTORY ACCOUNT_SECRET_ROOT "/achievements"
 #define ACCOUNT_CREDENTIALS ACCOUNT_SECRET_DIRECTORY "/credentials"
+#define CATALOG_IMPORT_MAX_SIZE (32UL * 1024UL * 1024UL)
 
 typedef struct {
     const char *folder;
@@ -413,9 +416,113 @@ static int scan_command(int argc, char **argv)
     return 2;
 }
 
+static int import_catalog_console(const char *console_text, const char *revision, int installed_only)
+{
+    char *end = NULL;
+    long console_id = strtol(console_text, &end, 10);
+    if (console_text[0] == '\0' || end == NULL || *end != '\0' || console_id <= 0 || console_id > 255 ||
+        revision[0] == '\0' || strlen(revision) > 96) {
+        fprintf(stderr, "{\"schema\":1,\"error\":{\"code\":\"catalog_import_invalid\"}}\n");
+        return 1;
+    }
+    for (const unsigned char *character = (const unsigned char *)revision; *character; character++) {
+        if (!(isalnum(*character) || *character == '-' || *character == '_' || *character == '.')) {
+            fprintf(stderr, "{\"schema\":1,\"error\":{\"code\":\"catalog_import_invalid\"}}\n");
+            return 1;
+        }
+    }
+    size_t capacity = 64 * 1024;
+    size_t length = 0;
+    char *json = (char *)malloc(capacity + 1);
+    while (json != NULL && !feof(stdin)) {
+        if (length == capacity) {
+            if (capacity >= CATALOG_IMPORT_MAX_SIZE) {
+                free(json);
+                fprintf(stderr, "{\"schema\":1,\"error\":{\"code\":\"catalog_import_too_large\"}}\n");
+                return 1;
+            }
+            capacity *= 2;
+            char *expanded = (char *)realloc(json, capacity + 1);
+            if (expanded == NULL) {
+                free(json);
+                json = NULL;
+                break;
+            }
+            json = expanded;
+        }
+        length += fread(json + length, 1, capacity - length, stdin);
+        if (ferror(stdin)) {
+            free(json);
+            json = NULL;
+            break;
+        }
+    }
+    if (json == NULL || length == 0) {
+        free(json);
+        fprintf(stderr, "{\"schema\":1,\"error\":{\"code\":\"catalog_import_read_failed\"}}\n");
+        return 1;
+    }
+    json[length] = '\0';
+    sqlite3 *database = NULL;
+    int result = open_catalog(&database);
+    if (result == SQLITE_OK)
+        result = bloom_ra_official_catalog_provider()->import_console(database, (int)console_id, revision, json);
+    if (result == SQLITE_OK && installed_only)
+        result = sqlite3_exec(database,
+                              "UPDATE catalog_state SET provider='ra_connect_installed',status='stale'",
+                              NULL, NULL, NULL);
+    free(json);
+    if (database != NULL)
+        sqlite3_close(database);
+    if (result != SQLITE_OK) {
+        fprintf(stderr, "{\"schema\":1,\"error\":{\"code\":\"catalog_import_rejected\"}}\n");
+        return 1;
+    }
+    printf("{\"schema\":1,\"imported\":true,\"scope\":\"%s\",\"console_id\":%ld}\n",
+           installed_only ? "installed" : "console", console_id);
+    return 0;
+}
+
+static int print_catalog_candidates(void)
+{
+    sqlite3 *database = NULL;
+    int result = open_catalog(&database);
+    sqlite3_stmt *statement = NULL;
+    if (result == SQLITE_OK)
+        result = sqlite3_prepare_v2(
+            database,
+            "SELECT DISTINCT ra_console_id,ra_content_hash FROM library_games "
+            "WHERE ra_console_id>0 AND length(ra_content_hash)=32 ORDER BY ra_console_id,ra_content_hash",
+            -1, &statement, NULL);
+    if (result != SQLITE_OK) {
+        sqlite3_finalize(statement);
+        if (database != NULL)
+            sqlite3_close(database);
+        fprintf(stderr, "{\"schema\":1,\"error\":{\"code\":\"database_unavailable\"}}\n");
+        return 1;
+    }
+    printf("{\"schema\":1,\"candidates\":[");
+    int first = 1;
+    while ((result = sqlite3_step(statement)) == SQLITE_ROW) {
+        const char *hash = (const char *)sqlite3_column_text(statement, 1);
+        if (hash == NULL) {
+            result = SQLITE_CORRUPT;
+            break;
+        }
+        printf("%s{\"console_id\":%d,\"content_hash\":", first ? "" : ",", sqlite3_column_int(statement, 0));
+        json_string(hash);
+        printf("}");
+        first = 0;
+    }
+    printf("]}\n");
+    sqlite3_finalize(statement);
+    sqlite3_close(database);
+    return result == SQLITE_DONE ? 0 : 1;
+}
+
 static int usage(void)
 {
-    fprintf(stderr, "Usage: bloom-ra {status|game BLOOM_GAME_ID|collection|cores|account status|account configure USERNAME MODE disabled|automatic|scan --changed|--all|--system SYSTEM|--status|--cancel}\n");
+    fprintf(stderr, "Usage: bloom-ra {status|game BLOOM_GAME_ID|collection|cores|account status|account configure USERNAME MODE disabled|automatic|catalog candidates|import-console|import-installed CONSOLE REVISION|scan --changed|--all|--system SYSTEM|--status|--cancel}\n");
     return 2;
 }
 
@@ -433,6 +540,12 @@ int main(int argc, char **argv)
         return print_account_status();
     if (argc == 6 && strcmp(argv[1], "account") == 0 && strcmp(argv[2], "configure") == 0)
         return configure_account(argv[3], argv[4], argv[5]);
+    if (argc == 5 && strcmp(argv[1], "catalog") == 0 && strcmp(argv[2], "import-console") == 0)
+        return import_catalog_console(argv[3], argv[4], 0);
+    if (argc == 5 && strcmp(argv[1], "catalog") == 0 && strcmp(argv[2], "import-installed") == 0)
+        return import_catalog_console(argv[3], argv[4], 1);
+    if (argc == 3 && strcmp(argv[1], "catalog") == 0 && strcmp(argv[2], "candidates") == 0)
+        return print_catalog_candidates();
     if (argc >= 3 && strcmp(argv[1], "scan") == 0) {
         int result = scan_command(argc - 2, argv + 2);
         return result == 2 ? usage() : result;
