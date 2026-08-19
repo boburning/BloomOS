@@ -92,9 +92,9 @@ requires `.bloom-dev` and a valid developer public key; no address, password,
 private key, or accepted host fingerprint is stored in the repository.
 
 `game-smoke` is an explicitly developer-only runtime probe for GB, GBC, GBA,
-NES/FC, SNES/SFC, and PSX. It confines the supplied ROM to the matching system
-directory, creates a validated `BloomLaunchRequest`, crosses the normal Onion
-compatibility handoff through `bloom-launch`, keeps SSH
+NES/FC, SNES/SFC, PSX, and PICO-8 through Fake-08. It confines the supplied ROM
+to the matching system directory, creates a validated `BloomLaunchRequest`,
+crosses the normal Onion compatibility handoff through `bloom-launch`, keeps SSH
 alive for observation, bounds execution to 5–900 seconds, samples RetroArch's
 resident memory once per second, reports both starting and peak RSS, and fails
 if the process exits before the bound. It requests RetroArch's control-port
