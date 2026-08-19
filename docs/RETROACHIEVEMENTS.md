@@ -217,6 +217,13 @@ and [unsupported cores](https://docs.retroachievements.org/developer-docs/unsupp
 references. They remain distinct from Bloom certification: gpSP and
 PCSX-ReARMed retain `best_effort` Bloom status pending exact-binary testing,
 while no core is marked `verified` without physical evidence.
+RA-10 changes the packaged SNES default from Beetle Supafaust to current
+Snes9x and the SG-1000 default from Gearsystem to Genesis Plus GX. Both exact
+new binaries remain `untested` in Bloom policy pending device validation.
+Game Gear, Master System, Caprice32, and FBNeo default decisions remain
+explicitly deferred until their performance and ROM-set compatibility can be
+measured without weakening existing fallbacks.
+
 ## Account and secret ownership
 
 `bloom-ra` owns schema-1 enabled, username, mode, and offline-casual settings

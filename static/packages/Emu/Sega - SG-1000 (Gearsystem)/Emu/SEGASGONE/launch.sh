@@ -4,4 +4,4 @@ progdir=`dirname "$0"`
 homedir=`dirname "$1"`
 
 cd /mnt/SDCARD/RetroArch/
-HOME=/mnt/SDCARD/RetroArch/ $progdir/../../RetroArch/retroarch -v -L $progdir/../../RetroArch/.retroarch/cores/gearsystem_libretro.so "$1"
+HOME=/mnt/SDCARD/RetroArch/ $progdir/../../RetroArch/retroarch -v -L $progdir/../../RetroArch/.retroarch/cores/genesis_plus_gx_libretro.so "$1"
