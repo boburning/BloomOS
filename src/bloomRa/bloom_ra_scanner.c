@@ -13,7 +13,7 @@
 #include <strings.h>
 #include <sys/stat.h>
 
-#define BLOOM_RA_HASH_VERSION 1
+#define BLOOM_RA_HASH_VERSION 2
 
 static int unchanged(sqlite3 *database, const char *game_id, sqlite3_int64 size, sqlite3_int64 mtime, int *is_unchanged,
                      const char **status)

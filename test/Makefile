@@ -7,6 +7,10 @@ CFILES := $(CFILES) ../src/infoPanel/imagesConfig.c
 CFILES := $(CFILES) ../src/bloomSaveFlush/bloom_save_flush.c
 CFILES := $(CFILES) ../src/bloomGameId/bloom_game_id.c
 CFILES := $(CFILES) ../src/bloomRa/bloom_ra.c
+CFILES := $(CFILES) ../src/bloomRa/bloom_ra_archive.c
+CFILES := $(CFILES) ../third-party/zlib/contrib/minizip/unzip.c ../third-party/zlib/contrib/minizip/ioapi.c
+CFILES := $(CFILES) ../third-party/zlib/adler32.c ../third-party/zlib/crc32.c ../third-party/zlib/inffast.c
+CFILES := $(CFILES) ../third-party/zlib/inflate.c ../third-party/zlib/inftrees.c ../third-party/zlib/zutil.c
 CFILES := $(CFILES) ../src/bloomRa/bloom_ra_database.c
 CFILES := $(CFILES) ../src/bloomRa/bloom_ra_catalog.c
 CFILES := $(CFILES) ../src/bloomRa/bloom_ra_scanner.c
@@ -24,7 +28,8 @@ CFILES := $(CFILES) ../src/gameSwitcher/gameSwitcherIdentity.c
 CFILES := $(CFILES) ../src/gameSwitcher/gameSwitcherAchievements.c
 CFILES := $(CFILES) ../src/common/utils/udp.c
 include ../src/common/config.mk
-CFLAGS += -I../third-party/rcheevos/include -I../third-party/rcheevos/src -DRC_HASH_NO_ENCRYPTED
+CFLAGS += -I../third-party/rcheevos/include -I../third-party/rcheevos/src \
+	-I../third-party/zlib -I../third-party/zlib/contrib/minizip -DRC_HASH_NO_ENCRYPTED
 
 TARGET = test
 LDFLAGS := $(LDFLAGS) -L../lib -s -lSDL_image -lSDL -lSDL_rotozoom -lsqlite3 -lgtest -lgtest_main -lpthread
