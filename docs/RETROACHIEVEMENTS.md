@@ -413,6 +413,16 @@ Rich Presence, Hardcore, lifecycle, and save-flush probes are repeatable;
 actual unlocks require an explicit operator mode so tests cannot pollute an
 account silently.
 
+The initial RA-25 command performs a privacy-safe certification preflight:
+`bloomctl test achievements --system SYSTEM --rom-base64 DATA --core CORE`.
+It validates that the decoded ROM belongs to the selected system, derives the
+canonical Bloom GameID, queries exact local RA identification, hashes the exact
+installed core, and reports the matching Bloom policy status. It never prints
+the ROM path or title. Login, Rich Presence, Hardcore, lifecycle, save flush,
+and unlock fields remain explicitly `not_run`/`operator_required` until the
+physical vertical-slice runner can execute them truthfully; the command does
+not fabricate a pass from host evidence.
+
 No core/device is `verified` from host tests. Update and rollback preserve the
 catalog and proxy award queue. Stable completion requires the Definition of
 Done tracked in the RA-00 epic and child issues.

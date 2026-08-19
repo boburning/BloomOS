@@ -19,6 +19,7 @@ BLOOM_DIAGNOSTICS_EXPORT="${BLOOM_DIAGNOSTICS_EXPORT_BIN:-$SCRIPT_DIR/bloom-diag
 BLOOM_GAME_SMOKE="${BLOOM_GAME_SMOKE_BIN:-$SCRIPT_DIR/bloom-game-smoke}"
 BLOOM_RA="${BLOOM_RA_BIN:-$SCRIPT_DIR/bloom-ra}"
 BLOOM_RA_PROXY="${BLOOM_RA_PROXY_BIN:-$SCRIPT_DIR/bloom-ra-proxy}"
+BLOOM_RA_TEST="${BLOOM_RA_TEST_BIN:-$SCRIPT_DIR/bloom-ra-test}"
 
 path() {
     printf '%s%s' "$BLOOM_ROOT" "$1"
@@ -246,6 +247,7 @@ usage() {
     printf '       bloomctl logs export\n' >&2
     printf '       bloomctl platform capabilities\n' >&2
     printf '       bloomctl test smoke SYSTEM ROM_PATH [DURATION_SECONDS]\n' >&2
+    printf '       bloomctl test achievements --system SYSTEM --rom-base64 DATA --core CORE\n' >&2
     printf '       bloomctl achievements {status|game BLOOM_GAME_ID|collection|cores|account status|proxy status|pending|scan --changed|--all|--system SYSTEM|--status|--cancel}\n' >&2
 }
 
@@ -312,6 +314,11 @@ test_command() {
             esac
             rom_b64="$(printf '%s' "$3" | base64 | tr -d '\r\n')" || return 1
             "$BLOOM_GAME_SMOKE" "$2" "$rom_b64" "${4:-10}"
+            ;;
+        achievements)
+            [ "$#" -eq 7 ] || { usage; return 2; }
+            [ -x "$BLOOM_RA_TEST" ] || { printf 'bloomctl: achievement test service is unavailable\n' >&2; return 1; }
+            "$BLOOM_RA_TEST" "$2" "$3" "$4" "$5" "$6" "$7"
             ;;
         *) usage; return 2 ;;
     esac

@@ -1,0 +1,52 @@
+#!/usr/bin/env bats
+
+setup() {
+    export SDCARD="$BATS_TEST_TMPDIR/sd"
+    mkdir -p "$SDCARD/.tmp_update/bin" "$SDCARD/Roms/GBA" "$SDCARD/RetroArch/.retroarch/cores"
+    touch "$SDCARD/.bloom-dev" "$SDCARD/Roms/GBA/test.gba"
+    printf core >"$SDCARD/RetroArch/.retroarch/cores/gpsp_libretro.so"
+    game_id="$BATS_TEST_TMPDIR/game-id"
+    cat >"$game_id" <<'SH'
+#!/bin/sh
+printf '%s\n' 'bloom-game-v1:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
+SH
+    ra="$BATS_TEST_TMPDIR/ra"
+    core_sha=$(sha256sum "$SDCARD/RetroArch/.retroarch/cores/gpsp_libretro.so" | sed 's/[[:space:]].*//')
+    cat >"$ra" <<SH
+#!/bin/sh
+case "\$1" in
+game) printf '%s\n' '{"schema":1,"status":"identified","ra_game_id":1234}' ;;
+cores) printf '%s\n' '{"schema":1,"entries":[{"binary_sha256":"$core_sha","bloom_ra_status":"best_effort"}]}' ;;
+*) exit 2 ;;
+esac
+SH
+    chmod +x "$game_id" "$ra"
+    export BLOOM_GAME_ID_BIN="$game_id"
+    export BLOOM_RA_BIN="$ra"
+    export BLOOM_SD_ROOT="$SDCARD"
+    export TOOL=/workspace/src/bloomRaTest/bloom-ra-test
+}
+
+@test "guarded RA certification preflight reports no private ROM data" {
+    encoded=$(printf '%s' "$SDCARD/Roms/GBA/test.gba" | base64 | tr -d '\r\n')
+    run "$TOOL" --system GBA --rom-base64 "$encoded" --core gpsp
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'"identification":"pass"'* ]]
+    [[ "$output" == *'"bloom_ra_status":"best_effort"'* ]]
+    [[ "$output" == *'"unlock_test":"operator_required"'* ]]
+    [[ "$output" != *'/Roms/'* ]]
+}
+
+@test "RA certification preflight requires developer mode and confines ROMs" {
+    rm "$SDCARD/.bloom-dev"
+    encoded=$(printf '%s' "$SDCARD/Roms/GBA/test.gba" | base64 | tr -d '\r\n')
+    run "$TOOL" --system GBA --rom-base64 "$encoded" --core gpsp
+    [ "$status" -eq 1 ]
+    [[ "$output" == *'developer_mode_required'* ]]
+    touch "$SDCARD/.bloom-dev"
+    printf rom >"$BATS_TEST_TMPDIR/outside.gba"
+    encoded=$(printf '%s' "$BATS_TEST_TMPDIR/outside.gba" | base64 | tr -d '\r\n')
+    run "$TOOL" --system GBA --rom-base64 "$encoded" --core gpsp
+    [ "$status" -eq 1 ]
+    [[ "$output" == *'rom_outside_system'* ]]
+}
