@@ -87,6 +87,44 @@ static int print_game(const char *game_id)
     return 0;
 }
 
+typedef struct {
+    int first;
+} CollectionOutput;
+
+static int print_collection_item(const char *game_id, const char *system_id, void *context)
+{
+    CollectionOutput *output = context;
+    if (!output->first)
+        putchar(',');
+    output->first = 0;
+    printf("{\"game_id\":");
+    json_string(game_id);
+    printf(",\"system\":");
+    json_string(system_id);
+    putchar('}');
+    return 0;
+}
+
+static int print_collection(void)
+{
+    sqlite3 *database = NULL;
+    if (open_catalog(&database) != SQLITE_OK) {
+        fprintf(stderr, "{\"schema\":1,\"error\":{\"code\":\"database_unavailable\"}}\n");
+        return 1;
+    }
+    CollectionOutput output = {.first = 1};
+    unsigned long count = 0;
+    printf("{\"schema\":1,\"collection\":\"retroachievements\",\"items\":[");
+    int result = bloom_ra_database_collection(database, print_collection_item, &output, &count);
+    sqlite3_close(database);
+    if (result != SQLITE_OK) {
+        fprintf(stderr, "\n{\"schema\":1,\"error\":{\"code\":\"collection_lookup_failed\"}}\n");
+        return 1;
+    }
+    printf("],\"count\":%lu}\n", count);
+    return 0;
+}
+
 static int ensure_directory(const char *path)
 {
     struct stat status;
@@ -253,7 +291,7 @@ static int scan_command(int argc, char **argv)
 
 static int usage(void)
 {
-    fprintf(stderr, "Usage: bloom-ra {status|game BLOOM_GAME_ID|scan --changed|--all|--system SYSTEM|--status|--cancel}\n");
+    fprintf(stderr, "Usage: bloom-ra {status|game BLOOM_GAME_ID|collection|scan --changed|--all|--system SYSTEM|--status|--cancel}\n");
     return 2;
 }
 
@@ -263,6 +301,8 @@ int main(int argc, char **argv)
         return print_status();
     if (argc == 3 && strcmp(argv[1], "game") == 0)
         return print_game(argv[2]);
+    if (argc == 2 && strcmp(argv[1], "collection") == 0)
+        return print_collection();
     if (argc >= 3 && strcmp(argv[1], "scan") == 0) {
         int result = scan_command(argc - 2, argv + 2);
         return result == 2 ? usage() : result;

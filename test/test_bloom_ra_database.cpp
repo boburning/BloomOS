@@ -4,6 +4,8 @@
 
 #include <chrono>
 #include <filesystem>
+#include <string>
+#include <vector>
 extern "C" {
 #include "../src/bloomRa/bloom_ra.h"
 #include "../src/bloomRa/bloom_ra_database.h"
@@ -136,6 +138,33 @@ TEST_F(BloomRaDatabaseTest, CachedValidBadgeSurvivesStaleCatalogStatus)
     ASSERT_EQ(0, bloom_ra_get_game_from_database(database_, game_id, &game, error, sizeof(error))) << error;
     EXPECT_STREQ("stale", game.status);
     EXPECT_EQ(1, game.has_ra_badge);
+}
+
+static int collect_game(const char *game_id, const char *system_id, void *context)
+{
+    auto *items = static_cast<std::vector<std::string> *>(context);
+    items->push_back(std::string(system_id) + ":" + game_id);
+    return 0;
+}
+
+TEST_F(BloomRaDatabaseTest, SmartCollectionDerivesOnlyExactBadgeMembers)
+{
+    ASSERT_EQ(SQLITE_OK, bloom_ra_database_migrate(database_));
+    ASSERT_EQ(SQLITE_OK,
+              sqlite3_exec(database_,
+                           "INSERT INTO library_games VALUES"
+                           "('bloom-game-v1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa','snes','SFC/a.sfc',1,2,3,'a',10,1,5,3,1,1,'identified'),"
+                           "('bloom-game-v1:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb','gba','GBA/b.gba',1,2,5,'b',11,1,8,3,1,1,'stale'),"
+                           "('bloom-game-v1:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc','gba','GBA/c.gba',1,2,5,'c',12,0,8,3,1,1,'identified'),"
+                           "('bloom-game-v1:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd','gba','GBA/d.gba',1,2,5,'d',13,1,0,3,1,1,'identified')",
+                           nullptr, nullptr, nullptr));
+    std::vector<std::string> items;
+    unsigned long count = 0;
+    ASSERT_EQ(SQLITE_OK, bloom_ra_database_collection(database_, collect_game, &items, &count));
+    ASSERT_EQ(2UL, count);
+    ASSERT_EQ(2UL, items.size());
+    EXPECT_EQ("gba:bloom-game-v1:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", items[0]);
+    EXPECT_EQ("snes:bloom-game-v1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", items[1]);
 }
 
 } // namespace

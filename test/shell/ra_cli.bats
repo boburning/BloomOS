@@ -11,6 +11,7 @@ printf '%s\n%s\n%s\n' "$1" "${2:-}" "${3:-}" >"$BLOOM_TEST_ROOT/ra-args"
 case "$1" in
     status) printf '%s\n' '{"schema":1,"service":"bloom-ra","enabled":false,"state":"not_configured"}' ;;
     game) printf '%s\n' "{\"schema\":1,\"game_id\":\"$2\",\"status\":\"unindexed\",\"has_ra_badge\":false}" ;;
+    collection) printf '%s\n' '{"schema":1,"collection":"retroachievements","items":[],"count":0}' ;;
     scan) printf '%s\n' '{"schema":1,"processed":0,"identified":0}' ;;
     *) exit 2 ;;
 esac
@@ -57,6 +58,15 @@ teardown() {
     printf '%s' "$output" | grep -F '"status":"unindexed"'
     [ "$(sed -n '1p' "$BLOOM_TEST_ROOT/ra-args")" = game ]
     [ "$(sed -n '2p' "$BLOOM_TEST_ROOT/ra-args")" = "$game_id" ]
+}
+
+@test "achievements collection delegates to the derived local index" {
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl achievements collection
+
+    [ "$status" -eq 0 ]
+    printf '%s' "$output" | grep -F '"collection":"retroachievements"'
+    [ "$(sed -n '1p' "$BLOOM_TEST_ROOT/ra-args")" = collection ]
+    [ -z "$(sed -n '2p' "$BLOOM_TEST_ROOT/ra-args")" ]
 }
 
 @test "achievements CLI rejects unsupported and malformed command shapes" {
