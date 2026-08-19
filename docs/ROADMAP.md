@@ -134,7 +134,8 @@ merged; it does not imply unrecorded hardware certification.
   ([PR #89](https://github.com/boburning/BloomOS/pull/89)).
 - [x] Replace the inherited ScummVM executable and ten unexplained shared
   libraries with a deterministic ARM build from pinned source and pinned
-  statically linked dependencies; defer device behavior to the hardware matrix.
+  statically linked dependencies; defer device behavior to the hardware matrix
+  ([PR #126](https://github.com/boburning/BloomOS/pull/126)).
 
 The hardware-sensitive BloomOS 1.0/1.1 implementation queue is at its
 physical-validation boundary. Source-provenance replacement work can continue
