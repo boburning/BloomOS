@@ -21,6 +21,7 @@ RUNTIME_COMPONENT_ROOTS = (
 )
 RUNTIME_NESTED_COMPONENT_ROOTS = (
     ("tmp-update-bin", "static/build/.tmp_update/bin"),
+    ("tmp-update-lib", "static/build/.tmp_update/lib"),
     ("tmp-update-script", "static/build/.tmp_update/script"),
 )
 PACKAGE_KINDS = ("App", "Emu", "RApp")
