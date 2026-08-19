@@ -4,7 +4,13 @@
 
 RetroAchievements (RA) is a P0, release-defining BloomOS subsystem. This
 document is the architecture contract and ordered implementation plan. No RA
-runtime behavior is implemented by this architecture milestone.
+runtime behavior is implemented by the RA-00 architecture milestone.
+
+RA-01 adds only the offline-safe native service skeleton: versioned `status`
+and `game` responses, strict Bloom GameID validation, and `bloomctl`
+delegation. It deliberately reports `not_configured`, `not_implemented`, and
+`unindexed` rather than inventing account, catalog, or RA identity state before
+their owning issues land.
 
 RetroArch and rcheevos remain responsible for evaluating and awarding
 achievements. Bloom owns content identification, persistent metadata, account

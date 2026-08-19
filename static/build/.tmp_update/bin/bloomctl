@@ -17,6 +17,7 @@ BLOOM_SYSTEM_HEALTH="${BLOOM_SYSTEM_HEALTH_BIN:-$SCRIPT_DIR/bloom-health-system}
 BLOOM_SAVE_SNAPSHOT="${BLOOM_SAVE_SNAPSHOT_BIN:-$SCRIPT_DIR/bloom-save-snapshot}"
 BLOOM_DIAGNOSTICS_EXPORT="${BLOOM_DIAGNOSTICS_EXPORT_BIN:-$SCRIPT_DIR/bloom-diagnostics-export}"
 BLOOM_GAME_SMOKE="${BLOOM_GAME_SMOKE_BIN:-$SCRIPT_DIR/bloom-game-smoke}"
+BLOOM_RA="${BLOOM_RA_BIN:-$SCRIPT_DIR/bloom-ra}"
 
 path() {
     printf '%s%s' "$BLOOM_ROOT" "$1"
@@ -197,6 +198,22 @@ usage() {
     printf '       bloomctl logs export\n' >&2
     printf '       bloomctl platform capabilities\n' >&2
     printf '       bloomctl test smoke SYSTEM ROM_PATH [DURATION_SECONDS]\n' >&2
+    printf '       bloomctl achievements {status|game BLOOM_GAME_ID}\n' >&2
+}
+
+achievements_command() {
+    [ -x "$BLOOM_RA" ] || { printf 'bloomctl: achievements service is unavailable\n' >&2; return 1; }
+    case "${1:-}" in
+        status)
+            [ "$#" -eq 1 ] || { usage; return 2; }
+            "$BLOOM_RA" status
+            ;;
+        game)
+            [ "$#" -eq 2 ] || { usage; return 2; }
+            "$BLOOM_RA" game "$2"
+            ;;
+        *) usage; return 2 ;;
+    esac
 }
 
 test_command() {
@@ -336,6 +353,10 @@ case "${1:-}" in
     test)
         shift
         test_command "$@"
+        ;;
+    achievements)
+        shift
+        achievements_command "$@"
         ;;
     *) usage; exit 2 ;;
 esac
