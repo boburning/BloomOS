@@ -353,6 +353,11 @@ Planned work includes safe updates and rollback, optional synchronization and of
   real RA login on Mini Plus. Redacted account status, enable/mode/offline
   settings mutations, and sign-out are available through the stable CLI;
   the graphical settings surface remains pending.
+- [ ] RA-14: finish session-runner integration for structured RA launch policy.
+  `BloomLaunchRequest`, immutable transport resolution, and mode-`0600`
+  temporary append configs are implemented; the launch CLI now accepts tokens
+  only through stdin. Wiring the normal launcher/session path and physical
+  direct-session validation remain pending.
 - [ ] RA-18: ship the schema-1 `bloom-ra-proxy` adapter. Host coverage now
   proves absent-package degradation, bounded status/pending/cache translation,
   input rejection, and stop behavior without config mutation. Physical package
