@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "bloom_commit": "4a1fd9e312c1cab1333142f6e2277a5fcd76e63d",
+  "device_family": "miyoo-mini-plus",
+  "tested_at": "2026-08-19T23:44:47Z",
+  "operator": "boburning",
+  "test_scope": "session-policy-preparation-only",
+  "system": "gba",
+  "core": "gpsp_libretro.so",
+  "core_sha256": "519e19c015a27ac82ca32f026c9f0c58b407ce31e4512495de19bd1828452587",
+  "ra_game_id": 568,
+  "mode": "softcore",
+  "transport": "direct",
+  "core_certification": "best_effort",
+  "results": {
+    "exact_game_resolution": "pass",
+    "exact_core_policy_resolution": "pass",
+    "credential_stdin_handoff": "pass",
+    "session_config_mode_0600": "pass",
+    "permanent_retroarch_config_unchanged": "pass",
+    "emulator_launch": "not_tested",
+    "live_ra_login": "not_tested",
+    "rich_presence": "not_tested",
+    "achievement_unlock": "not_tested"
+  },
+  "notes": "No credential, ROM path, content hash, title, or permanent config content is recorded. This evidence does not upgrade gpSP beyond best_effort."
+}

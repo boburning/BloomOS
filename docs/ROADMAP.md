@@ -363,7 +363,10 @@ Planned work includes safe updates and rollback, optional synchronization and of
   temporary append configs are implemented; the launch CLI now accepts tokens
   only through stdin. The normal `bloom-session` path now resolves canonical
   account, exact-game, and exact-core policy into a private request copy and
-  session-only config; physical direct-session validation remains pending.
+  session-only config. Mini Plus preparation validated exact Game ID 568,
+  best-effort gpSP policy, mode-`0600` config creation, credential presence,
+  and byte-identical permanent RetroArch config; live emulator/RA validation
+  remains pending.
 - [ ] RA-18: ship the schema-1 `bloom-ra-proxy` adapter. Host coverage now
   proves absent-package degradation, bounded status/pending/cache translation,
   input rejection, and stop behavior without config mutation. Physical package
