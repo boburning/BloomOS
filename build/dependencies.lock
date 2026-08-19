@@ -30,6 +30,7 @@ info_zip = "3.0"
 "third-party/zlib" = "51b7f2abdade71cd9bb0e7a373ef2610ec6f9daf"
 "third-party/libxml2" = "02d577715e1951cf114ca4e9adaf5605156c4f4c"
 "third-party/libzip" = "f30f5290de485348442d168cd7b2eb714d1f20f9"
+"third-party/rcheevos" = "2ad0b8672f68a48148620164510b963039e49eb1"
 "third-party/RetroArch-patch/submodules/RetroArch" = "69a4f0ea1e8aaf442ae4858f2e7f2b31a1776576"
 
 [github_actions]
@@ -56,6 +57,16 @@ python3_package = "3.12.14-r0"
 package_version = "1.22.2-1"
 source_revision = "69a4f0ea1e8aaf442ae4858f2e7f2b31a1776576"
 patch_revision = "f9e959f7445d2ba0a4dd6279da41a095163767f2"
+
+[rcheevos]
+version = "12.4.0"
+source = "https://github.com/RetroAchievements/rcheevos"
+tag_object = "7572a3b86e7dac4b2f053f4a21b7793af093e97b"
+source_revision = "2ad0b8672f68a48148620164510b963039e49eb1"
+license = "MIT"
+license_file = "third-party/rcheevos/LICENSE"
+build_recipe = "src/bloomRa/Makefile"
+hash_version = 1
 
 [openbor]
 version = "4.0-b00efbc"

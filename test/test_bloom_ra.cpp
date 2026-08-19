@@ -1,5 +1,8 @@
 #include <gtest/gtest.h>
 
+#include <filesystem>
+#include <fstream>
+
 extern "C" {
 #include "../src/bloomRa/bloom_ra.h"
 }
@@ -44,4 +47,46 @@ TEST(BloomRaTest, MissingOutputFailsClosed)
     char error[128] = {};
     EXPECT_NE(0, bloom_ra_get_game(game_id, nullptr, error, sizeof(error)));
     EXPECT_STREQ("missing game output", error);
+}
+
+TEST(BloomRaTest, MapsCanonicalSystemsToAuthoritativeConsoleIds)
+{
+    uint32_t console_id = 0;
+    ASSERT_EQ(0, bloom_ra_console_id("gba", &console_id));
+    EXPECT_EQ(5U, console_id);
+    ASSERT_EQ(0, bloom_ra_console_id("psx", &console_id));
+    EXPECT_EQ(12U, console_id);
+    ASSERT_EQ(0, bloom_ra_console_id("fds", &console_id));
+    EXPECT_EQ(81U, console_id);
+    EXPECT_NE(0, bloom_ra_console_id("pico8", &console_id));
+}
+
+TEST(BloomRaTest, HashesExactRomContentAndRejectsPathsOutsideRoot)
+{
+    char directory_template[] = "/tmp/bloom-ra-XXXXXX";
+    const char *root = mkdtemp(directory_template);
+    ASSERT_NE(nullptr, root);
+    std::filesystem::path rom = std::filesystem::path(root) / "fixture.gba";
+    std::ofstream(rom, std::ios::binary) << "Bloom RA fixture v1";
+    char hash[33] = {};
+    char error[128] = {};
+    ASSERT_EQ(0, bloom_ra_hash_file("gba", rom.c_str(), root, hash, error, sizeof(error))) << error;
+    EXPECT_STREQ("5049a8174a2a65954988d899ff3a03a6", hash);
+    EXPECT_NE(0, bloom_ra_hash_file("gba", rom.c_str(), "/tmp/not-the-root", hash, error, sizeof(error)));
+    std::filesystem::remove_all(root);
+}
+
+TEST(BloomRaTest, RejectsSymlinkedRomAtBloomBoundary)
+{
+    char directory_template[] = "/tmp/bloom-ra-link-XXXXXX";
+    const char *root = mkdtemp(directory_template);
+    ASSERT_NE(nullptr, root);
+    std::filesystem::path rom = std::filesystem::path(root) / "fixture.gba";
+    std::filesystem::path link = std::filesystem::path(root) / "linked.gba";
+    std::ofstream(rom, std::ios::binary) << "Bloom RA fixture v1";
+    std::filesystem::create_symlink(rom, link);
+    char hash[33] = {};
+    char error[128] = {};
+    EXPECT_NE(0, bloom_ra_hash_file("gba", link.c_str(), root, hash, error, sizeof(error)));
+    std::filesystem::remove_all(root);
 }

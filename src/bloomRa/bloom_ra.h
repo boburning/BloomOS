@@ -2,6 +2,7 @@
 #define BLOOM_RA_H
 
 #include <stddef.h>
+#include <stdint.h>
 
 #define BLOOM_RA_SCHEMA 1
 
@@ -24,5 +25,8 @@ typedef struct {
 
 void bloom_ra_get_status(BloomRaStatus *status);
 int bloom_ra_get_game(const char *game_id, BloomRaGame *game, char *error, size_t error_size);
+int bloom_ra_console_id(const char *system_id, uint32_t *console_id);
+int bloom_ra_hash_file(const char *system_id, const char *rom_path, const char *rom_root, char hash[33], char *error,
+                       size_t error_size);
 
 #endif
