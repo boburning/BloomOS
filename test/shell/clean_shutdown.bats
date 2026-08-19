@@ -47,6 +47,16 @@ teardown() { teardown_bloom_fixture; }
     ! grep -F 'su root -c "/usr/bin/nohup /tmp/_shutdown' "$SHUTDOWN_HELPER"
 }
 
+@test "requested reboot bypasses charging-only userspace exactly once" {
+    runtime=/workspace/static/build/.tmp_update/runtime.sh
+    marker=/mnt/SDCARD/.bloom/reboot-to-system
+
+    grep -F "printf '%s\\n' 1 > $marker" "$SHUTDOWN_HELPER"
+    grep -F "[ -f $marker ]" "$runtime"
+    grep -F "rm -f $marker" "$runtime"
+    grep -F '[ $is_charging -eq 1 ] && [ $reboot_to_system -ne 1 ]' "$runtime"
+}
+
 @test "all BloomOS shutdown paths use the detached clean shutdown script" {
     grep -F 'system("shutdown")' /workspace/src/keymon/keymon.c
     grep -F 'system("shutdown; sleep 10")' /workspace/src/chargingState/chargingState.c

@@ -63,8 +63,20 @@ main() {
         is_charging=$([ $(($axp_status & 0x4)) -eq 4 ] && echo 1 || echo 0)
     fi
 
-    # Show charging animation
-    if [ $is_charging -eq 1 ]; then
+    # A clean reboot records its intent on the persistent SD card. Consume the
+    # marker before entering the charging UI so a USB-powered Plus continues
+    # into normal userspace without requiring a second physical power press.
+    # Ordinary cable insertion has no marker and retains charging-only mode.
+    reboot_to_system=0
+    if [ -f /mnt/SDCARD/.bloom/reboot-to-system ]; then
+        rm -f /mnt/SDCARD/.bloom/reboot-to-system
+        sync
+        reboot_to_system=1
+        log "Consuming one-boot reboot-to-system marker"
+    fi
+
+    # Show charging animation unless this boot is the requested reboot.
+    if [ $is_charging -eq 1 ] && [ $reboot_to_system -ne 1 ]; then
         cd $sysdir
         chargingState
     fi
