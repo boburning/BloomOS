@@ -8,6 +8,7 @@ CFILES := $(CFILES) ../src/bloomSaveFlush/bloom_save_flush.c
 CFILES := $(CFILES) ../src/bloomGameId/bloom_game_id.c
 CFILES := $(CFILES) ../src/bloomRa/bloom_ra.c
 CFILES := $(CFILES) ../src/bloomRa/bloom_ra_database.c
+CFILES := $(CFILES) ../src/bloomRa/bloom_ra_catalog.c
 CFILES := $(CFILES) ../third-party/rcheevos/src/rc_compat.c ../third-party/rcheevos/src/rhash/md5.c \
 	../third-party/rcheevos/src/rhash/hash.c ../third-party/rcheevos/src/rhash/hash_rom.c \
 	../third-party/rcheevos/src/rhash/cdreader.c ../third-party/rcheevos/src/rhash/hash_disc.c \
