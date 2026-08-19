@@ -31,3 +31,6 @@
 [submodule "third-party/libzip"]
 	path = third-party/libzip
 	url = https://github.com/nih-at/libzip.git
+[submodule "third-party/rcheevos"]
+	path = third-party/rcheevos
+	url = https://github.com/RetroAchievements/rcheevos.git

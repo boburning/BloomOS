@@ -7,6 +7,10 @@ CFILES := $(CFILES) ../src/infoPanel/imagesConfig.c
 CFILES := $(CFILES) ../src/bloomSaveFlush/bloom_save_flush.c
 CFILES := $(CFILES) ../src/bloomGameId/bloom_game_id.c
 CFILES := $(CFILES) ../src/bloomRa/bloom_ra.c
+CFILES := $(CFILES) ../third-party/rcheevos/src/rc_compat.c ../third-party/rcheevos/src/rhash/md5.c \
+	../third-party/rcheevos/src/rhash/hash.c ../third-party/rcheevos/src/rhash/hash_rom.c \
+	../third-party/rcheevos/src/rhash/cdreader.c ../third-party/rcheevos/src/rhash/hash_disc.c \
+	../third-party/rcheevos/src/rhash/hash_zip.c
 CFILES := $(CFILES) ../src/playActivity/playActivityModel.c
 CFILES := $(CFILES) ../src/playActivity/playActivityMigrations.c
 CFILES := $(CFILES) ../src/playActivity/playActivityIdentity.c
@@ -15,6 +19,7 @@ CFILES := $(CFILES) ../src/playActivity/playActivityDuration.c
 CFILES := $(CFILES) ../src/gameSwitcher/gameSwitcherIdentity.c
 CFILES := $(CFILES) ../src/common/utils/udp.c
 include ../src/common/config.mk
+CFLAGS += -I../third-party/rcheevos/include -I../third-party/rcheevos/src -DRC_HASH_NO_ENCRYPTED
 
 TARGET = test
 LDFLAGS := $(LDFLAGS) -L../lib -s -lSDL_image -lSDL -lSDL_rotozoom -lsqlite3 -lgtest -lgtest_main -lpthread

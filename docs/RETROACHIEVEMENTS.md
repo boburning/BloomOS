@@ -101,9 +101,11 @@ Wall-clock fields are informational and are not correctness inputs.
 
 ## Authoritative hashing and catalog
 
-Bloom source-builds a pinned official rcheevos release and uses its `rhash`
-interface for console-specific hashing, archive/disc handling, and supported
-CHD and playlist semantics. Bloom does not invent an MD5 convention or use
+Bloom source-builds official rcheevos v12.4.0 at commit
+`2ad0b8672f68a48148620164510b963039e49eb1` and uses its `rc_hash` interface
+for console-specific hashing and its supported archive/disc semantics. CHD
+extension detection exists upstream, but Bloom does not claim CHD support until
+a compatible reader callback and deterministic fixture pass. Bloom does not invent an MD5 convention or use
 filenames as identity. Paths remain structured data, hashing is read-only, and
 Bloom rejects traversal, links, and unsafe inputs at its boundary.
 
@@ -309,7 +311,7 @@ RA-00 inspected these current primary repositories before implementation:
 | spruceUI/spruceOS | `c7a7c92a2e1d...` | `ra_functions.sh` still centralizes modes but mutates platform config; Bloom retains a native/session-owned boundary. |
 | batocera-linux/batocera-emulationstation | `bf0eab201c63...` | `RetroAchievements.*`, `ThreadedHasher.cpp`, and theme bindings retain the exact-content hash-to-game UI pattern. |
 | ROCKNIX/distribution | `e044d3c474e4...` | Centralized platform packaging/settings reference; no Bloom credential ownership is delegated to it. |
-| RetroAchievements/rcheevos | release `v12.4.0`; develop `f1417fbf2236...` | MIT-licensed authoritative `rc_hash`/`rhash` implementation; the release must be pinned separately in RA-02. |
+| RetroAchievements/rcheevos | release `v12.4.0`, commit `2ad0b8672f68...` | MIT-licensed authoritative `rc_hash` implementation pinned and source-built by RA-02. |
 | misantronic/RAOfflineProxy | `be6898e6dc26...` | Now GPL-3.0 with Linux/Onion source and current `v1.11.1-alpha1` docs; still casual-only and not a Hardcore transport. This resolves the older no-license observation but not runtime/provenance work. |
 
 Revisions are audit evidence, not automatic dependency selections. Every
