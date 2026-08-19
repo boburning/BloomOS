@@ -226,13 +226,18 @@ guessed from inherited bytes.
 - [x] Validate clean reboot on an unplugged Plus: the device returned to SSH
   automatically, logged `shutdown_mode=reboot`, completed the read-only remount
   and recursive unmount, and accepted the normal init reboot command.
+- [x] Activate signed build `142c2922` over retained known-good `c1ccb004` on
+  Plus, boot through the real installer, confirm the exact installed version,
+  pass consecutive structured health checks, preserve four verified save
+  snapshots and both NDS ROMs, remove the retired DraStic package, and promote
+  the candidate to known-good.
 - [ ] Repeat the applicable reboot/poweroff paths on Mini V2 and Flip. Treat a
   USB-powered Plus entering its firmware charging screen as a separate charging
   mode; it requires a second power press and is not evidence of a failed clean
   shutdown.
-- [ ] Run real signed update activation, boot confirmation, bounded-failure,
-  and rollback tests on Plus, then repeat applicable coverage on Mini V2 and
-  Flip.
+- [ ] Run bounded-failure and rollback tests on Plus, then repeat applicable
+  signed update activation, boot confirmation, failure, and rollback coverage
+  on Mini V2 and Flip.
 - [ ] Complete visual/audio/input/SRAM/save-state and longer soak coverage on
   maintainer-owned V2, Plus, and Flip hardware.
 - [ ] Validate Battery Monitor text fit and readability on V2, Plus, and Flip

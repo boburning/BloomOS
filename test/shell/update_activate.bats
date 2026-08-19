@@ -111,6 +111,39 @@ EOF
     [ ! -e "$BLOOM_TEST_ROOT/calls" ]
 }
 
+@test "removes an empty regular installer residue before activation" {
+    mkdir -p "$SDCARD/miyoo/app/.tmp_update"
+    printf 'installed MainUI binary\n' >"$SDCARD/miyoo/app/MainUI"
+
+    run "$ACTIVATE" "$VERSION"
+
+    [ "$status" -eq 0 ]
+    printf '%s' "$output" | grep -F '"status":"activation_pending"'
+    [ -f "$SDCARD/miyoo/app/.tmp_update/onion.pak" ]
+}
+
+@test "refuses populated or symlinked installer residue" {
+    mkdir -p "$SDCARD/miyoo/app/.tmp_update"
+    touch "$SDCARD/miyoo/app/.tmp_update/pending"
+
+    run "$ACTIVATE" "$VERSION"
+    [ "$status" -eq 1 ]
+    printf '%s' "$output" | grep -F 'installer is already pending'
+    [ -f "$SDCARD/miyoo/app/.tmp_update/pending" ]
+    [ ! -e "$BLOOM_TEST_ROOT/calls" ]
+
+    rm -rf "$SDCARD/miyoo/app/.tmp_update"
+    mkdir -p "$BLOOM_TEST_ROOT/outside"
+    ln -s "$BLOOM_TEST_ROOT/outside" "$SDCARD/miyoo/app/.tmp_update"
+
+    run "$ACTIVATE" "$VERSION"
+    [ "$status" -eq 1 ]
+    printf '%s' "$output" | grep -F 'installer is already pending'
+    [ -L "$SDCARD/miyoo/app/.tmp_update" ]
+    [ -d "$BLOOM_TEST_ROOT/outside" ]
+    [ ! -e "$BLOOM_TEST_ROOT/calls" ]
+}
+
 @test "durable update state is outside the replaceable system directory" {
     grep -F 'UPDATE_ROOT="${BLOOM_UPDATE_ROOT:-$SD_ROOT/.bloom/update}"' \
         /workspace/static/build/.tmp_update/bin/bloom-update-stage

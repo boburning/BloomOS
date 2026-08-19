@@ -42,6 +42,9 @@ mkdir -p "$target_app" "$target_ra" || fail "cannot create activation targets"
 if [ -f "$target_app/MainUI" ] && grep -Fq '#!/bin/sh' "$target_app/MainUI"; then
     fail "an installer is already pending"
 fi
+if [ -d "$target_app/.tmp_update" ] && [ ! -L "$target_app/.tmp_update" ]; then
+    rmdir "$target_app/.tmp_update" 2>/dev/null || fail "an installer is already pending"
+fi
 [ ! -e "$target_app/.tmp_update" ] || fail "an installer is already pending"
 [ ! -e "$target_ra/retroarch.pak" ] || fail "a RetroArch installer is already pending"
 
