@@ -100,3 +100,16 @@ EOF
 
     ! grep -Fq bloom-game-smoke "$MOCK_LOG"
 }
+
+@test "game-smoke permits bounded soak durations and rejects longer runs" {
+    rom_path="/mnt/SDCARD/Roms/GB/Test Game.zip"
+    encoded="$(printf '%s' "$rom_path" | base64 | tr -d '\r\n')"
+
+    run "$DEVICE_TOOL" game-smoke test-plus GB "$rom_path" 900
+    [ "$status" -eq 0 ]
+    grep -F "bloom-game-smoke 'GB' '$encoded' '900'" "$MOCK_LOG"
+
+    run "$DEVICE_TOOL" game-smoke test-plus GB "$rom_path" 901
+    [ "$status" -eq 1 ]
+    printf '%s' "$output" | grep -F 'duration must be between 5 and 900 seconds'
+}
