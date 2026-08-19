@@ -21,12 +21,14 @@ RUNTIME_COMPONENT_ROOTS = (
 )
 RUNTIME_NESTED_COMPONENT_ROOTS = (
     ("tmp-update-bin", "static/build/.tmp_update/bin"),
+    ("tmp-update-script", "static/build/.tmp_update/script"),
 )
 PACKAGE_KINDS = ("App", "Emu", "RApp")
 ANNOTATION_FIELDS = ("source", "source_revision", "license", "build_recipe", "resolution")
 RESOLUTIONS = ("replace-source-build-or-exclude", "source-build", "excluded")
 ONION_SOURCE = "https://github.com/OnionUI/Onion"
 ONION_WRAPPER_SUFFIXES = (".json", ".miyoocmd", ".notfound", ".sh")
+ONION_RUNTIME_SUFFIXES = ("", ".sh", ".tsv")
 BLOOM_SOURCE = "https://github.com/boburning/BloomOS"
 BLOOM_RUNTIME_SOURCE_IDS = {
     "runtime-miyoo-app-config-json",
@@ -258,7 +260,10 @@ def annotate_onion_wrappers(repository, manifest):
     for component in manifest["components"]:
         if component["resolution"] != "replace-source-build-or-exclude":
             continue
-        if not is_onion_source_wrapper(repository, component):
+        if not (
+            is_onion_source_wrapper(repository, component)
+            or is_onion_runtime_source(repository, component)
+        ):
             continue
         component.update({
             "source": ONION_SOURCE,
@@ -269,6 +274,32 @@ def annotate_onion_wrappers(repository, manifest):
         })
         count += 1
     return count
+
+
+def is_onion_runtime_source(repository, component):
+    if component["kind"] != "runtime":
+        return False
+    root_path = pathlib.PurePosixPath(component["path"])
+    script_root = pathlib.PurePosixPath("static/build/.tmp_update/script")
+    if script_root not in root_path.parents:
+        return False
+    root = repository / component["path"]
+    paths = root.rglob("*") if root.is_dir() else (root,)
+    found = False
+    for path in paths:
+        if not path.is_file():
+            continue
+        found = True
+        if path.suffix.lower() not in ONION_RUNTIME_SUFFIXES:
+            return False
+        content = canonical_file(path)
+        if b"\0" in content:
+            return False
+        try:
+            content.decode("utf-8")
+        except UnicodeDecodeError:
+            return False
+    return found
 
 
 def is_bloom_battery_monitor(repository, component):

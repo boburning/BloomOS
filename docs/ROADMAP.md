@@ -205,6 +205,9 @@ merged; it does not imply unrecorded hardware certification.
   command tools independently, and remove the stale checked-in Dropbear output
   that the pinned release build regenerates
   ([#128](https://github.com/boburning/BloomOS/pull/128)).
+- [x] Decompose inherited runtime scripts by command or subsystem, resolve the
+  exact Onion source revision for reviewed text, and isolate the mixed scraper
+  databases as a fail-closed payload.
 - [x] Retire the inherited parallel Dropbear/SFTP binaries and the legacy SSH
   password/no-password toggles; retain only Bloom's source-built, key-only SSH
   service behind explicit developer mode and a provisioned public key.

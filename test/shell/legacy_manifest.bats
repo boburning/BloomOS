@@ -6,7 +6,7 @@
         --manifest /workspace/build/legacy-manifest.json
 
     [ "$status" -eq 0 ]
-    [[ "$output" == "legacy manifest validate: 229 components" ]]
+    [[ "$output" == "legacy manifest validate: 257 components" ]]
     [ ! -e "/workspace/static/packages/RApp/SNK - Neo Geo (GnGeo)" ]
     [ ! -e "/workspace/static/packages/RApp/PICO-8 (PICO-8 standalone)" ]
     [ ! -e "/workspace/static/packages/RApp/SCUMM (ScummVM standalone)" ]
@@ -41,6 +41,9 @@ assert components["runtime-tmp-update-bin-bloomctl"]["path"] == "static/build/.t
 assert components["runtime-miyoo-app-skin"]["path"] == "static/build/miyoo/app/skin"
 assert components["runtime-miyoo-lib-libpadsp-so"]["path"] == "static/build/miyoo/lib/libpadsp.so"
 assert components["runtime-tmp-update-bin-bloomctl"]["resolution"] == "source-build"
+assert components["runtime-tmp-update-script-network"]["path"] == "static/build/.tmp_update/script/network"
+assert components["runtime-tmp-update-script-network"]["source"] == "https://github.com/OnionUI/Onion"
+assert components["runtime-tmp-update-script-scraper"]["resolution"] == "replace-source-build-or-exclude"
 PY
 }
 
@@ -82,9 +85,10 @@ import json
 import sys
 components = json.load(open(sys.argv[1], encoding="utf-8"))["components"]
 runtime = [item for item in components if item["id"].startswith("runtime-")]
-resolved = [item for item in runtime if item["resolution"] == "source-build"]
-assert all(item["source"] == "https://github.com/boburning/BloomOS" for item in resolved)
-assert all(item["source_revision"] == "release-commit" for item in resolved)
+bloom = [item for item in runtime if item["source"] == "https://github.com/boburning/BloomOS"]
+assert len(bloom) == 29
+assert all(item["resolution"] == "source-build" for item in bloom)
+assert all(item["source_revision"] == "release-commit" for item in bloom)
 PY
 }
 
@@ -123,6 +127,7 @@ PY
     repository="$BATS_TEST_TMPDIR/repository"
     for directory in \
         static/build/.tmp_update/bin \
+        static/build/.tmp_update/script \
         static/build/miyoo/app \
         static/build/miyoo/lib \
         lib \
@@ -157,6 +162,7 @@ PY
     repository="$BATS_TEST_TMPDIR/source-repository"
     for directory in \
         static/build/.tmp_update/bin \
+        static/build/.tmp_update/script \
         static/build/miyoo/app \
         static/build/miyoo/lib \
         lib \
@@ -203,6 +209,7 @@ PY
     repository="$BATS_TEST_TMPDIR/bloom-repository"
     for directory in \
         static/build/.tmp_update/bin \
+        static/build/.tmp_update/script \
         static/build/miyoo/app \
         static/build/miyoo/lib \
         lib \
