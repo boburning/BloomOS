@@ -50,7 +50,7 @@ trap cleanup EXIT HUP INT TERM
 case "$DURATION" in
     ''|*[!0-9]*) fail invalid_duration ;;
 esac
-[ "$DURATION" -ge 5 ] && [ "$DURATION" -le 60 ] || fail invalid_duration
+[ "$DURATION" -ge 5 ] && [ "$DURATION" -le 900 ] || fail invalid_duration
 
 case "$SYSTEM" in
     GB) ROM_DIR=GB; SYSTEM_ID=gb; CORE=gambatte_libretro.so ;;
@@ -110,8 +110,19 @@ done
 [ -n "$RETROARCH_PID" ] || fail retroarch_start_timeout
 "$BLOOM_SESSION" attach "$RETROARCH_PID" || fail session_attach_failed
 
-RSS_KB="$(awk '/^VmRSS:/ { print $2; exit }' "/proc/$RETROARCH_PID/status")"
-sleep "$DURATION"
+START_RSS_KB="$(awk '/^VmRSS:/ { print $2; exit }' "/proc/$RETROARCH_PID/status")"
+PEAK_RSS_KB="${START_RSS_KB:-0}"
+elapsed=0
+while [ "$elapsed" -lt "$DURATION" ]; do
+    sleep 1
+    kill -0 "$RETROARCH_PID" 2>/dev/null || fail retroarch_exited_early
+    CURRENT_RSS_KB="$(awk '/^VmRSS:/ { print $2; exit }' "/proc/$RETROARCH_PID/status" 2>/dev/null || true)"
+    case "$CURRENT_RSS_KB" in
+        ''|*[!0-9]*) ;;
+        *) [ "$CURRENT_RSS_KB" -le "$PEAK_RSS_KB" ] || PEAK_RSS_KB="$CURRENT_RSS_KB" ;;
+    esac
+    elapsed=$((elapsed + 1))
+done
 STOP_RESULT="$("$BLOOM_SESSION" stop-retroarch)" || fail session_stop_failed
 SHUTDOWN_METHOD="$(printf '%s' "$STOP_RESULT" | sed -n 's/.*"shutdown_method":"\([a-z_]*\)".*/\1/p')"
 case "$SHUTDOWN_METHOD" in retroarch_quit|sigterm|sigterm_fallback) ;; *) fail invalid_shutdown_method ;; esac
@@ -128,5 +139,5 @@ pidof MainUI >/dev/null 2>&1 || fail mainui_return_timeout
 [ ! -e "$COMMAND_FILE" ] || fail command_cleanup_failed
 "$BLOOM_SESSION" complete || fail session_complete_failed
 
-printf '{"schema":1,"status":"passed","system":"%s","duration_seconds":%s,"rss_kb":%s,"shutdown_method":"%s","session_state":"STOPPED","graceful_exit":true,"save_flush":true,"mainui_return":true,"command_cleanup":true}\n' \
-    "$SYSTEM" "$DURATION" "${RSS_KB:-0}" "$SHUTDOWN_METHOD"
+printf '{"schema":1,"status":"passed","system":"%s","duration_seconds":%s,"rss_kb":%s,"start_rss_kb":%s,"peak_rss_kb":%s,"shutdown_method":"%s","session_state":"STOPPED","graceful_exit":true,"save_flush":true,"mainui_return":true,"command_cleanup":true}\n' \
+    "$SYSTEM" "$DURATION" "$PEAK_RSS_KB" "${START_RSS_KB:-0}" "$PEAK_RSS_KB" "$SHUTDOWN_METHOD"

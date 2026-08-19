@@ -32,6 +32,17 @@ encode() { printf '%s' "$1" | base64 | tr -d '\r\n'; }
     printf '%s' "$output" | grep -F '"reason":"unsupported_system"'
 }
 
+@test "game smoke rejects durations beyond the bounded soak limit" {
+    : >"$SDCARD/.bloom-dev"
+    rom="$SDCARD/Roms/GB/Test.gb"
+    : >"$rom"
+
+    run "$GAME_SMOKE" GB "$(encode "$rom")" 901
+
+    [ "$status" -eq 1 ]
+    printf '%s' "$output" | grep -F '"reason":"invalid_duration"'
+}
+
 @test "game smoke confines ROMs to the selected system directory" {
     : >"$SDCARD/.bloom-dev"
     rom="$SDCARD/Roms/GBC/Test.gbc"
