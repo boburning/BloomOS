@@ -194,6 +194,22 @@ glyph.
   or `not_applicable`.
 - Hardcore status: the same controlled vocabulary.
 - Transport: `direct`, `proxy`, or `offline/unavailable`.
+
+## Exact-core certification policy
+
+`build/ra-core-policy.json` records separate upstream and Bloom statuses for
+every RA-relevant default system, keyed to the exact core binary SHA-256 in
+`build/core-manifest.json`. CI rejects missing default systems, stale hashes,
+unknown status values, and any `verified` claim without physical-device test
+evidence. A changed core binary therefore invalidates the policy until the new
+identity is reviewed and, where applicable, recertified.
+
+Initial upstream classifications were reviewed against the current official
+[emulator support](https://docs.retroachievements.org/general/emulator-support-and-issues.html)
+and [unsupported cores](https://docs.retroachievements.org/developer-docs/unsupported-emulators-and-cores.html)
+references. They remain distinct from Bloom certification: gpSP and
+PCSX-ReARMed retain `best_effort` Bloom status pending exact-binary testing,
+while no core is marked `verified` without physical evidence.
 - Proxy cache: `not_applicable`, `not_cached`, or `cached`.
 - Pending awards: a non-negative aggregate count.
 
