@@ -5,6 +5,7 @@ umask 077
 UPSTREAM=${BLOOM_RA_PROXY_UPSTREAM:-/mnt/SDCARD/.bloom/components/raofflineproxy/bin/raofflineproxy}
 CONFIG_DIR=${BLOOM_RA_PROXY_CONFIG_DIR:-/mnt/SDCARD/.bloom/achievements/proxy}
 LOG_FILE=${BLOOM_RA_PROXY_LOG_FILE:-/mnt/SDCARD/.bloom/logs/raofflineproxy.log}
+ROM_ROOT=${BLOOM_RA_PROXY_ROM_ROOT:-/mnt/SDCARD/Roms}
 
 json_error() {
     printf '{"schema":1,"service":"bloom-ra-proxy","error":{"code":"%s"}}\n' "$1" >&2
@@ -45,6 +46,26 @@ prepare_runtime_paths() {
     if [ -f "$LOG_FILE" ] && [ "$(wc -c <"$LOG_FILE")" -gt 262144 ]; then
         mv -f "$LOG_FILE" "$LOG_FILE.1"
     fi
+}
+
+system_folder() {
+    case "$1" in
+        gb) printf GB ;; gbc) printf GBC ;; gba) printf GBA ;; nes) printf FC ;; fds) printf FDS ;;
+        snes) printf SFC ;; psx) printf PS ;; genesis) printf MD ;; segacd) printf SEGACD ;;
+        32x) printf THIRTYTWOX ;; gamegear) printf GG ;; mastersystem) printf MS ;; sg1000) printf SEGASGONE ;;
+        arcade) printf ARCADE ;; cps1) printf CPS1 ;; cps2) printf CPS2 ;; cps3) printf CPS3 ;; neogeo) printf NEOGEO ;;
+        atari2600) printf ATARI ;; atari7800) printf SEVENTYEIGHTHUNDRED ;; lynx) printf LYNX ;;
+        pce) printf PCE ;; pcecd) printf PCECD ;; supergrafx) printf SGFX ;; virtualboy) printf VB ;;
+        wonderswan) printf WS ;; ngpc) printf NGP ;; coleco) printf COLECO ;; msx) printf MSX ;;
+        amstrad) printf CPC ;; amiga) printf AMIGA ;; *) return 1 ;;
+    esac
+}
+
+validated_rom() {
+    [ ! -L "$1" ] && [ -f "$1" ] || return 1
+    resolved=$(readlink -f "$1") || return 1
+    root=$(readlink -f "$ROM_ROOT") || return 1
+    case "$resolved" in "$root"/*) printf '%s' "$resolved" ;; *) return 1 ;; esac
 }
 
 print_status() {
@@ -104,6 +125,22 @@ case "${1:-}" in
         installed || json_error not_installed
         if run_upstream cached-games 2>/dev/null | grep -Eq "##GAMEID:${2}$"; then cached=true; else cached=false; fi
         printf '{"schema":1,"service":"bloom-ra-proxy","ra_game_id":%s,"cached":%s}\n' "$2" "$cached"
+        ;;
+    cache-rom)
+        [ "$#" -eq 2 ] || json_error invalid_arguments
+        installed || json_error not_installed
+        rom=$(validated_rom "$2") || json_error invalid_rom_path
+        run_upstream cache-rom --path "$rom" >/dev/null 2>&1 || json_error cache_failed
+        printf '%s\n' '{"schema":1,"service":"bloom-ra-proxy","cached":true}'
+        ;;
+    cache-system)
+        [ "$#" -eq 2 ] || json_error invalid_arguments
+        installed || json_error not_installed
+        folder=$(system_folder "$2") || json_error invalid_system
+        root=$(readlink -f "$ROM_ROOT") || json_error invalid_rom_root
+        directory="$root/$folder"
+        [ ! -L "$directory" ] && [ -d "$directory" ] || json_error invalid_system_path
+        run_upstream cache-folder-listing --path "$directory" || json_error cache_failed
         ;;
     *) json_error invalid_command ;;
 esac

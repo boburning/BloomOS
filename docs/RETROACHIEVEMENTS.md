@@ -347,6 +347,15 @@ upstream's foreground `run-service` operation directly; it never calls
 configuration. `bloomctl achievements proxy status|pending` exposes the two
 initial read-only public operations.
 
+The adapter also provides internal `cache-rom PATH` and `cache-system SYSTEM`
+operations. Bloom resolves every ROM to a regular, non-symlinked file beneath
+the configured ROM root and maps canonical system IDs to their known library
+directories before invoking upstream. System batches run in the foreground, so
+the caller can cancel them normally; upstream persists each completed cache
+entry, making a later retry resumable without a Bloom-owned queue. Favorites,
+Recent, all-game selection, progress UI, and rate-limit presentation remain
+consumer work on this backend.
+
 ## Original Mini and offline behavior
 
 Consumers query network capability instead of hardcoding models. With no usable

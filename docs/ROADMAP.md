@@ -348,6 +348,9 @@ Planned work includes safe updates and rollback, optional synchronization and of
   session append-config generation. Host tests cover direct Softcore, proxy
   Softcore, unavailable-proxy rejection, forced-direct Hardcore, and permanent
   config immutability; physical session validation remains pending.
+- [ ] RA-21: add offline-cache UX. The adapter now safely supports resumable,
+  foreground per-ROM and per-system caching with ROM-root confinement. UI
+  progress/cancel presentation and Favorites/Recent/all selectors remain.
 - [ ] Keep RA-27 as a future consumer of the same `bloom-ra` API when Bloom owns
   the primary library browser; closed MainUI replacement is not a prerequisite
   for the P0 GameSwitcher badge.
