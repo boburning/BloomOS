@@ -4,8 +4,13 @@
 #include "bloom_ra.h"
 #include "bloom_ra_catalog.h"
 
+#include <dirent.h>
+#include <limits.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <sys/stat.h>
 
 #define BLOOM_RA_HASH_VERSION 1
@@ -35,6 +40,123 @@ static int unchanged(sqlite3 *database, const char *game_id, sqlite3_int64 size,
     }
     sqlite3_finalize(statement);
     return result;
+}
+
+static int marker_exists(const char *path)
+{
+    struct stat status;
+    return path != NULL && lstat(path, &status) == 0 && S_ISREG(status.st_mode);
+}
+
+static int session_active(const char *path)
+{
+    if (path == NULL)
+        return 0;
+    FILE *file = fopen(path, "r");
+    if (file == NULL)
+        return 0;
+    char state[32] = {0};
+    int active = fscanf(file, "%31s", state) == 1 &&
+                 (strcmp(state, "PREPARING") == 0 || strcmp(state, "STARTING") == 0 ||
+                  strcmp(state, "RUNNING") == 0 || strcmp(state, "STOP_REQUESTED") == 0 ||
+                  strcmp(state, "FLUSHING") == 0);
+    fclose(file);
+    return active;
+}
+
+static int ignored_name(const char *name)
+{
+    return name[0] == '.' || strcmp(name, "Imgs") == 0 || strcmp(name, "images") == 0 ||
+           strcmp(name, "Snaps") == 0;
+}
+
+static int supported_extension(const char *path)
+{
+    static const char *extensions[] = {
+        "zip", "gb", "gbc", "gba", "nes", "fds", "sfc", "smc", "fig", "bs", "md", "gen", "bin",
+        "cue", "chd", "pbp", "m3u", "iso", "gg", "sms", "sg", "pce", "ccd", "toc", "a26", "a78",
+        "lnx", "ws", "wsc", "ngc", "vb", "col", "rom", "dsk", "tap", "cas", "adf", "ipf", "neo"};
+    const char *dot = strrchr(path, '.');
+    if (dot == NULL || dot[1] == '\0')
+        return 0;
+    dot++;
+    for (size_t i = 0; i < sizeof(extensions) / sizeof(extensions[0]); i++)
+        if (strcasecmp(dot, extensions[i]) == 0)
+            return 1;
+    return 0;
+}
+
+static int scan_directory(sqlite3 *database, const char *system_id, const char *directory, int force,
+                          const char *session_state_path, const char *cancel_path, BloomRaScanStats *stats)
+{
+    if (marker_exists(cancel_path)) {
+        stats->canceled = 1;
+        return SQLITE_INTERRUPT;
+    }
+    if (session_active(session_state_path)) {
+        stats->paused = 1;
+        return SQLITE_BUSY;
+    }
+    DIR *handle = opendir(directory);
+    if (handle == NULL)
+        return SQLITE_CANTOPEN;
+    int result = SQLITE_OK;
+    struct dirent *entry;
+    while ((entry = readdir(handle)) != NULL) {
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0 || ignored_name(entry->d_name))
+            continue;
+        char path[PATH_MAX];
+        if (snprintf(path, sizeof(path), "%s/%s", directory, entry->d_name) >= (int)sizeof(path)) {
+            stats->errors++;
+            continue;
+        }
+        struct stat metadata;
+        if (lstat(path, &metadata) != 0 || S_ISLNK(metadata.st_mode)) {
+            stats->errors++;
+            continue;
+        }
+        if (S_ISDIR(metadata.st_mode)) {
+            result = scan_directory(database, system_id, path, force, session_state_path, cancel_path, stats);
+        }
+        else if (S_ISREG(metadata.st_mode) && supported_extension(path)) {
+            char game_id[BLOOM_GAME_ID_LENGTH + 1];
+            char normalized[PATH_MAX];
+            char error[128];
+            if (bloom_game_id_create(system_id, path, game_id, sizeof(game_id), normalized, sizeof(normalized), error,
+                                     sizeof(error)) != 0) {
+                stats->errors++;
+                continue;
+            }
+            BloomRaScanResult game_result;
+            int scan = bloom_ra_scan_game(database, game_id, system_id, path, "/mnt/SDCARD/Roms", normalized, force,
+                                          &game_result);
+            stats->processed++;
+            if (scan != SQLITE_OK)
+                stats->errors++;
+            else {
+                stats->skipped += (unsigned long)game_result.skipped;
+                stats->identified += (unsigned long)game_result.identified;
+            }
+        }
+        if (result == SQLITE_INTERRUPT || result == SQLITE_BUSY)
+            break;
+    }
+    closedir(handle);
+    return result;
+}
+
+int bloom_ra_scan_tree(sqlite3 *database, const char *system_id, const char *system_path, int force,
+                       const char *session_state_path, const char *cancel_path, BloomRaScanStats *stats)
+{
+    if (database == NULL || system_id == NULL || system_path == NULL || stats == NULL)
+        return SQLITE_MISUSE;
+    memset(stats, 0, sizeof(*stats));
+    char resolved[PATH_MAX];
+    struct stat metadata;
+    if (lstat(system_path, &metadata) != 0 || !S_ISDIR(metadata.st_mode) || S_ISLNK(metadata.st_mode) ||
+        realpath(system_path, resolved) == NULL || strncmp(resolved, "/mnt/SDCARD/Roms/", 17) != 0)
+        return SQLITE_CANTOPEN;
+    return scan_directory(database, system_id, resolved, force, session_state_path, cancel_path, stats);
 }
 
 static int store(sqlite3 *database, const char *game_id, const char *system_id, const char *normalized_path,
