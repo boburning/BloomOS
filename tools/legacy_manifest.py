@@ -19,6 +19,9 @@ RUNTIME_COMPONENT_ROOTS = (
     ("miyoo-app", "static/build/miyoo/app"),
     ("miyoo-lib", "static/build/miyoo/lib"),
 )
+RUNTIME_NESTED_COMPONENT_ROOTS = (
+    ("tmp-update-bin", "static/build/.tmp_update/bin"),
+)
 PACKAGE_KINDS = ("App", "Emu", "RApp")
 ANNOTATION_FIELDS = ("source", "source_revision", "license", "build_recipe", "resolution")
 RESOLUTIONS = ("replace-source-build-or-exclude", "source-build", "excluded")
@@ -34,6 +37,26 @@ BLOOM_RUNTIME_SOURCE_IDS = {
     "runtime-tmp-update-onionversion",
     "runtime-tmp-update-runtime-sh",
     "runtime-tmp-update-updater",
+    "runtime-tmp-update-bin-bloom-detect-model",
+    "runtime-tmp-update-bin-bloom-dev-ssh",
+    "runtime-tmp-update-bin-bloom-diagnostics-export",
+    "runtime-tmp-update-bin-bloom-game-smoke",
+    "runtime-tmp-update-bin-bloom-health-system",
+    "runtime-tmp-update-bin-bloom-launch-override",
+    "runtime-tmp-update-bin-bloom-platform",
+    "runtime-tmp-update-bin-bloom-save-snapshot",
+    "runtime-tmp-update-bin-bloom-session",
+    "runtime-tmp-update-bin-bloom-test-runner",
+    "runtime-tmp-update-bin-bloom-update-activate",
+    "runtime-tmp-update-bin-bloom-update-boot",
+    "runtime-tmp-update-bin-bloom-update-bootstrap",
+    "runtime-tmp-update-bin-bloom-update-channel",
+    "runtime-tmp-update-bin-bloom-update-prepare",
+    "runtime-tmp-update-bin-bloom-update-rollback",
+    "runtime-tmp-update-bin-bloom-update-stage",
+    "runtime-tmp-update-bin-bloom-update-state",
+    "runtime-tmp-update-bin-bloom-update-verify",
+    "runtime-tmp-update-bin-bloomctl",
 }
 ADVANCEMENU_ID = "app-advancemenu--alternative-frontend"
 OPENBOR_ID = "rapp-game-engine---open-beats-of-rage"
@@ -70,7 +93,16 @@ def component_id(kind, name):
 
 def component_specs(repository):
     specs = list(FIXED_COMPONENTS)
+    nested_roots = {relative for _, relative in RUNTIME_NESTED_COMPONENT_ROOTS}
     for identifier_prefix, relative_root in RUNTIME_COMPONENT_ROOTS:
+        root = repository / relative_root
+        for child in sorted(root.iterdir(), key=lambda item: item.name.encode("utf-8")):
+            if child.relative_to(repository).as_posix() in nested_roots:
+                continue
+            identifier = component_id("runtime", f"{identifier_prefix}-{child.name}")
+            relative = child.relative_to(repository).as_posix()
+            specs.append((identifier, "runtime", relative))
+    for identifier_prefix, relative_root in RUNTIME_NESTED_COMPONENT_ROOTS:
         root = repository / relative_root
         for child in sorted(root.iterdir(), key=lambda item: item.name.encode("utf-8")):
             identifier = component_id("runtime", f"{identifier_prefix}-{child.name}")

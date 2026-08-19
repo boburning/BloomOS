@@ -6,7 +6,7 @@
         --manifest /workspace/build/legacy-manifest.json
 
     [ "$status" -eq 0 ]
-    [[ "$output" == "legacy manifest validate: 172 components" ]]
+    [[ "$output" == "legacy manifest validate: 229 components" ]]
     [ ! -e "/workspace/static/packages/RApp/SNK - Neo Geo (GnGeo)" ]
     [ ! -e "/workspace/static/packages/RApp/PICO-8 (PICO-8 standalone)" ]
     [ ! -e "/workspace/static/packages/RApp/SCUMM (ScummVM standalone)" ]
@@ -25,15 +25,22 @@
     grep -F './script/reset_list.sh "$romroot"' /workspace/static/build/.tmp_update/script/game_list_options.sh
     [ ! -e /workspace/static/build/miyoo/lib/libgamename.so ]
     grep -F 'cp $(BIN_DIR)/libgamename.so $(BUILD_DIR)/miyoo/lib/' /workspace/Makefile
+    [ ! -e /workspace/static/build/.tmp_update/bin/bloom-dropbearmulti ]
+    [ ! -e /workspace/static/build/.tmp_update/bin/LICENSE.dropbear ]
+    grep -F 'tools/build-dropbear.sh $(BIN_DIR)/bloom-dropbearmulti' /workspace/Makefile
+    grep -F 'cp "$SOURCE_REPO/LICENSE" "$(dirname -- "$OUTPUT")/LICENSE.dropbear"' /workspace/tools/build-dropbear.sh
     python3 - /workspace/build/legacy-manifest.json <<'PY'
 import json
 import sys
 components = {item["id"]: item for item in json.load(open(sys.argv[1], encoding="utf-8"))["components"]}
 assert "runtime-tmp-update" not in components
 assert "runtime-miyoo" not in components
-assert components["runtime-tmp-update-bin"]["path"] == "static/build/.tmp_update/bin"
+assert "runtime-tmp-update-bin" not in components
+assert components["runtime-tmp-update-bin-adv"]["path"] == "static/build/.tmp_update/bin/adv"
+assert components["runtime-tmp-update-bin-bloomctl"]["path"] == "static/build/.tmp_update/bin/bloomctl"
 assert components["runtime-miyoo-app-skin"]["path"] == "static/build/miyoo/app/skin"
 assert components["runtime-miyoo-lib-libpadsp-so"]["path"] == "static/build/miyoo/lib/libpadsp.so"
+assert components["runtime-tmp-update-bin-bloomctl"]["resolution"] == "source-build"
 PY
 }
 
@@ -115,7 +122,7 @@ PY
 @test "legacy manifest detects added payload files" {
     repository="$BATS_TEST_TMPDIR/repository"
     for directory in \
-        static/build/.tmp_update \
+        static/build/.tmp_update/bin \
         static/build/miyoo/app \
         static/build/miyoo/lib \
         lib \
@@ -125,7 +132,7 @@ PY
         static/packages/RApp; do
         mkdir -p "$repository/$directory"
     done
-    printf 'fixture\n' >"$repository/static/build/.tmp_update/runtime"
+    printf 'fixture\n' >"$repository/static/build/.tmp_update/bin/runtime"
     printf 'fixture\n' >"$repository/static/build/miyoo/app/runtime"
     printf 'fixture\n' >"$repository/static/build/miyoo/lib/runtime.so"
     printf 'fixture\n' >"$repository/lib/library.so"
@@ -149,7 +156,7 @@ PY
 @test "only UTF-8 Onion script wrappers receive source provenance" {
     repository="$BATS_TEST_TMPDIR/source-repository"
     for directory in \
-        static/build/.tmp_update \
+        static/build/.tmp_update/bin \
         static/build/miyoo/app \
         static/build/miyoo/lib \
         lib \
@@ -160,7 +167,7 @@ PY
         static/packages/RApp; do
         mkdir -p "$repository/$directory"
     done
-    printf 'fixture\n' >"$repository/static/build/.tmp_update/runtime"
+    printf 'fixture\n' >"$repository/static/build/.tmp_update/bin/runtime"
     printf 'fixture\n' >"$repository/static/build/miyoo/app/runtime"
     printf 'fixture\n' >"$repository/static/build/miyoo/lib/runtime.so"
     printf 'fixture\n' >"$repository/lib/library.so"
@@ -195,7 +202,7 @@ PY
 @test "verified Bloom Battery Monitor replacement receives composite provenance" {
     repository="$BATS_TEST_TMPDIR/bloom-repository"
     for directory in \
-        static/build/.tmp_update \
+        static/build/.tmp_update/bin \
         static/build/miyoo/app \
         static/build/miyoo/lib \
         lib \
@@ -206,7 +213,7 @@ PY
         src/batteryMonitorUI/res; do
         mkdir -p "$repository/$directory"
     done
-    printf 'fixture\n' >"$repository/static/build/.tmp_update/runtime"
+    printf 'fixture\n' >"$repository/static/build/.tmp_update/bin/runtime"
     printf 'fixture\n' >"$repository/static/build/miyoo/app/runtime"
     printf 'fixture\n' >"$repository/static/build/miyoo/lib/runtime.so"
     printf 'fixture\n' >"$repository/lib/library.so"

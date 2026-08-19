@@ -214,6 +214,12 @@ media, public-key material, and mixed scraper data stay fail-closed as
 independent unresolved components until each is rebuilt, replaced, or
 excluded.
 
+The `.tmp_update/bin` inventory is decomposed one level further so Bloom-owned
+shell tools can carry repository provenance without attributing adjacent
+third-party executables to Bloom. The checked-in Dropbear binary and license
+copy are removed from the static payload; the pinned Dropbear build regenerates
+both into the release tree before validation and packaging.
+
 ## Lock-file requirements
 
 `build/dependencies.lock` records the resolved toolchain, submodule, Action,
