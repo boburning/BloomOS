@@ -113,3 +113,13 @@ EOF
     [ "$status" -eq 1 ]
     printf '%s' "$output" | grep -F 'duration must be between 5 and 900 seconds'
 }
+
+@test "game-smoke routes a PICO cartridge to the guarded device probe" {
+    rom_path="/mnt/SDCARD/Roms/PICO/Bloom Probe.p8"
+    encoded="$(printf '%s' "$rom_path" | base64 | tr -d '\r\n')"
+
+    run "$DEVICE_TOOL" game-smoke test-plus PICO "$rom_path" 60
+
+    [ "$status" -eq 0 ]
+    grep -F "bloom-game-smoke 'PICO' '$encoded' '60'" "$MOCK_LOG"
+}

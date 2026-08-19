@@ -7,7 +7,7 @@ TARGETS_FILE="${BLOOM_TARGETS_FILE:-$SCRIPT_DIR/targets.toml}"
 usage() {
     cat <<'EOF'
 Usage: bloom-device <info|smoke|collect> <target> [output-directory]
-       bloom-device game-smoke <target> <GB|GBC|GBA|FC|SFC|PSX> <rom-path> [seconds]
+       bloom-device game-smoke <target> <GB|GBC|GBA|FC|SFC|PSX|PICO> <rom-path> [seconds]
 
 Targets are read from tools/targets.toml or BLOOM_TARGETS_FILE. Copy
 targets.example.toml to create a local configuration. Connections require an
@@ -116,7 +116,7 @@ command_collect() {
 
 command_game_smoke() {
     local system="$1" rom_path="$2" duration="$3" rom_b64
-    [[ "$system" =~ ^(GB|GBC|GBA|FC|SFC|PSX)$ ]] || die "unsupported game-smoke system: $system"
+    [[ "$system" =~ ^(GB|GBC|GBA|FC|SFC|PSX|PICO)$ ]] || die "unsupported game-smoke system: $system"
     [[ "$duration" =~ ^[0-9]+$ ]] && ((duration >= 5 && duration <= 900)) ||
         die "game-smoke duration must be between 5 and 900 seconds"
     [[ "$rom_path" == /mnt/SDCARD/Roms/* ]] || die "game-smoke ROM must be under /mnt/SDCARD/Roms"

@@ -63,6 +63,11 @@ case "$SYSTEM" in
         SYSTEM_ID=psx
         CORE=pcsx_rearmed_libretro.so
         ;;
+    PICO)
+        ROM_DIR=PICO
+        SYSTEM_ID=pico8
+        CORE=fake08_libretro.so
+        ;;
     *)
         fail unsupported_system
         ;;
