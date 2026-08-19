@@ -18,7 +18,7 @@ setup() {
 
     [ "$status" -ne 0 ]
     [[ "$output" == *"inherited-libretro-cores (legacy)"* ]]
-    [[ "$output" == *"runtime-tmp-update-bin (unresolved inventory)"* ]]
+    [[ "$output" == *"runtime-tmp-update-bin-adv (unresolved inventory)"* ]]
     [[ "$output" == *"runtime-miyoo-app-skin (unresolved inventory)"* ]]
     [[ "$output" != *"runtime-shared-libraries"* ]]
     [[ "$output" != *"search-filter"* ]]
