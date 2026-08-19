@@ -129,12 +129,14 @@ command_flush_saves() {
     [ "$(current_state)" = FLUSHING ] || fail "session is not FLUSHING"
     [ -x "$BLOOM_SAVE_FLUSH" ] || {
         atomic_line "$REASON_FILE" save_flush_failed
+        rm -f "$SESSION_ROOT/ra.cfg"
         atomic_line "$STATE_FILE" FAILED
         fail "bloom-save-flush is unavailable"
     }
     core="$(read_value "$CORE_FILE")"
     case "$core" in ''|*[!A-Za-z0-9_.-]*)
         atomic_line "$REASON_FILE" save_flush_failed
+        rm -f "$SESSION_ROOT/ra.cfg"
         atomic_line "$STATE_FILE" FAILED
         fail "session core is invalid"
         ;;
@@ -143,12 +145,14 @@ command_flush_saves() {
     if ! (umask 077; "$BLOOM_SAVE_FLUSH" "$core" >"$temporary"); then
         rm -f "$temporary"
         atomic_line "$REASON_FILE" save_flush_failed
+        rm -f "$SESSION_ROOT/ra.cfg"
         atomic_line "$STATE_FILE" FAILED
         fail "save flush failed"
     fi
     if [ ! -s "$temporary" ] || ! grep -q '"schema":1' "$temporary"; then
         rm -f "$temporary"
         atomic_line "$REASON_FILE" save_flush_failed
+        rm -f "$SESSION_ROOT/ra.cfg"
         atomic_line "$STATE_FILE" FAILED
         fail "save flush result is invalid"
     fi
@@ -160,6 +164,7 @@ command_complete() {
     lock
     [ "$(current_state)" = FLUSHING ] || fail "session is not FLUSHING"
     [ -s "$FLUSH_RESULT_FILE" ] && grep -q '"schema":1' "$FLUSH_RESULT_FILE" || fail "save flush is not confirmed"
+    rm -f "$SESSION_ROOT/ra.cfg"
     atomic_line "$STATE_FILE" STOPPED
 }
 
@@ -188,6 +193,7 @@ command_fail() {
     state="$(current_state)"
     case "$state" in PREPARING|STARTING|RUNNING|STOP_REQUESTED|FLUSHING) ;; *) fail "session is not active" ;; esac
     atomic_line "$REASON_FILE" "$reason"
+    rm -f "$SESSION_ROOT/ra.cfg"
     atomic_line "$STATE_FILE" FAILED
 }
 
@@ -219,6 +225,7 @@ stop_failure() {
     lock
     [ "$(current_state)" = STOP_REQUESTED ] || fail "stop failure lost session ownership"
     atomic_line "$REASON_FILE" "$reason"
+    rm -f "$SESSION_ROOT/ra.cfg"
     atomic_line "$STATE_FILE" FAILED
     unlock
     fail "$reason"
