@@ -114,6 +114,47 @@ TEST_F(BloomLaunchTest, RejectsHardcoreProxyWithoutChangingExistingRequest)
     EXPECT_EQ(before, after);
 }
 
+TEST_F(BloomLaunchTest, HardcoreDisablesResumeAndProhibitedInputPaths)
+{
+    ASSERT_EQ(0, bloom_launch_create_file(
+                     request_.c_str(),
+                     "bloom-game-v1:2d514749ed2f60ba7a6583d7e36483b113005fd788bab176fc9941256551ad71", "gb",
+                     "/mnt/SDCARD/Roms/GB/Bob's $pecial 游戏.zip", "/mnt/SDCARD/Emu/GB/launch.sh", "retroarch",
+                     "gambatte_libretro.so", 0, error_, sizeof(error_)));
+    ASSERT_EQ(0, bloom_launch_set_achievements(request_.c_str(), 1, "hardcore", "direct", 1234, "untested",
+                                               error_, sizeof(error_)));
+    std::filesystem::create_directories("/tmp/bloom-session");
+    auto config_path =
+        std::filesystem::path("/tmp/bloom-session") / ("hardcore-" + std::to_string(getpid()) + ".cfg");
+    ASSERT_EQ(0, bloom_launch_write_ra_config(request_.c_str(), config_path.c_str(), "BloomUser", "token123", nullptr,
+                                              error_, sizeof(error_)))
+        << error_;
+    std::ifstream config_file(config_path);
+    std::string config((std::istreambuf_iterator<char>(config_file)), std::istreambuf_iterator<char>());
+    EXPECT_NE(config.find("cheevos_hardcore_mode_enable = \"true\""), std::string::npos);
+    EXPECT_NE(config.find("savestate_auto_load = \"false\""), std::string::npos);
+    EXPECT_NE(config.find("rewind_enable = \"false\""), std::string::npos);
+    EXPECT_NE(config.find("run_ahead_enabled = \"false\""), std::string::npos);
+    EXPECT_NE(config.find("input_load_state = \"nul\""), std::string::npos);
+    EXPECT_NE(config.find("input_frame_advance = \"nul\""), std::string::npos);
+    EXPECT_NE(config.find("input_slowmotion = \"nul\""), std::string::npos);
+    EXPECT_NE(config.find("input_cheat_toggle = \"nul\""), std::string::npos);
+    EXPECT_EQ(config.find("cheevos_custom_host"), std::string::npos);
+    std::filesystem::remove(config_path);
+}
+
+TEST_F(BloomLaunchTest, HardcoreRejectsAutomaticStateLoading)
+{
+    ASSERT_EQ(0, bloom_launch_create_file(
+                     request_.c_str(),
+                     "bloom-game-v1:2d514749ed2f60ba7a6583d7e36483b113005fd788bab176fc9941256551ad71", "gb",
+                     "/mnt/SDCARD/Roms/GB/Bob's $pecial 游戏.zip", "/mnt/SDCARD/Emu/GB/launch.sh", "retroarch",
+                     "gambatte_libretro.so", 1, error_, sizeof(error_)));
+    EXPECT_NE(0, bloom_launch_set_achievements(request_.c_str(), 1, "hardcore", "direct", 1234, "untested",
+                                               error_, sizeof(error_)));
+    EXPECT_NE(std::string(error_).find("auto-load"), std::string::npos);
+}
+
 TEST_F(BloomLaunchTest, WritesSessionOnlyRaConfigAndLeavesPermanentConfigUntouched)
 {
     ASSERT_EQ(0, bloom_launch_create_file(
