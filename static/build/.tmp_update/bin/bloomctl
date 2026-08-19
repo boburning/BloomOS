@@ -133,6 +133,43 @@ snapshot_health() {
         "$BLOOM_SAVE_SNAPSHOT" health
 }
 
+retroachievements_health() {
+    if [ ! -x "$BLOOM_RA" ]; then
+        printf '%s' '{"schema":1,"healthy":false,"error":"unavailable"}'
+        return 1
+    fi
+    raw_ra=$("$BLOOM_RA" status 2>/dev/null)
+    ra_status=$?
+    enabled=$(printf '%s' "$raw_ra" | sed -n 's/.*"enabled":\(true\|false\).*/\1/p')
+    state=$(printf '%s' "$raw_ra" | sed -n 's/.*"state":"\([a-z_]*\)".*/\1/p')
+    catalog=$(printf '%s' "$raw_ra" | sed -n 's/.*"catalog":{[^}]*"status":"\([a-z_]*\)".*/\1/p')
+    indexed=$(printf '%s' "$raw_ra" | sed -n 's/.*"indexed_games":\([0-9][0-9]*\).*/\1/p')
+    identified=$(printf '%s' "$raw_ra" | sed -n 's/.*"identified_games":\([0-9][0-9]*\).*/\1/p')
+    if [ "$ra_status" -ne 0 ] || [ -z "$enabled" ] || [ -z "$state" ] || [ -z "$catalog" ] ||
+       [ -z "$indexed" ] || [ -z "$identified" ]; then
+        printf '%s' '{"schema":1,"healthy":false,"error":"invalid_state"}'
+        return 1
+    fi
+
+    proxy_installed=false
+    proxy_running=false
+    cached=0
+    pending=0
+    if [ -x "$BLOOM_RA_PROXY" ]; then
+        raw_proxy=$("$BLOOM_RA_PROXY" status 2>/dev/null)
+        proxy_status=$?
+        [ "$proxy_status" -eq 0 ] || { printf '%s' '{"schema":1,"healthy":false,"error":"proxy_unavailable"}'; return 1; }
+        case "$raw_proxy" in *'"installed":true'*) proxy_installed=true ;; esac
+        case "$raw_proxy" in *'"service_running":true'*) proxy_running=true ;; esac
+        value=$(printf '%s' "$raw_proxy" | sed -n 's/.*"cached_games_count":\([0-9][0-9]*\).*/\1/p')
+        [ -z "$value" ] || cached=$value
+        value=$(printf '%s' "$raw_proxy" | sed -n 's/.*"pending_awards_count":\([0-9][0-9]*\).*/\1/p')
+        [ -z "$value" ] || pending=$value
+    fi
+    printf '{"schema":1,"healthy":true,"enabled":%s,"state":"%s","catalog":{"status":"%s","indexed_games":%s,"identified_games":%s},"offline_proxy":{"installed":%s,"running":%s,"cached_games":%s,"pending_awards":%s}}' \
+        "$enabled" "$state" "$catalog" "$indexed" "$identified" "$proxy_installed" "$proxy_running" "$cached" "$pending"
+}
+
 print_health_json() {
     activity_output="$(play_activity_health)"
     activity_status=$?
@@ -142,6 +179,8 @@ print_health_json() {
     update_status=$?
     snapshot_output="$(snapshot_health 2>/dev/null)"
     snapshot_status=$?
+    ra_output="$(retroachievements_health)"
+    ra_status=$?
     case "$activity_output" in
         \{*) ;;
         *) activity_output='{"schema":1,"healthy":false,"error":"execution_failed"}' ;;
@@ -158,12 +197,16 @@ print_health_json() {
         \{*) ;;
         *) snapshot_output='{"schema":1,"healthy":false,"error":"execution_failed"}' ;;
     esac
-    if [ "$activity_status" -eq 0 ] && [ "$system_status" -eq 0 ] && [ "$update_status" -eq 0 ] && [ "$snapshot_status" -eq 0 ]; then healthy=true; status=0; else healthy=false; status=1; fi
+    case "$ra_output" in
+        \{*) ;;
+        *) ra_output='{"schema":1,"healthy":false,"error":"execution_failed"}' ;;
+    esac
+    if [ "$activity_status" -eq 0 ] && [ "$system_status" -eq 0 ] && [ "$update_status" -eq 0 ] && [ "$snapshot_status" -eq 0 ] && [ "$ra_status" -eq 0 ]; then healthy=true; status=0; else healthy=false; status=1; fi
 
     printf '{\n'
     printf '  "schema": 1,\n'
     printf '  "healthy": %s,\n' "$healthy"
-    printf '  "checks": {"system": %s, "play_activity": %s, "update_state": %s, "save_snapshots": %s}\n' "$system_output" "$activity_output" "$update_output" "$snapshot_output"
+    printf '  "checks": {"system": %s, "play_activity": %s, "update_state": %s, "save_snapshots": %s, "retroachievements": %s}\n' "$system_output" "$activity_output" "$update_output" "$snapshot_output" "$ra_output"
     printf '}\n'
     return "$status"
 }
@@ -177,6 +220,8 @@ print_health_text() {
     update_status=$?
     snapshot_output="$(snapshot_health 2>/dev/null)"
     snapshot_status=$?
+    ra_output="$(retroachievements_health)"
+    ra_status=$?
     if [ "$system_status" -eq 0 ]; then printf 'System: healthy\n'; else printf 'System: unhealthy\n'; fi
     printf '%s\n' "$system_output"
     if [ "$activity_status" -eq 0 ]; then
@@ -189,7 +234,9 @@ print_health_text() {
     printf '%s\n' "$update_output"
     if [ "$snapshot_status" -eq 0 ]; then printf 'Save snapshots: healthy\n'; else printf 'Save snapshots: unhealthy\n'; fi
     printf '%s\n' "$snapshot_output"
-    if [ "$activity_status" -eq 0 ] && [ "$system_status" -eq 0 ] && [ "$update_status" -eq 0 ] && [ "$snapshot_status" -eq 0 ]; then return 0; else return 1; fi
+    if [ "$ra_status" -eq 0 ]; then printf 'RetroAchievements: healthy\n'; else printf 'RetroAchievements: unhealthy\n'; fi
+    printf '%s\n' "$ra_output"
+    if [ "$activity_status" -eq 0 ] && [ "$system_status" -eq 0 ] && [ "$update_status" -eq 0 ] && [ "$snapshot_status" -eq 0 ] && [ "$ra_status" -eq 0 ]; then return 0; else return 1; fi
 }
 
 usage() {

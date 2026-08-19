@@ -376,6 +376,14 @@ proxy installed/running, cached-game count, and pending-award count. It omits
 username by default and always omits credentials, ROM paths, hashes, titles,
 and individual pending achievements.
 
+RA-24 reconstructs the health object from an explicit allowlist rather than
+embedding subsystem output. It carries enabled/state, catalog status and
+aggregate counts, plus proxy installed/running/cache/pending counts. Username,
+credentials, ROM paths, hashes, titles, award details, and unexpected provider
+fields are discarded even if a malformed or incompatible helper prints them.
+The support archive consumes only this redacted health result; raw RA/proxy logs
+remain excluded until a similarly structured redaction path exists.
+
 Logs are bounded/rotating and may contain subsystem version, catalog generation,
 aggregate scan counts, selected transport, core basename/SHA/policy, proxy
 state, and generic network error class. Support exports enforce the same
