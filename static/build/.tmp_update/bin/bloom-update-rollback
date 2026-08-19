@@ -7,6 +7,8 @@ STATE_BIN="${BLOOM_UPDATE_STATE_BIN:-$SD_ROOT/.tmp_update/bin/bloom-update-state
 PREPARE_BIN="${BLOOM_UPDATE_PREPARE_BIN:-$SD_ROOT/.tmp_update/bin/bloom-update-prepare}"
 SNAPSHOT_BIN="${BLOOM_SAVE_SNAPSHOT_BIN:-$SD_ROOT/.tmp_update/bin/bloom-save-snapshot}"
 JQ="${BLOOM_JQ_BIN:-$SD_ROOT/.tmp_update/bin/jq}"
+MOUNT="${BLOOM_MOUNT_BIN:-mount}"
+UMOUNT="${BLOOM_UMOUNT_BIN:-umount}"
 
 fail() { printf 'bloom-update-rollback: %s\n' "$*" >&2; exit 1; }
 
@@ -32,7 +34,14 @@ source_ra="$candidate/RetroArch"
 target_app="$SD_ROOT/miyoo/app"
 target_ra="$SD_ROOT/RetroArch"
 mkdir -p "$target_app" "$target_ra" || fail "cannot create rollback targets"
-[ ! -e "$target_app/MainUI" ] && [ ! -e "$target_app/.tmp_update" ] || fail "an installer is already pending"
+[ ! -L "$target_app/MainUI" ] || fail "an installer is already pending"
+if [ -f "$target_app/MainUI" ] && grep -Fq '#!/bin/sh' "$target_app/MainUI"; then
+    fail "an installer is already pending"
+fi
+if [ -d "$target_app/.tmp_update" ] && [ ! -L "$target_app/.tmp_update" ]; then
+    rmdir "$target_app/.tmp_update" 2>/dev/null || fail "an installer is already pending"
+fi
+[ ! -e "$target_app/.tmp_update" ] || fail "an installer is already pending"
 [ ! -e "$target_ra/retroarch.pak" ] || fail "a RetroArch installer is already pending"
 
 snapshot="$($SNAPSHOT_BIN create pre-rollback)" || fail "pre-rollback save snapshot failed"
@@ -51,6 +60,9 @@ sync
 mv "$temporary_app" "$target_app/.tmp_update" || fail "cannot publish rollback installer"
 mv "$temporary_ra" "$target_ra/retroarch.pak" || fail "cannot publish rollback RetroArch payload"
 sync
+if "$MOUNT" | grep -Fq " on $target_app/MainUI "; then
+    "$UMOUNT" -l "$target_app/MainUI" || fail "cannot detach the active MainUI mount"
+fi
 mv "$temporary_trigger" "$target_app/MainUI" || fail "cannot publish rollback trigger"
 trap - EXIT HUP INT TERM
 sync
