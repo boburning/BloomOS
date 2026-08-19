@@ -6,7 +6,7 @@
         --manifest /workspace/build/legacy-manifest.json
 
     [ "$status" -eq 0 ]
-    [[ "$output" == "legacy manifest validate: 296 components" ]]
+    [[ "$output" == "legacy manifest validate: 307 components" ]]
     [ ! -e "/workspace/static/packages/RApp/SNK - Neo Geo (GnGeo)" ]
     [ ! -e "/workspace/static/packages/RApp/PICO-8 (PICO-8 standalone)" ]
     [ ! -e "/workspace/static/packages/RApp/SCUMM (ScummVM standalone)" ]
@@ -46,6 +46,9 @@ assert components["runtime-tmp-update-script-network"]["source"] == "https://git
 assert components["runtime-tmp-update-script-scraper"]["resolution"] == "replace-source-build-or-exclude"
 assert components["runtime-tmp-update-lib-libcrypto-so-3"]["path"] == "static/build/.tmp_update/lib/libcrypto.so.3"
 assert components["runtime-tmp-update-lib-parasyte"]["path"] == "static/build/.tmp_update/lib/parasyte"
+assert components["runtime-tmp-update-keys"]["source"] == "https://github.com/boburning/BloomOS"
+assert components["runtime-tmp-update-res-miyoo354-system-json"]["source"] == "https://github.com/OnionUI/Onion"
+assert components["runtime-tmp-update-res-wifiup-png"]["resolution"] == "replace-source-build-or-exclude"
 PY
 }
 
@@ -88,7 +91,7 @@ import sys
 components = json.load(open(sys.argv[1], encoding="utf-8"))["components"]
 runtime = [item for item in components if item["id"].startswith("runtime-")]
 bloom = [item for item in runtime if item["source"] == "https://github.com/boburning/BloomOS"]
-assert len(bloom) == 29
+assert len(bloom) == 30
 assert all(item["resolution"] == "source-build" for item in bloom)
 assert all(item["source_revision"] == "release-commit" for item in bloom)
 PY
@@ -130,6 +133,7 @@ PY
     for directory in \
         static/build/.tmp_update/bin \
         static/build/.tmp_update/lib \
+        static/build/.tmp_update/res \
         static/build/.tmp_update/script \
         static/build/miyoo/app \
         static/build/miyoo/lib \
@@ -166,6 +170,7 @@ PY
     for directory in \
         static/build/.tmp_update/bin \
         static/build/.tmp_update/lib \
+        static/build/.tmp_update/res \
         static/build/.tmp_update/script \
         static/build/miyoo/app \
         static/build/miyoo/lib \
@@ -214,6 +219,7 @@ PY
     for directory in \
         static/build/.tmp_update/bin \
         static/build/.tmp_update/lib \
+        static/build/.tmp_update/res \
         static/build/.tmp_update/script \
         static/build/miyoo/app \
         static/build/miyoo/lib \

@@ -231,6 +231,11 @@ independently. This does not infer source or license from filenames: all 40
 units remain fail-closed until a pinned source build replaces them or their
 redistribution provenance is documented.
 
+Runtime resources are tracked per file. The two model settings, Wi-Fi reset
+template, and Bloom release public key carry their exact source revisions.
+Inherited icons and status artwork remain fail-closed until they are replaced
+with reproducible Bloom assets or their original licenses are documented.
+
 ## Lock-file requirements
 
 `build/dependencies.lock` records the resolved toolchain, submodule, Action,
