@@ -236,6 +236,15 @@ template, and Bloom release public key carry their exact source revisions.
 Inherited icons and status artwork remain fail-closed until they are replaced
 with reproducible Bloom assets or their original licenses are documented.
 
+RetroAchievements dependencies are architecture-only until their focused
+issues land. RA-02 will pin and source-build an official rcheevos release (the
+RA-00 audit observed MIT-licensed `v12.4.0`) and record its resulting ARM output
+identity. RAOfflineProxy is deferred until RA-17; its repository now declares
+GPL-3.0 and contains Linux/Onion source, correcting the older no-license audit,
+but Bloom must still pin and reproduce its application, Python runtime, native
+libraries, and assets before distribution. Audit revisions and separation of
+direct/proxy responsibilities are recorded in `docs/RETROACHIEVEMENTS.md`.
+
 ## Lock-file requirements
 
 `build/dependencies.lock` records the resolved toolchain, submodule, Action,
