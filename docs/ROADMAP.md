@@ -226,10 +226,13 @@ guessed from inherited bytes.
 - [x] Validate clean reboot on an unplugged Plus: the device returned to SSH
   automatically, logged `shutdown_mode=reboot`, completed the read-only remount
   and recursive unmount, and accepted the normal init reboot command.
-- [ ] Validate the one-boot `reboot-to-system` handoff on a USB-powered Plus.
-  Bloom's startup charging UI runs before networking and was the apparent
-  blocker: a clean reboot now persists its intent before unmounting, and the
-  next userspace boot consumes that marker to bypass charging-only mode once.
+- [x] Validate the one-boot `reboot-to-system` handoff on a USB-powered Plus.
+  Signed build `65a9384a` returned to SSH automatically in under one minute
+  without a physical power press. Persistent telemetry recorded the reboot
+  marker, swapoff, successful read-only FAT remount, recursive unmount, and
+  accepted init reboot; fresh userspace consumed the marker before charging
+  mode. Two candidate boots passed structured health with five verified save
+  snapshots, and `65a9384a` was promoted over known-good `142c2922`.
 - [x] Activate signed build `142c2922` over retained known-good `c1ccb004` on
   Plus, boot through the real installer, confirm the exact installed version,
   pass consecutive structured health checks, preserve four verified save
