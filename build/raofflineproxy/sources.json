@@ -1,0 +1,42 @@
+{
+  "schema": 1,
+  "package": {
+    "name": "raofflineproxy",
+    "version": "1.11.1-alpha1",
+    "source_date_epoch": 1787097600
+  },
+  "sources": [
+    {
+      "name": "raofflineproxy",
+      "revision": "be6898e6dc26338bf82421ff7602fd37932be449",
+      "url": "https://codeload.github.com/misantronic/RAOfflineProxy/tar.gz/be6898e6dc26338bf82421ff7602fd37932be449",
+      "sha256": "be95fce67267d8fad30518df79cb53cc77fbd73db55919f5997e5d52d131f44d",
+      "bytes": 3155463,
+      "license": "GPL-3.0-only"
+    },
+    {
+      "name": "rcheevos",
+      "revision": "2ad0b8672f68a48148620164510b963039e49eb1",
+      "url": "https://codeload.github.com/RetroAchievements/rcheevos/tar.gz/2ad0b8672f68a48148620164510b963039e49eb1",
+      "sha256": "b8e3e834d15c327085154315c49dea85b081ad48592ba1740f323ac953e1bfec",
+      "bytes": 445138,
+      "license": "MIT"
+    },
+    {
+      "name": "libchdr",
+      "revision": "6cde5348eb118da3baf94f75a69577a005a484fd",
+      "url": "https://codeload.github.com/rtissera/libchdr/tar.gz/6cde5348eb118da3baf94f75a69577a005a484fd",
+      "sha256": "a222b1f1c842f988c2aad51e5f56ba94a423ed87ccab71f1abdb757caa7444f5",
+      "bytes": 521123,
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "python-runtime",
+      "revision": "cpython-3.9.20+20241016-armv7-unknown-linux-gnueabihf-install_only_stripped",
+      "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20241016/cpython-3.9.20%2B20241016-armv7-unknown-linux-gnueabihf-install_only_stripped.tar.gz",
+      "sha256": "73ecdd7318b44c88cc5877d039111067723510e922852fd207ac05b03a11863c",
+      "bytes": 18491574,
+      "license": "PSF-2.0"
+    }
+  ]
+}

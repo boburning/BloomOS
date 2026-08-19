@@ -18,6 +18,8 @@ on:
       - 'build/dependencies.lock'
       - 'build/openbor/**'
       - 'build/pixelreader/**'
+      - 'build/raofflineproxy/**'
+      - 'tools/validate_raofflineproxy_sources.py'
       - 'build/provenance-policy.json'
       - 'build/shell-test-inputs.json'
       - 'build/legacy-manifest.json'

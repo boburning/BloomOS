@@ -68,6 +68,15 @@ license_file = "third-party/rcheevos/LICENSE"
 build_recipe = "src/bloomRa/Makefile"
 hash_version = 1
 
+[raofflineproxy]
+version = "1.11.1-alpha1"
+source_revision = "be6898e6dc26338bf82421ff7602fd37932be449"
+license = "GPL-3.0-only"
+source_lock = "build/raofflineproxy/sources.json"
+build_recipe = "build/raofflineproxy/fetch.sh"
+integration = "service-only; Bloom owns session RetroArch append config"
+python_runtime = "cpython-3.9.20+20241016-armv7-unknown-linux-gnueabihf-install_only_stripped"
+
 [openbor]
 version = "4.0-b00efbc"
 source = "https://github.com/DCurrent/openbor"
