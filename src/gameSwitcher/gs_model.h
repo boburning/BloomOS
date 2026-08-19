@@ -35,6 +35,9 @@ typedef struct {
 typedef struct {
     RecentItem recentItem;
     char game_id[BLOOM_GAME_ID_LENGTH + 1];
+    bool has_ra_badge;
+    int ra_game_id;
+    unsigned long ra_achievement_count;
     SDL_Surface *romScreen;
     char rom_name[STR_MAX * 2];
     char name[STR_MAX * 2];

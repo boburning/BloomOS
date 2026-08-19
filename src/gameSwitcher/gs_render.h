@@ -142,6 +142,23 @@ void renderGameName(AppState *state)
 
     SDL_BlitSurface(state->surfaceGameName, &state->game_name_size, screen, &game_name_rect);
 
+    if (game->has_ra_badge) {
+        static SDL_Surface *badge = NULL;
+        if (badge == NULL) {
+            SDL_Color badge_color = {255, 255, 255};
+            badge = TTF_RenderUTF8_Blended(resource_getFont(HINT), "RA", badge_color);
+        }
+        if (badge != NULL) {
+            SDL_Rect badge_box = {(int)(g_display.width - theme()->frame.border_right - 42 * g_scale),
+                                  (int)(game_name_bg_pos.y + 30 * g_scale - (badge->h + 8 * g_scale) / 2),
+                                  (int)(badge->w + 12 * g_scale), (int)(badge->h + 8 * g_scale)};
+            SDL_FillRect(screen, &badge_box, SDL_MapRGB(screen->format, 53, 117, 83));
+            SDL_Rect badge_pos = {badge_box.x + (badge_box.w - badge->w) / 2,
+                                  badge_box.y + (badge_box.h - badge->h) / 2};
+            SDL_BlitSurface(badge, NULL, screen, &badge_pos);
+        }
+    }
+
     if (state->surfaceGameName->w > state->game_name_max_width) {
         state->gameNameScrollX += state->gameNameScrollSpeed;
 

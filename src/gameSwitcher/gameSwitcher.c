@@ -27,6 +27,8 @@
 #include "utils/msleep.h"
 #include "utils/surfaceSetAlpha.h"
 
+#include "../bloomRa/bloom_ra_database.h"
+#include "gameSwitcherAchievements.h"
 #include "gs_appState.h"
 #include "gs_history.h"
 #include "gs_keystate.h"
@@ -200,6 +202,7 @@ int main(int argc, char *argv[])
 
     freeRomScreens();
     ra_freeHistory();
+    gameswitcher_achievements_close();
 
     deinit();
 

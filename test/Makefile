@@ -20,6 +20,7 @@ CFILES := $(CFILES) ../src/playActivity/playActivityIdentity.c
 CFILES := $(CFILES) ../src/playActivity/playActivityHealth.c
 CFILES := $(CFILES) ../src/playActivity/playActivityDuration.c
 CFILES := $(CFILES) ../src/gameSwitcher/gameSwitcherIdentity.c
+CFILES := $(CFILES) ../src/gameSwitcher/gameSwitcherAchievements.c
 CFILES := $(CFILES) ../src/common/utils/udp.c
 include ../src/common/config.mk
 CFLAGS += -I../third-party/rcheevos/include -I../third-party/rcheevos/src -DRC_HASH_NO_ENCRYPTED
