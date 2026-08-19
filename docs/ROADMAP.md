@@ -211,7 +211,7 @@ merged; it does not imply unrecorded hardware certification.
   ([#129](https://github.com/boburning/BloomOS/pull/129)).
 - [x] Decompose the inherited runtime library bundle into independently
   replaceable libraries and runtime stacks without inferring provenance from
-  binary names.
+  binary names ([#130](https://github.com/boburning/BloomOS/pull/130)).
 - [x] Retire the inherited parallel Dropbear/SFTP binaries and the legacy SSH
   password/no-password toggles; retain only Bloom's source-built, key-only SSH
   service behind explicit developer mode and a provisioned public key.
