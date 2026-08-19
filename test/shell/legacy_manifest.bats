@@ -6,7 +6,7 @@
         --manifest /workspace/build/legacy-manifest.json
 
     [ "$status" -eq 0 ]
-    [[ "$output" == "legacy manifest validate: 145 components" ]]
+    [[ "$output" == "legacy manifest validate: 172 components" ]]
     [ ! -e "/workspace/static/packages/RApp/SNK - Neo Geo (GnGeo)" ]
     [ ! -e "/workspace/static/packages/RApp/PICO-8 (PICO-8 standalone)" ]
     [ ! -e "/workspace/static/packages/RApp/SCUMM (ScummVM standalone)" ]
@@ -23,6 +23,62 @@
     ! grep -F 'SearchFilter' /workspace/Makefile
     ! grep -F 'bin/filter' /workspace/static/build/.tmp_update/script/game_list_options.sh
     grep -F './script/reset_list.sh "$romroot"' /workspace/static/build/.tmp_update/script/game_list_options.sh
+    [ ! -e /workspace/static/build/miyoo/lib/libgamename.so ]
+    grep -F 'cp $(BIN_DIR)/libgamename.so $(BUILD_DIR)/miyoo/lib/' /workspace/Makefile
+    python3 - /workspace/build/legacy-manifest.json <<'PY'
+import json
+import sys
+components = {item["id"]: item for item in json.load(open(sys.argv[1], encoding="utf-8"))["components"]}
+assert "runtime-tmp-update" not in components
+assert "runtime-miyoo" not in components
+assert components["runtime-tmp-update-bin"]["path"] == "static/build/.tmp_update/bin"
+assert components["runtime-miyoo-app-skin"]["path"] == "static/build/miyoo/app/skin"
+assert components["runtime-miyoo-lib-libpadsp-so"]["path"] == "static/build/miyoo/lib/libpadsp.so"
+PY
+}
+
+@test "reviewed runtime source units receive Bloom provenance" {
+    manifest="$BATS_TEST_TMPDIR/legacy-manifest.json"
+    cp /workspace/build/legacy-manifest.json "$manifest"
+    python3 - "$manifest" <<'PY'
+import json
+import sys
+path = sys.argv[1]
+data = json.load(open(path, encoding="utf-8"))
+ids = {
+    "runtime-miyoo-app-config-json",
+    "runtime-miyoo-app-lang",
+    "runtime-miyoo-lib--gitkeep",
+    "runtime-tmp-update-config",
+    "runtime-tmp-update-etc",
+    "runtime-tmp-update-onionversion",
+    "runtime-tmp-update-runtime-sh",
+    "runtime-tmp-update-updater",
+}
+for component in data["components"]:
+    if component["id"] in ids:
+        for field in ("source", "source_revision", "license", "build_recipe"):
+            component[field] = None
+        component["resolution"] = "replace-source-build-or-exclude"
+with open(path, "w", encoding="utf-8", newline="\n") as stream:
+    json.dump(data, stream, ensure_ascii=False, indent=2)
+    stream.write("\n")
+PY
+
+    run python3 /workspace/tools/legacy_manifest.py annotate-bloom-replacements \
+        --repository /workspace --manifest "$manifest"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == "legacy manifest annotated: 8 Bloom source replacements" ]]
+    python3 - "$manifest" <<'PY'
+import json
+import sys
+components = json.load(open(sys.argv[1], encoding="utf-8"))["components"]
+runtime = [item for item in components if item["id"].startswith("runtime-")]
+resolved = [item for item in runtime if item["resolution"] == "source-build"]
+assert all(item["source"] == "https://github.com/boburning/BloomOS" for item in resolved)
+assert all(item["source_revision"] == "release-commit" for item in resolved)
+PY
 }
 
 @test "libretro integrations replace the excluded Fake-08 and PCSX standalones" {
@@ -60,7 +116,8 @@
     repository="$BATS_TEST_TMPDIR/repository"
     for directory in \
         static/build/.tmp_update \
-        static/build/miyoo \
+        static/build/miyoo/app \
+        static/build/miyoo/lib \
         lib \
         static/packages/common \
         static/packages/App/Demo \
@@ -69,7 +126,8 @@
         mkdir -p "$repository/$directory"
     done
     printf 'fixture\n' >"$repository/static/build/.tmp_update/runtime"
-    printf 'fixture\n' >"$repository/static/build/miyoo/runtime"
+    printf 'fixture\n' >"$repository/static/build/miyoo/app/runtime"
+    printf 'fixture\n' >"$repository/static/build/miyoo/lib/runtime.so"
     printf 'fixture\n' >"$repository/lib/library.so"
     printf 'fixture\n' >"$repository/static/packages/common/config"
     printf 'fixture\n' >"$repository/static/packages/App/Demo/app"
@@ -92,7 +150,8 @@
     repository="$BATS_TEST_TMPDIR/source-repository"
     for directory in \
         static/build/.tmp_update \
-        static/build/miyoo \
+        static/build/miyoo/app \
+        static/build/miyoo/lib \
         lib \
         static/packages/common \
         static/packages/App/Source \
@@ -102,7 +161,8 @@
         mkdir -p "$repository/$directory"
     done
     printf 'fixture\n' >"$repository/static/build/.tmp_update/runtime"
-    printf 'fixture\n' >"$repository/static/build/miyoo/runtime"
+    printf 'fixture\n' >"$repository/static/build/miyoo/app/runtime"
+    printf 'fixture\n' >"$repository/static/build/miyoo/lib/runtime.so"
     printf 'fixture\n' >"$repository/lib/library.so"
     printf '#!/bin/sh\n' >"$repository/static/packages/common/apply.sh"
     printf '#!/bin/sh\n' >"$repository/static/packages/App/Source/launch.sh"
@@ -136,7 +196,8 @@ PY
     repository="$BATS_TEST_TMPDIR/bloom-repository"
     for directory in \
         static/build/.tmp_update \
-        static/build/miyoo \
+        static/build/miyoo/app \
+        static/build/miyoo/lib \
         lib \
         static/packages/common \
         "static/packages/App/Battery Monitor/App/BatteryMonitorUI/res" \
@@ -146,7 +207,8 @@ PY
         mkdir -p "$repository/$directory"
     done
     printf 'fixture\n' >"$repository/static/build/.tmp_update/runtime"
-    printf 'fixture\n' >"$repository/static/build/miyoo/runtime"
+    printf 'fixture\n' >"$repository/static/build/miyoo/app/runtime"
+    printf 'fixture\n' >"$repository/static/build/miyoo/lib/runtime.so"
     printf 'fixture\n' >"$repository/lib/library.so"
     printf 'fixture\n' >"$repository/static/packages/common/config"
     package="$repository/static/packages/App/Battery Monitor/App/BatteryMonitorUI"

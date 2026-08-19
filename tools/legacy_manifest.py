@@ -11,10 +11,13 @@ import sys
 
 BASELINE = "07505ea58c7bba698d6b9220ff43946a43cac76b"
 FIXED_COMPONENTS = (
-    ("runtime-tmp-update", "runtime", "static/build/.tmp_update"),
-    ("runtime-miyoo", "runtime", "static/build/miyoo"),
     ("runtime-shared-libraries", "runtime", "lib"),
     ("package-common", "package-common", "static/packages/common"),
+)
+RUNTIME_COMPONENT_ROOTS = (
+    ("tmp-update", "static/build/.tmp_update"),
+    ("miyoo-app", "static/build/miyoo/app"),
+    ("miyoo-lib", "static/build/miyoo/lib"),
 )
 PACKAGE_KINDS = ("App", "Emu", "RApp")
 ANNOTATION_FIELDS = ("source", "source_revision", "license", "build_recipe", "resolution")
@@ -22,6 +25,16 @@ RESOLUTIONS = ("replace-source-build-or-exclude", "source-build", "excluded")
 ONION_SOURCE = "https://github.com/OnionUI/Onion"
 ONION_WRAPPER_SUFFIXES = (".json", ".miyoocmd", ".notfound", ".sh")
 BLOOM_SOURCE = "https://github.com/boburning/BloomOS"
+BLOOM_RUNTIME_SOURCE_IDS = {
+    "runtime-miyoo-app-config-json",
+    "runtime-miyoo-app-lang",
+    "runtime-miyoo-lib--gitkeep",
+    "runtime-tmp-update-config",
+    "runtime-tmp-update-etc",
+    "runtime-tmp-update-onionversion",
+    "runtime-tmp-update-runtime-sh",
+    "runtime-tmp-update-updater",
+}
 ADVANCEMENU_ID = "app-advancemenu--alternative-frontend"
 OPENBOR_ID = "rapp-game-engine---open-beats-of-rage"
 OPENBOR_SOURCE = "https://github.com/DCurrent/openbor"
@@ -57,6 +70,12 @@ def component_id(kind, name):
 
 def component_specs(repository):
     specs = list(FIXED_COMPONENTS)
+    for identifier_prefix, relative_root in RUNTIME_COMPONENT_ROOTS:
+        root = repository / relative_root
+        for child in sorted(root.iterdir(), key=lambda item: item.name.encode("utf-8")):
+            identifier = component_id("runtime", f"{identifier_prefix}-{child.name}")
+            relative = child.relative_to(repository).as_posix()
+            specs.append((identifier, "runtime", relative))
     package_root = repository / "static/packages"
     for kind in PACKAGE_KINDS:
         directory = package_root / kind
@@ -78,8 +97,12 @@ def canonical_file(path):
 def tree_identity(root):
     records = []
     byte_count = 0
-    for path in sorted(root.rglob("*"), key=lambda item: item.relative_to(root).as_posix().encode("utf-8")):
-        relative = path.relative_to(root).as_posix()
+    if root.is_dir():
+        paths = sorted(root.rglob("*"), key=lambda item: item.relative_to(root).as_posix().encode("utf-8"))
+    else:
+        paths = (root,)
+    for path in paths:
+        relative = path.relative_to(root).as_posix() if root.is_dir() else path.name
         metadata = path.lstat()
         if stat.S_ISLNK(metadata.st_mode):
             content = path.readlink().as_posix().encode("utf-8")
@@ -100,8 +123,8 @@ def tree_identity(root):
 
 def make_component(repository, identifier, kind, relative):
     root = repository / relative
-    if not root.is_dir():
-        raise ValueError(f"missing component directory: {relative}")
+    if not root.exists() and not root.is_symlink():
+        raise ValueError(f"missing component path: {relative}")
     file_count, byte_count, tree_sha256 = tree_identity(root)
     return {
         "id": identifier,
@@ -251,6 +274,26 @@ def is_bloom_battery_monitor(repository, component):
     if not source_code.is_file() or b'TTF_OpenFont("./res/DejaVuSans.ttf", 15)' not in canonical_file(source_code):
         return False
     return True
+
+
+def is_bloom_runtime_source(repository, component):
+    if component["id"] not in BLOOM_RUNTIME_SOURCE_IDS or component["kind"] != "runtime":
+        return False
+    root = repository / component["path"]
+    paths = root.rglob("*") if root.is_dir() else (root,)
+    found = False
+    for path in paths:
+        if not path.is_file():
+            continue
+        found = True
+        content = canonical_file(path)
+        if b"\0" in content:
+            return False
+        try:
+            content.decode("utf-8")
+        except UnicodeDecodeError:
+            return False
+    return found
 
 
 def is_bloom_quick_guide(repository, component):
@@ -408,7 +451,15 @@ def annotate_bloom_replacements(repository, manifest):
     for component in manifest["components"]:
         if component["resolution"] != "replace-source-build-or-exclude":
             continue
-        if is_bloom_battery_monitor(repository, component):
+        if is_bloom_runtime_source(repository, component):
+            component.update({
+                "source": BLOOM_SOURCE,
+                "source_revision": "release-commit",
+                "license": "GPL-3.0-only",
+                "build_recipe": "Makefile",
+                "resolution": "source-build",
+            })
+        elif is_bloom_battery_monitor(repository, component):
             component.update({
                 "source": BLOOM_SOURCE,
                 "source_revision": "release-commit",
@@ -473,11 +524,13 @@ def main():
     args = parser.parse_args()
     try:
         current = None
-        if args.command != "create":
+        if args.manifest.exists():
             current = args.manifest.read_text(encoding="utf-8")
             parsed = json.loads(current)
             if parsed.get("schema") != 1:
                 raise ValueError("unsupported legacy manifest schema")
+        elif args.command != "create":
+            raise ValueError(f"legacy manifest does not exist: {args.manifest}")
         generated = create_manifest(args.repository)
         if current is not None:
             apply_annotations(generated, parsed)

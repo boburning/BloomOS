@@ -204,6 +204,16 @@ shipped byte. A future music player must be assembled entirely from pinned,
 licensed sources and must not bundle media without explicit redistribution
 rights.
 
+The inherited runtime inventory is decomposed at its first meaningful payload
+boundaries instead of treating `.tmp_update` and `miyoo` as two opaque trees.
+Repository-owned configuration, language data, scaffolding, acknowledgments,
+and shell entrypoints carry Bloom source provenance. The stale static
+`libgamename.so` is removed because every release already replaces it with the
+source-built output. Remaining runtime binaries, libraries, artwork, fonts,
+media, public-key material, and mixed scraper data stay fail-closed as
+independent unresolved components until each is rebuilt, replaced, or
+excluded.
+
 ## Lock-file requirements
 
 `build/dependencies.lock` records the resolved toolchain, submodule, Action,

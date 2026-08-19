@@ -14,9 +14,10 @@
     [ -z "$output" ]
 }
 
-@test "miyoo library bundle only carries Bloom gamename and audio preload overrides" {
-    run sh -c 'find /workspace/static/build/miyoo/lib -maxdepth 1 -type f -exec basename {} \; | LC_ALL=C sort'
+@test "miyoo library bundle carries only the static audio preload override" {
+    run sh -c 'find /workspace/static/build/miyoo/lib -maxdepth 1 -type f ! -name ".gitkeep" -exec basename {} \; | LC_ALL=C sort'
 
     [ "$status" -eq 0 ]
-    [ "$output" = $'libgamename.so\nlibpadsp.so' ]
+    [ "$output" = "libpadsp.so" ]
+    grep -F 'cp $(BIN_DIR)/libgamename.so $(BUILD_DIR)/miyoo/lib/' /workspace/Makefile
 }
