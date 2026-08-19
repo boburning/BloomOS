@@ -1,4 +1,5 @@
 #include "bloom_ra.h"
+#include "bloom_ra_account.h"
 #include "bloom_ra_database.h"
 #include "bloom_ra_scanner.h"
 
@@ -20,6 +21,8 @@
 #define SCAN_LOCK "/tmp/bloom-ra-scan.lock"
 #define SCAN_PID SCAN_LOCK "/pid"
 #define CORE_POLICY_PATH "/mnt/SDCARD/.tmp_update/config/ra-core-policy.json"
+#define ACCOUNT_SETTINGS RA_ROOT "/account.json"
+#define ACCOUNT_CREDENTIALS RA_ROOT "/credentials"
 
 typedef struct {
     const char *folder;
@@ -158,6 +161,22 @@ static int print_cores(void)
         return 1;
     puts(json);
     free(json);
+    return 0;
+}
+
+static int print_account_status(void)
+{
+    BloomRaAccountStatus status;
+    char error[128] = {0};
+    if (bloom_ra_account_load(ACCOUNT_SETTINGS, ACCOUNT_CREDENTIALS, &status, error, sizeof(error)) != 0) {
+        fprintf(stderr, "{\"schema\":1,\"error\":{\"code\":\"account_state_invalid\"}}\n");
+        return 1;
+    }
+    printf("{\"schema\":1,\"configured\":%s,\"enabled\":%s,\"authenticated\":%s,\"mode\":",
+           status.username[0] ? "true" : "false", status.enabled ? "true" : "false",
+           status.authenticated ? "true" : "false");
+    json_string(status.mode);
+    printf(",\"offline_casual\":%s}\n", status.offline_casual ? "true" : "false");
     return 0;
 }
 
@@ -327,7 +346,7 @@ static int scan_command(int argc, char **argv)
 
 static int usage(void)
 {
-    fprintf(stderr, "Usage: bloom-ra {status|game BLOOM_GAME_ID|collection|cores|scan --changed|--all|--system SYSTEM|--status|--cancel}\n");
+    fprintf(stderr, "Usage: bloom-ra {status|game BLOOM_GAME_ID|collection|cores|account status|scan --changed|--all|--system SYSTEM|--status|--cancel}\n");
     return 2;
 }
 
@@ -341,6 +360,8 @@ int main(int argc, char **argv)
         return print_collection();
     if (argc == 2 && strcmp(argv[1], "cores") == 0)
         return print_cores();
+    if (argc == 3 && strcmp(argv[1], "account") == 0 && strcmp(argv[2], "status") == 0)
+        return print_account_status();
     if (argc >= 3 && strcmp(argv[1], "scan") == 0) {
         int result = scan_command(argc - 2, argv + 2);
         return result == 2 ? usage() : result;
