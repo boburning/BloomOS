@@ -359,6 +359,10 @@ Planned work includes safe updates and rollback, optional synchronization and of
   verifies exact ROM identity and installed core SHA/policy without exposing
   ROM data; physical login, Rich Presence, Hardcore, lifecycle, save-flush, and
   explicit operator unlock execution remain pending.
+- [x] RA-26: enforce a dedicated CI regression gate for exact core/source
+  policy, required RA fixtures, service-only proxy integration, immutable
+  transport, Hardcore routing, redaction-sensitive shell behavior, and focused
+  offline tests without production RA network access.
 - [ ] Keep RA-27 as a future consumer of the same `bloom-ra` API when Bloom owns
   the primary library browser; closed MainUI replacement is not a prerequisite
   for the P0 GameSwitcher badge.

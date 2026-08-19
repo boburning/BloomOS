@@ -22,6 +22,7 @@ on:
       - 'build/pixelreader/**'
       - 'build/raofflineproxy/**'
       - 'tools/validate_raofflineproxy_sources.py'
+      - 'tools/validate_ra_release_gate.py'
       - 'build/provenance-policy.json'
       - 'build/shell-test-inputs.json'
       - 'build/legacy-manifest.json'
