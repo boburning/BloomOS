@@ -31,9 +31,20 @@ $password = $null
 $token = $null
 try {
     $password = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($passwordPointer)
-    $response = Invoke-RestMethod -Method Post -Uri "https://retroachievements.org/dorequest.php" `
+    $loginResponse = Invoke-WebRequest -Method Post -Uri "https://retroachievements.org/dorequest.php" `
+        -UserAgent "BloomOS/0.1.0 (Windows) bloom-ra-bootstrap/1.0.0" `
         -ContentType "application/x-www-form-urlencoded" `
-        -Body @{ r = "login2"; u = $username; p = $password }
+        -Body @{ r = "login2"; u = $username; p = $password } `
+        -SkipHttpErrorCheck
+    if ($loginResponse.StatusCode -ne 200) {
+        throw "RetroAchievements rejected the login. Check the username/password and try again."
+    }
+    try {
+        $response = $loginResponse.Content | ConvertFrom-Json
+    }
+    catch {
+        throw "RetroAchievements returned an invalid login response."
+    }
     if ($response.Success -ne $true -or [string]::IsNullOrWhiteSpace([string]$response.Token)) {
         throw "RetroAchievements rejected the login."
     }
