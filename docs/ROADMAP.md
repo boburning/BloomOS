@@ -319,6 +319,19 @@ BloomOS 1.0 is not blocked on Sync, Hub, Link, profiles, or a replacement fronte
 
 Planned work includes safe updates and rollback, optional synchronization and offline achievements, a package hub, profiles and Kids Mode, system health, performance profiles, Nearby Play, a local browser companion, and a unified in-game experience.
 
+### RetroAchievements P0 platform
+
+- [ ] Deliver the ordered RA-00 through RA-26 implementation in
+  [`RETROACHIEVEMENTS.md`](RETROACHIEVEMENTS.md): exact rcheevos identification,
+  persistent offline metadata, GameSwitcher badge and smart collection,
+  exact-SHA Bloom core policy, centrally owned account and temporary launch
+  configuration, enforced direct Hardcore, optional softcore-only
+  RAOfflineProxy, redacted diagnostics, CI, and physical certification
+  ([RA-00 epic #132](https://github.com/boburning/BloomOS/issues/132)).
+- [ ] Keep RA-27 as a future consumer of the same `bloom-ra` API when Bloom owns
+  the primary library browser; closed MainUI replacement is not a prerequisite
+  for the P0 GameSwitcher badge.
+
 - [ ] Restore Nintendo DS support with a reproducible, open-source libretro
   core such as melonDS or DeSmuME. Build it from pinned source for Bloom's
   ARMv7 runtime, keep proprietary BIOS/firmware out of releases, and qualify

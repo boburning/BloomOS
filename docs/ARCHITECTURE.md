@@ -8,6 +8,24 @@ The target architecture separates shared services from original Mini, Plus, and 
 
 Planned stable service boundaries include platform discovery, structured game launch, session lifecycle, canonical game identity, activity storage, updates, sync, and health diagnostics. Miyoo's closed MainUI remains a compatibility boundary for BloomOS 1.x.
 
+## RetroAchievements boundary
+
+`bloom-ra` is the planned schema-versioned RetroAchievements service boundary.
+It attaches authoritative rcheevos content identity and minimal RA metadata to
+canonical Bloom GameID without replacing that identity. Game support, exact
+core-binary certification, and direct/proxy transport are independent policy
+dimensions. UI consumers read persistent local metadata and never hash or use
+the network during badge rendering.
+
+RA launch policy extends `BloomLaunchRequest` and is owned for the immutable
+session lifetime. Bloom writes a temporary RetroArch append config; it never
+uses permanent config mutation as normal control flow. Hardcore is direct-only
+and fails explicitly when its prohibited-feature invariants cannot be
+guaranteed. Optional RAOfflineProxy is a replaceable softcore transport behind
+`bloom-ra-proxy`, not a dependency of `bloom-ra` or ordinary game launch. The
+complete contract and ordered delivery plan are in
+[`RETROACHIEVEMENTS.md`](RETROACHIEVEMENTS.md).
+
 ## BloomPlatform foundation
 
 `bloom-platform` is the first device-side capability boundary. Its schema-1,
