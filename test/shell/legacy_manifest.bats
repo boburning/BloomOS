@@ -6,7 +6,7 @@
         --manifest /workspace/build/legacy-manifest.json
 
     [ "$status" -eq 0 ]
-    [[ "$output" == "legacy manifest validate: 257 components" ]]
+    [[ "$output" == "legacy manifest validate: 296 components" ]]
     [ ! -e "/workspace/static/packages/RApp/SNK - Neo Geo (GnGeo)" ]
     [ ! -e "/workspace/static/packages/RApp/PICO-8 (PICO-8 standalone)" ]
     [ ! -e "/workspace/static/packages/RApp/SCUMM (ScummVM standalone)" ]
@@ -44,6 +44,8 @@ assert components["runtime-tmp-update-bin-bloomctl"]["resolution"] == "source-bu
 assert components["runtime-tmp-update-script-network"]["path"] == "static/build/.tmp_update/script/network"
 assert components["runtime-tmp-update-script-network"]["source"] == "https://github.com/OnionUI/Onion"
 assert components["runtime-tmp-update-script-scraper"]["resolution"] == "replace-source-build-or-exclude"
+assert components["runtime-tmp-update-lib-libcrypto-so-3"]["path"] == "static/build/.tmp_update/lib/libcrypto.so.3"
+assert components["runtime-tmp-update-lib-parasyte"]["path"] == "static/build/.tmp_update/lib/parasyte"
 PY
 }
 
@@ -127,6 +129,7 @@ PY
     repository="$BATS_TEST_TMPDIR/repository"
     for directory in \
         static/build/.tmp_update/bin \
+        static/build/.tmp_update/lib \
         static/build/.tmp_update/script \
         static/build/miyoo/app \
         static/build/miyoo/lib \
@@ -162,6 +165,7 @@ PY
     repository="$BATS_TEST_TMPDIR/source-repository"
     for directory in \
         static/build/.tmp_update/bin \
+        static/build/.tmp_update/lib \
         static/build/.tmp_update/script \
         static/build/miyoo/app \
         static/build/miyoo/lib \
@@ -209,6 +213,7 @@ PY
     repository="$BATS_TEST_TMPDIR/bloom-repository"
     for directory in \
         static/build/.tmp_update/bin \
+        static/build/.tmp_update/lib \
         static/build/.tmp_update/script \
         static/build/miyoo/app \
         static/build/miyoo/lib \

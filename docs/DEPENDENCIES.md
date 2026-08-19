@@ -226,6 +226,11 @@ revision and GPL provenance. The scraper payload remains unresolved because it
 mixes scripts with inherited binary databases and cannot be licensed as one
 source unit.
 
+The `.tmp_update/lib` inventory records each top-level library or runtime stack
+independently. This does not infer source or license from filenames: all 40
+units remain fail-closed until a pinned source build replaces them or their
+redistribution provenance is documented.
+
 ## Lock-file requirements
 
 `build/dependencies.lock` records the resolved toolchain, submodule, Action,
