@@ -337,6 +337,11 @@ Planned work includes safe updates and rollback, optional synchronization and of
   The final package reproduces exactly across fresh builds and physically runs
   on Mini Plus. The optional runtime remains outside stable releases until its
   binary-input provenance is admitted or replaced by a source build.
+- [ ] RA-13: finish account/settings UI and authentication lifecycle. The
+  canonical service, redacted status, hidden host login bootstrap, one-time
+  password-to-token exchange, and device-local mode-`0600` JFFS2 token storage
+  are implemented and physically exercised with a disposable token; real RA
+  authentication and sign-out/settings UI remain pending.
 - [ ] RA-18: ship the schema-1 `bloom-ra-proxy` adapter. Host coverage now
   proves absent-package degradation, bounded status/pending/cache translation,
   input rejection, and stop behavior without config mutation. Physical package

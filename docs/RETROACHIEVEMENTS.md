@@ -276,6 +276,17 @@ or session credential over long-term plaintext password storage when supported.
 Secrets have restrictive permissions and are never emitted by health, exported
 logs, session JSON, activity, GameSwitcher, or catalog tables.
 
+The public account preferences remain at
+`/mnt/SDCARD/.bloom/achievements/account.json`. The RA token does not: Miyoo's
+VFAT SD mount uses `fmask=0000` and cannot enforce private file modes. Bloom
+stores the token in device-local JFFS2 at
+`/appconfigs/bloom/achievements/credentials` with mode `0600`. Moving an SD
+card therefore moves offline metadata and preferences, but never the online
+credential; each device must be authenticated separately. The host bootstrap
+helper prompts without echo, exchanges the password once for an RA token, and
+sends only that token over pinned SSH standard input. Passwords and tokens are
+never command-line arguments.
+
 `BloomLaunchRequest` gains a validated achievements policy. Bloom generates a
 temporary RetroArch append config; permanent `retroarch.cfg` is byte-identical
 before and after every direct or proxy session.

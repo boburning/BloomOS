@@ -22,7 +22,9 @@
 #define SCAN_PID SCAN_LOCK "/pid"
 #define CORE_POLICY_PATH "/mnt/SDCARD/.tmp_update/config/ra-core-policy.json"
 #define ACCOUNT_SETTINGS RA_ROOT "/account.json"
-#define ACCOUNT_CREDENTIALS RA_ROOT "/credentials"
+#define ACCOUNT_SECRET_ROOT "/appconfigs/bloom"
+#define ACCOUNT_SECRET_DIRECTORY ACCOUNT_SECRET_ROOT "/achievements"
+#define ACCOUNT_CREDENTIALS ACCOUNT_SECRET_DIRECTORY "/credentials"
 
 typedef struct {
     const char *folder;
@@ -32,6 +34,8 @@ typedef struct {
 static const ScanSystem scan_systems[] = {{"GB", "gb"}, {"GBC", "gbc"}, {"GBA", "gba"}, {"FC", "nes"}, {"FDS", "fds"}, {"SFC", "snes"}, {"PS", "psx"}, {"MD", "genesis"}, {"SEGACD", "segacd"}, {"THIRTYTWOX", "32x"}, {"GG", "gamegear"}, {"MS", "mastersystem"}, {"SEGASGONE", "sg1000"}, {"ARCADE", "arcade"}, {"CPS1", "cps1"}, {"CPS2", "cps2"}, {"CPS3", "cps3"}, {"NEOGEO", "neogeo"}, {"ATARI", "atari2600"}, {"SEVENTYEIGHTHUNDRED", "atari7800"}, {"LYNX", "lynx"}, {"PCE", "pce"}, {"PCECD", "pcecd"}, {"SGFX", "supergrafx"}, {"VB", "virtualboy"}, {"WS", "wonderswan"}, {"NGP", "ngpc"}, {"COLECO", "coleco"}, {"MSX", "msx"}, {"CPC", "amstrad"}, {"AMIGA", "amiga"}};
 
 static int open_catalog(sqlite3 **database);
+static int ensure_directory(const char *path);
+static int usage(void);
 
 static void json_string(const char *value)
 {
@@ -177,6 +181,49 @@ static int print_account_status(void)
            status.authenticated ? "true" : "false");
     json_string(status.mode);
     printf(",\"offline_casual\":%s}\n", status.offline_casual ? "true" : "false");
+    return 0;
+}
+
+static int configure_account(const char *username, const char *mode, const char *offline_setting)
+{
+    int offline_casual;
+    if (strcmp(offline_setting, "disabled") == 0)
+        offline_casual = 0;
+    else if (strcmp(offline_setting, "automatic") == 0)
+        offline_casual = 1;
+    else
+        return usage();
+    if (ensure_directory("/mnt/SDCARD/.bloom") != 0 || ensure_directory(RA_ROOT) != 0 ||
+        ensure_directory(ACCOUNT_SECRET_ROOT) != 0 || ensure_directory(ACCOUNT_SECRET_DIRECTORY) != 0) {
+        fprintf(stderr, "{\"schema\":1,\"error\":{\"code\":\"account_storage_unavailable\"}}\n");
+        return 1;
+    }
+    char token[128] = {0};
+    if (fgets(token, sizeof(token), stdin) == NULL) {
+        fprintf(stderr, "{\"schema\":1,\"error\":{\"code\":\"credential_input_invalid\"}}\n");
+        return 1;
+    }
+    size_t length = strlen(token);
+    if (length > 0 && token[length - 1] == '\n')
+        token[--length] = '\0';
+    if (length > 0 && token[length - 1] == '\r')
+        token[--length] = '\0';
+    if (length == 0 || (!feof(stdin) && length == sizeof(token) - 1)) {
+        memset(token, 0, sizeof(token));
+        fprintf(stderr, "{\"schema\":1,\"error\":{\"code\":\"credential_input_invalid\"}}\n");
+        return 1;
+    }
+    char error[128] = {0};
+    int result = bloom_ra_account_store(ACCOUNT_SETTINGS, ACCOUNT_CREDENTIALS, username, token, 1, mode,
+                                        offline_casual, error, sizeof(error));
+    memset(token, 0, sizeof(token));
+    if (result != 0) {
+        fprintf(stderr, "{\"schema\":1,\"error\":{\"code\":\"account_store_failed\"}}\n");
+        return 1;
+    }
+    printf("{\"schema\":1,\"configured\":true,\"enabled\":true,\"authenticated\":true,\"mode\":");
+    json_string(mode);
+    printf(",\"offline_casual\":%s}\n", offline_casual ? "true" : "false");
     return 0;
 }
 
@@ -346,7 +393,7 @@ static int scan_command(int argc, char **argv)
 
 static int usage(void)
 {
-    fprintf(stderr, "Usage: bloom-ra {status|game BLOOM_GAME_ID|collection|cores|account status|scan --changed|--all|--system SYSTEM|--status|--cancel}\n");
+    fprintf(stderr, "Usage: bloom-ra {status|game BLOOM_GAME_ID|collection|cores|account status|account configure USERNAME MODE disabled|automatic|scan --changed|--all|--system SYSTEM|--status|--cancel}\n");
     return 2;
 }
 
@@ -362,6 +409,8 @@ int main(int argc, char **argv)
         return print_cores();
     if (argc == 3 && strcmp(argv[1], "account") == 0 && strcmp(argv[2], "status") == 0)
         return print_account_status();
+    if (argc == 6 && strcmp(argv[1], "account") == 0 && strcmp(argv[2], "configure") == 0)
+        return configure_account(argv[3], argv[4], argv[5]);
     if (argc >= 3 && strcmp(argv[1], "scan") == 0) {
         int result = scan_command(argc - 2, argv + 2);
         return result == 2 ? usage() : result;

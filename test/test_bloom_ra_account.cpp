@@ -64,6 +64,18 @@ TEST_F(BloomRaAccountTest, RejectsHardcoreProxyCombinationAndUnsafeCredentialFil
     EXPECT_NE(0, bloom_ra_account_read_token(credentials.c_str(), token, sizeof(token)));
 }
 
+TEST_F(BloomRaAccountTest, AllowsPublicNonSecretSettingsPermissions)
+{
+    char error[128] = {};
+    ASSERT_EQ(0, bloom_ra_account_store(settings.c_str(), credentials.c_str(), "BloomUser", "token", 1,
+                                        "softcore", 0, error, sizeof(error)));
+    ASSERT_EQ(0, chmod(settings.c_str(), 0644));
+    BloomRaAccountStatus status = {};
+    ASSERT_EQ(0, bloom_ra_account_load(settings.c_str(), credentials.c_str(), &status, error, sizeof(error)));
+    EXPECT_EQ(1, status.authenticated);
+    EXPECT_STREQ("BloomUser", status.username);
+}
+
 TEST_F(BloomRaAccountTest, SignOutRemovesSettingsAndCredential)
 {
     char error[128] = {};
