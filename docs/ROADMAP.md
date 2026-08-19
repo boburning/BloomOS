@@ -199,7 +199,8 @@ merged; it does not imply unrecorded hardware certification.
   the audio preload shim required by existing launch commands.
 - [x] Split the final inherited `.tmp_update` and `miyoo` runtime trees into
   independently auditable payload units, resolve reviewed repository source,
-  and remove the stale static `libgamename.so` that release builds overwrite.
+  and remove the stale static `libgamename.so` that release builds overwrite
+  ([#127](https://github.com/boburning/BloomOS/pull/127)).
 - [x] Retire the inherited parallel Dropbear/SFTP binaries and the legacy SSH
   password/no-password toggles; retain only Bloom's source-built, key-only SSH
   service behind explicit developer mode and a provisioned public key.
