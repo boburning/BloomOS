@@ -22,6 +22,7 @@ RUNTIME_COMPONENT_ROOTS = (
 RUNTIME_NESTED_COMPONENT_ROOTS = (
     ("tmp-update-bin", "static/build/.tmp_update/bin"),
     ("tmp-update-lib", "static/build/.tmp_update/lib"),
+    ("tmp-update-res", "static/build/.tmp_update/res"),
     ("tmp-update-script", "static/build/.tmp_update/script"),
 )
 PACKAGE_KINDS = ("App", "Emu", "RApp")
@@ -29,7 +30,12 @@ ANNOTATION_FIELDS = ("source", "source_revision", "license", "build_recipe", "re
 RESOLUTIONS = ("replace-source-build-or-exclude", "source-build", "excluded")
 ONION_SOURCE = "https://github.com/OnionUI/Onion"
 ONION_WRAPPER_SUFFIXES = (".json", ".miyoocmd", ".notfound", ".sh")
-ONION_RUNTIME_SUFFIXES = ("", ".sh", ".tsv")
+ONION_RUNTIME_SUFFIXES = ("", ".json", ".reset", ".sh", ".tsv")
+ONION_RUNTIME_SOURCE_IDS = {
+    "runtime-tmp-update-res-miyoo283-system-json",
+    "runtime-tmp-update-res-miyoo354-system-json",
+    "runtime-tmp-update-res-wpa-supplicant-reset",
+}
 BLOOM_SOURCE = "https://github.com/boburning/BloomOS"
 BLOOM_RUNTIME_SOURCE_IDS = {
     "runtime-miyoo-app-config-json",
@@ -37,6 +43,7 @@ BLOOM_RUNTIME_SOURCE_IDS = {
     "runtime-miyoo-lib--gitkeep",
     "runtime-tmp-update-config",
     "runtime-tmp-update-etc",
+    "runtime-tmp-update-keys",
     "runtime-tmp-update-onionversion",
     "runtime-tmp-update-runtime-sh",
     "runtime-tmp-update-updater",
@@ -282,7 +289,7 @@ def is_onion_runtime_source(repository, component):
         return False
     root_path = pathlib.PurePosixPath(component["path"])
     script_root = pathlib.PurePosixPath("static/build/.tmp_update/script")
-    if script_root not in root_path.parents:
+    if script_root not in root_path.parents and component["id"] not in ONION_RUNTIME_SOURCE_IDS:
         return False
     root = repository / component["path"]
     paths = root.rglob("*") if root.is_dir() else (root,)
