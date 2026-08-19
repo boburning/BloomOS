@@ -178,6 +178,11 @@ The `RetroAchievements` smart collection derives from the same index and
 contains installed games satisfying the badge rule. No second list or metadata
 store is allowed.
 
+`bloomctl achievements collection` exposes the collection as deterministic
+schema-1 JSON containing canonical GameIDs and system IDs. It queries
+`library_games` directly using the badge predicate, so scanner updates change
+membership without regenerating or synchronizing another collection file.
+
 The shipped badge must be either an official mark with documented permission
 and pinned provenance, or a reproducible Bloom-authored generic achievement/RA
 glyph.

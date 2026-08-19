@@ -150,3 +150,32 @@ int bloom_ra_database_health(sqlite3 *database, int *version, int *indexed_games
         result = scalar(database, "SELECT COUNT(*) FROM library_games WHERE status='identified'", identified_games);
     return result;
 }
+
+int bloom_ra_database_collection(sqlite3 *database, BloomRaCollectionVisitor visitor, void *context,
+                                 unsigned long *count)
+{
+    if (database == NULL || visitor == NULL || count == NULL)
+        return SQLITE_MISUSE;
+    *count = 0;
+    sqlite3_stmt *statement = NULL;
+    int result = sqlite3_prepare_v2(
+        database,
+        "SELECT bloom_game_id,system_id FROM library_games "
+        "WHERE ra_game_id>0 AND official_set=1 AND achievement_count>0 "
+        "ORDER BY system_id,bloom_game_id",
+        -1, &statement, NULL);
+    if (result != SQLITE_OK)
+        return result;
+    while ((result = sqlite3_step(statement)) == SQLITE_ROW) {
+        const char *game_id = (const char *)sqlite3_column_text(statement, 0);
+        const char *system_id = (const char *)sqlite3_column_text(statement, 1);
+        if (game_id == NULL || system_id == NULL || visitor(game_id, system_id, context) != 0) {
+            sqlite3_finalize(statement);
+            return SQLITE_ABORT;
+        }
+        (*count)++;
+    }
+    int final_result = result == SQLITE_DONE ? SQLITE_OK : result;
+    sqlite3_finalize(statement);
+    return final_result;
+}
