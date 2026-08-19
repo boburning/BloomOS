@@ -54,8 +54,9 @@ static int eligible_entry(const char *system_id, const char *name)
     static const char *ngpc[] = {"ngc"};
     static const char *virtualboy[] = {"vb"};
     const char *ext = extension(name);
-#define MATCH(system, list) \
-    if (strcmp(system_id, system) == 0) return extension_is(ext, list, sizeof(list) / sizeof(list[0]))
+#define MATCH(system, list)             \
+    if (strcmp(system_id, system) == 0) \
+    return extension_is(ext, list, sizeof(list) / sizeof(list[0]))
     MATCH("gb", gb);
     MATCH("gbc", gbc);
     MATCH("gba", gba);
