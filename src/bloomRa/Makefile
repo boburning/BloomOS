@@ -1,6 +1,7 @@
 INCLUDE_UTILS = 0
 TARGET = bloom-ra
 CFILES := ../bloomGameId/bloom_game_id.c \
+	../../include/cjson/cJSON.c \
 	../../third-party/rcheevos/src/rc_compat.c \
 	../../third-party/rcheevos/src/rhash/md5.c \
 	../../third-party/rcheevos/src/rhash/hash.c \

@@ -119,6 +119,15 @@ The initial provider must be selected only after verifying the current official
 or de-facto RA-supported bulk hash/game resolution interface. Provider details
 must not leak into GameSwitcher, Bloom GameID, or the public schema.
 
+The initial `ra_web_game_list` provider uses RetroAchievements' documented
+`API_GetGameList.php` contract per console with `f=1` (games with achievements)
+and `h=1` (supported hashes). The endpoint requires a user's Web API key and
+explicitly asks clients to cache aggressively because responses can be large.
+Fetch/authentication remains outside the importer until RA-13; RA-04 accepts a
+staged response, validates every required field and hash, and publishes it in a
+single database transaction. Empty or malformed responses roll back without
+replacing the prior known-good generation.
+
 ## Incremental scanner
 
 The default scanner uses one low-priority hashing worker. It reuses a prior
