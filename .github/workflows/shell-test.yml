@@ -6,6 +6,7 @@ on:
       - '.github/workflows/shell-test.yml'
       - 'Makefile'
       - 'src/**/*.sh'
+      - 'src/bloomRaProxy/**'
       - 'static/**/*.sh'
       - 'static/build/.tmp_update/bin/*'
       - 'test/shell/**'

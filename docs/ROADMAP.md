@@ -333,6 +333,10 @@ Planned work includes safe updates and rollback, optional synchronization and of
   implemented; ARM package reproduction and physical installation remain
   pending. The optional runtime remains outside stable releases until its
   binary-input provenance is admitted or replaced by a source build.
+- [ ] RA-18: ship the schema-1 `bloom-ra-proxy` adapter. Host coverage now
+  proves absent-package degradation, bounded status/pending/cache translation,
+  input rejection, and stop behavior without config mutation; ARM/device
+  lifecycle validation remains pending.
 - [ ] Keep RA-27 as a future consumer of the same `bloom-ra` API when Bloom owns
   the primary library browser; closed MainUI replacement is not a prerequisite
   for the P0 GameSwitcher badge.

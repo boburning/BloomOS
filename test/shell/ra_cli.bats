@@ -20,6 +20,18 @@ esac
 EOF
     chmod +x "$ra"
     export BLOOM_RA_BIN="$ra"
+    proxy="$BLOOM_TEST_ROOT/bloom-ra-proxy"
+    cat >"$proxy" <<'EOF'
+#!/bin/sh
+printf '%s\n' "$1" >"$BLOOM_TEST_ROOT/proxy-args"
+case "$1" in
+status) printf '%s\n' '{"schema":1,"service":"bloom-ra-proxy","installed":false}' ;;
+pending) printf '%s\n' '{"schema":1,"service":"bloom-ra-proxy","pending_awards":0}' ;;
+*) exit 2 ;;
+esac
+EOF
+    chmod +x "$proxy"
+    export BLOOM_RA_PROXY_BIN="$proxy"
 }
 
 @test "achievements scan exposes only bounded scanner operations" {
@@ -86,6 +98,18 @@ teardown() {
     printf '%s' "$output" | grep -F '"authenticated":false'
     [ "$(sed -n '1p' "$BLOOM_TEST_ROOT/ra-args")" = account ]
     [ "$(sed -n '2p' "$BLOOM_TEST_ROOT/ra-args")" = status ]
+}
+
+@test "achievements proxy exposes bounded status and pending operations" {
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl achievements proxy status
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'"installed":false'* ]]
+    [ "$(cat "$BLOOM_TEST_ROOT/proxy-args")" = status ]
+
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl achievements proxy pending
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'"pending_awards":0'* ]]
+    [ "$(cat "$BLOOM_TEST_ROOT/proxy-args")" = pending ]
 }
 
 @test "achievements CLI rejects unsupported and malformed command shapes" {

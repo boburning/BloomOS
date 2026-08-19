@@ -1,0 +1,109 @@
+#!/bin/sh
+set -eu
+umask 077
+
+UPSTREAM=${BLOOM_RA_PROXY_UPSTREAM:-/mnt/SDCARD/.bloom/components/raofflineproxy/bin/raofflineproxy}
+CONFIG_DIR=${BLOOM_RA_PROXY_CONFIG_DIR:-/mnt/SDCARD/.bloom/achievements/proxy}
+LOG_FILE=${BLOOM_RA_PROXY_LOG_FILE:-/mnt/SDCARD/.bloom/logs/raofflineproxy.log}
+
+json_error() {
+    printf '{"schema":1,"service":"bloom-ra-proxy","error":{"code":"%s"}}\n' "$1" >&2
+    exit 1
+}
+
+installed() {
+    [ -f "$UPSTREAM" ] && [ -x "$UPSTREAM" ] && [ ! -L "$UPSTREAM" ]
+}
+
+run_upstream() {
+    RAOFFLINEPROXY_CONFIG_DIR="$CONFIG_DIR" "$UPSTREAM" "$@"
+}
+
+safe_json() {
+    value=$1
+    [ "${#value}" -le 4096 ] || json_error invalid_upstream_response
+    newline='
+'
+    case "$value" in
+        *"$newline"*) json_error invalid_upstream_response ;;
+        \{*\}) printf '%s' "$value" ;;
+        *) json_error invalid_upstream_response ;;
+    esac
+}
+
+service_status() {
+    run_upstream service-status 2>/dev/null || json_error upstream_unavailable
+}
+
+prepare_runtime_paths() {
+    [ ! -L "$CONFIG_DIR" ] || json_error unsafe_config_path
+    [ ! -e "$CONFIG_DIR" ] || [ -d "$CONFIG_DIR" ] || json_error unsafe_config_path
+    log_dir=$(dirname "$LOG_FILE")
+    [ ! -L "$log_dir" ] || json_error unsafe_log_path
+    [ ! -e "$LOG_FILE" ] || { [ -f "$LOG_FILE" ] && [ ! -L "$LOG_FILE" ]; } || json_error unsafe_log_path
+    mkdir -p "$CONFIG_DIR" "$log_dir"
+    if [ -f "$LOG_FILE" ] && [ "$(wc -c <"$LOG_FILE")" -gt 262144 ]; then
+        mv -f "$LOG_FILE" "$LOG_FILE.1"
+    fi
+}
+
+print_status() {
+    if ! installed; then
+        printf '%s\n' '{"schema":1,"service":"bloom-ra-proxy","installed":false,"running":false,"state":"not_installed"}'
+        return
+    fi
+    home=$(run_upstream home-status 2>/dev/null) || json_error upstream_unavailable
+    printf '{"schema":1,"service":"bloom-ra-proxy","installed":true,"state":"ready","upstream":'
+    safe_json "$home"
+    printf '}\n'
+}
+
+start_service() {
+    installed || json_error not_installed
+    before=$(service_status)
+    case "$before" in *'"running":true'*) print_status; return ;; esac
+    prepare_runtime_paths
+    RAOFFLINEPROXY_CONFIG_DIR="$CONFIG_DIR" nohup "$UPSTREAM" run-service >>"$LOG_FILE" 2>&1 &
+    attempts=0
+    while [ "$attempts" -lt 20 ]; do
+        current=$(service_status)
+        case "$current" in *'"running":true'*) print_status; return ;; esac
+        attempts=$((attempts + 1))
+        sleep 1
+    done
+    json_error start_failed
+}
+
+stop_service() {
+    installed || json_error not_installed
+    current=$(service_status)
+    pid=$(printf '%s' "$current" | sed -n 's/.*"pid":[ ]*\([0-9][0-9]*\).*/\1/p')
+    if [ -z "$pid" ]; then
+        printf '%s\n' '{"schema":1,"service":"bloom-ra-proxy","installed":true,"running":false,"state":"stopped"}'
+        return
+    fi
+    cmdline=$(tr '\000' ' ' <"/proc/$pid/cmdline" 2>/dev/null || true)
+    case "$cmdline" in *raofflineproxy*) kill "$pid" ;; *) json_error unsafe_service_pid ;; esac
+    printf '%s\n' '{"schema":1,"service":"bloom-ra-proxy","installed":true,"running":false,"state":"stopped"}'
+}
+
+case "${1:-}" in
+    status|health) [ "$#" -eq 1 ] || json_error invalid_arguments; print_status ;;
+    start) [ "$#" -eq 1 ] || json_error invalid_arguments; start_service ;;
+    stop) [ "$#" -eq 1 ] || json_error invalid_arguments; stop_service ;;
+    pending)
+        [ "$#" -eq 1 ] || json_error invalid_arguments
+        installed || json_error not_installed
+        count=$(run_upstream pending-awards-count 2>/dev/null) || json_error upstream_unavailable
+        case "$count" in ''|*[!0-9]*) json_error invalid_upstream_response ;; esac
+        printf '{"schema":1,"service":"bloom-ra-proxy","pending_awards":%s}\n' "$count"
+        ;;
+    cached-game)
+        [ "$#" -eq 2 ] || json_error invalid_arguments
+        case "$2" in ''|*[!0-9]*|0) json_error invalid_game_id ;; esac
+        installed || json_error not_installed
+        if run_upstream cached-games 2>/dev/null | grep -Eq "##GAMEID:${2}$"; then cached=true; else cached=false; fi
+        printf '{"schema":1,"service":"bloom-ra-proxy","ra_game_id":%s,"cached":%s}\n' "$2" "$cached"
+        ;;
+    *) json_error invalid_command ;;
+esac
