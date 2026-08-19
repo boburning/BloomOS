@@ -220,6 +220,12 @@ third-party executables to Bloom. The checked-in Dropbear binary and license
 copy are removed from the static payload; the pinned Dropbear build regenerates
 both into the release tree before validation and packaging.
 
+The `.tmp_update/script` inventory is likewise decomposed by command or
+subsystem. UTF-8 shell and tabular source retains its exact Onion baseline
+revision and GPL provenance. The scraper payload remains unresolved because it
+mixes scripts with inherited binary databases and cannot be licensed as one
+source unit.
+
 ## Lock-file requirements
 
 `build/dependencies.lock` records the resolved toolchain, submodule, Action,
