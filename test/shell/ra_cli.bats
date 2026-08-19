@@ -7,15 +7,31 @@ setup() {
     ra="$BLOOM_TEST_ROOT/bloom-ra"
     cat >"$ra" <<'EOF'
 #!/bin/sh
-printf '%s\n%s\n' "$1" "${2:-}" >"$BLOOM_TEST_ROOT/ra-args"
+printf '%s\n%s\n%s\n' "$1" "${2:-}" "${3:-}" >"$BLOOM_TEST_ROOT/ra-args"
 case "$1" in
     status) printf '%s\n' '{"schema":1,"service":"bloom-ra","enabled":false,"state":"not_configured"}' ;;
     game) printf '%s\n' "{\"schema\":1,\"game_id\":\"$2\",\"status\":\"unindexed\",\"has_ra_badge\":false}" ;;
+    scan) printf '%s\n' '{"schema":1,"processed":0,"identified":0}' ;;
     *) exit 2 ;;
 esac
 EOF
     chmod +x "$ra"
     export BLOOM_RA_BIN="$ra"
+}
+
+@test "achievements scan exposes only bounded scanner operations" {
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl achievements scan --changed
+    [ "$status" -eq 0 ]
+    [ "$(sed -n '1p' "$BLOOM_TEST_ROOT/ra-args")" = scan ]
+    [ "$(sed -n '2p' "$BLOOM_TEST_ROOT/ra-args")" = --changed ]
+
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl achievements scan --system GBA
+    [ "$status" -eq 0 ]
+    [ "$(sed -n '2p' "$BLOOM_TEST_ROOT/ra-args")" = --system ]
+    [ "$(sed -n '3p' "$BLOOM_TEST_ROOT/ra-args")" = GBA ]
+
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl achievements scan --system '../../GBA'
+    [ "$status" -eq 2 ]
 }
 
 teardown() {

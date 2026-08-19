@@ -198,7 +198,7 @@ usage() {
     printf '       bloomctl logs export\n' >&2
     printf '       bloomctl platform capabilities\n' >&2
     printf '       bloomctl test smoke SYSTEM ROM_PATH [DURATION_SECONDS]\n' >&2
-    printf '       bloomctl achievements {status|game BLOOM_GAME_ID}\n' >&2
+    printf '       bloomctl achievements {status|game BLOOM_GAME_ID|scan --changed|--all|--system SYSTEM|--status|--cancel}\n' >&2
 }
 
 achievements_command() {
@@ -211,6 +211,20 @@ achievements_command() {
         game)
             [ "$#" -eq 2 ] || { usage; return 2; }
             "$BLOOM_RA" game "$2"
+            ;;
+        scan)
+            case "${2:-}" in
+                --changed|--all|--status|--cancel)
+                    [ "$#" -eq 2 ] || { usage; return 2; }
+                    "$BLOOM_RA" scan "$2"
+                    ;;
+                --system)
+                    [ "$#" -eq 3 ] || { usage; return 2; }
+                    case "$3" in ''|*[!A-Z0-9]*) usage; return 2 ;; esac
+                    "$BLOOM_RA" scan --system "$3"
+                    ;;
+                *) usage; return 2 ;;
+            esac
             ;;
         *) usage; return 2 ;;
     esac

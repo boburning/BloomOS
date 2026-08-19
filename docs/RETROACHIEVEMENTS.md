@@ -140,6 +140,15 @@ a game session starts, and never competes with MainUI or GameSwitcher. A full
 scan is explicit. Launch may attempt bounded identification of one unindexed
 game; failure leaves status unknown and does not block play.
 
+RA-05 implements a single synchronous low-priority worker behind
+`scan --changed`, `--all`, and `--system`. Each completed game is committed
+independently, so restarting a canceled, paused, or interrupted scan resumes by
+skipping durable unchanged rows rather than maintaining a large work queue.
+The scanner refuses symlinked roots and entries, ignores artwork/metadata
+directories, checks `bloom-session` state between entries, and uses a
+recoverable process lock to prevent concurrent scans. Hardware I/O thresholds
+and automatic boot scheduling remain deferred until on-device measurement.
+
 ## Badge and collections
 
 The normal badge has one exact meaning:
