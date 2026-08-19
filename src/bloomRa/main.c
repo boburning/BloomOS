@@ -252,6 +252,42 @@ static int configure_account(const char *username, const char *mode, const char 
     return 0;
 }
 
+static int update_account(const char *field, const char *value)
+{
+    int enabled = -1;
+    int offline_casual = -1;
+    const char *mode = NULL;
+    if (strcmp(field, "enabled") == 0 && (strcmp(value, "true") == 0 || strcmp(value, "false") == 0))
+        enabled = strcmp(value, "true") == 0;
+    else if (strcmp(field, "mode") == 0 && (strcmp(value, "softcore") == 0 || strcmp(value, "hardcore") == 0))
+        mode = value;
+    else if (strcmp(field, "offline-casual") == 0 &&
+             (strcmp(value, "disabled") == 0 || strcmp(value, "automatic") == 0))
+        offline_casual = strcmp(value, "automatic") == 0;
+    else {
+        fprintf(stderr, "{\"schema\":1,\"error\":{\"code\":\"account_update_invalid\"}}\n");
+        return 1;
+    }
+    char error[128] = {0};
+    if (bloom_ra_account_update(ACCOUNT_SETTINGS, ACCOUNT_CREDENTIALS, enabled, mode, offline_casual, error,
+                                sizeof(error)) != 0) {
+        fprintf(stderr, "{\"schema\":1,\"error\":{\"code\":\"account_update_rejected\"}}\n");
+        return 1;
+    }
+    return print_account_status();
+}
+
+static int sign_out_account(void)
+{
+    char error[128] = {0};
+    if (bloom_ra_account_sign_out(ACCOUNT_SETTINGS, ACCOUNT_CREDENTIALS, error, sizeof(error)) != 0) {
+        fprintf(stderr, "{\"schema\":1,\"error\":{\"code\":\"account_sign_out_failed\"}}\n");
+        return 1;
+    }
+    printf("{\"schema\":1,\"signed_out\":true}\n");
+    return 0;
+}
+
 static int ensure_directory(const char *path)
 {
     struct stat status;
@@ -522,7 +558,7 @@ static int print_catalog_candidates(void)
 
 static int usage(void)
 {
-    fprintf(stderr, "Usage: bloom-ra {status|game BLOOM_GAME_ID|collection|cores|account status|account configure USERNAME MODE disabled|automatic|catalog candidates|import-console|import-installed CONSOLE REVISION|scan --changed|--all|--system SYSTEM|--status|--cancel}\n");
+    fprintf(stderr, "Usage: bloom-ra {status|game BLOOM_GAME_ID|collection|cores|account status|sign-out|set FIELD VALUE|account configure USERNAME MODE disabled|automatic|catalog candidates|import-console|import-installed CONSOLE REVISION|scan --changed|--all|--system SYSTEM|--status|--cancel}\n");
     return 2;
 }
 
@@ -540,6 +576,10 @@ int main(int argc, char **argv)
         return print_account_status();
     if (argc == 6 && strcmp(argv[1], "account") == 0 && strcmp(argv[2], "configure") == 0)
         return configure_account(argv[3], argv[4], argv[5]);
+    if (argc == 3 && strcmp(argv[1], "account") == 0 && strcmp(argv[2], "sign-out") == 0)
+        return sign_out_account();
+    if (argc == 5 && strcmp(argv[1], "account") == 0 && strcmp(argv[2], "set") == 0)
+        return update_account(argv[3], argv[4]);
     if (argc == 5 && strcmp(argv[1], "catalog") == 0 && strcmp(argv[2], "import-console") == 0)
         return import_catalog_console(argv[3], argv[4], 0);
     if (argc == 5 && strcmp(argv[1], "catalog") == 0 && strcmp(argv[2], "import-installed") == 0)

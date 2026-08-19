@@ -101,6 +101,21 @@ teardown() {
     [ "$(sed -n '2p' "$BLOOM_TEST_ROOT/ra-args")" = status ]
 }
 
+@test "achievements account settings and sign-out delegate bounded arguments" {
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl achievements account set mode hardcore
+    [ "$status" -eq 0 ]
+    [ "$(sed -n '1p' "$BLOOM_TEST_ROOT/ra-args")" = account ]
+    [ "$(sed -n '2p' "$BLOOM_TEST_ROOT/ra-args")" = set ]
+    [ "$(sed -n '3p' "$BLOOM_TEST_ROOT/ra-args")" = mode ]
+
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl achievements account sign-out
+    [ "$status" -eq 0 ]
+    [ "$(sed -n '2p' "$BLOOM_TEST_ROOT/ra-args")" = sign-out ]
+
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl achievements account set mode hardcore extra
+    [ "$status" -eq 2 ]
+}
+
 @test "achievements proxy exposes bounded status and pending operations" {
     run sh /workspace/static/build/.tmp_update/bin/bloomctl achievements proxy status
     [ "$status" -eq 0 ]

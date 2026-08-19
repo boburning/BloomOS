@@ -85,3 +85,28 @@ TEST_F(BloomRaAccountTest, SignOutRemovesSettingsAndCredential)
     EXPECT_FALSE(std::filesystem::exists(settings));
     EXPECT_FALSE(std::filesystem::exists(credentials));
 }
+
+TEST_F(BloomRaAccountTest, UpdatesSettingsWithoutReplacingCredential)
+{
+    char error[128] = {};
+    ASSERT_EQ(0, bloom_ra_account_store(settings.c_str(), credentials.c_str(), "BloomUser", "token", 1,
+                                        "softcore", 0, error, sizeof(error)));
+    ASSERT_EQ(0, bloom_ra_account_update(settings.c_str(), credentials.c_str(), 0, "hardcore", -1, error,
+                                         sizeof(error)));
+    BloomRaAccountStatus status = {};
+    ASSERT_EQ(0, bloom_ra_account_load(settings.c_str(), credentials.c_str(), &status, error, sizeof(error)));
+    EXPECT_EQ(0, status.enabled);
+    EXPECT_STREQ("hardcore", status.mode);
+    char token[128] = {};
+    ASSERT_EQ(0, bloom_ra_account_read_token(credentials.c_str(), token, sizeof(token)));
+    EXPECT_STREQ("token", token);
+}
+
+TEST_F(BloomRaAccountTest, UpdateRejectsHardcoreOfflineCombination)
+{
+    char error[128] = {};
+    ASSERT_EQ(0, bloom_ra_account_store(settings.c_str(), credentials.c_str(), "BloomUser", "token", 1,
+                                        "softcore", 1, error, sizeof(error)));
+    EXPECT_NE(0, bloom_ra_account_update(settings.c_str(), credentials.c_str(), -1, "hardcore", -1, error,
+                                         sizeof(error)));
+}

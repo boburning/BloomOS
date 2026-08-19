@@ -165,3 +165,31 @@ int bloom_ra_account_sign_out(const char *settings_path, const char *credentials
     }
     return 0;
 }
+
+int bloom_ra_account_update(const char *settings_path, const char *credentials_path, int enabled,
+                            const char *mode, int offline_casual, char *error, size_t error_size)
+{
+    if ((enabled < -1 || enabled > 1) || (offline_casual < -1 || offline_casual > 1) ||
+        (mode != NULL && strcmp(mode, "softcore") != 0 && strcmp(mode, "hardcore") != 0)) {
+        set_error(error, error_size, "invalid account update");
+        return -1;
+    }
+    BloomRaAccountStatus current;
+    if (bloom_ra_account_load(settings_path, credentials_path, &current, error, error_size) != 0 ||
+        current.username[0] == '\0' || !current.authenticated) {
+        set_error(error, error_size, "authenticated account is required");
+        return -1;
+    }
+    char token[128] = {0};
+    if (bloom_ra_account_read_token(credentials_path, token, sizeof(token)) != 0) {
+        set_error(error, error_size, "authenticated account is required");
+        return -1;
+    }
+    int next_enabled = enabled < 0 ? current.enabled : enabled;
+    int next_offline = offline_casual < 0 ? current.offline_casual : offline_casual;
+    const char *next_mode = mode == NULL ? current.mode : mode;
+    int result = bloom_ra_account_store(settings_path, credentials_path, current.username, token, next_enabled,
+                                        next_mode, next_offline, error, error_size);
+    memset(token, 0, sizeof(token));
+    return result;
+}

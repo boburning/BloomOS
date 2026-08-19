@@ -22,5 +22,7 @@ int bloom_ra_account_store(const char *settings_path, const char *credentials_pa
 int bloom_ra_account_read_token(const char *credentials_path, char *token, size_t token_size);
 int bloom_ra_account_sign_out(const char *settings_path, const char *credentials_path, char *error,
                               size_t error_size);
+int bloom_ra_account_update(const char *settings_path, const char *credentials_path, int enabled,
+                            const char *mode, int offline_casual, char *error, size_t error_size);
 
 #endif

@@ -350,7 +350,9 @@ Planned work includes safe updates and rollback, optional synchronization and of
   canonical service, redacted status, hidden host login bootstrap, one-time
   password-to-token exchange, and device-local mode-`0600` JFFS2 token storage
   are implemented and physically exercised with both a disposable token and a
-  real RA login on Mini Plus; sign-out/settings UI remain pending.
+  real RA login on Mini Plus. Redacted account status, enable/mode/offline
+  settings mutations, and sign-out are available through the stable CLI;
+  the graphical settings surface remains pending.
 - [ ] RA-18: ship the schema-1 `bloom-ra-proxy` adapter. Host coverage now
   proves absent-package degradation, bounded status/pending/cache translation,
   input rejection, and stop behavior without config mutation. Physical package
