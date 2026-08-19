@@ -313,6 +313,12 @@ Softcore, Offline Casual off    -> direct
 Softcore, Offline Casual on     -> proxy
 ```
 
+The launch resolver rejects Softcore Offline Casual when the proxy is not
+ready; it does not silently fall back to direct traffic. Hardcore always
+resolves to direct even if Offline Casual is enabled. Once the session append
+config has been generated, BloomLaunchRequest rejects any attempt to rewrite
+the achievements policy, freezing the chosen transport for that session.
+
 Proxy failure never prevents the emulator or save flush from running. Bloom
 uses session append config rather than upstream Onion's permanent-config patch
 and revert behavior. If upstream needs a service-only/external-config mode,

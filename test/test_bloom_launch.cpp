@@ -114,6 +114,28 @@ TEST_F(BloomLaunchTest, RejectsHardcoreProxyWithoutChangingExistingRequest)
     EXPECT_EQ(before, after);
 }
 
+TEST_F(BloomLaunchTest, ResolvesTransportBeforeLaunchWithoutSilentFallback)
+{
+    write_request();
+    ASSERT_EQ(0, bloom_launch_resolve_achievement_transport(request_.c_str(), 1, "softcore", 1, 1, 1234,
+                                                             "best_effort", error_, sizeof(error_))) << error_;
+    std::ifstream proxy_file(request_);
+    std::string proxy((std::istreambuf_iterator<char>(proxy_file)), std::istreambuf_iterator<char>());
+    EXPECT_NE(proxy.find("\"transport\":\"proxy\""), std::string::npos);
+
+    write_request();
+    EXPECT_NE(0, bloom_launch_resolve_achievement_transport(request_.c_str(), 1, "softcore", 1, 0, 1234,
+                                                             "best_effort", error_, sizeof(error_)));
+    EXPECT_NE(std::string(error_).find("unavailable"), std::string::npos);
+
+    write_request();
+    ASSERT_EQ(0, bloom_launch_resolve_achievement_transport(request_.c_str(), 1, "hardcore", 1, 1, 1234,
+                                                             "best_effort", error_, sizeof(error_))) << error_;
+    std::ifstream hardcore_file(request_);
+    std::string hardcore((std::istreambuf_iterator<char>(hardcore_file)), std::istreambuf_iterator<char>());
+    EXPECT_NE(hardcore.find("\"transport\":\"direct\""), std::string::npos);
+}
+
 TEST_F(BloomLaunchTest, HardcoreDisablesResumeAndProhibitedInputPaths)
 {
     ASSERT_EQ(0, bloom_launch_create_file(
@@ -184,6 +206,9 @@ TEST_F(BloomLaunchTest, WritesSessionOnlyRaConfigAndLeavesPermanentConfigUntouch
     std::ifstream request_file(request_);
     std::string request((std::istreambuf_iterator<char>(request_file)), std::istreambuf_iterator<char>());
     EXPECT_NE(request.find(temporary.string()), std::string::npos);
+    EXPECT_NE(0, bloom_launch_set_achievements(request_.c_str(), 1, "softcore", "direct", 1234, "untested",
+                                               error_, sizeof(error_)));
+    EXPECT_NE(std::string(error_).find("immutable"), std::string::npos);
     std::filesystem::remove(temporary);
 }
 

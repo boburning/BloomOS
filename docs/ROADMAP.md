@@ -344,6 +344,10 @@ Planned work includes safe updates and rollback, optional synchronization and of
   lifecycle control now consumes its bounded `home-status` JSON contract.
   Corrected Mini Plus status/start/pending/stop lifecycle passes with zero
   pending awards and a clean stopped final state.
+- [ ] RA-20: resolve direct/proxy transport before launch and freeze it after
+  session append-config generation. Host tests cover direct Softcore, proxy
+  Softcore, unavailable-proxy rejection, forced-direct Hardcore, and permanent
+  config immutability; physical session validation remains pending.
 - [ ] Keep RA-27 as a future consumer of the same `bloom-ra` API when Bloom owns
   the primary library browser; closed MainUI replacement is not a prerequisite
   for the P0 GameSwitcher badge.
