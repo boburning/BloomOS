@@ -24,6 +24,8 @@ typedef struct {
 
 static const ScanSystem scan_systems[] = {{"GB", "gb"}, {"GBC", "gbc"}, {"GBA", "gba"}, {"FC", "nes"}, {"FDS", "fds"}, {"SFC", "snes"}, {"PS", "psx"}, {"MD", "genesis"}, {"SEGACD", "segacd"}, {"THIRTYTWOX", "32x"}, {"GG", "gamegear"}, {"MS", "mastersystem"}, {"SEGASGONE", "sg1000"}, {"ARCADE", "arcade"}, {"CPS1", "cps1"}, {"CPS2", "cps2"}, {"CPS3", "cps3"}, {"NEOGEO", "neogeo"}, {"ATARI", "atari2600"}, {"SEVENTYEIGHTHUNDRED", "atari7800"}, {"LYNX", "lynx"}, {"PCE", "pce"}, {"PCECD", "pcecd"}, {"SGFX", "supergrafx"}, {"VB", "virtualboy"}, {"WS", "wonderswan"}, {"NGP", "ngpc"}, {"COLECO", "coleco"}, {"MSX", "msx"}, {"CPC", "amstrad"}, {"AMIGA", "amiga"}};
 
+static int open_catalog(sqlite3 **database);
+
 static void json_string(const char *value)
 {
     putchar('"');
@@ -58,13 +60,30 @@ static int print_game(const char *game_id)
                 error);
         return 1;
     }
+    sqlite3 *database = NULL;
+    int database_result = open_catalog(&database);
+    if (database_result != SQLITE_OK) {
+        fprintf(stderr, "{\"schema\":1,\"error\":{\"code\":\"database_unavailable\"}}\n");
+        return 1;
+    }
+    if (bloom_ra_get_game_from_database(database, game_id, &game, error, sizeof(error)) != 0) {
+        sqlite3_close(database);
+        fprintf(stderr, "{\"schema\":1,\"error\":{\"code\":\"lookup_failed\",\"message\":\"%s\"}}\n",
+                error);
+        return 1;
+    }
+    sqlite3_close(database);
     printf("{\"schema\":%d,\"game_id\":", game.schema);
     json_string(game.game_id);
     printf(",\"status\":");
     json_string(game.status);
-    printf(",\"has_ra_badge\":%s,\"ra\":{\"game_id\":null,\"official_set\":false,"
-           "\"achievement_count\":%lu}}\n",
-           game.has_ra_badge ? "true" : "false", game.achievement_count);
+    printf(",\"has_ra_badge\":%s,\"ra\":{\"game_id\":", game.has_ra_badge ? "true" : "false");
+    if (game.ra_game_id > 0)
+        printf("%d", game.ra_game_id);
+    else
+        printf("null");
+    printf(",\"official_set\":%s,\"achievement_count\":%lu}}\n", game.official_set ? "true" : "false",
+           game.achievement_count);
     return 0;
 }
 
