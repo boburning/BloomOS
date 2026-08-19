@@ -226,15 +226,18 @@ guessed from inherited bytes.
 - [x] Validate clean reboot on an unplugged Plus: the device returned to SSH
   automatically, logged `shutdown_mode=reboot`, completed the read-only remount
   and recursive unmount, and accepted the normal init reboot command.
+- [ ] Validate the one-boot `reboot-to-system` handoff on a USB-powered Plus.
+  Bloom's startup charging UI runs before networking and was the apparent
+  blocker: a clean reboot now persists its intent before unmounting, and the
+  next userspace boot consumes that marker to bypass charging-only mode once.
 - [x] Activate signed build `142c2922` over retained known-good `c1ccb004` on
   Plus, boot through the real installer, confirm the exact installed version,
   pass consecutive structured health checks, preserve four verified save
   snapshots and both NDS ROMs, remove the retired DraStic package, and promote
   the candidate to known-good.
-- [ ] Repeat the applicable reboot/poweroff paths on Mini V2 and Flip. Treat a
-  USB-powered Plus entering its firmware charging screen as a separate charging
-  mode; it requires a second power press and is not evidence of a failed clean
-  shutdown.
+- [ ] Repeat the applicable reboot/poweroff paths on Mini V2 and Flip. Confirm
+  that ordinary USB cable insertion still enters charging-only mode while an
+  explicit reboot bypasses it exactly once on each applicable model.
 - [ ] Run bounded-failure and rollback tests on Plus, then repeat applicable
   signed update activation, boot confirmation, failure, and rollback coverage
   on Mini V2 and Flip.

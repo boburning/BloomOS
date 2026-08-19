@@ -70,6 +70,14 @@ if [ "$0" = "/tmp/_shutdown" ]; then
 	fi
 	shutdown_log "shutdown_started=1"
 	shutdown_log "shutdown_mode=$shutdown_mode"
+	if [ "$shutdown_mode" = "reboot" ]; then
+		# The Plus starts Bloom's charging UI whenever VBUS is present. Preserve
+		# the caller's intent across reset so the next userspace boot can bypass
+		# that UI once and continue to networking without a physical power press.
+		mkdir -p /mnt/SDCARD/.bloom
+		printf '%s\n' 1 > /mnt/SDCARD/.bloom/reboot-to-system
+		shutdown_log "reboot_to_system_marker=1"
+	fi
 
 	killall -9 main # mandatory to avoid the suppression of .tmp_update !
 	killall -9 updater
