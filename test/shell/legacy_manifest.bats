@@ -6,7 +6,7 @@
         --manifest /workspace/build/legacy-manifest.json
 
     [ "$status" -eq 0 ]
-    [[ "$output" == "legacy manifest validate: 307 components" ]]
+    [[ "$output" == "legacy manifest validate: 308 components" ]]
     [ ! -e "/workspace/static/packages/RApp/SNK - Neo Geo (GnGeo)" ]
     [ ! -e "/workspace/static/packages/RApp/PICO-8 (PICO-8 standalone)" ]
     [ ! -e "/workspace/static/packages/RApp/SCUMM (ScummVM standalone)" ]
@@ -91,7 +91,7 @@ import sys
 components = json.load(open(sys.argv[1], encoding="utf-8"))["components"]
 runtime = [item for item in components if item["id"].startswith("runtime-")]
 bloom = [item for item in runtime if item["source"] == "https://github.com/boburning/BloomOS"]
-assert len(bloom) == 30
+assert len(bloom) == 31
 assert all(item["resolution"] == "source-build" for item in bloom)
 assert all(item["source_revision"] == "release-commit" for item in bloom)
 PY

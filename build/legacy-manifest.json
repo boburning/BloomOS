@@ -549,6 +549,19 @@
       "resolution": "source-build"
     },
     {
+      "id": "runtime-tmp-update-bin-bloom-ra-session-prepare",
+      "kind": "runtime",
+      "path": "static/build/.tmp_update/bin/bloom-ra-session-prepare",
+      "file_count": 1,
+      "byte_count": 4128,
+      "tree_sha256": "e7c13d803aceee1f0b7140e426f44205ba9eb557807e91ec68140a77248a0270",
+      "source": "https://github.com/boburning/BloomOS",
+      "source_revision": "release-commit",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
+    },
+    {
       "id": "runtime-tmp-update-bin-bloom-save-snapshot",
       "kind": "runtime",
       "path": "static/build/.tmp_update/bin/bloom-save-snapshot",
@@ -566,8 +579,8 @@
       "kind": "runtime",
       "path": "static/build/.tmp_update/bin/bloom-session",
       "file_count": 1,
-      "byte_count": 10497,
-      "tree_sha256": "cae610375718d202fafb728127c8f07e8f9ae4678b226fbc512955df62ff8d69",
+      "byte_count": 10860,
+      "tree_sha256": "0c085fa15bca8fb2b39192e298d9ea0484b9cf65933e03485f8fa7659df367dd",
       "source": "https://github.com/boburning/BloomOS",
       "source_revision": "release-commit",
       "license": "GPL-3.0-only",

@@ -247,6 +247,15 @@ writes credentials and `cheevos_*` values only to a mode-`0600` append config
 under `/tmp/bloom-session/`, then adds that path to the session request. The
 permanent RetroArch configuration is never read or modified by this operation.
 
+`bloom-session` invokes a Bloom-owned preparation adapter on its private copy of
+the request. The adapter reads the token only from the protected credential file
+and passes it to `bloom-launch` through standard input. Unauthenticated or
+unidentified Softcore sessions continue with RA disabled; the equivalent
+Hardcore uncertainty fails before launch rather than silently downgrading.
+Missing exact-core policy is reported as `untested`, while a known incompatible
+core disables Softcore RA and rejects Hardcore. Offline Casual requests remain
+explicitly unavailable until proxy session routing lands.
+
 Hardcore policy additionally rejects Bloom auto-resume and proxy transport,
 requires Rich Presence and leaderboards, disables rewind/run-ahead/preemptive
 frames, and removes load-state, rewind, frame-advance, slowdown, and cheat

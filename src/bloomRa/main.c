@@ -252,6 +252,23 @@ static int configure_account(const char *username, const char *mode, const char 
     return 0;
 }
 
+static int print_account_launch(void)
+{
+    BloomRaAccountStatus status;
+    char error[128] = {0};
+    if (bloom_ra_account_load(ACCOUNT_SETTINGS, ACCOUNT_CREDENTIALS, &status, error, sizeof(error)) != 0) {
+        fprintf(stderr, "{\"schema\":1,\"error\":{\"code\":\"account_state_invalid\"}}\n");
+        return 1;
+    }
+    printf("{\"schema\":1,\"enabled\":%s,\"authenticated\":%s,\"username\":",
+           status.enabled ? "true" : "false", status.authenticated ? "true" : "false");
+    json_string(status.username);
+    printf(",\"mode\":");
+    json_string(status.mode);
+    printf(",\"offline_casual\":%s}\n", status.offline_casual ? "true" : "false");
+    return 0;
+}
+
 static int update_account(const char *field, const char *value)
 {
     int enabled = -1;
@@ -574,6 +591,8 @@ int main(int argc, char **argv)
         return print_cores();
     if (argc == 3 && strcmp(argv[1], "account") == 0 && strcmp(argv[2], "status") == 0)
         return print_account_status();
+    if (argc == 3 && strcmp(argv[1], "account") == 0 && strcmp(argv[2], "launch") == 0)
+        return print_account_launch();
     if (argc == 6 && strcmp(argv[1], "account") == 0 && strcmp(argv[2], "configure") == 0)
         return configure_account(argv[3], argv[4], argv[5]);
     if (argc == 3 && strcmp(argv[1], "account") == 0 && strcmp(argv[2], "sign-out") == 0)

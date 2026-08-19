@@ -74,6 +74,25 @@ teardown() { teardown_bloom_fixture; }
     grep -Eq '^[0-9a-f]{64}$' "$BLOOM_SESSION_ROOT/request_sha256"
 }
 
+@test "session prepares RA policy on its private request copy" {
+    export BLOOM_RA_PREPARE_BIN="$MOCK_BIN/bloom-ra-session-prepare"
+    cat >"$BLOOM_RA_PREPARE_BIN" <<'EOF'
+#!/bin/sh
+printf '%s\n' "$1" >"$BLOOM_TEST_ROOT/prepared-request"
+printf '\n' >>"$1"
+EOF
+    chmod +x "$BLOOM_RA_PREPARE_BIN"
+
+    "$SESSION" start "$REQUEST"
+
+    case "$(cat "$BLOOM_TEST_ROOT/prepared-request")" in
+        "$BLOOM_SESSION_ROOT/request.json.tmp."*) ;;
+        *) false ;;
+    esac
+    [ "$(wc -l <"$REQUEST")" -eq 1 ]
+    [ "$(wc -l <"$BLOOM_SESSION_ROOT/request.json")" -eq 2 ]
+}
+
 @test "wall-clock changes cannot alter monotonic session duration" {
     start_running_session
     printf '107.75 50.00\n' >"$BLOOM_UPTIME_FILE"
