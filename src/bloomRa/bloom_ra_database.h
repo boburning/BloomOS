@@ -10,6 +10,7 @@ int bloom_ra_database_open(const char *path, sqlite3 **database);
 int bloom_ra_database_version(sqlite3 *database, int *version);
 int bloom_ra_database_migrate(sqlite3 *database);
 int bloom_ra_database_health(sqlite3 *database, int *version, int *indexed_games, int *identified_games);
+int bloom_ra_database_catalog_status(sqlite3 *database, char *status, unsigned long status_size);
 
 typedef int (*BloomRaCollectionVisitor)(const char *game_id, const char *system_id, void *context);
 int bloom_ra_database_collection(sqlite3 *database, BloomRaCollectionVisitor visitor, void *context,
