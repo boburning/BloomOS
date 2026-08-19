@@ -326,7 +326,8 @@ Planned work includes safe updates and rollback, optional synchronization and of
   persistent offline metadata, GameSwitcher badge and smart collection,
   exact-SHA Bloom core policy, centrally owned account and temporary launch
   configuration, enforced direct Hardcore, optional softcore-only
-  RAOfflineProxy, redacted diagnostics, CI, and physical certification.
+  RAOfflineProxy, redacted diagnostics, CI, and physical certification
+  ([RA-00 epic #132](https://github.com/boburning/BloomOS/issues/132)).
 - [ ] Keep RA-27 as a future consumer of the same `bloom-ra` API when Bloom owns
   the primary library browser; closed MainUI replacement is not a prerequisite
   for the P0 GameSwitcher badge.

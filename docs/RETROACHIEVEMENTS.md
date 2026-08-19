@@ -312,7 +312,10 @@ output identity in its implementation issue.
 
 ## Ordered work breakdown
 
-The RA-00 parent epic owns these focused issues and dependency order:
+The [RA-00 parent epic](https://github.com/boburning/BloomOS/issues/132) owns
+the focused child issues [#134](https://github.com/boburning/BloomOS/issues/134)
+through [#160](https://github.com/boburning/BloomOS/issues/160) and this
+dependency order:
 
 ```text
 RA-01 bloom-ra CLI skeleton
