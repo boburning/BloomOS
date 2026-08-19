@@ -71,9 +71,10 @@ static int print_status(void)
         fprintf(stderr, "{\"schema\":1,\"error\":{\"code\":\"database_unavailable\"}}\n");
         return 1;
     }
-    const char *state = !account.username[0] ? "not_configured" :
-                        !account.enabled ? "disabled" :
-                        !account.authenticated ? "attention_required" : "ready";
+    const char *state = !account.username[0]     ? "not_configured"
+                        : !account.enabled       ? "disabled"
+                        : !account.authenticated ? "attention_required"
+                                                 : "ready";
     printf("{\"schema\":1,\"service\":\"bloom-ra\",\"enabled\":%s,\"state\":",
            account.enabled ? "true" : "false");
     json_string(state);
