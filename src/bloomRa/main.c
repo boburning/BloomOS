@@ -2,11 +2,14 @@
 #include "bloom_ra_database.h"
 #include "bloom_ra_scanner.h"
 
+#include "cjson/cJSON.h"
+
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
 #include <signal.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -16,6 +19,7 @@
 #define SESSION_STATE "/tmp/bloom-session/state"
 #define SCAN_LOCK "/tmp/bloom-ra-scan.lock"
 #define SCAN_PID SCAN_LOCK "/pid"
+#define CORE_POLICY_PATH "/mnt/SDCARD/.tmp_update/config/ra-core-policy.json"
 
 typedef struct {
     const char *folder;
@@ -122,6 +126,38 @@ static int print_collection(void)
         return 1;
     }
     printf("],\"count\":%lu}\n", count);
+    return 0;
+}
+
+static int print_cores(void)
+{
+    FILE *file = fopen(CORE_POLICY_PATH, "rb");
+    if (file == NULL) {
+        fprintf(stderr, "{\"schema\":1,\"error\":{\"code\":\"core_policy_unavailable\"}}\n");
+        return 1;
+    }
+    char buffer[65536];
+    size_t length = fread(buffer, 1, sizeof(buffer) - 1, file);
+    int at_end = feof(file);
+    fclose(file);
+    if (!at_end) {
+        fprintf(stderr, "{\"schema\":1,\"error\":{\"code\":\"core_policy_invalid\"}}\n");
+        return 1;
+    }
+    buffer[length] = '\0';
+    cJSON *policy = cJSON_Parse(buffer);
+    if (policy == NULL || !cJSON_IsNumber(cJSON_GetObjectItemCaseSensitive(policy, "schema")) ||
+        !cJSON_IsArray(cJSON_GetObjectItemCaseSensitive(policy, "entries"))) {
+        cJSON_Delete(policy);
+        fprintf(stderr, "{\"schema\":1,\"error\":{\"code\":\"core_policy_invalid\"}}\n");
+        return 1;
+    }
+    char *json = cJSON_PrintUnformatted(policy);
+    cJSON_Delete(policy);
+    if (json == NULL)
+        return 1;
+    puts(json);
+    free(json);
     return 0;
 }
 
@@ -291,7 +327,7 @@ static int scan_command(int argc, char **argv)
 
 static int usage(void)
 {
-    fprintf(stderr, "Usage: bloom-ra {status|game BLOOM_GAME_ID|collection|scan --changed|--all|--system SYSTEM|--status|--cancel}\n");
+    fprintf(stderr, "Usage: bloom-ra {status|game BLOOM_GAME_ID|collection|cores|scan --changed|--all|--system SYSTEM|--status|--cancel}\n");
     return 2;
 }
 
@@ -303,6 +339,8 @@ int main(int argc, char **argv)
         return print_game(argv[2]);
     if (argc == 2 && strcmp(argv[1], "collection") == 0)
         return print_collection();
+    if (argc == 2 && strcmp(argv[1], "cores") == 0)
+        return print_cores();
     if (argc >= 3 && strcmp(argv[1], "scan") == 0) {
         int result = scan_command(argc - 2, argv + 2);
         return result == 2 ? usage() : result;

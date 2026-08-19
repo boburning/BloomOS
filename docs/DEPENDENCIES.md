@@ -62,6 +62,11 @@ build flags, patch sets, known issues, and physical-validation dates remain
 explicit `null` or empty fields; they must be filled from authoritative source
 and device evidence rather than inferred from a filename.
 
+`build/ra-core-policy.json` stores RetroAchievements policy separately for
+those exact binaries. Its validator requires every RA-relevant default system
+to match the corresponding core SHA and rejects `verified` claims without
+physical-device evidence.
+
 ## Release provenance policy
 
 `build/provenance-policy.json` assigns every release component to a
