@@ -1,0 +1,63 @@
+#!/usr/bin/env bats
+
+load 'support/test_helper'
+
+setup() {
+    setup_bloom_fixture
+    ra="$BLOOM_TEST_ROOT/bloom-ra"
+    cat >"$ra" <<'EOF'
+#!/bin/sh
+printf '%s\n%s\n' "$1" "${2:-}" >"$BLOOM_TEST_ROOT/ra-args"
+case "$1" in
+    status) printf '%s\n' '{"schema":1,"service":"bloom-ra","enabled":false,"state":"not_configured"}' ;;
+    game) printf '%s\n' "{\"schema\":1,\"game_id\":\"$2\",\"status\":\"unindexed\",\"has_ra_badge\":false}" ;;
+    *) exit 2 ;;
+esac
+EOF
+    chmod +x "$ra"
+    export BLOOM_RA_BIN="$ra"
+}
+
+teardown() {
+    teardown_bloom_fixture
+}
+
+@test "achievements status delegates to the native service" {
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl achievements status
+
+    [ "$status" -eq 0 ]
+    printf '%s' "$output" | grep -F '"schema":1'
+    printf '%s' "$output" | grep -F '"state":"not_configured"'
+    [ "$(sed -n '1p' "$BLOOM_TEST_ROOT/ra-args")" = status ]
+    [ -z "$(sed -n '2p' "$BLOOM_TEST_ROOT/ra-args")" ]
+}
+
+@test "achievements game preserves a validated identity as one argument" {
+    game_id='bloom-game-v1:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
+
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl achievements game "$game_id"
+
+    [ "$status" -eq 0 ]
+    printf '%s' "$output" | grep -F '"status":"unindexed"'
+    [ "$(sed -n '1p' "$BLOOM_TEST_ROOT/ra-args")" = game ]
+    [ "$(sed -n '2p' "$BLOOM_TEST_ROOT/ra-args")" = "$game_id" ]
+}
+
+@test "achievements CLI rejects unsupported and malformed command shapes" {
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl achievements scan
+    [ "$status" -eq 2 ]
+    [ ! -e "$BLOOM_TEST_ROOT/ra-args" ]
+
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl achievements game one extra
+    [ "$status" -eq 2 ]
+    [ ! -e "$BLOOM_TEST_ROOT/ra-args" ]
+}
+
+@test "achievements CLI fails clearly when the service is unavailable" {
+    export BLOOM_RA_BIN="$BLOOM_TEST_ROOT/missing-bloom-ra"
+
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl achievements status
+
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"achievements service is unavailable"* ]]
+}

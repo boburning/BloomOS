@@ -6,6 +6,7 @@ CFILES := $(CFILES) ../src/infoPanel/imagesBrowser.c
 CFILES := $(CFILES) ../src/infoPanel/imagesConfig.c
 CFILES := $(CFILES) ../src/bloomSaveFlush/bloom_save_flush.c
 CFILES := $(CFILES) ../src/bloomGameId/bloom_game_id.c
+CFILES := $(CFILES) ../src/bloomRa/bloom_ra.c
 CFILES := $(CFILES) ../src/playActivity/playActivityModel.c
 CFILES := $(CFILES) ../src/playActivity/playActivityMigrations.c
 CFILES := $(CFILES) ../src/playActivity/playActivityIdentity.c
