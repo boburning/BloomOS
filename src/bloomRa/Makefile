@@ -12,5 +12,6 @@ CFILES := ../bloomGameId/bloom_game_id.c \
 include ../common/config.mk
 CFLAGS += -I../../third-party/rcheevos/include -I../../third-party/rcheevos/src -DRC_HASH_NO_ENCRYPTED
 LDFLAGS += -lpthread
+LDFLAGS += -lsqlite3
 include ../common/commands.mk
 include ../common/recipes.mk

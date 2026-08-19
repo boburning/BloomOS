@@ -1,6 +1,7 @@
 #ifndef BLOOM_SQLITE_CONFIG_H
 #define BLOOM_SQLITE_CONFIG_H
 
+#include <stddef.h>
 #include <sqlite3/sqlite3.h>
 
 #define BLOOM_SQLITE_BUSY_TIMEOUT_MS 3000
