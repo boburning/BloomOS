@@ -168,6 +168,12 @@ GameID is already available, and other Bloom-owned detail surfaces. Closed
 MainUI titles and scraped artwork are not modified. GameSwitcher reads a local
 API/cache and performs no hashing or network I/O during rendering.
 
+GameSwitcher resolves the canonical GameID once while processing each history
+item, queries the durable catalog through a read-only cached SQLite connection,
+and stores only the bounded badge/detail fields in its in-memory model. The
+render path draws a Bloom-authored generic `RA` glyph from that model and never
+opens the catalog, invokes another process, hashes a ROM, or contacts a service.
+
 The `RetroAchievements` smart collection derives from the same index and
 contains installed games satisfying the badge rule. No second list or metadata
 store is allowed.

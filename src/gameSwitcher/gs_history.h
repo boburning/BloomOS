@@ -82,6 +82,9 @@ void setEntryDefaultValues(Game_s *game, int index)
     game->processed = false;
     game->is_running = false;
     game->game_id[0] = '\0';
+    game->has_ra_badge = false;
+    game->ra_game_id = 0;
+    game->ra_achievement_count = 0;
 
     strcpy(game->name, "");
     strcpy(game->shortname, "");
@@ -167,6 +170,13 @@ void processItem(Game_s *game)
     game->processed = true;
 
     gameswitcher_game_id(game->recentItem.launch, game->recentItem.rompath, game->game_id, sizeof(game->game_id));
+
+    GameSwitcherAchievements achievements = {0};
+    if (gameswitcher_achievements_lookup(BLOOM_RA_DATABASE_PATH, game->game_id, &achievements, NULL, 0) == 0) {
+        game->has_ra_badge = achievements.has_ra_badge;
+        game->ra_game_id = achievements.ra_game_id;
+        game->ra_achievement_count = achievements.achievement_count;
+    }
 
     char *rom_name = file_removeExtension(file_basename(game->recentItem.rompath));
     strcpy(game->rom_name, rom_name);
