@@ -264,6 +264,13 @@ guessed from inherited bytes.
   to MainUI, and removed launch state. PCSX-ReARMed peaked at 37,856 KiB,
   preserved its 128 KiB SRAM/memory-card file, atomically refreshed its
   automatic state, and left structured health green on signed build `6b319e30`.
+- [x] Add guarded Fake-08 probing ([PR #124](https://github.com/boburning/BloomOS/pull/124))
+  and validate an original device-local PICO-8 cartridge on Plus build
+  `71080921`. A 60-second run and a repeated 300-second run stayed alive,
+  peaked at 11,464 and 13,572 KiB respectively, flushed saves, returned to
+  MainUI, removed launch state, and created/refreshed automatic state and
+  screenshot files. The repeat exited through RetroArch `QUIT` and left
+  structured health green.
 - [ ] Complete visual/audio/input/SRAM/save-state and longer soak coverage on
   maintainer-owned V2, Plus, and Flip hardware.
 - [ ] Validate Battery Monitor text fit and readability on V2, Plus, and Flip
