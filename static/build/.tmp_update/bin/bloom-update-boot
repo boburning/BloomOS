@@ -4,6 +4,8 @@ set -u
 SD_ROOT="${BLOOM_SD_ROOT:-/mnt/SDCARD}"
 STATE_BIN="${BLOOM_UPDATE_STATE_BIN:-$SD_ROOT/.tmp_update/bin/bloom-update-state}"
 HEALTH_BIN="${BLOOM_HEALTH_BIN:-$SD_ROOT/.tmp_update/bin/bloomctl}"
+ROLLBACK_BIN="${BLOOM_UPDATE_ROLLBACK_BIN:-$SD_ROOT/.tmp_update/bin/bloom-update-rollback}"
+SHUTDOWN_BIN="${BLOOM_SHUTDOWN_BIN:-$SD_ROOT/.tmp_update/bin/shutdown}"
 JQ="${BLOOM_JQ_BIN:-$SD_ROOT/.tmp_update/bin/jq}"
 VERSION_FILE="${BLOOM_VERSION_FILE:-$SD_ROOT/.tmp_update/onionVersion/version.txt}"
 
@@ -19,7 +21,18 @@ case "${1:-}" in
         state="$($STATE_BIN status)" || fail "cannot read update state"
         phase="$(printf '%s\n' "$state" | "$JQ" -er '.phase')" || fail "update state is invalid"
         case "$phase" in
-            activation_pending|testing|rollback_pending) "$STATE_BIN" boot-attempt ;;
+            activation_pending|testing|rollback_pending)
+                state="$($STATE_BIN boot-attempt)" || fail "cannot record update boot attempt"
+                phase="$(printf '%s\n' "$state" | "$JQ" -er '.phase')" || fail "update state is invalid"
+                if [ "$phase" = recovery_required ]; then
+                    [ -x "$ROLLBACK_BIN" ] || fail "rollback service is unavailable"
+                    [ -x "$SHUTDOWN_BIN" ] || fail "shutdown service is unavailable"
+                    "$ROLLBACK_BIN" || fail "automatic rollback publication failed"
+                    "$SHUTDOWN_BIN" -r
+                    fail "automatic rollback reboot returned"
+                fi
+                printf '%s\n' "$state"
+                ;;
             *) printf '%s\n' "$state" ;;
         esac
         ;;

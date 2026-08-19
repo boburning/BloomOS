@@ -7,6 +7,8 @@ setup() {
     export BOOT=/workspace/static/build/.tmp_update/bin/bloom-update-boot
     export BLOOM_UPDATE_STATE_BIN="$BLOOM_TEST_ROOT/mock-state"
     export BLOOM_HEALTH_BIN="$BLOOM_TEST_ROOT/mock-health"
+    export BLOOM_UPDATE_ROLLBACK_BIN="$BLOOM_TEST_ROOT/mock-rollback"
+    export BLOOM_SHUTDOWN_BIN="$BLOOM_TEST_ROOT/mock-shutdown"
     export BLOOM_JQ_BIN=/usr/bin/jq
     export BLOOM_VERSION_FILE="$SDCARD/.tmp_update/onionVersion/version.txt"
     export PHASE=activation_pending
@@ -15,7 +17,7 @@ setup() {
 #!/bin/sh
 case "$1" in
     status) printf '{"schema":1,"phase":"%s","pending_version":"%s","boot_attempts":0}\n' "$PHASE" "$PENDING" ;;
-    *) printf '%s:%s\n' "$1" "${2:-}" >>"$BLOOM_TEST_ROOT/calls"; printf '{"schema":1,"phase":"testing"}\n' ;;
+    *) printf '%s:%s\n' "$1" "${2:-}" >>"$BLOOM_TEST_ROOT/calls"; printf '{"schema":1,"phase":"%s"}\n' "${BOOT_PHASE:-testing}" ;;
 esac
 EOF
     cat >"$BLOOM_HEALTH_BIN" <<'EOF'
@@ -23,7 +25,15 @@ EOF
 printf '%s:%s\n' "$1" "$2" >>"$BLOOM_TEST_ROOT/calls"
 [ "${HEALTHY:-1}" = 1 ]
 EOF
-    chmod +x "$BLOOM_UPDATE_STATE_BIN" "$BLOOM_HEALTH_BIN"
+    cat >"$BLOOM_UPDATE_ROLLBACK_BIN" <<'EOF'
+#!/bin/sh
+printf '%s\n' rollback >>"$BLOOM_TEST_ROOT/calls"
+EOF
+    cat >"$BLOOM_SHUTDOWN_BIN" <<'EOF'
+#!/bin/sh
+printf 'shutdown:%s\n' "$1" >>"$BLOOM_TEST_ROOT/calls"
+EOF
+    chmod +x "$BLOOM_UPDATE_STATE_BIN" "$BLOOM_HEALTH_BIN" "$BLOOM_UPDATE_ROLLBACK_BIN" "$BLOOM_SHUTDOWN_BIN"
 }
 
 teardown() { teardown_bloom_fixture; }
@@ -33,6 +43,31 @@ teardown() { teardown_bloom_fixture; }
 
     [ "$status" -eq 0 ]
     grep -Fx 'boot-attempt:' "$BLOOM_TEST_ROOT/calls"
+}
+
+@test "begin automatically publishes and reboots into recovery at the attempt bound" {
+    export BOOT_PHASE=recovery_required
+
+    run "$BOOT" begin
+
+    [ "$status" -eq 1 ]
+    grep -Fx 'boot-attempt:' "$BLOOM_TEST_ROOT/calls"
+    grep -Fx rollback "$BLOOM_TEST_ROOT/calls"
+    grep -Fx 'shutdown:-r' "$BLOOM_TEST_ROOT/calls"
+    printf '%s' "$output" | grep -F 'automatic rollback reboot returned'
+}
+
+@test "begin does not recursively recover a failed rollback" {
+    export PHASE=rollback_pending
+    export BOOT_PHASE=rollback_failed
+
+    run "$BOOT" begin
+
+    [ "$status" -eq 0 ]
+    grep -Fx 'boot-attempt:' "$BLOOM_TEST_ROOT/calls"
+    ! grep -Fx rollback "$BLOOM_TEST_ROOT/calls"
+    ! grep -q '^shutdown:' "$BLOOM_TEST_ROOT/calls"
+    printf '%s' "$output" | grep -F '"phase":"rollback_failed"'
 }
 
 @test "begin is a no-op outside candidate validation" {

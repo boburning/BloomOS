@@ -2,7 +2,7 @@
 
 ## Implementation status
 
-Last updated: 2026-08-18
+Last updated: 2026-08-19
 
 This section tracks delivered increments and deferred physical validation. A
 checked repository item means the implementation and automated tests have
@@ -54,6 +54,10 @@ merged; it does not imply unrecorded hardware certification.
 - [x] Reconstruct rollback candidates from retained signed archives, snapshot
   saves, publish the recovery trigger transactionally, and expose the guarded
   `bloomctl update rollback` operation ([PR #55](https://github.com/boburning/BloomOS/pull/55)).
+- [x] Automatically publish retained signed known-good media and initiate a
+  marked clean reboot when an update reaches its bounded unconfirmed-boot
+  limit; harden rollback publication around the live `MainUI` mount and stale
+  installer residue.
 - [x] Stop modifying permanent emulator launch scripts for temporary reset and
   auto-load-state options ([PR #56](https://github.com/boburning/BloomOS/pull/56)).
 - [x] Require known hardware identity, complete runtime payloads, writable SD
@@ -241,9 +245,9 @@ guessed from inherited bytes.
 - [ ] Repeat the applicable reboot/poweroff paths on Mini V2 and Flip. Confirm
   that ordinary USB cable insertion still enters charging-only mode while an
   explicit reboot bypasses it exactly once on each applicable model.
-- [ ] Run bounded-failure and rollback tests on Plus, then repeat applicable
-  signed update activation, boot confirmation, failure, and rollback coverage
-  on Mini V2 and Flip.
+- [ ] Run bounded-failure and automatic rollback tests on Plus, then repeat
+  applicable signed update activation, boot confirmation, failure, and
+  rollback coverage on Mini V2 and Flip.
 - [ ] Complete visual/audio/input/SRAM/save-state and longer soak coverage on
   maintainer-owned V2, Plus, and Flip hardware.
 - [ ] Validate Battery Monitor text fit and readability on V2, Plus, and Flip
