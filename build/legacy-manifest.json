@@ -502,7 +502,7 @@
       "path": "static/build/.tmp_update/bin/bloom-game-smoke",
       "file_count": 1,
       "byte_count": 5366,
-      "tree_sha256": "f7da164fe5d01f985940717ca66bbb3e7ec838899cba012dc6ecc0fddab35476",
+      "tree_sha256": "e6ae2bd53d6cbff77a3ab4902909b9f592db4afcc175c55e262860e25ca24940",
       "source": "https://github.com/boburning/BloomOS",
       "source_revision": "release-commit",
       "license": "GPL-3.0-only",

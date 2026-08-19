@@ -122,14 +122,18 @@ EOF
 
 @test "game smoke routes command-sensitive ROM paths through structured data" {
     : >"$SDCARD/.bloom-dev"
+    export BLOOM_SESSION_ROOT="$BLOOM_TEST_ROOT/session"
     rom="$SDCARD/Roms/GB/Unsafe\$Name.gb"
     : >"$rom"
     printf '#!/bin/sh\n' >"$SDCARD/Emu/GB/launch.sh"
     chmod +x "$SDCARD/Emu/GB/launch.sh"
-    cat >"$SDCARD/.tmp_update/bin/bloom-launch" <<'EOF'
+cat >"$SDCARD/.tmp_update/bin/bloom-launch" <<'EOF'
 #!/bin/sh
 printf '%s\n' "$*" >>"$MOCK_LOG"
-exit 1
+case "$1" in
+create) printf '%s\n' '{}' >"$2" ;;
+write-legacy) exit 1 ;;
+esac
 EOF
     chmod +x "$SDCARD/.tmp_update/bin/bloom-launch"
     cat >"$SDCARD/.tmp_update/bin/bloom-game-id" <<'EOF'
@@ -137,7 +141,14 @@ EOF
 printf '%s\n' bloom-game-v1:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
 EOF
     chmod +x "$SDCARD/.tmp_update/bin/bloom-game-id"
-    printf '#!/bin/sh\nexit 0\n' >"$SDCARD/.tmp_update/bin/bloom-session"
+    cat >"$SDCARD/.tmp_update/bin/bloom-session" <<'EOF'
+#!/bin/sh
+if [ "$1" = start ]; then
+    mkdir -p "$BLOOM_SESSION_ROOT"
+    cp "$2" "$BLOOM_SESSION_ROOT/request.json"
+fi
+exit 0
+EOF
     chmod +x "$SDCARD/.tmp_update/bin/bloom-session"
     cat >"$MOCK_BIN/pidof" <<'EOF'
 #!/bin/sh
@@ -148,7 +159,8 @@ EOF
     run "$GAME_SMOKE" GB "$(encode "$rom")" 10
 
     [ "$status" -eq 1 ]
-    printf '%s' "$output" | grep -F '"reason":"structured_request_failed"'
+    printf '%s' "$output" | grep -F '"reason":"legacy_adapter_failed"'
     grep -F "create $SDCARD/.tmp_update/bloom-launch-request.json bloom-game-v1:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef gb $rom" "$MOCK_LOG"
+    grep -F "write-legacy $BLOOM_SESSION_ROOT/request.json $SDCARD/.tmp_update/cmd_to_run.sh" "$MOCK_LOG"
     [ ! -e "$SDCARD/.tmp_update/bloom-launch-request.json" ]
 }
