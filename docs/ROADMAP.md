@@ -42,6 +42,10 @@ merged; it does not imply unrecorded hardware certification.
 - [x] Preserve pending candidates and validation state when upgrading early
   development cards from `.tmp_update/update` to the durable `.bloom/update`
   root.
+- [x] Extend the developer-only runtime probe to bounded 15-minute soaks with
+  one-second starting and peak RSS telemetry, early-exit detection, graceful
+  shutdown, scoped save flush, MainUI return, and command-cleanup gates
+  ([PR #122](https://github.com/boburning/BloomOS/pull/122)).
 - [x] Reject FAT-incompatible installer payloads before packaging, keep
   source-build workspaces outside the assembled runtime, preserve failed
   extraction diagnostics, and detach the expected live `MainUI` bind mount
@@ -254,6 +258,12 @@ guessed from inherited bytes.
   explicit reboot bypasses it exactly once on each applicable model.
 - [ ] Repeat applicable signed update activation, boot confirmation,
   bounded-failure, and automatic rollback coverage on Mini V2 and Flip.
+- [x] Run remote Plus lifecycle probes for GB, GBC, GBA, NES, SNES, and PSX for
+  60 seconds each, then run PCSX-ReARMed for 900 seconds with continuous RSS
+  sampling. All cores exited through RetroArch `QUIT`, flushed saves, returned
+  to MainUI, and removed launch state. PCSX-ReARMed peaked at 37,856 KiB,
+  preserved its 128 KiB SRAM/memory-card file, atomically refreshed its
+  automatic state, and left structured health green on signed build `6b319e30`.
 - [ ] Complete visual/audio/input/SRAM/save-state and longer soak coverage on
   maintainer-owned V2, Plus, and Flip hardware.
 - [ ] Validate Battery Monitor text fit and readability on V2, Plus, and Flip
