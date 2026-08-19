@@ -1,0 +1,44 @@
+{
+  "schema": 1,
+  "state": "pending",
+  "bloom_commit": null,
+  "device": null,
+  "device_revision": null,
+  "core": "pcsx_rearmed_libretro.so",
+  "core_sha256": "c04586c281bb843f288d1e2215176a5f544d3db05396f1a20d9c6b84f31793f7",
+  "operator": null,
+  "tested_at": null,
+  "fixtures": [],
+  "bios": {
+    "present": null,
+    "recognized": null,
+    "sha256_recorded_privately": null,
+    "hle_disabled": null
+  },
+  "results": {
+    "identification": "pending",
+    "wrong_hash_rejection": "pending",
+    "chd": "pending",
+    "cue_bin": "pending",
+    "pbp_if_supported": "pending",
+    "m3u_multi_disc": "pending",
+    "disc_switch": "pending",
+    "memory_card": "pending",
+    "softcore_unlocks": "pending",
+    "representative_memory": "pending",
+    "rich_presence": "pending",
+    "leaderboards": "pending",
+    "hardcore": "pending",
+    "reset": "pending",
+    "session_lifecycle": "pending",
+    "save_flush": "pending",
+    "performance": "pending"
+  },
+  "metrics": {
+    "launch_ms": null,
+    "peak_rss_kib": null,
+    "average_fps": null,
+    "audio_notes": null
+  },
+  "notes": "Template only; this is not certification evidence."
+}
