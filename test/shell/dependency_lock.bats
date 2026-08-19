@@ -69,6 +69,23 @@
     grep -F './build/openbor/build.sh' /workspace/Makefile
 }
 
+@test "ScummVM standalone is source-pinned and license-complete" {
+    lock=/workspace/build/dependencies.lock
+    package="/workspace/static/packages/RApp/SCUMM (ScummVM standalone)/RApp/scummvm"
+
+    grep -F 'source_revision = "0a8aa528e92836b86780ba0498dda3263fba19ea"' "$lock"
+    grep -F 'vorbis_revision = "0657aee69dec8508a0011f47f3b69d7538e9d262"' "$lock"
+    grep -F 'libmpeg2_revision = "218a44b390b7d0e20e87e16a3b53c0176cd68b0e"' "$lock"
+    grep -F 'binary_sha256 = "aae6eaf7a8b40d90d435b1c9c77806c538d94d29a911b4e8f8590365b9560fa8"' "$lock"
+    [ "$(sha256sum "$package/scummvm" | cut -d' ' -f1)" = \
+        "aae6eaf7a8b40d90d435b1c9c77806c538d94d29a911b4e8f8590365b9560fa8" ]
+    grep -F '## ScummVM' "$package/LICENSE.MD"
+    grep -F '## FreeType' "$package/LICENSE.MD"
+    grep -F '## libmpeg2' "$package/LICENSE.MD"
+    ! find "$package" -maxdepth 1 -name 'lib*.so*' | grep .
+    grep -F './build/scummvm/build.sh' /workspace/Makefile
+}
+
 @test "OpenSSL runtime dependency comes from the pinned ARM toolchain" {
     grep -F 'cp -L /opt/miyoomini-toolchain/arm-linux-gnueabihf/libc/usr/lib/libatomic.so.1' /workspace/Makefile
     ! grep -F 'libatomic.so.1' /workspace/Makefile | grep -F 'http'

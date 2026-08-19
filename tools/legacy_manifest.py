@@ -32,6 +32,11 @@ OPENBOR_ID = "rapp-game-engine---open-beats-of-rage"
 OPENBOR_SOURCE = "https://github.com/DCurrent/openbor"
 OPENBOR_REVISION = "b00efbc7752cb55709dfc9fdfdfc7cfe78ddfb90"
 OPENBOR_BINARY_SHA256 = "41ef99389f37a943eb67b9f50cb2847ff00c646f0f3d63598611684053b19c57"
+SCUMMVM_ID = "rapp-scumm--scummvm-standalone"
+SCUMMVM_SOURCE = "https://github.com/XK9274/scummvm-miyoo"
+SCUMMVM_REVISION = "0a8aa528e92836b86780ba0498dda3263fba19ea"
+SCUMMVM_BINARY_SHA256 = "aae6eaf7a8b40d90d435b1c9c77806c538d94d29a911b4e8f8590365b9560fa8"
+SCUMMVM_LICENSE = "GPL-3.0-or-later AND BSD-3-Clause AND Zlib AND Libpng-2.0 AND LicenseRef-FTL AND LicenseRef-IJG AND MIT AND GPL-2.0-or-later"
 BATTERY_MONITOR_ID = "app-battery-monitor"
 BATTERY_MONITOR_PACKAGE_ROOT = pathlib.PurePosixPath("App/BatteryMonitorUI")
 BATTERY_MONITOR_SOURCE_ROOT = pathlib.PurePosixPath("src/batteryMonitorUI")
@@ -331,6 +336,26 @@ def is_source_built_openbor(repository, component):
     return b"third-party/openbor" in build_script and b"openbor-mmiyoo.patch" in build_script
 
 
+def is_source_built_scummvm(repository, component):
+    if component["id"] != SCUMMVM_ID or component["kind"] != "package":
+        return False
+    root = repository / component["path"] / "RApp/scummvm"
+    binary = root / "scummvm"
+    license_file = root / "LICENSE.MD"
+    if not binary.is_file() or not license_file.is_file():
+        return False
+    if hashlib.sha256(binary.read_bytes()).hexdigest() != SCUMMVM_BINARY_SHA256:
+        return False
+    if any(root.glob("lib*.so*")):
+        return False
+    license_content = canonical_file(license_file)
+    required_sections = (b"## ScummVM", b"## libvorbis", b"## FreeType", b"## libmpeg2")
+    if not all(section in license_content for section in required_sections):
+        return False
+    build_script = canonical_file(repository / "build/scummvm/build.sh")
+    return b"verify_revision scummvm" in build_script and b"scummvm.stripped" in build_script
+
+
 def annotate_bloom_replacements(repository, manifest):
     count = 0
     for component in manifest["components"]:
@@ -374,6 +399,14 @@ def annotate_bloom_replacements(repository, manifest):
                 "source_revision": OPENBOR_REVISION,
                 "license": "BSD-3-Clause",
                 "build_recipe": "build/openbor/build.sh",
+                "resolution": "source-build",
+            })
+        elif is_source_built_scummvm(repository, component):
+            component.update({
+                "source": SCUMMVM_SOURCE,
+                "source_revision": SCUMMVM_REVISION,
+                "license": SCUMMVM_LICENSE,
+                "build_recipe": "build/scummvm/build.sh",
                 "resolution": "source-build",
             })
         else:

@@ -31,3 +31,27 @@
 [submodule "third-party/scummvm"]
 	path = third-party/scummvm
 	url = https://github.com/XK9274/scummvm-miyoo.git
+[submodule "third-party/vorbis"]
+	path = third-party/vorbis
+	url = https://github.com/xiph/vorbis.git
+[submodule "third-party/zlib"]
+	path = third-party/zlib
+	url = https://github.com/madler/zlib.git
+[submodule "third-party/libpng"]
+	path = third-party/libpng
+	url = https://github.com/pnggroup/libpng.git
+[submodule "third-party/freetype"]
+	path = third-party/freetype
+	url = https://gitlab.freedesktop.org/freetype/freetype.git
+[submodule "third-party/libjpeg-turbo"]
+	path = third-party/libjpeg-turbo
+	url = https://github.com/libjpeg-turbo/libjpeg-turbo.git
+[submodule "third-party/giflib"]
+	path = third-party/giflib
+	url = https://git.code.sf.net/p/giflib/code
+[submodule "third-party/libmad"]
+	path = third-party/libmad
+	url = https://github.com/sezero/libmad.git
+[submodule "third-party/libmpeg2"]
+	path = third-party/libmpeg2
+	url = https://github.com/cisco-open-source/libmpeg2.git

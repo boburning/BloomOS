@@ -2,7 +2,7 @@
 
 ## Implementation status
 
-Last updated: 2026-08-17
+Last updated: 2026-08-19
 
 This section tracks delivered increments and deferred physical validation. A
 checked repository item means the implementation and automated tests have
@@ -132,6 +132,9 @@ merged; it does not imply unrecorded hardware certification.
   declared upstream license, while retaining both source-built Fake-08 options
   and leaving a clean path for a future independently licensed native wrapper
   ([PR #89](https://github.com/boburning/BloomOS/pull/89)).
+- [x] Replace the inherited ScummVM executable and ten unexplained shared
+  libraries with a deterministic ARM build from pinned source and pinned
+  statically linked dependencies; defer device behavior to the hardware matrix.
 
 The hardware-sensitive BloomOS 1.0/1.1 implementation queue is at its
 physical-validation boundary. Source-provenance replacement work can continue
@@ -173,6 +176,9 @@ guessed from inherited bytes.
   representative cartridge compatibility on V2, Plus, and Flip.
 - [ ] Validate source-built OpenBOR startup, rendering, audio, input mappings,
   PAK loading, and save behavior on V2, Plus, and Flip.
+- [ ] Validate source-built ScummVM startup, rendering, audio, input mappings,
+  game discovery, representative engines, and save behavior on Plus; defer V2
+  and Flip coverage until those devices are locally available again.
 - [ ] Collect equivalent external physical evidence for original Mini V1, V3,
   and V4 before claiming stable support for those revisions.
 

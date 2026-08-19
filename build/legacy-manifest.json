@@ -1800,14 +1800,14 @@
       "id": "rapp-scumm--scummvm-standalone",
       "kind": "package",
       "path": "static/packages/RApp/SCUMM (ScummVM standalone)",
-      "file_count": 67,
-      "byte_count": 132745097,
-      "tree_sha256": "eca52038bd5dc82e11b8a60b0daed3c3d8edcb7ab40c30aa87ff61986fa96c9f",
-      "source": null,
-      "source_revision": null,
-      "license": null,
-      "build_recipe": null,
-      "resolution": "replace-source-build-or-exclude"
+      "file_count": 58,
+      "byte_count": 109004385,
+      "tree_sha256": "6e20a43d3f92b05ad36e7a7097dc940a754818e83a08f2e5e3d74796379230d6",
+      "source": "https://github.com/XK9274/scummvm-miyoo",
+      "source_revision": "0a8aa528e92836b86780ba0498dda3263fba19ea",
+      "license": "GPL-3.0-or-later AND BSD-3-Clause AND Zlib AND Libpng-2.0 AND LicenseRef-FTL AND LicenseRef-IJG AND MIT AND GPL-2.0-or-later",
+      "build_recipe": "build/scummvm/build.sh",
+      "resolution": "source-build"
     },
     {
       "id": "rapp-sega---game-gear--gearsystem",
