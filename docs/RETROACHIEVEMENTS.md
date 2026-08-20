@@ -71,6 +71,8 @@ bloomctl achievements cores
 bloomctl achievements account status
 bloomctl achievements proxy status
 bloomctl achievements proxy pending
+bloomctl achievements proxy cache-rom ROM_PATH
+bloomctl achievements proxy cache-system SYSTEM
 ```
 
 ## Persistent data
@@ -404,16 +406,24 @@ returns aggregate cache/award state without titles or award details. It starts
 upstream's foreground `run-service` operation directly; it never calls
 `start-proxy`, `stop-proxy`, or another command that patches or reverts emulator
 configuration. `bloomctl achievements proxy status|pending` exposes the two
-initial read-only public operations.
+initial read-only public operations; `cache-rom` and `cache-system` expose the
+guarded foreground cache operations.
 
-The adapter also provides internal `cache-rom PATH` and `cache-system SYSTEM`
-operations. Bloom resolves every ROM to a regular, non-symlinked file beneath
+Bloom resolves every ROM to a regular, non-symlinked file beneath
 the configured ROM root and maps canonical system IDs to their known library
 directories before invoking upstream. System batches run in the foreground, so
 the caller can cancel them normally; upstream persists each completed cache
 entry, making a later retry resumable without a Bloom-owned queue. Favorites,
 Recent, all-game selection, progress UI, and rate-limit presentation remain
 consumer work on this backend.
+
+Before proxy startup or caching, the adapter imports Bloom's canonical account
+through a mode-`0600` temporary RetroArch-format file. The credential never
+appears in process arguments, command output, or permanent RetroArch config.
+After a foreground cache operation the temporary file is removed; after proxy
+startup it remains only until the service stops so the first proxied login can
+be served. RAOfflineProxy remains responsible for its own authenticated cache
+records and pending-award integrity.
 
 ## Original Mini and offline behavior
 

@@ -363,8 +363,9 @@ Planned work includes safe updates and rollback, optional synchronization and of
   exposed forbidden runtime symlinks on FAT, so the recipe now prunes
   developer-only payloads, fails closed unless the result is symlink-free, and
   carries the pinned toolchain's missing `libutil.so.1` runtime companion.
-  The final package reproduces exactly across fresh builds and physically runs
-  on Mini Plus. The optional runtime remains outside stable releases until its
+  The current 18,520,645-byte package reproduces exactly across distinct build
+  directories, uses its pinned runtime CA bundle, and physically runs on Mini
+  Plus. The optional runtime remains outside stable releases until its
   binary-input provenance is admitted or replaced by a source build.
 - [ ] RA-13: finish account/settings UI and authentication lifecycle. The
   canonical service, redacted status, hidden host login bootstrap, one-time
@@ -419,8 +420,13 @@ Planned work includes safe updates and rollback, optional synchronization and of
   permanent RetroArch config, and clean account/proxy restoration. A real cached
   offline award remains part of RA-21/RA-23 validation.
 - [ ] RA-21: add offline-cache UX. The adapter now safely supports resumable,
-  foreground per-ROM and per-system caching with ROM-root confinement. UI
-  progress/cancel presentation and Favorites/Recent/all selectors remain.
+  foreground per-ROM and per-system caching with ROM-root confinement. The
+  public CLI now exposes both operations. A private credential bridge imports
+  Bloom's canonical token without command-line/log output or permanent
+  RetroArch mutation, and removes its mode-`0600` temporary config after use.
+  Mini Plus physically cached RA Game ID 8038 over verified TLS and reported it
+  through the adapter. UI progress/cancel presentation and
+  Favorites/Recent/all selectors remain.
 - [ ] RA-24: add aggregate RA health and support-export diagnostics. Health now
   allowlists catalog/proxy counts and rejects or discards secrets, ROM paths,
   titles, award details, and unexpected fields. Session launch/finish diagnostics

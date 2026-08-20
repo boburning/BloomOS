@@ -6,6 +6,17 @@ setup() {
     export BLOOM_RA_PROXY_CONFIG_DIR="$BATS_TEST_TMPDIR/config"
     export BLOOM_RA_PROXY_LOG_FILE="$BATS_TEST_TMPDIR/proxy.log"
     export BLOOM_RA_PROXY_ROM_ROOT="$BATS_TEST_TMPDIR/Roms"
+    export BLOOM_RA_BIN="$BATS_TEST_TMPDIR/bloom-ra"
+    export BLOOM_JQ_BIN=/usr/bin/jq
+    export BLOOM_RA_CREDENTIALS="$BATS_TEST_TMPDIR/credentials"
+    export BLOOM_RA_PROXY_RUNTIME_DIR="$BATS_TEST_TMPDIR/runtime"
+    printf '%s' fixture-token >"$BLOOM_RA_CREDENTIALS"
+    cat >"$BLOOM_RA_BIN" <<'SH'
+#!/bin/sh
+[ "$1:$2" = account:launch ] || exit 1
+printf '%s\n' '{"authenticated":true,"username":"BloomUser"}'
+SH
+    chmod +x "$BLOOM_RA_BIN"
 }
 
 make_upstream() {
@@ -127,4 +138,18 @@ SH
     run "$ADAPTER" cache-rom "$BATS_TEST_TMPDIR/outside.rom"
     [ "$status" -eq 1 ]
     [[ "$output" == *'"code":"invalid_rom_path"'* ]]
+}
+
+@test "cache credential bridge is private and never changes permanent RetroArch config" {
+    make_upstream
+    mkdir -p "$BLOOM_RA_PROXY_CONFIG_DIR" "$BLOOM_RA_PROXY_ROM_ROOT/GBA"
+    printf rom >"$BLOOM_RA_PROXY_ROM_ROOT/GBA/fixture.gba"
+    printf permanent >"$BATS_TEST_TMPDIR/retroarch.cfg"
+    before=$(sha256sum "$BATS_TEST_TMPDIR/retroarch.cfg")
+    run "$ADAPTER" cache-rom "$BLOOM_RA_PROXY_ROM_ROOT/GBA/fixture.gba"
+    [ "$status" -eq 0 ]
+    [ ! -e "$BLOOM_RA_PROXY_RUNTIME_DIR/credentials.append" ]
+    [ "$(stat -c %a "$BLOOM_RA_PROXY_CONFIG_DIR/config.json")" = 600 ]
+    ! grep -F fixture-token "$output"
+    [ "$before" = "$(sha256sum "$BATS_TEST_TMPDIR/retroarch.cfg")" ]
 }
