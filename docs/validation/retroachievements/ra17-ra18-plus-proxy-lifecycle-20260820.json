@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "bloom_base_commit": "42234afb",
+  "device_family": "miyoo-mini-plus",
+  "tested_at": "2026-08-20T08:01:00Z",
+  "operator": "boburning",
+  "test_scope": "ra17-ra18-fat-package-and-adapter-lifecycle",
+  "package": {
+    "version": "1.11.1-alpha1",
+    "bytes": 18520760,
+    "sha256": "6f51fc0296eda60f995c8ed08191fb67aaa7448023d6155f26cb53e01e628a21",
+    "two_builds_byte_identical": true,
+    "fat_symlinks": 0
+  },
+  "results": {
+    "transferred_hash_verified": "pass",
+    "python_runtime": "pass",
+    "home_status": "pass",
+    "adapter_status": "pass",
+    "service_start": "pass",
+    "pending_awards_count": 0,
+    "service_stop": "pass",
+    "final_service_running": false,
+    "retroarch_config_mutated": false
+  },
+  "privacy": {
+    "credential_recorded": false,
+    "username_recorded": false,
+    "rom_path_or_title_recorded": false,
+    "award_details_recorded": false
+  },
+  "notes": "The first physical package exposed FAT-incompatible runtime symlinks and then a missing firmware libutil.so.1. The corrected recipe removes developer-only payloads, rejects all symlinks, carries libutil from Bloom's pinned Miyoo toolchain, and sets the private runtime library path. The pinned upstream exposes lifecycle JSON through home-status, not service-status; the adapter was aligned to that contract. The optional component remains outside stable publication while the immutable CPython binary provenance gate is unresolved."
+}

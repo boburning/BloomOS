@@ -330,13 +330,20 @@ Planned work includes safe updates and rollback, optional synchronization and of
   ([RA-00 epic #132](https://github.com/boburning/BloomOS/issues/132)).
 - [ ] RA-17: package the pinned RAOfflineProxy service backend and native hash
   bridge reproducibly. Source/runtime locks and fail-closed verification are
-  implemented; ARM package reproduction and physical installation remain
-  pending. The optional runtime remains outside stable releases until its
+  implemented. Fresh ARM builds are byte-identical; an initial physical install
+  exposed forbidden runtime symlinks on FAT, so the recipe now prunes
+  developer-only payloads, fails closed unless the result is symlink-free, and
+  carries the pinned toolchain's missing `libutil.so.1` runtime companion.
+  The final package reproduces exactly across fresh builds and physically runs
+  on Mini Plus. The optional runtime remains outside stable releases until its
   binary-input provenance is admitted or replaced by a source build.
 - [ ] RA-18: ship the schema-1 `bloom-ra-proxy` adapter. Host coverage now
   proves absent-package degradation, bounded status/pending/cache translation,
-  input rejection, and stop behavior without config mutation; ARM/device
-  lifecycle validation remains pending.
+  input rejection, and stop behavior without config mutation. Physical package
+  startup exposed that pinned upstream `service-status` is human-readable, so
+  lifecycle control now consumes its bounded `home-status` JSON contract.
+  Corrected Mini Plus status/start/pending/stop lifecycle passes with zero
+  pending awards and a clean stopped final state.
 - [ ] Keep RA-27 as a future consumer of the same `bloom-ra` API when Bloom owns
   the primary library browser; closed MainUI replacement is not a prerequisite
   for the P0 GameSwitcher badge.

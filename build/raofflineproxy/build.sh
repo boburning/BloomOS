@@ -23,6 +23,29 @@ tar -xzf "${SOURCE_DIR}/rcheevos.tar.gz" -C "${WORK_DIR}/src"
 tar -xzf "${SOURCE_DIR}/libchdr.tar.gz" -C "${WORK_DIR}/src"
 tar -xzf "${SOURCE_DIR}/python-runtime.tar.gz" -C "${WORK_DIR}/package/runtime"
 
+# The durable Bloom component root is FAT32, which cannot represent the
+# standalone runtime's Unix symlinks. Remove developer-only payloads and make
+# the one runtime entrypoint a regular file before packaging.
+PYTHON_ROOT="${WORK_DIR}/package/runtime/python"
+rm -rf -- "${PYTHON_ROOT}/include" "${PYTHON_ROOT}/share" "${PYTHON_ROOT}/lib/pkgconfig"
+rm -f -- "${PYTHON_ROOT}/bin/2to3" "${PYTHON_ROOT}/bin/2to3-3.9" \
+  "${PYTHON_ROOT}/bin/idle3" "${PYTHON_ROOT}/bin/idle3.9" \
+  "${PYTHON_ROOT}/bin/pydoc3" "${PYTHON_ROOT}/bin/pydoc3.9" \
+  "${PYTHON_ROOT}/bin/python" "${PYTHON_ROOT}/bin/python3" \
+  "${PYTHON_ROOT}/bin/python3-config" "${PYTHON_ROOT}/bin/python3.9-config" \
+  "${PYTHON_ROOT}/lib/libpython3.9.so"
+cp "${PYTHON_ROOT}/bin/python3.9" "${PYTHON_ROOT}/bin/python3"
+LIBUTIL="$(${CC} -print-file-name=libutil.so.1)"
+if [ ! -f "${LIBUTIL}" ]; then
+  echo "Pinned toolchain does not provide libutil.so.1" >&2
+  exit 1
+fi
+cp -L "${LIBUTIL}" "${PYTHON_ROOT}/lib/libutil.so.1"
+if find "${WORK_DIR}/package/runtime" -type l -print -quit | grep -q .; then
+  echo "FAT runtime still contains symbolic links" >&2
+  exit 1
+fi
+
 RAP="$(find "${WORK_DIR}/src" -maxdepth 1 -type d -name 'RAOfflineProxy-*' -print -quit)"
 RC="$(find "${WORK_DIR}/src" -maxdepth 1 -type d -name 'rcheevos-*' -print -quit)"
 CHDR="$(find "${WORK_DIR}/src" -maxdepth 1 -type d -name 'libchdr-*' -print -quit)"
@@ -37,7 +60,7 @@ mkdir -p "${WORK_DIR}/package/bin"
 printf '%s\n' '#!/bin/sh' \
   'HERE="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"' \
   'export PYTHONPATH="${HERE}/raofflineproxy"' \
-  'export LD_LIBRARY_PATH="${HERE}/raofflineproxy${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"' \
+  'export LD_LIBRARY_PATH="${HERE}/runtime/python/lib:${HERE}/raofflineproxy${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"' \
   'exec "${HERE}/runtime/python/bin/python3" -m raofflineproxy.main "$@"' \
   > "${WORK_DIR}/package/bin/raofflineproxy"
 chmod 0755 "${WORK_DIR}/package/bin/raofflineproxy"
@@ -55,6 +78,10 @@ chmod 0755 "${WORK_DIR}/package/bin/raofflineproxy"
   "${CHDR}/deps/miniz-3.1.1/miniz.c" "${CHDR}/deps/lzma-25.01/src/LzmaDec.c" "${CHDR}/deps/zstd-1.5.7/zstddeclib.c"
 
 find "${WORK_DIR}/package" -exec touch -h -d "@${EPOCH}" {} +
+if find "${WORK_DIR}/package" -type l -print -quit | grep -q .; then
+  echo "RAOfflineProxy package is not FAT-compatible" >&2
+  exit 1
+fi
 tar --sort=name --mtime="@${EPOCH}" --owner=0 --group=0 --numeric-owner \
     -C "${WORK_DIR}/package" -cf - . | gzip -n -9 \
     > "${OUTPUT_DIR}/raofflineproxy-1.11.1-alpha1-armv7.tar.gz"
