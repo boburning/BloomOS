@@ -58,22 +58,33 @@ fi
 system=$("$LAUNCH_BIN" get "$request" system_id) || fail "request system is unavailable"
 core=$("$LAUNCH_BIN" get "$request" core) || fail "request core is unavailable"
 case "$core" in ''|*[!A-Za-z0-9_.-]*) fail "request core is invalid" ;; esac
+if [ "$mode" = hardcore ] && [ "$system" = gba ] && [ "$core" = gpsp_libretro.so ]; then
+    core=mgba_libretro.so
+    "$LAUNCH_BIN" set-core "$request" "$core" || fail_category core_unavailable "Hardcore fallback core could not be selected"
+fi
 core_path="$CORE_ROOT/$core"
 [ -f "$core_path" ] && [ ! -L "$core_path" ] || fail_category core_unavailable "selected core is unavailable"
 core_sha=$(sha256sum "$core_path" | awk '{print $1}')
 case "$core_sha" in *[!0-9a-f]*|'') fail "selected core identity is invalid" ;; esac
 certification=untested
+hardcore_status=untested
 if cores=$("$RA_BIN" cores 2>/dev/null); then
     certification=$(printf '%s' "$cores" | "$JQ_BIN" -er --arg system "$system" --arg core "$core" --arg sha "$core_sha" \
         '[.entries[] | select(.system==$system and .core==$core and .binary_sha256==$sha) | .bloom_ra_status][0] // "untested"' 2>/dev/null) ||
         fail_category core_policy_invalid "core policy is invalid"
+    hardcore_status=$(printf '%s' "$cores" | "$JQ_BIN" -er --arg system "$system" --arg core "$core" --arg sha "$core_sha" \
+        '[.entries[] | select(.system==$system and .core==$core and .binary_sha256==$sha) | .hardcore_status][0] // "untested"' 2>/dev/null) ||
+        fail_category core_policy_invalid "core policy is invalid"
 fi
 case "$certification" in verified|best_effort|incompatible|untested) ;; *) fail_category core_policy_invalid "core policy is invalid" ;; esac
+case "$hardcore_status" in verified|best_effort|unsupported|untested|not_applicable) ;; *) fail_category core_policy_invalid "core policy is invalid" ;; esac
 if [ "$certification" = incompatible ]; then
     [ "$mode" = hardcore ] && fail_category hardcore_incompatible "Hardcore is incompatible with the selected core"
     disable_ra
     exit 0
 fi
+[ "$mode" != hardcore ] || [ "$hardcore_status" != unsupported ] ||
+    fail_category hardcore_incompatible "Hardcore is unsupported by the selected core"
 if [ "$offline" = true ]; then
     fail_category proxy_unavailable "Offline Casual proxy routing is not yet available in the session adapter"
 fi

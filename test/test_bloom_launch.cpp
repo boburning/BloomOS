@@ -126,6 +126,24 @@ TEST_F(BloomLaunchTest, AddsValidatedDirectAchievementPolicy)
     EXPECT_NE(request.find("\"ra_game_id\":1234"), std::string::npos);
 }
 
+TEST_F(BloomLaunchTest, CoreFallbackIsStructuredAndImmutableAfterConfigGeneration)
+{
+    write_request();
+    ASSERT_EQ(0, bloom_launch_set_core(request_.c_str(), "mgba_libretro.so", error_, sizeof(error_))) << error_;
+    char core[128] = {};
+    ASSERT_EQ(0, bloom_launch_get_string(request_.c_str(), "core", core, sizeof(core), error_, sizeof(error_)));
+    EXPECT_STREQ("mgba_libretro.so", core);
+    std::ifstream input(request_);
+    std::string request((std::istreambuf_iterator<char>(input)), std::istreambuf_iterator<char>());
+    input.close();
+    size_t configs = request.find("\"append_configs\":[]");
+    ASSERT_NE(configs, std::string::npos);
+    request.replace(configs, strlen("\"append_configs\":[]"),
+                    "\"append_configs\":[\"/tmp/bloom-session/ra.cfg\"]");
+    std::ofstream(request_) << request;
+    EXPECT_NE(0, bloom_launch_set_core(request_.c_str(), "gambatte_libretro.so", error_, sizeof(error_)));
+}
+
 TEST_F(BloomLaunchTest, RejectsHardcoreProxyWithoutChangingExistingRequest)
 {
     write_request();

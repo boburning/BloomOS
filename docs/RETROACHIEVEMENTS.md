@@ -284,8 +284,12 @@ binary invalidates or downgrades prior certification until it is retested.
 Initial performance-first policy:
 
 - Keep gpSP as the GBA default and PCSX-ReARMed as the PS1 default, initially
-  `best_effort`; mGBA remains the GBA fallback. Do not replace either default
-  solely because upstream does not formally support it.
+  `best_effort`. The exact gpSP binary is Softcore-capable but cannot receive
+  Hardcore credit, so a GBA Hardcore request selects the exact mGBA fallback
+  in the private structured request before session configuration. The core
+  selection becomes immutable once that configuration exists. Do not replace
+  the ordinary performance-first default solely because upstream does not
+  formally support it.
 - Move SNES RA-default behavior from Supafaust to current Snes9x while retaining
   an explicit performance fallback if required.
 - Prefer FBNeo for compatible RA Arcade/CPS/Neo Geo sets while preserving MAME

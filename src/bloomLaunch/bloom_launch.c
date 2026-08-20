@@ -470,6 +470,31 @@ static int write_request_json(const char *path, cJSON *root, char *error, size_t
     return result;
 }
 
+int bloom_launch_set_core(const char *request_path, const char *core, char *error, size_t error_size)
+{
+    if (!valid_core(core)) {
+        set_error(error, error_size, "core is invalid");
+        return -1;
+    }
+    cJSON *request = NULL;
+    if (load_valid(request_path, &request, error, error_size) != 0)
+        return -1;
+    cJSON *configs = cJSON_GetObjectItemCaseSensitive(request, "append_configs");
+    if (cJSON_IsArray(configs) && cJSON_GetArraySize(configs) != 0) {
+        cJSON_Delete(request);
+        set_error(error, error_size, "core selection is immutable after config generation");
+        return -1;
+    }
+    cJSON_ReplaceItemInObjectCaseSensitive(request, "core", cJSON_CreateString(core));
+    if (!valid_request(request, error, error_size)) {
+        cJSON_Delete(request);
+        return -1;
+    }
+    int result = write_request_json(request_path, request, error, error_size);
+    cJSON_Delete(request);
+    return result;
+}
+
 int bloom_launch_set_achievements(const char *request_path, int enabled, const char *mode, const char *transport,
                                   int ra_game_id, const char *core_certification, char *error, size_t error_size)
 {
