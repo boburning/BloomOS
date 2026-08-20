@@ -102,6 +102,13 @@ GAME_ID="$("$BLOOM_GAME_ID" "$SYSTEM_ID" "$ROM_PATH")" || fail game_id_failed
     "$ROM_PATH" "$LAUNCHER" retroarch "$CORE" false || fail structured_request_failed
 CREATED_REQUEST=1
 "$BLOOM_SESSION" start "$REQUEST_FILE" || fail session_start_failed
+SELECTED_CORE="$("$BLOOM_LAUNCH" get "$SESSION_REQUEST" core 2>/dev/null)" || fail selected_core_unavailable
+case "$SELECTED_CORE" in *'_libretro.so') ;; *) fail selected_core_invalid ;; esac
+SELECTED_CORE_PATH="$SD_ROOT/RetroArch/.retroarch/cores/$SELECTED_CORE"
+[ -f "$SELECTED_CORE_PATH" ] && [ ! -L "$SELECTED_CORE_PATH" ] || fail selected_core_unavailable
+SELECTED_CORE_SHA256="$(sha256sum "$SELECTED_CORE_PATH" | sed 's/[[:space:]].*//')"
+case "$SELECTED_CORE_SHA256" in ''|*[!0-9a-f]*) fail selected_core_invalid ;; esac
+[ "${#SELECTED_CORE_SHA256}" -eq 64 ] || fail selected_core_invalid
 "$BLOOM_LAUNCH" write-legacy "$SESSION_REQUEST" "$COMMAND_FILE" || fail legacy_adapter_failed
 "$BLOOM_SESSION" transition PREPARING STARTING || fail session_starting_failed
 sync
@@ -146,5 +153,5 @@ pidof MainUI >/dev/null 2>&1 || fail mainui_return_timeout
 [ ! -e "$COMMAND_FILE" ] || fail command_cleanup_failed
 "$BLOOM_SESSION" complete || fail session_complete_failed
 
-printf '{"schema":1,"status":"passed","system":"%s","duration_seconds":%s,"rss_kb":%s,"start_rss_kb":%s,"peak_rss_kb":%s,"shutdown_method":"%s","session_state":"STOPPED","graceful_exit":true,"save_flush":true,"mainui_return":true,"command_cleanup":true}\n' \
-    "$SYSTEM" "$DURATION" "$PEAK_RSS_KB" "${START_RSS_KB:-0}" "$PEAK_RSS_KB" "$SHUTDOWN_METHOD"
+printf '{"schema":1,"status":"passed","system":"%s","selected_core":"%s","selected_core_sha256":"%s","duration_seconds":%s,"rss_kb":%s,"start_rss_kb":%s,"peak_rss_kb":%s,"shutdown_method":"%s","session_state":"STOPPED","graceful_exit":true,"save_flush":true,"mainui_return":true,"command_cleanup":true}\n' \
+    "$SYSTEM" "$SELECTED_CORE" "$SELECTED_CORE_SHA256" "$DURATION" "$PEAK_RSS_KB" "${START_RSS_KB:-0}" "$PEAK_RSS_KB" "$SHUTDOWN_METHOD"

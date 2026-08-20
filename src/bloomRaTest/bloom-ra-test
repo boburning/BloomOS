@@ -44,6 +44,7 @@ policy=$("$BLOOM_RA" cores 2>/dev/null) || fail core_policy_unavailable
 core_status=$(printf '%s' "$policy" | "$JQ_BIN" -er --arg system "$system" --arg core "${6}_libretro.so" --arg sha "$core_sha" \
     '[.entries[] | select(.system == $system and .core == $core and .binary_sha256 == $sha) | .bloom_ra_status][0] // "untested"' 2>/dev/null) || fail core_policy_invalid
 case "$core_status" in verified|best_effort|incompatible|untested) ;; *) fail core_policy_invalid ;; esac
+reported_core="${6}_libretro.so"
 
 session_exit=not_run
 save_flush=not_run
@@ -54,9 +55,17 @@ if [ "$#" -eq 8 ]; then
     [ -x "$BLOOM_GAME_SMOKE" ] || fail session_service_unavailable
     session=$("$BLOOM_GAME_SMOKE" "$2" "$4" "$8" 2>/dev/null) || fail session_failed
     printf '%s' "$session" | "$JQ_BIN" -e '.status == "passed" and .graceful_exit == true and .save_flush == true' >/dev/null 2>&1 || fail session_result_invalid
+    reported_core=$(printf '%s' "$session" | "$JQ_BIN" -er '.selected_core') || fail session_result_invalid
+    core_sha=$(printf '%s' "$session" | "$JQ_BIN" -er '.selected_core_sha256') || fail session_result_invalid
+    case "$reported_core" in *'_libretro.so') ;; *) fail session_result_invalid ;; esac
+    case "$core_sha" in ''|*[!0-9a-f]*) fail session_result_invalid ;; esac
+    [ "${#core_sha}" -eq 64 ] || fail session_result_invalid
+    core_status=$(printf '%s' "$policy" | "$JQ_BIN" -er --arg system "$system" --arg core "$reported_core" --arg sha "$core_sha" \
+        '[.entries[] | select(.system == $system and .core == $core and .binary_sha256 == $sha) | .bloom_ra_status][0] // "untested"' 2>/dev/null) || fail core_policy_invalid
+    case "$core_status" in verified|best_effort|incompatible|untested) ;; *) fail core_policy_invalid ;; esac
     session_exit=pass
     save_flush=pass
 fi
 
-printf '{"schema":1,"service":"bloom-ra-test","device":"host-reported-separately","system":"%s","core":"%s_libretro.so","core_sha256":"%s","bloom_ra_status":"%s","identification":"%s","login":"%s","rich_presence":"not_run","hardcore":"not_run","session_exit":"%s","save_flush":"%s","unlock_test":"operator_required"}\n' \
-    "$2" "$6" "$core_sha" "$core_status" "$identification" "$login" "$session_exit" "$save_flush"
+printf '{"schema":1,"service":"bloom-ra-test","device":"host-reported-separately","system":"%s","core":"%s","core_sha256":"%s","bloom_ra_status":"%s","identification":"%s","login":"%s","rich_presence":"not_run","hardcore":"not_run","session_exit":"%s","save_flush":"%s","unlock_test":"operator_required"}\n' \
+    "$2" "$reported_core" "$core_sha" "$core_status" "$identification" "$login" "$session_exit" "$save_flush"
