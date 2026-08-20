@@ -24,3 +24,11 @@ operator but should not identify private ROM filenames or paths.
 Copy `gpsp-template.json` for each run, fill only observed results, and validate
 it before changing `build/ra-core-policy.json`. A binary SHA mismatch requires
 a new certification run.
+
+For PCSX-ReARMed, use `pcsx-rearmed-template.json` and require an
+operator-provided, recognized PS1 BIOS with HLE disabled. Exercise CHD,
+cue/bin, supported PBP, `.m3u` multi-disc launch and disc switching, memory
+cards, multiple game engines and memory regions, Rich Presence, leaderboards,
+Hardcore, reset, clean exit, save flush, and worst-case performance. Record a
+BIOS digest only in the private operator record; never commit BIOS bytes or the
+digest to the public repository.

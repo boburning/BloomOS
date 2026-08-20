@@ -7,6 +7,13 @@
     [ "$status" -eq 0 ]
 }
 
+@test "pending PCSX-ReARMed evidence template matches the exact policy SHA" {
+    run python3 /workspace/tools/validate_ra_evidence.py \
+        /workspace/docs/validation/retroachievements/pcsx-rearmed-template.json \
+        --policy /workspace/build/ra-core-policy.json
+    [ "$status" -eq 0 ]
+}
+
 @test "complete evidence rejects pending results and missing operator fields" {
     candidate="$BATS_TEST_TMPDIR/evidence.json"
     python3 - /workspace/docs/validation/retroachievements/gpsp-template.json "$candidate" <<'PY'
