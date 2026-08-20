@@ -7,6 +7,11 @@ CONFIG_DIR=${BLOOM_RA_PROXY_CONFIG_DIR:-/mnt/SDCARD/.bloom/achievements/proxy}
 LOG_FILE=${BLOOM_RA_PROXY_LOG_FILE:-/mnt/SDCARD/.bloom/logs/raofflineproxy.log}
 ROM_ROOT=${BLOOM_RA_PROXY_ROM_ROOT:-/mnt/SDCARD/Roms}
 PROXY_HOST=127.0.0.1:8080
+RA_BIN=${BLOOM_RA_BIN:-/mnt/SDCARD/.tmp_update/bin/bloom-ra}
+JQ_BIN=${BLOOM_JQ_BIN:-/mnt/SDCARD/.tmp_update/bin/jq}
+CREDENTIALS=${BLOOM_RA_CREDENTIALS:-/appconfigs/bloom/achievements/credentials}
+RUNTIME_DIR=${BLOOM_RA_PROXY_RUNTIME_DIR:-/tmp/bloom-ra-proxy}
+RUNTIME_ACCOUNT=$RUNTIME_DIR/credentials.append
 
 json_error() {
     printf '{"schema":1,"service":"bloom-ra-proxy","error":{"code":"%s"}}\n' "$1" >&2
@@ -43,6 +48,41 @@ validate_endpoint_config() {
     if [ -f "$config_file" ] && grep -Eq '"proxy_(host|port)"[[:space:]]*:' "$config_file"; then
         json_error unsupported_endpoint_override
     fi
+}
+
+sync_account() {
+    [ -x "$RA_BIN" ] && [ -x "$JQ_BIN" ] || json_error account_unavailable
+    [ -f "$CREDENTIALS" ] && [ ! -L "$CREDENTIALS" ] || json_error account_unavailable
+    account=$("$RA_BIN" account launch 2>/dev/null) || json_error account_unavailable
+    username=$(printf '%s' "$account" | "$JQ_BIN" -er '.username | select(type == "string" and length > 0)' 2>/dev/null) ||
+        json_error account_unavailable
+    authenticated=$(printf '%s' "$account" | "$JQ_BIN" -er '.authenticated | select(type == "boolean")' 2>/dev/null) ||
+        json_error account_unavailable
+    [ "$authenticated" = true ] || json_error account_unavailable
+    token=''
+    IFS= read -r token <"$CREDENTIALS" || [ -n "$token" ] || json_error account_unavailable
+    case "$username$token" in *[!A-Za-z0-9_.@-]*) json_error account_invalid ;; esac
+    [ -n "$token" ] || json_error account_invalid
+    [ ! -L "$RUNTIME_DIR" ] || json_error unsafe_runtime_path
+    [ ! -e "$RUNTIME_DIR" ] || [ -d "$RUNTIME_DIR" ] || json_error unsafe_runtime_path
+    mkdir -p "$RUNTIME_DIR"
+    chmod 700 "$RUNTIME_DIR"
+    account_temp=$RUNTIME_ACCOUNT.tmp.$$
+    printf 'cheevos_username = "%s"\ncheevos_token = "%s"\n' "$username" "$token" >"$account_temp"
+    chmod 600 "$account_temp"
+    mv -f "$account_temp" "$RUNTIME_ACCOUNT"
+
+    config_file=$CONFIG_DIR/config.json
+    config_temp=$CONFIG_DIR/config.json.tmp.$$
+    if [ -f "$config_file" ]; then
+        "$JQ_BIN" -e --arg path "$RUNTIME_ACCOUNT" 'select(type == "object") | . + {retroarch_cfg:$path}' \
+            "$config_file" >"$config_temp" || { rm -f "$config_temp"; json_error invalid_upstream_config; }
+    else
+        "$JQ_BIN" -n --arg path "$RUNTIME_ACCOUNT" '{retroarch_cfg:$path}' >"$config_temp" || json_error account_unavailable
+    fi
+    chmod 600 "$config_temp"
+    mv -f "$config_temp" "$config_file"
+    token=''
 }
 
 prepare_runtime_paths() {
@@ -91,9 +131,10 @@ print_status() {
 start_service() {
     installed || json_error not_installed
     validate_endpoint_config
+    prepare_runtime_paths
+    sync_account
     before=$(service_status)
     case "$before" in *'"service_running":true'*) print_status; return ;; esac
-    prepare_runtime_paths
     RAOFFLINEPROXY_CONFIG_DIR="$CONFIG_DIR" nohup "$UPSTREAM" run-service >>"$LOG_FILE" 2>&1 &
     attempts=0
     while [ "$attempts" -lt 20 ]; do
@@ -110,11 +151,13 @@ stop_service() {
     current=$(service_status)
     pid=$(printf '%s' "$current" | sed -n 's/.*"service_pid":[ ]*\([0-9][0-9]*\).*/\1/p')
     if [ -z "$pid" ]; then
+        rm -f "$RUNTIME_ACCOUNT"
         printf '%s\n' '{"schema":1,"service":"bloom-ra-proxy","installed":true,"running":false,"state":"stopped"}'
         return
     fi
     cmdline=$(tr '\000' ' ' <"/proc/$pid/cmdline" 2>/dev/null || true)
     case "$cmdline" in *raofflineproxy*) kill "$pid" ;; *) json_error unsafe_service_pid ;; esac
+    rm -f "$RUNTIME_ACCOUNT"
     printf '%s\n' '{"schema":1,"service":"bloom-ra-proxy","installed":true,"running":false,"state":"stopped"}'
 }
 
@@ -146,7 +189,15 @@ case "${1:-}" in
         [ "$#" -eq 2 ] || json_error invalid_arguments
         installed || json_error not_installed
         rom=$(validated_rom "$2") || json_error invalid_rom_path
-        run_upstream cache-rom --path "$rom" >/dev/null 2>&1 || json_error cache_failed
+        validate_endpoint_config
+        prepare_runtime_paths
+        sync_account
+        if run_upstream cache-rom --path "$rom" >/dev/null 2>&1; then
+            rm -f "$RUNTIME_ACCOUNT"
+        else
+            rm -f "$RUNTIME_ACCOUNT"
+            json_error cache_failed
+        fi
         printf '%s\n' '{"schema":1,"service":"bloom-ra-proxy","cached":true}'
         ;;
     cache-system)
@@ -156,7 +207,15 @@ case "${1:-}" in
         root=$(readlink -f "$ROM_ROOT") || json_error invalid_rom_root
         directory="$root/$folder"
         [ ! -L "$directory" ] && [ -d "$directory" ] || json_error invalid_system_path
-        run_upstream cache-folder-listing --path "$directory" || json_error cache_failed
+        validate_endpoint_config
+        prepare_runtime_paths
+        sync_account
+        if run_upstream cache-folder-listing --path "$directory"; then
+            rm -f "$RUNTIME_ACCOUNT"
+        else
+            rm -f "$RUNTIME_ACCOUNT"
+            json_error cache_failed
+        fi
         ;;
     *) json_error invalid_command ;;
 esac

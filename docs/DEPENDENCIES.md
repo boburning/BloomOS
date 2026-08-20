@@ -253,7 +253,11 @@ vendor downloads. The package also removes developer-only Python files and
 fails if any symbolic link remains, because Bloom's durable component root is
 FAT32. It copies `libutil.so.1` from Bloom's immutable Miyoo cross-toolchain
 because the standalone CPython executable requires it and Miyoo firmware does
-not provide it. The CPython runtime is an immutable upstream binary input,
+not provide it. The launcher also pins TLS verification to the certifi Mozilla
+CA bundle already contained in that exact runtime archive; Miyoo firmware does
+not provide a usable system trust bundle. Native bridge builds remove temporary
+build-directory identities and GNU build IDs before packaging. The CPython
+runtime is an immutable upstream binary input,
 not a Bloom source build, so stable release eligibility remains fail-closed
 until the public provenance policy explicitly admits that artifact or Bloom
 replaces it with a reproducible source build. Direct RA and ordinary launch do

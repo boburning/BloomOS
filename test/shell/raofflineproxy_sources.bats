@@ -43,3 +43,17 @@ PY
     [ "$status" -eq 0 ]
     [[ "$output" == *'RAOfflineProxy package is not FAT-compatible'* || "$output" == *'find "${WORK_DIR}/package" -type l'* ]]
 }
+
+@test "RAOfflineProxy launcher uses its pinned runtime CA bundle" {
+    run grep -F 'RAOFFLINEPROXY_CA_FILE="${CA_FILE}"' /workspace/build/raofflineproxy/build.sh
+    [ "$status" -eq 0 ]
+    run grep -F 'pip/_vendor/certifi/cacert.pem' /workspace/build/raofflineproxy/build.sh
+    [ "$status" -eq 0 ]
+}
+
+@test "RAOfflineProxy native bridge removes build-directory identity" {
+    run grep -F -- '-ffile-prefix-map="${WORK_DIR}"=/build/raofflineproxy' /workspace/build/raofflineproxy/build.sh
+    [ "$status" -eq 0 ]
+    run grep -F -- '-Wl,--build-id=none' /workspace/build/raofflineproxy/build.sh
+    [ "$status" -eq 0 ]
+}

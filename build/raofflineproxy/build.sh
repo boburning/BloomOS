@@ -59,13 +59,20 @@ cp "${CHDR}/LICENSE.txt" "${OUT}/licenses/libchdr-BSD-3-Clause.txt"
 mkdir -p "${WORK_DIR}/package/bin"
 printf '%s\n' '#!/bin/sh' \
   'HERE="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"' \
+  'CA_FILE="${HERE}/runtime/python/lib/python3.9/site-packages/pip/_vendor/certifi/cacert.pem"' \
+  '[ -f "${CA_FILE}" ] || { echo "raofflineproxy: CA bundle unavailable" >&2; exit 1; }' \
   'export PYTHONPATH="${HERE}/raofflineproxy"' \
   'export LD_LIBRARY_PATH="${HERE}/runtime/python/lib:${HERE}/raofflineproxy${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"' \
+  'export SSL_CERT_FILE="${CA_FILE}"' \
+  'export RAOFFLINEPROXY_CA_FILE="${CA_FILE}"' \
   'exec "${HERE}/runtime/python/bin/python3" -m raofflineproxy.main "$@"' \
   > "${WORK_DIR}/package/bin/raofflineproxy"
 chmod 0755 "${WORK_DIR}/package/bin/raofflineproxy"
 
 "${CC}" -shared -Os -s -fPIC \
+  -ffile-prefix-map="${WORK_DIR}"=/build/raofflineproxy \
+  -fmacro-prefix-map="${WORK_DIR}"=/build/raofflineproxy \
+  -Wl,--build-id=none \
   -DRC_HASH_NO_ENCRYPTED -DWANT_RAW_DATA_SECTOR=1 -DWANT_SUBCODE=1 -DVERIFY_BLOCK_CRC=1 \
   -I"${RC}/include" -I"${RC}/src" -I"${RC}/src/rhash" \
   -I"${GLUE}" -I"${GLUE}/shim" -I"${CHDR}/include" -I"${CHDR}/src" \

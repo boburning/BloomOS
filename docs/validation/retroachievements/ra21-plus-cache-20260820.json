@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "bloom_base_commit": "d91c5e9e",
+  "device_family": "miyoo-mini-plus",
+  "tested_at": "2026-08-20T04:51:13Z",
+  "operator": "boburning",
+  "test_scope": "ra21-private-credential-bridge-and-single-game-cache",
+  "package": {
+    "version": "1.11.1-alpha1",
+    "bytes": 18520645,
+    "sha256": "297ffef97eb0a941ab077ae2b2682e4c9ec00bd116955ed1e172ad209e1c6db4",
+    "distinct_build_directories_byte_identical": true,
+    "tls_ca_source": "pinned-python-runtime-certifi-bundle"
+  },
+  "results": {
+    "canonical_account_bridge": "pass",
+    "verified_tls_cache_request": "pass",
+    "ra_game_id": 8038,
+    "cached_game_lookup": true,
+    "cached_games_count": 1,
+    "temporary_credential_removed": true,
+    "permanent_retroarch_config_mutated": false,
+    "final_service_running": false
+  },
+  "privacy": {
+    "credential_recorded": false,
+    "username_recorded": false,
+    "rom_path_or_title_recorded": false,
+    "content_hash_recorded": false,
+    "award_details_recorded": false
+  },
+  "notes": "This proves authenticated online precaching and local cached-game status. It does not claim an offline achievement award or later flush; those remain physical RA-23 work."
+}

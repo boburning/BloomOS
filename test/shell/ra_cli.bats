@@ -20,13 +20,15 @@ esac
 EOF
     chmod +x "$ra"
     export BLOOM_RA_BIN="$ra"
-    proxy="$BLOOM_TEST_ROOT/bloom-ra-proxy"
+proxy="$BLOOM_TEST_ROOT/bloom-ra-proxy"
     cat >"$proxy" <<'EOF'
 #!/bin/sh
 printf '%s\n' "$1" >"$BLOOM_TEST_ROOT/proxy-args"
+printf 'bloom-ra-proxy %s\n' "$*" >>"$MOCK_LOG"
 case "$1" in
 status) printf '%s\n' '{"schema":1,"service":"bloom-ra-proxy","installed":false}' ;;
 pending) printf '%s\n' '{"schema":1,"service":"bloom-ra-proxy","pending_awards":0}' ;;
+cache-rom|cache-system) printf '%s\n' '{"schema":1,"service":"bloom-ra-proxy","cached":true}' ;;
 *) exit 2 ;;
 esac
 EOF
@@ -126,6 +128,19 @@ teardown() {
     [ "$status" -eq 0 ]
     [[ "$output" == *'"pending_awards":0'* ]]
     [ "$(cat "$BLOOM_TEST_ROOT/proxy-args")" = pending ]
+}
+
+@test "achievements proxy exposes bounded cache operations" {
+    rom="$SDCARD/Roms/GBA/Fixture.gba"
+    mkdir -p "$(dirname "$rom")"
+    printf rom >"$rom"
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl achievements proxy cache-rom "$rom"
+    [ "$status" -eq 0 ]
+    grep -F "bloom-ra-proxy cache-rom $rom" "$MOCK_LOG"
+
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl achievements proxy cache-system gba
+    [ "$status" -eq 0 ]
+    grep -F 'bloom-ra-proxy cache-system gba' "$MOCK_LOG"
 }
 
 @test "achievements CLI rejects unsupported and malformed command shapes" {
