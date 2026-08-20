@@ -355,6 +355,10 @@ Planned work includes safe updates and rollback, optional synchronization and of
   allowlists catalog/proxy counts and rejects or discards secrets, ROM paths,
   titles, award details, and unexpected fields. Bounded structured RA log export
   remains pending.
+- [ ] RA-25: add guarded RA certification tooling. Developer-mode preflight now
+  verifies exact ROM identity and installed core SHA/policy without exposing
+  ROM data; physical login, Rich Presence, Hardcore, lifecycle, save-flush, and
+  explicit operator unlock execution remain pending.
 - [ ] Keep RA-27 as a future consumer of the same `bloom-ra` API when Bloom owns
   the primary library browser; closed MainUI replacement is not a prerequisite
   for the P0 GameSwitcher badge.

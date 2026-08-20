@@ -169,6 +169,21 @@ path.zip"
     [ ! -e "$BLOOM_TEST_ROOT/smoke-called" ]
 }
 
+@test "test achievements delegates only the explicit guarded argument shape" {
+    helper="$BLOOM_TEST_ROOT/ra-test"
+    cat >"$helper" <<'EOF'
+#!/bin/sh
+printf '%s\n' "$*"
+EOF
+    chmod +x "$helper"
+    export BLOOM_RA_TEST_BIN="$helper"
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl test achievements --system GBA --rom-base64 ZGF0YQ== --core gpsp
+    [ "$status" -eq 0 ]
+    [ "$output" = '--system GBA --rom-base64 ZGF0YQ== --core gpsp' ]
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl test achievements --system GBA --core gpsp
+    [ "$status" -eq 2 ]
+}
+
 @test "update commands delegate only the explicit offline operations" {
     mock_stage="$BLOOM_TEST_ROOT/mock-stage"
     mock_prepare="$BLOOM_TEST_ROOT/mock-prepare"
