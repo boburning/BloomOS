@@ -2,7 +2,7 @@
 set -eu
 umask 077
 
-LOG_DIR=${BLOOM_RA_LOG_DIR:-/mnt/SDCARD/.bloom/logs}
+LOG_DIR=${BLOOM_RA_LOG_DIR:-/appconfigs/bloom/logs}
 LOG_FILE=$LOG_DIR/retroachievements.log
 ROTATED=$LOG_FILE.1
 MAX_BYTES=${BLOOM_RA_LOG_MAX_BYTES:-65536}
