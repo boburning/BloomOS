@@ -27,7 +27,7 @@ get)
     case "$3" in
     game_id) printf '%s\n' bloom-game-v1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ;;
     system_id) printf '%s\n' gb ;;
-    core) printf '%s\n' gambatte_libretro.so ;;
+    core) printf '%s\n' "${RA_REQUEST_CORE:-gambatte_libretro.so}" ;;
     *) exit 1 ;;
     esac
     ;;
@@ -39,6 +39,7 @@ write-ra-config)
     chmod 600 "$3"
     printf 'config:%s\n' "$*" >>"$MOCK_LOG"
     ;;
+set-core) printf 'set-core:%s\n' "$*" >>"$MOCK_LOG" ;;
 *) exit 1 ;;
 esac
 EOF
@@ -56,12 +57,25 @@ game:*)
     ;;
 cores:)
     status=${RA_CORE_STATUS:-best_effort}
-    printf '{"schema":1,"entries":[{"system":"gb","core":"gambatte_libretro.so","binary_sha256":"%s","bloom_ra_status":"%s"}]}\n' "$CORE_SHA" "$status"
+    hardcore=${RA_HARDCORE_STATUS:-untested}
+    printf '{"schema":1,"entries":[{"system":"gb","core":"gambatte_libretro.so","binary_sha256":"%s","bloom_ra_status":"%s","hardcore_status":"%s"}]}\n' "$CORE_SHA" "$status" "$hardcore"
     ;;
 *) exit 1 ;;
 esac
 EOF
     chmod +x "$BLOOM_RA_BIN"
+}
+
+@test "GBA Hardcore selects the structured mGBA fallback before policy resolution" {
+    export RA_REQUEST_CORE=gpsp_libretro.so
+    sed -i 's/system_id) printf.*gb.*/system_id) printf '\''%s\\n'\'' gba ;;/' "$BLOOM_LAUNCH_BIN"
+    cp "$BLOOM_CORE_ROOT/gambatte_libretro.so" "$BLOOM_CORE_ROOT/mgba_libretro.so"
+    sed -i 's/"mode":"softcore"/"mode":"hardcore"/' "$BLOOM_RA_BIN"
+    sed -i 's/"system":"gb","core":"gambatte_libretro.so"/"system":"gba","core":"mgba_libretro.so"/' "$BLOOM_RA_BIN"
+    run "$PREPARE" "$REQUEST"
+    [ "$status" -eq 0 ]
+    grep -F 'set-core:set-core' "$MOCK_LOG"
+    [[ "$output" == *'"mode":"hardcore"'* ]]
 }
 
 teardown() { teardown_bloom_fixture; }
@@ -121,6 +135,15 @@ teardown() { teardown_bloom_fixture; }
     [ "$status" -eq 0 ]
     [[ "$output" == *'"enabled":false'* ]]
     [ ! -e "$BLOOM_SESSION_ROOT/ra.cfg" ]
+}
+
+@test "Hardcore is rejected before launch when the exact core policy is unsupported" {
+    export RA_HARDCORE_STATUS=unsupported
+    sed -i 's/"mode":"softcore"/"mode":"hardcore"/' "$BLOOM_RA_BIN"
+    run "$PREPARE" "$REQUEST"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *'Hardcore is unsupported by the selected core'* ]]
+    ! grep -F 'write-ra-config' "$MOCK_LOG"
 }
 
 @test "missing core policy is reported as untested without blocking RA" {

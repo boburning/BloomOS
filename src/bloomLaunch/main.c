@@ -9,6 +9,7 @@ static void usage(void)
     fprintf(stderr, "Usage: bloom-launch validate REQUEST.json\n"
                     "       bloom-launch create REQUEST.json GAME_ID SYSTEM_ID ROM_PATH LAUNCHER EMULATOR CORE|- AUTO_LOAD\n"
                     "       bloom-launch get REQUEST.json FIELD\n"
+                    "       bloom-launch set-core REQUEST.json CORE\n"
                     "       bloom-launch resolve-achievements REQUEST.json ENABLED MODE OFFLINE_CASUAL PROXY_READY RA_GAME_ID CERTIFICATION\n"
                     "       bloom-launch write-ra-config REQUEST.json CONFIG USERNAME PROXY_HOST|- < TOKEN\n"
                     "       bloom-launch write-legacy REQUEST.json COMMAND.sh\n");
@@ -69,6 +70,8 @@ int main(int argc, char **argv)
         if (result == 0)
             printf("%s\n", value);
     }
+    else if (argc == 4 && strcmp(argv[1], "set-core") == 0)
+        result = bloom_launch_set_core(argv[2], argv[3], error, sizeof(error));
     else {
         usage();
         return 2;

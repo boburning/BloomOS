@@ -24,12 +24,15 @@ def validate(policy_path: Path, manifest_path: Path) -> list[str]:
         return ["RA core policy must use schema 1 with an entries array"]
     cores = {core["binary"]: core["sha256"] for core in manifest.get("cores", [])}
     systems: set[str] = set()
+    system_cores: set[tuple[str, str]] = set()
     for entry in policy["entries"]:
         system = entry.get("system")
         core = entry.get("core")
         digest = entry.get("binary_sha256")
-        if system in systems:
-            errors.append(f"duplicate policy system: {system}")
+        pair = (system, core)
+        if pair in system_cores:
+            errors.append(f"duplicate policy system/core: {system}/{core}")
+        system_cores.add(pair)
         systems.add(system)
         if core not in cores:
             errors.append(f"unknown core for {system}: {core}")

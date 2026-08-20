@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "bloom_commit": "5bf1fbd0",
+  "device_family": "miyoo-mini-plus",
+  "tested_at": "2026-08-20T01:36:00Z",
+  "operator": "boburning",
+  "test_scope": "gpsp-softcore-unlock-and-hardcore-capability",
+  "system": "gba",
+  "core": "gpsp_libretro.so",
+  "core_sha256": "519e19c015a27ac82ca32f026c9f0c58b407ce31e4512495de19bd1828452587",
+  "ra_game_id": 568,
+  "results": {
+    "exact_identification": "pass",
+    "direct_login": "pass",
+    "softcore_achievement_evaluation": "pass",
+    "softcore_award_server_acceptance": "pass",
+    "softcore_award_post_session_persistence": "pass",
+    "session_exit": "pass",
+    "save_flush": "pass",
+    "hardcore_unlock_support": "unsupported",
+    "leaderboards": "not_tested",
+    "rich_presence": "not_independently_verified"
+  },
+  "privacy": {
+    "username_recorded": false,
+    "credential_recorded": false,
+    "rom_path_or_title_recorded": false,
+    "content_hash_recorded": false,
+    "user_progress_details_recorded": false
+  },
+  "notes": "A Softcore achievement condition was exercised through RetroArch's emulated-memory command interface so the real rcheevos evaluator and award transport were used. A fresh authenticated session confirmed the award after graceful exit and save flush. RetroAchievements supplied its unknown-emulator warning for this exact gpSP binary, proving Hardcore awards are unavailable even though Bloom's local Hardcore restrictions were correctly applied."
+}

@@ -372,19 +372,26 @@ Planned work includes safe updates and rollback, optional synchronization and of
   and byte-identical permanent RetroArch config. A 60-second physical direct
   Softcore session then proved the config reached RetroArch, graceful exit,
   save flush, MainUI return, and removal of both private config and temporary
-  launcher. Observable live RA login, Rich Presence, and unlock validation
-  remain pending.
+  launcher. Observable live login and a real Softcore unlock now pass; Rich
+  Presence remains pending.
 - [ ] RA-15: finish Hardcore enforcement and certification. Host policy rejects
   proxy transport and silent downgrade. A 60-second Mini Plus session proved
   direct transport plus runtime disabling of auto-load, rewind, run-ahead,
   preemptive frames, load-state, and cheat controls; it also completed graceful
   exit/save flush/cleanup and restored the account to Softcore. Server-side
-  Hardcore recognition and representative achievement behavior remain pending.
+  validation subsequently returned RetroAchievements' unknown-emulator warning
+  for the exact gpSP binary, so policy now marks its Hardcore support as
+  unsupported. Bloom instead selects the exact mGBA fallback in the private
+  request. A 60-second physical mGBA Hardcore session passed direct routing,
+  restrictions, graceful exit, scoped save flush, cleanup, MainUI return, and
+  Softcore account restoration. A real Hardcore unlock and other core/device
+  certification remain pending.
 - [ ] RA-16: complete the direct RA vertical slice. Mini Plus now physically
   proves token login, exact Game ID 568 recognition, continued gameplay,
   graceful exit, save flush, and MainUI return through the real direct path.
-  Rich Presence, a deliberate operator-approved unlock, and independent
-  server-progress preservation remain pending.
+  A real two-point Softcore achievement was evaluated and awarded through gpSP,
+  persisted after graceful exit/save flush, and appeared in a fresh authenticated
+  server session. Rich Presence remains pending.
 - [ ] RA-18: ship the schema-1 `bloom-ra-proxy` adapter. Host coverage now
   proves absent-package degradation, bounded status/pending/cache translation,
   input rejection, and stop behavior without config mutation. Physical package
@@ -414,8 +421,9 @@ Planned work includes safe updates and rollback, optional synchronization and of
   verifies exact ROM identity and installed core SHA/policy without exposing
   ROM or account data and reports the current redacted authentication state;
   bounded default-core sessions now automate graceful lifecycle and save-flush
-  validation. Mini Plus preflight and a 10-second gpSP session pass. Physical
-  Rich Presence and explicit operator unlock execution remain pending.
+  validation. Mini Plus preflight and a 10-second gpSP session pass. A physical
+  gpSP Softcore unlock and post-session server verification also pass. Physical
+  Rich Presence remains pending.
 - [x] RA-26: enforce a dedicated CI regression gate for exact core/source
   policy, required RA fixtures, service-only proxy integration, immutable
   transport, Hardcore routing, redaction-sensitive shell behavior, and focused
