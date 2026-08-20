@@ -306,6 +306,12 @@ achievements_command() {
                 *) usage; return 2 ;;
             esac
             ;;
+        network)
+            [ "$#" -eq 2 ] && [ "$2" = status ] || { usage; return 2; }
+            network_probe="${BLOOM_RA_NETWORK_BIN:-$(path /mnt/SDCARD/.tmp_update/bin/bloom-ra-network)}"
+            [ -x "$network_probe" ] || { printf 'bloomctl: achievements network probe is unavailable\n' >&2; return 1; }
+            "$network_probe" status
+            ;;
         scan)
             case "${2:-}" in
                 --changed|--all|--status|--cancel)

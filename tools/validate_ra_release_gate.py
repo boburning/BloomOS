@@ -19,6 +19,7 @@ REQUIRED_TESTS = {
     "test/test_bloom_ra_scanner.cpp",
     "test/shell/ra_cli.bats",
     "test/shell/ra_core_policy.bats",
+    "test/shell/ra_network.bats",
     "test/shell/ra_proxy_adapter.bats",
     "test/shell/raofflineproxy_sources.bats",
     "test/shell/ra_certification_tool.bats",

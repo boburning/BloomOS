@@ -34,6 +34,14 @@ esac
 EOF
     chmod +x "$proxy"
     export BLOOM_RA_PROXY_BIN="$proxy"
+    network="$BLOOM_TEST_ROOT/bloom-ra-network"
+    cat >"$network" <<'EOF'
+#!/bin/sh
+printf '%s\n' "$1" >"$BLOOM_TEST_ROOT/network-args"
+printf '%s\n' '{"schema":1,"service":"bloom-ra-network","online":true,"state":"ready"}'
+EOF
+    chmod +x "$network"
+    export BLOOM_RA_NETWORK_BIN="$network"
 }
 
 @test "achievements scan exposes only bounded scanner operations" {
@@ -148,6 +156,16 @@ teardown() {
         [ "$status" -eq 0 ]
         grep -F "bloom-ra-proxy $selector" "$MOCK_LOG"
     done
+}
+
+@test "achievements network exposes only the explicit status probe" {
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl achievements network status
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'"state":"ready"'* ]]
+    [ "$(cat "$BLOOM_TEST_ROOT/network-args")" = status ]
+
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl achievements network probe
+    [ "$status" -eq 2 ]
 }
 
 @test "achievements CLI rejects unsupported and malformed command shapes" {
