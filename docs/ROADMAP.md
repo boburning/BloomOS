@@ -330,9 +330,10 @@ Planned work includes safe updates and rollback, optional synchronization and of
   cartridge ZIP hashing are implemented; physical Mini Plus validation maps
   known GBA and SNES fixtures to their real RA Game IDs. The source-pinned
   CHD/PBP bridge produces the authoritative hash for a real operator-owned CHD
-  on both the host and Mini Plus, with matching evidence. Guarded PBP,
-  playlist/multi-disc, and remaining archive-boundary fixtures are still
-  pending.
+  on both the host and Mini Plus, with matching evidence. A real two-disc PS1
+  playlist now validates upstream first-disc semantics on the host and Plus
+  while rejecting unconfined first entries. Guarded PBP and remaining
+  archive-boundary fixtures are still pending.
 - [ ] RA-04: finish the production catalog fetch path. Transactional full-console
   import and a secure installed-game development refresh bridge are implemented;
   Mini Plus validation persists ten exact RA matches offline. The bridge now

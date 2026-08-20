@@ -15,6 +15,7 @@
 
 static _Thread_local char active_hash_root[PATH_MAX];
 static void set_error(char *error, size_t size, const char *format, ...);
+static bool path_in_active_root(const char *path, char resolved[PATH_MAX]);
 
 typedef int (*BloomRhashFileForConsole)(unsigned int console_id, const char *path, char hash[33]);
 
@@ -41,6 +42,53 @@ static int bridge_hash(uint32_t console_id, const char *path, char hash[33])
     int result = hasher != NULL && hasher(console_id, path, hash) && strlen(hash) == 32 ? 0 : -1;
     dlclose(library);
     return result;
+}
+
+static int validate_playlist_first_disc(const char *playlist, char *error, size_t error_size)
+{
+    FILE *file = fopen(playlist, "rb");
+    if (file == NULL) {
+        set_error(error, error_size, "could not open playlist");
+        return -1;
+    }
+    char line[PATH_MAX];
+    unsigned int lines = 0;
+    while (lines++ < 256 && fgets(line, sizeof(line), file) != NULL) {
+        size_t length = strlen(line);
+        if (length == sizeof(line) - 1 && line[length - 1] != '\n' && !feof(file)) {
+            fclose(file);
+            set_error(error, error_size, "playlist entry is too long");
+            return -1;
+        }
+        while (length > 0 && (line[length - 1] == '\r' || line[length - 1] == '\n' ||
+                              line[length - 1] == ' ' || line[length - 1] == '\t'))
+            line[--length] = '\0';
+        if (length == 0 || line[0] == '#')
+            continue;
+        if (line[0] == '/' || line[0] == '\\' || strchr(line, ':') != NULL) {
+            fclose(file);
+            set_error(error, error_size, "playlist entry must be a relative ROM path");
+            return -1;
+        }
+        const char *slash = strrchr(playlist, '/');
+        if (slash == NULL) {
+            fclose(file);
+            set_error(error, error_size, "playlist path has no confined parent");
+            return -1;
+        }
+        char candidate[PATH_MAX];
+        int written = snprintf(candidate, sizeof(candidate), "%.*s/%s", (int)(slash - playlist), playlist, line);
+        char resolved[PATH_MAX];
+        fclose(file);
+        if (written < 0 || (size_t)written >= sizeof(candidate) || !path_in_active_root(candidate, resolved)) {
+            set_error(error, error_size, "playlist entry escapes the ROM root or is not a regular file");
+            return -1;
+        }
+        return 0;
+    }
+    fclose(file);
+    set_error(error, error_size, "playlist has no bounded disc entry");
+    return -1;
 }
 
 static bool path_in_active_root(const char *path, char resolved[PATH_MAX])
@@ -250,8 +298,15 @@ int bloom_ra_hash_file(const char *system_id, const char *rom_path, const char *
         hash_path = archive_name;
         hash_content = archive_content;
     }
-    int external_disc = dot != NULL && (strcasecmp(dot, ".chd") == 0 || strcasecmp(dot, ".pbp") == 0);
+    int external_disc = dot != NULL &&
+                        (strcasecmp(dot, ".chd") == 0 || strcasecmp(dot, ".pbp") == 0 ||
+                         strcasecmp(dot, ".m3u") == 0);
     if (external_disc) {
+        if (strcasecmp(dot, ".m3u") == 0 && validate_playlist_first_disc(resolved_path, error, error_size) != 0) {
+            free(archive_content);
+            active_hash_root[0] = '\0';
+            return -1;
+        }
         int result = bridge_hash(console_id, resolved_path, hash);
         free(archive_content);
         active_hash_root[0] = '\0';

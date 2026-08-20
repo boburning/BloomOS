@@ -223,7 +223,12 @@ int bloom_ra_scan_game(sqlite3 *database, const char *bloom_game_id, const char 
     scan_result->skipped = 0;
     scan_result->identified = 0;
     scan_result->status = "hash_error";
-    if (!force) {
+    const char *extension = strrchr(rom_path, '.');
+    int composite_playlist = extension != NULL && strcasecmp(extension, ".m3u") == 0;
+    /* A playlist's content identity includes its first referenced disc. Until
+     * the dependency stat is persisted separately, never reuse a playlist row
+     * from the small .m3u file's size/mtime alone. */
+    if (!force && !composite_playlist) {
         int is_unchanged = 0;
         const char *status = NULL;
         int result = unchanged(database, bloom_game_id, metadata.st_size, metadata.st_mtime, &is_unchanged, &status);
