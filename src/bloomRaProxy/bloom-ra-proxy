@@ -161,6 +161,33 @@ stop_service() {
     printf '%s\n' '{"schema":1,"service":"bloom-ra-proxy","installed":true,"running":false,"state":"stopped"}'
 }
 
+print_pending() {
+    installed || json_error not_installed
+    home=$(service_status)
+    pending=$(printf '%s' "$home" | "$JQ_BIN" -r '.pending_awards_count | if type == "number" and . >= 0 and floor == . then tostring else error("count") end' 2>/dev/null) ||
+        json_error invalid_upstream_response
+    online=$(printf '%s' "$home" | "$JQ_BIN" -r '.is_online | if type == "boolean" then tostring else error("boolean") end' 2>/dev/null) ||
+        json_error invalid_upstream_response
+    running=$(printf '%s' "$home" | "$JQ_BIN" -r '.service_running | if type == "boolean" then tostring else error("boolean") end' 2>/dev/null) ||
+        json_error invalid_upstream_response
+    authenticated=false
+    if [ -x "$RA_BIN" ]; then
+        account=$("$RA_BIN" account status 2>/dev/null || true)
+        authenticated=$(printf '%s' "$account" | "$JQ_BIN" -r '.authenticated | if type == "boolean" then tostring else error("boolean") end' 2>/dev/null || printf false)
+    fi
+    if [ "$pending" -eq 0 ]; then
+        state=clear
+    elif [ "$authenticated" != true ]; then
+        state=authentication_required
+    elif [ "$online" != true ]; then
+        state=waiting_for_network
+    else
+        state=pending
+    fi
+    printf '{"schema":1,"service":"bloom-ra-proxy","pending_awards":%s,"online":%s,"running":%s,"state":"%s"}\n' \
+        "$pending" "$online" "$running" "$state"
+}
+
 case "${1:-}" in
     status|health) [ "$#" -eq 1 ] || json_error invalid_arguments; print_status ;;
     start) [ "$#" -eq 1 ] || json_error invalid_arguments; start_service ;;
@@ -173,10 +200,7 @@ case "${1:-}" in
         ;;
     pending)
         [ "$#" -eq 1 ] || json_error invalid_arguments
-        installed || json_error not_installed
-        count=$(run_upstream pending-awards-count 2>/dev/null) || json_error upstream_unavailable
-        case "$count" in ''|*[!0-9]*) json_error invalid_upstream_response ;; esac
-        printf '{"schema":1,"service":"bloom-ra-proxy","pending_awards":%s}\n' "$count"
+        print_pending
         ;;
     cached-game)
         [ "$#" -eq 2 ] || json_error invalid_arguments

@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "bloom_base_commit": "aab09324",
+  "device_family": "miyoo-mini-plus",
+  "tested_at": "2026-08-20T04:58:00Z",
+  "operator": "boburning",
+  "test_scope": "ra22-bounded-pending-award-status",
+  "results": {
+    "pending_awards": 0,
+    "state": "clear",
+    "online": false,
+    "running": false,
+    "cached_games_count": 1,
+    "proxy_database_parsed_by_bloom": false
+  },
+  "privacy": {
+    "credential_recorded": false,
+    "username_recorded": false,
+    "rom_path_or_title_recorded": false,
+    "achievement_name_recorded": false,
+    "award_details_recorded": false
+  },
+  "notes": "Host fixtures separately cover pending, waiting_for_network, and authentication_required. A real pending award and flush remain physical RA-23 work."
+}

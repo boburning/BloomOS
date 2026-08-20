@@ -13,7 +13,7 @@ setup() {
     printf '%s' fixture-token >"$BLOOM_RA_CREDENTIALS"
     cat >"$BLOOM_RA_BIN" <<'SH'
 #!/bin/sh
-[ "$1:$2" = account:launch ] || exit 1
+case "$1:$2" in account:launch|account:status) ;; *) exit 1 ;; esac
 printf '%s\n' '{"authenticated":true,"username":"BloomUser"}'
 SH
     chmod +x "$BLOOM_RA_BIN"
@@ -57,6 +57,21 @@ SH
     run "$ADAPTER" pending
     [ "$status" -eq 0 ]
     [[ "$output" == *'"pending_awards":3'* ]]
+    [[ "$output" == *'"state":"waiting_for_network"'* ]]
+}
+
+@test "pending status distinguishes clear and authentication-required states" {
+    make_upstream
+    sed -i 's/"pending_awards_count":3/"pending_awards_count":0/g' "$BLOOM_RA_PROXY_UPSTREAM"
+    run "$ADAPTER" pending
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'"state":"clear"'* ]]
+
+    sed -i 's/"pending_awards_count":0/"pending_awards_count":3/g' "$BLOOM_RA_PROXY_UPSTREAM"
+    sed -i 's/"authenticated":true/"authenticated":false/' "$BLOOM_RA_BIN"
+    run "$ADAPTER" pending
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'"state":"authentication_required"'* ]]
 }
 
 @test "adapter owns the fixed loopback session endpoint" {
@@ -87,7 +102,7 @@ SH
 
 @test "adapter rejects malformed upstream output" {
     make_upstream
-    sed -i "s/printf '%s\\\\n' '3'/printf '%s\\\\n' 'secret'/" "$BLOOM_RA_PROXY_UPSTREAM"
+    sed -i 's/"pending_awards_count":3/"pending_awards_count":"secret"/g' "$BLOOM_RA_PROXY_UPSTREAM"
     run "$ADAPTER" pending
     [ "$status" -eq 1 ]
     [[ "$output" == *'"code":"invalid_upstream_response"'* ]]
