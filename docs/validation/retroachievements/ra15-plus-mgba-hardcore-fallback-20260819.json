@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "bloom_commit": "af0c43ab",
+  "device_family": "miyoo-mini-plus",
+  "tested_at": "2026-08-20T01:48:00Z",
+  "operator": "boburning",
+  "test_scope": "gba-hardcore-mgba-fallback",
+  "system": "gba",
+  "requested_core": "gpsp_libretro.so",
+  "selected_core": "mgba_libretro.so",
+  "selected_core_sha256": "74aa27c12ff677bb84eb265e03f686aec439f3ae8621511e61c7eb23bb9a170c",
+  "results": {
+    "structured_core_fallback": "pass",
+    "hardcore_append_config": "pass",
+    "direct_transport": "pass",
+    "session_duration_seconds": 60,
+    "graceful_exit": "pass",
+    "save_flush": "pass",
+    "mainui_return": "pass",
+    "command_cleanup": "pass",
+    "account_mode_restored_to_softcore": "pass",
+    "hardcore_achievement_unlock": "not_tested",
+    "leaderboards": "not_tested"
+  },
+  "privacy": {
+    "username_recorded": false,
+    "credential_recorded": false,
+    "rom_path_or_title_recorded": false,
+    "content_hash_recorded": false
+  },
+  "notes": "Bloom preserved gpSP as the normal GBA default and changed only the private session request to the exact installed mGBA fallback for Hardcore. mGBA-scoped save flushing completed; no permanent launcher or RetroArch configuration was modified."
+}
