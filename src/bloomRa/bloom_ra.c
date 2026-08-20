@@ -1,4 +1,5 @@
 #include "bloom_ra.h"
+#include "bloom_ra_archive.h"
 
 #include "../bloomGameId/bloom_game_id.h"
 #include "rc_hash.h"
@@ -202,8 +203,27 @@ int bloom_ra_hash_file(const char *system_id, const char *rom_path, const char *
         set_error(error, error_size, "ROM path is outside the allowed root");
         return -1;
     }
+    uint8_t *archive_content = NULL;
+    size_t archive_size = 0;
+    char archive_name[512] = {0};
+    const char *hash_path = resolved_path;
+    const uint8_t *hash_content = NULL;
+    const char *dot = strrchr(resolved_path, '.');
+    int cartridge_archive = dot != NULL && strcasecmp(dot, ".zip") == 0 &&
+                            strcmp(system_id, "arcade") != 0 && strcmp(system_id, "cps1") != 0 &&
+                            strcmp(system_id, "cps2") != 0 && strcmp(system_id, "cps3") != 0 &&
+                            strcmp(system_id, "neogeo") != 0;
+    if (cartridge_archive) {
+        if (bloom_ra_archive_read_rom(system_id, resolved_path, archive_name, sizeof(archive_name),
+                                      &archive_content, &archive_size, error, error_size) != 0) {
+            active_hash_root[0] = '\0';
+            return -1;
+        }
+        hash_path = archive_name;
+        hash_content = archive_content;
+    }
     rc_hash_iterator_t iterator;
-    rc_hash_initialize_iterator(&iterator, resolved_path, NULL, 0);
+    rc_hash_initialize_iterator(&iterator, hash_path, hash_content, archive_size);
     iterator.callbacks.filereader.open = guarded_open;
     iterator.callbacks.filereader.seek = guarded_seek;
     iterator.callbacks.filereader.tell = guarded_tell;
@@ -211,6 +231,7 @@ int bloom_ra_hash_file(const char *system_id, const char *rom_path, const char *
     iterator.callbacks.filereader.close = guarded_close;
     int result = rc_hash_generate(hash, console_id, &iterator);
     rc_hash_destroy_iterator(&iterator);
+    free(archive_content);
     active_hash_root[0] = '\0';
     if (!result) {
         set_error(error, error_size, "rcheevos could not hash ROM content");

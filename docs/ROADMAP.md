@@ -321,6 +321,11 @@ Planned work includes safe updates and rollback, optional synchronization and of
 
 ### RetroAchievements P0 platform
 
+- [ ] RA-02: finish authoritative rcheevos hashing coverage. Raw and bounded
+  cartridge ZIP hashing are implemented; physical Mini Plus validation maps
+  known GBA and SNES fixtures to their real RA Game IDs. Disc, CHD, playlist,
+  and remaining archive-boundary fixtures are still pending.
+
 - [ ] Deliver the ordered RA-00 through RA-26 implementation in
   [`RETROACHIEVEMENTS.md`](RETROACHIEVEMENTS.md): exact rcheevos identification,
   persistent offline metadata, GameSwitcher badge and smart collection,
