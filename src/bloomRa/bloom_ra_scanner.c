@@ -69,6 +69,29 @@ static int session_active(const char *path)
     return active;
 }
 
+static int scan_interruption(const char *session_state_path, const char *cancel_path, BloomRaScanStats *stats)
+{
+    if (marker_exists(cancel_path)) {
+        stats->canceled = 1;
+        return SQLITE_INTERRUPT;
+    }
+    if (session_active(session_state_path)) {
+        stats->paused = 1;
+        return SQLITE_BUSY;
+    }
+    return SQLITE_OK;
+}
+
+#ifdef BLOOM_TEST
+int bloom_ra_scan_interruption_for_test(const char *session_state_path, const char *cancel_path,
+                                        BloomRaScanStats *stats)
+{
+    if (stats == NULL)
+        return SQLITE_MISUSE;
+    return scan_interruption(session_state_path, cancel_path, stats);
+}
+#endif
+
 static int ignored_name(const char *name)
 {
     return name[0] == '.' || strcmp(name, "Imgs") == 0 || strcmp(name, "images") == 0 ||
@@ -94,20 +117,18 @@ static int supported_extension(const char *path)
 static int scan_directory(sqlite3 *database, const char *system_id, const char *directory, int force,
                           const char *session_state_path, const char *cancel_path, BloomRaScanStats *stats)
 {
-    if (marker_exists(cancel_path)) {
-        stats->canceled = 1;
-        return SQLITE_INTERRUPT;
-    }
-    if (session_active(session_state_path)) {
-        stats->paused = 1;
-        return SQLITE_BUSY;
-    }
+    int interruption = scan_interruption(session_state_path, cancel_path, stats);
+    if (interruption != SQLITE_OK)
+        return interruption;
     DIR *handle = opendir(directory);
     if (handle == NULL)
         return SQLITE_CANTOPEN;
     int result = SQLITE_OK;
     struct dirent *entry;
     while ((entry = readdir(handle)) != NULL) {
+        result = scan_interruption(session_state_path, cancel_path, stats);
+        if (result != SQLITE_OK)
+            break;
         if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0 || ignored_name(entry->d_name))
             continue;
         char path[PATH_MAX];

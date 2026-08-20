@@ -22,5 +22,9 @@ int bloom_ra_scan_game(sqlite3 *database, const char *bloom_game_id, const char 
                        const char *rom_root, const char *normalized_rom_path, int force, BloomRaScanResult *scan_result);
 int bloom_ra_scan_tree(sqlite3 *database, const char *system_id, const char *system_path, int force,
                        const char *session_state_path, const char *cancel_path, BloomRaScanStats *stats);
+#ifdef BLOOM_TEST
+int bloom_ra_scan_interruption_for_test(const char *session_state_path, const char *cancel_path,
+                                        BloomRaScanStats *stats);
+#endif
 
 #endif

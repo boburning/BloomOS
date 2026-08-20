@@ -335,6 +335,10 @@ Planned work includes safe updates and rollback, optional synchronization and of
   while rejecting unconfined first entries. Schema-v2 dependency signals also
   skip unchanged playlists without trusting the `.m3u` file alone. Guarded PBP
   and remaining archive-boundary fixtures are still pending.
+- [ ] RA-05: finish the incremental scanner. Changed scans persist completed
+  rows for safe restart, use one low-priority worker, and now recheck cancel and
+  active-session signals before every directory entry so large flat libraries
+  yield promptly to gameplay. Durable scan-position reporting remains pending.
 - [ ] RA-04: finish the production catalog fetch path. Transactional full-console
   import and a secure installed-game development refresh bridge are implemented;
   Mini Plus validation persists ten exact RA matches offline. The bridge now
