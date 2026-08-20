@@ -67,6 +67,9 @@ EOF
 teardown() { teardown_bloom_fixture; }
 
 @test "direct softcore policy creates only a private session config" {
+    export BLOOM_RA_LOG_BIN="$MOCK_BIN/bloom-ra-log"
+    printf '#!/bin/sh\nprintf "log:%%s\\n" "$*" >>"$MOCK_LOG"\n' >"$BLOOM_RA_LOG_BIN"
+    chmod +x "$BLOOM_RA_LOG_BIN"
     run "$PREPARE" "$REQUEST"
     [ "$status" -eq 0 ]
     [[ "$output" == *'"transport":"direct"'* ]]
@@ -74,6 +77,8 @@ teardown() { teardown_bloom_fixture; }
     grep -F 'config:write-ra-config' "$MOCK_LOG"
     [ "$(stat -c %a "$BLOOM_SESSION_ROOT/ra.cfg")" = 600 ]
     ! grep -F fixture-token "$MOCK_LOG"
+    grep -F "log:launch softcore direct gambatte_libretro.so $CORE_SHA best_effort" "$MOCK_LOG"
+    ! grep -E '^log:.*BloomUser' "$MOCK_LOG"
 }
 
 @test "unknown softcore game degrades to RA-disabled launch" {
@@ -86,12 +91,28 @@ teardown() { teardown_bloom_fixture; }
 }
 
 @test "unknown Hardcore game fails before launch without downgrading" {
+    export BLOOM_RA_LOG_BIN="$MOCK_BIN/bloom-ra-log"
+    printf '#!/bin/sh\nprintf "log:%%s\\n" "$*" >>"$MOCK_LOG"\n' >"$BLOOM_RA_LOG_BIN"
+    chmod +x "$BLOOM_RA_LOG_BIN"
     export RA_GAME_MISSING=1
     sed -i 's/"mode":"softcore"/"mode":"hardcore"/' "$BLOOM_RA_BIN"
     run "$PREPARE" "$REQUEST"
     [ "$status" -eq 1 ]
     [[ "$output" == *'Hardcore requires exact game identification'* ]]
     ! grep -F 'false disabled' "$MOCK_LOG"
+    grep -F 'log:prepare-failure hardcore_unidentified' "$MOCK_LOG"
+}
+
+@test "offline casual request fails explicitly and records only an allowlisted category" {
+    export BLOOM_RA_LOG_BIN="$MOCK_BIN/bloom-ra-log"
+    printf '#!/bin/sh\nprintf "log:%%s\\n" "$*" >>"$MOCK_LOG"\n' >"$BLOOM_RA_LOG_BIN"
+    chmod +x "$BLOOM_RA_LOG_BIN"
+    sed -i 's/"offline_casual":false/"offline_casual":true/' "$BLOOM_RA_BIN"
+    run "$PREPARE" "$REQUEST"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *'Offline Casual proxy routing is not yet available'* ]]
+    grep -F 'log:prepare-failure proxy_unavailable' "$MOCK_LOG"
+    ! grep -E '^log:.*(BloomUser|fixture-token)' "$MOCK_LOG"
 }
 
 @test "incompatible core disables softcore RA without blocking the game" {

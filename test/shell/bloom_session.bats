@@ -60,6 +60,9 @@ EOF
 teardown() { teardown_bloom_fixture; }
 
 @test "session follows the explicit successful lifecycle" {
+    export BLOOM_RA_LOG_BIN="$MOCK_BIN/bloom-ra-log"
+    printf '#!/bin/sh\nprintf "%%s\\n" "$*" >>"$MOCK_LOG"\n' >"$BLOOM_RA_LOG_BIN"
+    chmod +x "$BLOOM_RA_LOG_BIN"
     start_running_session
     printf '%s\n' credential-bearing-config >"$BLOOM_SESSION_ROOT/ra.cfg"
     printf '112.99 50.00\n' >"$BLOOM_UPTIME_FILE"
@@ -74,6 +77,7 @@ teardown() { teardown_bloom_fixture; }
     printf '%s' "$output" | grep -F '"duration_seconds":12'
     grep -Eq '^[0-9a-f]{64}$' "$BLOOM_SESSION_ROOT/request_sha256"
     [ ! -e "$BLOOM_SESSION_ROOT/ra.cfg" ]
+    grep -Fx 'finish stopped 12' "$MOCK_LOG"
 }
 
 @test "session prepares RA policy on its private request copy" {
@@ -136,6 +140,9 @@ EOF
 }
 
 @test "failed scoped save flush makes the session terminally failed" {
+    export BLOOM_RA_LOG_BIN="$MOCK_BIN/bloom-ra-log"
+    printf '#!/bin/sh\nprintf "%%s\\n" "$*" >>"$MOCK_LOG"\n' >"$BLOOM_RA_LOG_BIN"
+    chmod +x "$BLOOM_RA_LOG_BIN"
     start_running_session
     printf '%s\n' credential-bearing-config >"$BLOOM_SESSION_ROOT/ra.cfg"
     stop_to_flushing
@@ -148,6 +155,7 @@ EOF
     grep -Fx save_flush_failed "$BLOOM_SESSION_ROOT/failure_reason"
     [ ! -e "$BLOOM_SESSION_ROOT/save_flush.json" ]
     [ ! -e "$BLOOM_SESSION_ROOT/ra.cfg" ]
+    grep -Fx 'finish failed save_flush_failed' "$MOCK_LOG"
 }
 
 @test "invalid and stale transitions leave state unchanged" {

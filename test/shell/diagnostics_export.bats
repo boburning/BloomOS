@@ -8,10 +8,11 @@ setup() {
     export EXPORTER=/workspace/static/build/.tmp_update/bin/bloom-diagnostics-export
     export BLOOMCTL=/workspace/static/build/.tmp_update/bin/bloomctl
     export BLOOM_DIAGNOSTICS_NOW=20260817T150000Z
-    mkdir -p "$BLOOM_ROOT/proc" "$BLOOM_ROOT/appconfigs" "$SDCARD/.tmp_update/logs"
+    mkdir -p "$BLOOM_ROOT/proc" "$BLOOM_ROOT/appconfigs/bloom/logs" "$SDCARD/.tmp_update/logs"
     printf 'MemTotal: 128 kB\nMemFree: 64 kB\n' >"$BLOOM_ROOT/proc/meminfo"
     printf 'safe update log\n' >"$SDCARD/.tmp_update/logs/bloom-update-boot.log"
     printf 'safe shutdown log\n' >"$BLOOM_ROOT/appconfigs/bloom-shutdown.log"
+    printf '%s\n' '{"schema":1,"event":"finish","outcome":"stopped","detail":"60"}' >"$BLOOM_ROOT/appconfigs/bloom/logs/retroachievements.log"
     printf 'secret network log\n' >"$SDCARD/.tmp_update/logs/network.log"
     mkdir -p "$SDCARD/Roms" "$SDCARD/Saves" "$SDCARD/.ssh"
     printf 'private rom name\n' >"$SDCARD/Roms/Private Game.zip"
@@ -48,6 +49,7 @@ teardown() {
     printf '%s' "$listing" | grep -F './info.json'
     printf '%s' "$listing" | grep -F './logs/bloom-update-boot.log'
     printf '%s' "$listing" | grep -F './logs/bloom-shutdown.log'
+    printf '%s' "$listing" | grep -F './logs/retroachievements.log'
     ! printf '%s' "$listing" | grep -E 'network|Private|id_ed25519|Roms|Saves'
 
     extracted="$BLOOM_TEST_ROOT/extracted"

@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "bloom_commit": "f6828f59",
+  "device_family": "miyoo-mini-plus",
+  "tested_at": "2026-08-20T00:26:06Z",
+  "operator": "boburning",
+  "test_scope": "bounded-redacted-session-diagnostics",
+  "results": {
+    "direct_session_launch_entry": "pass",
+    "direct_session_finish_entry": "pass",
+    "log_mode_0600_on_jffs2": "pass",
+    "structured_json_lines": "pass",
+    "forbidden_data_scan": "pass",
+    "support_export_inclusion": "pass",
+    "source_log_and_export_equality": "pass",
+    "test_export_removed_after_validation": "pass"
+  },
+  "forbidden_data_checked": [
+    "credential labels",
+    "username",
+    "ROM terminology and paths",
+    "game identity",
+    "title",
+    "operator username",
+    "fixture title"
+  ],
+  "notes": "FAT mode bits are not enforceable, so the first physical check correctly moved the protected bounded log to durable JFFS2 under /appconfigs before evidence was accepted."
+}

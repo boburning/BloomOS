@@ -8,15 +8,22 @@ JQ_BIN=${BLOOM_JQ_BIN:-/mnt/SDCARD/.tmp_update/bin/jq}
 CORE_ROOT=${BLOOM_CORE_ROOT:-/mnt/SDCARD/RetroArch/.retroarch/cores}
 CREDENTIALS=${BLOOM_RA_CREDENTIALS:-/appconfigs/bloom/achievements/credentials}
 SESSION_ROOT=${BLOOM_SESSION_ROOT:-/tmp/bloom-session}
+RA_LOG=${BLOOM_RA_LOG_BIN:-/mnt/SDCARD/.tmp_update/bin/bloom-ra-log}
 
 fail() { printf 'bloom-ra-session-prepare: %s\n' "$*" >&2; exit 1; }
+fail_category() {
+    category=$1
+    shift
+    [ ! -x "$RA_LOG" ] || "$RA_LOG" prepare-failure "$category" >/dev/null 2>&1 || true
+    fail "$*"
+}
 json_value() { printf '%s' "$1" | "$JQ_BIN" -er "$2" 2>/dev/null; }
 json_boolean() { printf '%s' "$1" | "$JQ_BIN" -r "$2 | if type == \"boolean\" then tostring else error(\"boolean required\") end" 2>/dev/null; }
 
-[ "$#" -eq 1 ] || fail "expected one launch request"
+[ "$#" -eq 1 ] || fail_category request_invalid "expected one launch request"
 request=$1
-[ -x "$RA_BIN" ] && [ -x "$LAUNCH_BIN" ] && [ -x "$JQ_BIN" ] || fail "RA launch services are unavailable"
-"$LAUNCH_BIN" validate "$request" >/dev/null || fail "launch request is invalid"
+[ -x "$RA_BIN" ] && [ -x "$LAUNCH_BIN" ] && [ -x "$JQ_BIN" ] || fail_category request_invalid "RA launch services are unavailable"
+"$LAUNCH_BIN" validate "$request" >/dev/null || fail_category request_invalid "launch request is invalid"
 
 disable_ra() {
     "$LAUNCH_BIN" resolve-achievements "$request" false disabled false false 0 not_applicable
@@ -25,25 +32,25 @@ disable_ra() {
 }
 
 account=$("$RA_BIN" account launch 2>/dev/null) || { disable_ra; exit 0; }
-enabled=$(json_boolean "$account" '.enabled') || fail "account state is invalid"
-authenticated=$(json_boolean "$account" '.authenticated') || fail "account state is invalid"
+enabled=$(json_boolean "$account" '.enabled') || fail_category account_invalid "account state is invalid"
+authenticated=$(json_boolean "$account" '.authenticated') || fail_category account_invalid "account state is invalid"
 if [ "$enabled" != true ] || [ "$authenticated" != true ]; then
     disable_ra
     exit 0
 fi
-mode=$(json_value "$account" '.mode') || fail "account mode is invalid"
-offline=$(json_boolean "$account" '.offline_casual') || fail "account mode is invalid"
-username=$(json_value "$account" '.username') || fail "account username is invalid"
+mode=$(json_value "$account" '.mode') || fail_category account_invalid "account mode is invalid"
+offline=$(json_boolean "$account" '.offline_casual') || fail_category account_invalid "account mode is invalid"
+username=$(json_value "$account" '.username') || fail_category account_invalid "account username is invalid"
 
 game_id=$("$LAUNCH_BIN" get "$request" game_id) || fail "request GameID is unavailable"
 game=$("$RA_BIN" game "$game_id" 2>/dev/null) || {
-    [ "$mode" = hardcore ] && fail "Hardcore requires exact game identification"
+    [ "$mode" = hardcore ] && fail_category hardcore_unidentified "Hardcore requires exact game identification"
     disable_ra
     exit 0
 }
 ra_game_id=$(printf '%s' "$game" | "$JQ_BIN" -er '.ra.game_id // 0' 2>/dev/null) || fail "game metadata is invalid"
 if [ "$ra_game_id" -le 0 ]; then
-    [ "$mode" = hardcore ] && fail "Hardcore requires exact game identification"
+    [ "$mode" = hardcore ] && fail_category hardcore_unidentified "Hardcore requires exact game identification"
     disable_ra
     exit 0
 fi
@@ -52,23 +59,23 @@ system=$("$LAUNCH_BIN" get "$request" system_id) || fail "request system is unav
 core=$("$LAUNCH_BIN" get "$request" core) || fail "request core is unavailable"
 case "$core" in ''|*[!A-Za-z0-9_.-]*) fail "request core is invalid" ;; esac
 core_path="$CORE_ROOT/$core"
-[ -f "$core_path" ] && [ ! -L "$core_path" ] || fail "selected core is unavailable"
+[ -f "$core_path" ] && [ ! -L "$core_path" ] || fail_category core_unavailable "selected core is unavailable"
 core_sha=$(sha256sum "$core_path" | awk '{print $1}')
 case "$core_sha" in *[!0-9a-f]*|'') fail "selected core identity is invalid" ;; esac
 certification=untested
 if cores=$("$RA_BIN" cores 2>/dev/null); then
     certification=$(printf '%s' "$cores" | "$JQ_BIN" -er --arg system "$system" --arg core "$core" --arg sha "$core_sha" \
         '[.entries[] | select(.system==$system and .core==$core and .binary_sha256==$sha) | .bloom_ra_status][0] // "untested"' 2>/dev/null) ||
-        fail "core policy is invalid"
+        fail_category core_policy_invalid "core policy is invalid"
 fi
-case "$certification" in verified|best_effort|incompatible|untested) ;; *) fail "core policy is invalid" ;; esac
+case "$certification" in verified|best_effort|incompatible|untested) ;; *) fail_category core_policy_invalid "core policy is invalid" ;; esac
 if [ "$certification" = incompatible ]; then
-    [ "$mode" = hardcore ] && fail "Hardcore is incompatible with the selected core"
+    [ "$mode" = hardcore ] && fail_category hardcore_incompatible "Hardcore is incompatible with the selected core"
     disable_ra
     exit 0
 fi
 if [ "$offline" = true ]; then
-    fail "Offline Casual proxy routing is not yet available in the session adapter"
+    fail_category proxy_unavailable "Offline Casual proxy routing is not yet available in the session adapter"
 fi
 
 "$LAUNCH_BIN" resolve-achievements "$request" true "$mode" false true "$ra_game_id" "$certification" ||
@@ -76,6 +83,7 @@ fi
 [ -f "$CREDENTIALS" ] && [ ! -L "$CREDENTIALS" ] || fail "RA credential is unavailable"
 rm -f "$SESSION_ROOT/ra.cfg"
 "$LAUNCH_BIN" write-ra-config "$request" "$SESSION_ROOT/ra.cfg" "$username" - <"$CREDENTIALS" ||
-    fail "achievement session config could not be generated"
+    fail_category config_generation_failed "achievement session config could not be generated"
+[ ! -x "$RA_LOG" ] || "$RA_LOG" launch "$mode" direct "$core" "$core_sha" "$certification" >/dev/null 2>&1 || true
 printf '{"schema":1,"enabled":true,"mode":"%s","transport":"direct","ra_game_id":%s,"core_certification":"%s"}\n' \
     "$mode" "$ra_game_id" "$certification"

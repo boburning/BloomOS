@@ -402,9 +402,14 @@ Planned work includes safe updates and rollback, optional synchronization and of
   progress/cancel presentation and Favorites/Recent/all selectors remain.
 - [ ] RA-24: add aggregate RA health and support-export diagnostics. Health now
   allowlists catalog/proxy counts and rejects or discards secrets, ROM paths,
-  titles, award details, and unexpected fields. Bounded structured RA log export
-  remains pending. Native status now reports live redacted account, catalog, and
-  index state; Mini Plus validation confirmed the aggregate health path.
+  titles, award details, and unexpected fields. Session launch/finish diagnostics
+  now use a mode-`0600`, size-bounded rotating allowlist and support export may
+  include that redacted log. Native status reports live redacted account,
+  catalog, and index state. Mini Plus validation confirmed two structured
+  session events, enforced JFFS2 mode `0600`, forbidden-data absence, and an
+  identical allowlisted support-export copy. Preparation failures now emit only
+  bounded categories for account, request, core-policy, Hardcore, proxy, and
+  config-generation failures; broader network/TLS failure coverage remains pending.
 - [ ] RA-25: add guarded RA certification tooling. Developer-mode preflight now
   verifies exact ROM identity and installed core SHA/policy without exposing
   ROM data; physical login, Rich Presence, Hardcore, lifecycle, save-flush, and
