@@ -321,6 +321,11 @@ Planned work includes safe updates and rollback, optional synchronization and of
 
 ### RetroAchievements P0 platform
 
+- [x] RA-10: switch the packaged SNES default to current Snes9x and SG-1000 to
+  Genesis Plus GX while retaining the inherited fallback packages. Exact-core
+  Mini Plus sessions passed bounded memory, clean-exit, save-flush, MainUI
+  return, and command-cleanup checks. RA feature certification remains separate
+  and no `verified` claim is inferred from these lifecycle tests.
 - [ ] RA-02: finish authoritative rcheevos hashing coverage. Raw and bounded
   cartridge ZIP hashing are implemented; physical Mini Plus validation maps
   known GBA and SNES fixtures to their real RA Game IDs. Disc, CHD, playlist,

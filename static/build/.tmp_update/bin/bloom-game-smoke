@@ -57,7 +57,8 @@ case "$SYSTEM" in
     GBC) ROM_DIR=GBC; SYSTEM_ID=gbc; CORE=gambatte_libretro.so ;;
     GBA) ROM_DIR=GBA; SYSTEM_ID=gba; CORE=gpsp_libretro.so ;;
     FC) ROM_DIR=FC; SYSTEM_ID=nes; CORE=fceumm_libretro.so ;;
-    SFC) ROM_DIR=SFC; SYSTEM_ID=snes; CORE=mednafen_supafaust_libretro.so ;;
+    SFC) ROM_DIR=SFC; SYSTEM_ID=snes; CORE=snes9x_libretro.so ;;
+    SEGASGONE) ROM_DIR=SEGASGONE; SYSTEM_ID=sg1000; CORE=genesis_plus_gx_libretro.so ;;
     PSX)
         ROM_DIR=PS
         SYSTEM_ID=psx

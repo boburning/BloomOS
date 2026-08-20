@@ -87,6 +87,39 @@ EOF
     grep -F "pico8 $rom $SDCARD/Emu/PICO/launch.sh retroarch fake08_libretro.so false" "$MOCK_LOG"
 }
 
+@test "game smoke maps SG-1000 to Genesis Plus GX through structured launch data" {
+    : >"$SDCARD/.bloom-dev"
+    mkdir -p "$SDCARD/Roms/SEGASGONE" "$SDCARD/Emu/SEGASGONE"
+    rom="$SDCARD/Roms/SEGASGONE/Bloom Probe.sg"
+    : >"$rom"
+    printf '#!/bin/sh\n' >"$SDCARD/Emu/SEGASGONE/launch.sh"
+    chmod +x "$SDCARD/Emu/SEGASGONE/launch.sh"
+    cat >"$SDCARD/.tmp_update/bin/bloom-launch" <<'EOF'
+#!/bin/sh
+printf '%s\n' "$*" >>"$MOCK_LOG"
+exit 1
+EOF
+    chmod +x "$SDCARD/.tmp_update/bin/bloom-launch"
+    cat >"$SDCARD/.tmp_update/bin/bloom-game-id" <<'EOF'
+#!/bin/sh
+printf '%s\n' bloom-game-v1:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+EOF
+    chmod +x "$SDCARD/.tmp_update/bin/bloom-game-id"
+    printf '#!/bin/sh\nexit 0\n' >"$SDCARD/.tmp_update/bin/bloom-session"
+    chmod +x "$SDCARD/.tmp_update/bin/bloom-session"
+    cat >"$MOCK_BIN/pidof" <<'EOF'
+#!/bin/sh
+exit 0
+EOF
+    chmod +x "$MOCK_BIN/pidof"
+
+    run "$GAME_SMOKE" SEGASGONE "$(encode "$rom")" 60
+
+    [ "$status" -eq 1 ]
+    printf '%s' "$output" | grep -F '"reason":"structured_request_failed"'
+    grep -F "sg1000 $rom $SDCARD/Emu/SEGASGONE/launch.sh retroarch genesis_plus_gx_libretro.so false" "$MOCK_LOG"
+}
+
 @test "game smoke routes command-sensitive ROM paths through structured data" {
     : >"$SDCARD/.bloom-dev"
     rom="$SDCARD/Roms/GB/Unsafe\$Name.gb"
