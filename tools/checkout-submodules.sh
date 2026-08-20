@@ -1,6 +1,7 @@
 #!/bin/sh
 set -eu
 
+git config --global --add safe.directory "$(pwd)"
 git submodule sync --recursive
 git submodule init
 

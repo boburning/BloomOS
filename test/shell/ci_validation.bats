@@ -18,6 +18,8 @@
     [ "$status" -eq 0 ]
     run sh -n /workspace/tools/checkout-submodules.sh
     [ "$status" -eq 0 ]
+    run grep -F 'safe.directory "$(pwd)"' /workspace/tools/checkout-submodules.sh
+    [ "$status" -eq 0 ]
     run grep -F '"$attempt" -ge 4' /workspace/tools/checkout-submodules.sh
     [ "$status" -eq 0 ]
 }
