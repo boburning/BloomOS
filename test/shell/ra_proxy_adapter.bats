@@ -10,6 +10,8 @@ setup() {
     export BLOOM_JQ_BIN=/usr/bin/jq
     export BLOOM_RA_CREDENTIALS="$BATS_TEST_TMPDIR/credentials"
     export BLOOM_RA_PROXY_RUNTIME_DIR="$BATS_TEST_TMPDIR/runtime"
+    export BLOOM_RA_PROXY_FAVORITES="$BLOOM_RA_PROXY_ROM_ROOT/favourite.json"
+    export BLOOM_RA_PROXY_RECENTS="$BLOOM_RA_PROXY_ROM_ROOT/recentlist.json"
     printf '%s' fixture-token >"$BLOOM_RA_CREDENTIALS"
     cat >"$BLOOM_RA_BIN" <<'SH'
 #!/bin/sh
@@ -17,6 +19,60 @@ case "$1:$2" in account:launch|account:status) ;; *) exit 1 ;; esac
 printf '%s\n' '{"authenticated":true,"username":"BloomUser"}'
 SH
     chmod +x "$BLOOM_RA_BIN"
+}
+
+@test "favorite and recent batches cache unique confined game paths" {
+    make_upstream
+    mkdir -p "$BLOOM_RA_PROXY_CONFIG_DIR" "$BLOOM_RA_PROXY_ROM_ROOT/GBA"
+    first="$BLOOM_RA_PROXY_ROM_ROOT/GBA/First game.gba"
+    second="$BLOOM_RA_PROXY_ROM_ROOT/GBA/Second.gba"
+    printf rom >"$first"
+    printf rom >"$second"
+    printf '%s\n' \
+        "{\"type\":0,\"rompath\":\"$first\"}" \
+        "{\"type\":0,\"rompath\":\"$first\"}" \
+        '{"type":2,"rompath":"ignored"}' >"$BLOOM_RA_PROXY_FAVORITES"
+    printf '%s\n' "{\"type\":1,\"rompath\":\"$second\"}" >"$BLOOM_RA_PROXY_RECENTS"
+
+    run "$ADAPTER" cache-favorites
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'"selector":"favorites"'* ]]
+    [[ "$output" == *'"processed":1'* ]]
+    [[ "$output" == *'"cached":1'* ]]
+
+    run "$ADAPTER" cache-recent
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'"selector":"recent"'* ]]
+    [[ "$output" == *'"processed":1'* ]]
+    [ ! -e "$BLOOM_RA_PROXY_RUNTIME_DIR/credentials.append" ]
+}
+
+@test "collection batches reject unsafe lists and report invalid entries without leaking paths" {
+    make_upstream
+    mkdir -p "$BLOOM_RA_PROXY_CONFIG_DIR" "$BLOOM_RA_PROXY_ROM_ROOT"
+    printf rom >"$BATS_TEST_TMPDIR/outside.rom"
+    printf '%s\n' "{\"type\":0,\"rompath\":\"$BATS_TEST_TMPDIR/outside.rom\"}" >"$BLOOM_RA_PROXY_FAVORITES"
+    run "$ADAPTER" cache-favorites
+    [ "$status" -eq 1 ]
+    [[ "$output" == *'"state":"partial"'* ]]
+    [[ "$output" == *'"errors":1'* ]]
+    [[ "$output" != *'outside.rom'* ]]
+
+    rm "$BLOOM_RA_PROXY_FAVORITES"
+    ln -s "$BATS_TEST_TMPDIR/outside.rom" "$BLOOM_RA_PROXY_FAVORITES"
+    run "$ADAPTER" cache-favorites
+    [ "$status" -eq 1 ]
+    [[ "$output" == *'"code":"unsafe_collection_path"'* ]]
+}
+
+@test "cache-all visits only present canonical RA system directories" {
+    make_upstream
+    mkdir -p "$BLOOM_RA_PROXY_CONFIG_DIR" "$BLOOM_RA_PROXY_ROM_ROOT/GBA" "$BLOOM_RA_PROXY_ROM_ROOT/SFC" "$BLOOM_RA_PROXY_ROM_ROOT/PICO8"
+    run "$ADAPTER" cache-all
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'"processed_systems":2'* ]]
+    [[ "$output" == *'"cached_systems":2'* ]]
+    [[ "$output" != *'PICO8'* ]]
 }
 
 make_upstream() {
