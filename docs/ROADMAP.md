@@ -328,8 +328,11 @@ Planned work includes safe updates and rollback, optional synchronization and of
   and no `verified` claim is inferred from these lifecycle tests.
 - [ ] RA-02: finish authoritative rcheevos hashing coverage. Raw and bounded
   cartridge ZIP hashing are implemented; physical Mini Plus validation maps
-  known GBA and SNES fixtures to their real RA Game IDs. Disc, CHD, playlist,
-  and remaining archive-boundary fixtures are still pending.
+  known GBA and SNES fixtures to their real RA Game IDs. The source-pinned
+  CHD/PBP bridge produces the authoritative hash for a real operator-owned CHD
+  on both the host and Mini Plus, with matching evidence. Guarded PBP,
+  playlist/multi-disc, and remaining archive-boundary fixtures are still
+  pending.
 - [ ] RA-04: finish the production catalog fetch path. Transactional full-console
   import and a secure installed-game development refresh bridge are implemented;
   Mini Plus validation persists ten exact RA matches offline. The bridge now
