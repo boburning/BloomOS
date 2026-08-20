@@ -182,6 +182,9 @@ EOF
     [ "$output" = '--system GBA --rom-base64 ZGF0YQ== --core gpsp' ]
     run sh /workspace/static/build/.tmp_update/bin/bloomctl test achievements --system GBA --core gpsp
     [ "$status" -eq 2 ]
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl test achievements --system GBA --rom-base64 ZGF0YQ== --core gpsp --session-seconds 10
+    [ "$status" -eq 0 ]
+    [ "$output" = '--system GBA --rom-base64 ZGF0YQ== --core gpsp --session-seconds 10' ]
 }
 
 @test "update commands delegate only the explicit offline operations" {

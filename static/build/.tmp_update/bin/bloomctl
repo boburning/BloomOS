@@ -252,7 +252,7 @@ usage() {
     printf '       bloomctl logs export\n' >&2
     printf '       bloomctl platform capabilities\n' >&2
     printf '       bloomctl test smoke SYSTEM ROM_PATH [DURATION_SECONDS]\n' >&2
-    printf '       bloomctl test achievements --system SYSTEM --rom-base64 DATA --core CORE\n' >&2
+    printf '       bloomctl test achievements --system SYSTEM --rom-base64 DATA --core CORE [--session-seconds N]\n' >&2
     printf '       bloomctl achievements {status|game BLOOM_GAME_ID|collection|cores|account status|set FIELD VALUE|sign-out|proxy status|pending|scan --changed|--all|--system SYSTEM|--status|--cancel}\n' >&2
 }
 
@@ -330,9 +330,13 @@ test_command() {
             "$BLOOM_GAME_SMOKE" "$2" "$rom_b64" "${4:-10}"
             ;;
         achievements)
-            [ "$#" -eq 7 ] || { usage; return 2; }
+            [ "$#" -eq 7 ] || [ "$#" -eq 9 ] || { usage; return 2; }
             [ -x "$BLOOM_RA_TEST" ] || { printf 'bloomctl: achievement test service is unavailable\n' >&2; return 1; }
-            "$BLOOM_RA_TEST" "$2" "$3" "$4" "$5" "$6" "$7"
+            if [ "$#" -eq 7 ]; then
+                "$BLOOM_RA_TEST" "$2" "$3" "$4" "$5" "$6" "$7"
+            else
+                "$BLOOM_RA_TEST" "$2" "$3" "$4" "$5" "$6" "$7" "$8" "$9"
+            fi
             ;;
         *) usage; return 2 ;;
     esac

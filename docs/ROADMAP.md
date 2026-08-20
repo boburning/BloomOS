@@ -413,8 +413,9 @@ Planned work includes safe updates and rollback, optional synchronization and of
 - [ ] RA-25: add guarded RA certification tooling. Developer-mode preflight now
   verifies exact ROM identity and installed core SHA/policy without exposing
   ROM or account data and reports the current redacted authentication state;
-  physical Rich Presence, repeatable lifecycle/save-flush automation, and
-  explicit operator unlock execution remain pending.
+  bounded default-core sessions now automate graceful lifecycle and save-flush
+  validation. Mini Plus preflight and a 10-second gpSP session pass. Physical
+  Rich Presence and explicit operator unlock execution remain pending.
 - [x] RA-26: enforce a dedicated CI regression gate for exact core/source
   policy, required RA fixtures, service-only proxy integration, immutable
   transport, Hardcore routing, redaction-sensitive shell behavior, and focused
