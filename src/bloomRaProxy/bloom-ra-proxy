@@ -6,6 +6,7 @@ UPSTREAM=${BLOOM_RA_PROXY_UPSTREAM:-/mnt/SDCARD/.bloom/components/raofflineproxy
 CONFIG_DIR=${BLOOM_RA_PROXY_CONFIG_DIR:-/mnt/SDCARD/.bloom/achievements/proxy}
 LOG_FILE=${BLOOM_RA_PROXY_LOG_FILE:-/mnt/SDCARD/.bloom/logs/raofflineproxy.log}
 ROM_ROOT=${BLOOM_RA_PROXY_ROM_ROOT:-/mnt/SDCARD/Roms}
+PROXY_HOST=127.0.0.1:8080
 
 json_error() {
     printf '{"schema":1,"service":"bloom-ra-proxy","error":{"code":"%s"}}\n' "$1" >&2
@@ -34,6 +35,14 @@ safe_json() {
 
 service_status() {
     run_upstream home-status 2>/dev/null || json_error upstream_unavailable
+}
+
+validate_endpoint_config() {
+    config_file="$CONFIG_DIR/config.json"
+    [ ! -e "$config_file" ] || { [ -f "$config_file" ] && [ ! -L "$config_file" ]; } || json_error unsafe_config_path
+    if [ -f "$config_file" ] && grep -Eq '"proxy_(host|port)"[[:space:]]*:' "$config_file"; then
+        json_error unsupported_endpoint_override
+    fi
 }
 
 prepare_runtime_paths() {
@@ -81,6 +90,7 @@ print_status() {
 
 start_service() {
     installed || json_error not_installed
+    validate_endpoint_config
     before=$(service_status)
     case "$before" in *'"service_running":true'*) print_status; return ;; esac
     prepare_runtime_paths
@@ -112,6 +122,12 @@ case "${1:-}" in
     status|health) [ "$#" -eq 1 ] || json_error invalid_arguments; print_status ;;
     start) [ "$#" -eq 1 ] || json_error invalid_arguments; start_service ;;
     stop) [ "$#" -eq 1 ] || json_error invalid_arguments; stop_service ;;
+    endpoint)
+        [ "$#" -eq 1 ] || json_error invalid_arguments
+        installed || json_error not_installed
+        validate_endpoint_config
+        printf '{"schema":1,"service":"bloom-ra-proxy","host":"%s"}\n' "$PROXY_HOST"
+        ;;
     pending)
         [ "$#" -eq 1 ] || json_error invalid_arguments
         installed || json_error not_installed
