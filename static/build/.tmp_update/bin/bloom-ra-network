@@ -6,6 +6,20 @@ PLATFORM=${BLOOM_PLATFORM_BIN:-/mnt/SDCARD/.tmp_update/bin/bloom-platform}
 CURL=${BLOOM_CURL_BIN:-/mnt/SDCARD/.tmp_update/bin/curl}
 DATE=${BLOOM_DATE_BIN:-date}
 ENDPOINT=${BLOOM_RA_NETWORK_ENDPOINT:-https://retroachievements.org/}
+LIB_DIR=${BLOOM_RA_NETWORK_LIB_DIR:-$ROOT/mnt/SDCARD/.tmp_update/lib}
+CA_FILE=${BLOOM_RA_NETWORK_CA_FILE:-}
+
+if [ -z "$CA_FILE" ]; then
+    for candidate in \
+        "$ROOT/mnt/SDCARD/.tmp_update/etc/ssl/certs/ca-certificates.crt" \
+        "$ROOT/mnt/SDCARD/.bloom/components/raofflineproxy/runtime/python/lib/python3.9/site-packages/pip/_vendor/certifi/cacert.pem" \
+        "$ROOT/etc/ssl/certs/ca-certificates.crt"; do
+        if [ -f "$candidate" ] && [ ! -L "$candidate" ]; then
+            CA_FILE=$candidate
+            break
+        fi
+    done
+fi
 
 result() {
     printf '{"schema":1,"service":"bloom-ra-network","online":%s,"state":"%s"}\n' "$1" "$2"
@@ -33,8 +47,12 @@ epoch=$($DATE +%s 2>/dev/null) || { result false clock_invalid; exit 0; }
 case "$epoch" in ''|*[!0-9]*) result false clock_invalid; exit 0 ;; esac
 [ "$epoch" -ge 1577836800 ] || { result false clock_invalid; exit 0; }
 [ -x "$CURL" ] || { result false tls_unavailable; exit 1; }
+[ -n "$CA_FILE" ] && [ -f "$CA_FILE" ] && [ ! -L "$CA_FILE" ] || { result false tls_unavailable; exit 1; }
 
-if http=$($CURL --silent --show-error --output /dev/null --connect-timeout 5 --max-time 10 --write-out '%{http_code}' "$ENDPOINT" 2>/dev/null); then
+if http=$(LD_LIBRARY_PATH="/lib:/config/lib:$LIB_DIR:/customer/lib:$LIB_DIR/parasyte${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" \
+    CURL_CA_BUNDLE="$CA_FILE" \
+    "$CURL" --silent --show-error --output /dev/null --connect-timeout 5 \
+    --max-time 10 --write-out '%{http_code}' "$ENDPOINT" 2>/dev/null); then
     case "$http" in
         2??|3??|401|403) result true ready ;;
         *) result false ra_service_failure; exit 1 ;;

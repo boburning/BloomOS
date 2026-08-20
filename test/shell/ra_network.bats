@@ -6,6 +6,8 @@ setup() {
     export BLOOM_PLATFORM_BIN="$BATS_TEST_TMPDIR/bloom-platform"
     export BLOOM_CURL_BIN="$BATS_TEST_TMPDIR/curl"
     export BLOOM_DATE_BIN="$BATS_TEST_TMPDIR/date"
+    export BLOOM_RA_NETWORK_CA_FILE="$BATS_TEST_TMPDIR/cacert.pem"
+    : >"$BLOOM_RA_NETWORK_CA_FILE"
     mkdir -p "$BLOOM_RA_NETWORK_ROOT/sys/class/net/wlan0"
     printf up >"$BLOOM_RA_NETWORK_ROOT/sys/class/net/wlan0/operstate"
     printf 1 >"$BLOOM_RA_NETWORK_ROOT/sys/class/net/wlan0/carrier"
@@ -25,9 +27,28 @@ SH
 }
 
 @test "readiness probe reports a bounded ready state" {
+    export BLOOM_RA_NETWORK_LIB_DIR="$BATS_TEST_TMPDIR/runtime-lib"
+    export CURL_ENV_LOG="$BATS_TEST_TMPDIR/curl-env"
+    cat >"$BLOOM_CURL_BIN" <<'SH'
+#!/bin/sh
+printf '%s\n%s' "${LD_LIBRARY_PATH:-}" "${CURL_CA_BUNDLE:-}" >"$CURL_ENV_LOG"
+printf '%s' 200
+SH
+    chmod +x "$BLOOM_CURL_BIN"
+
     run "$PROBE" status
     [ "$status" -eq 0 ]
     [ "$output" = '{"schema":1,"service":"bloom-ra-network","online":true,"state":"ready"}' ]
+    expected_path="/lib:/config/lib:$BLOOM_RA_NETWORK_LIB_DIR:/customer/lib:$BLOOM_RA_NETWORK_LIB_DIR/parasyte"
+    [ "$(sed -n '1p' "$CURL_ENV_LOG")" = "$expected_path" ]
+    [ "$(sed -n '2p' "$CURL_ENV_LOG")" = "$BLOOM_RA_NETWORK_CA_FILE" ]
+}
+
+@test "readiness probe fails closed when no trusted CA bundle is available" {
+    export BLOOM_RA_NETWORK_CA_FILE="$BATS_TEST_TMPDIR/missing-ca"
+    run "$PROBE" status
+    [ "$status" -eq 1 ]
+    [[ "$output" == *'"state":"tls_unavailable"'* ]]
 }
 
 @test "readiness probe distinguishes hardware wifi association and clock" {
