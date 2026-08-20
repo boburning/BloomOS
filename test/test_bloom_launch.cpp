@@ -79,10 +79,71 @@ TEST_F(BloomLaunchTest, CreatesCanonicalJsonWithoutTreatingPathsAsCode)
     std::string request((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
     EXPECT_NE(request.find("Bob's $pecial"), std::string::npos);
     EXPECT_NE(request.find("\"environment\":{}"), std::string::npos);
+    EXPECT_NE(request.find("\"achievements\":{\"enabled\":false"), std::string::npos);
     char core[128] = {};
     EXPECT_EQ(0, bloom_launch_get_string(request_.c_str(), "core", core, sizeof(core), error_, sizeof(error_)));
     EXPECT_STREQ("gambatte_libretro.so", core);
     EXPECT_NE(0, bloom_launch_get_string(request_.c_str(), "environment", core, sizeof(core), error_, sizeof(error_)));
+}
+
+TEST_F(BloomLaunchTest, AddsValidatedDirectAchievementPolicy)
+{
+    ASSERT_EQ(0, bloom_launch_create_file(
+                     request_.c_str(),
+                     "bloom-game-v1:2d514749ed2f60ba7a6583d7e36483b113005fd788bab176fc9941256551ad71", "gb",
+                     "/mnt/SDCARD/Roms/GB/Bob's $pecial 游戏.zip", "/mnt/SDCARD/Emu/GB/launch.sh", "retroarch",
+                     "gambatte_libretro.so", 0, error_, sizeof(error_)));
+    ASSERT_EQ(0, bloom_launch_set_achievements(request_.c_str(), 1, "softcore", "direct", 1234, "untested",
+                                               error_, sizeof(error_)))
+        << error_;
+    EXPECT_EQ(0, bloom_launch_validate_file(request_.c_str(), error_, sizeof(error_)));
+    std::ifstream file(request_);
+    std::string request((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+    EXPECT_NE(request.find("\"ra_game_id\":1234"), std::string::npos);
+}
+
+TEST_F(BloomLaunchTest, RejectsHardcoreProxyWithoutChangingExistingRequest)
+{
+    write_request();
+    std::ifstream before_file(request_);
+    std::string before((std::istreambuf_iterator<char>(before_file)), std::istreambuf_iterator<char>());
+    EXPECT_NE(0, bloom_launch_set_achievements(request_.c_str(), 1, "hardcore", "proxy", 1234, "untested",
+                                               error_, sizeof(error_)));
+    std::ifstream after_file(request_);
+    std::string after((std::istreambuf_iterator<char>(after_file)), std::istreambuf_iterator<char>());
+    EXPECT_EQ(before, after);
+}
+
+TEST_F(BloomLaunchTest, WritesSessionOnlyRaConfigAndLeavesPermanentConfigUntouched)
+{
+    ASSERT_EQ(0, bloom_launch_create_file(
+                     request_.c_str(),
+                     "bloom-game-v1:2d514749ed2f60ba7a6583d7e36483b113005fd788bab176fc9941256551ad71", "gb",
+                     "/mnt/SDCARD/Roms/GB/Bob's $pecial 游戏.zip", "/mnt/SDCARD/Emu/GB/launch.sh", "retroarch",
+                     "gambatte_libretro.so", 0, error_, sizeof(error_)));
+    ASSERT_EQ(0, bloom_launch_set_achievements(request_.c_str(), 1, "softcore", "proxy", 1234, "untested",
+                                               error_, sizeof(error_)));
+    auto permanent = root_ / "retroarch.cfg";
+    std::filesystem::create_directories("/tmp/bloom-session");
+    auto temporary = std::filesystem::path("/tmp/bloom-session") / ("ra-test-" + std::to_string(getpid()) + ".cfg");
+    std::ofstream(permanent) << "video_driver = \"sdl\"\n";
+    ASSERT_EQ(0, bloom_launch_write_ra_config(request_.c_str(), temporary.c_str(), "BloomUser", "token123",
+                                              "127.0.0.1:12345", error_, sizeof(error_)))
+        << error_;
+    std::ifstream permanent_file(permanent);
+    std::string permanent_text((std::istreambuf_iterator<char>(permanent_file)), std::istreambuf_iterator<char>());
+    EXPECT_EQ("video_driver = \"sdl\"\n", permanent_text);
+    std::ifstream temporary_file(temporary);
+    std::string config((std::istreambuf_iterator<char>(temporary_file)), std::istreambuf_iterator<char>());
+    EXPECT_NE(config.find("cheevos_custom_host = \"127.0.0.1:12345\""), std::string::npos);
+    EXPECT_NE(config.find("cheevos_token = \"token123\""), std::string::npos);
+    auto permissions = std::filesystem::status(temporary).permissions();
+    EXPECT_EQ(std::filesystem::perms::none,
+              permissions & (std::filesystem::perms::group_all | std::filesystem::perms::others_all));
+    std::ifstream request_file(request_);
+    std::string request((std::istreambuf_iterator<char>(request_file)), std::istreambuf_iterator<char>());
+    EXPECT_NE(request.find(temporary.string()), std::string::npos);
+    std::filesystem::remove(temporary);
 }
 
 TEST_F(BloomLaunchTest, RejectsCorePathsInsteadOfCoreBasenames)

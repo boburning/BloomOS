@@ -220,6 +220,15 @@ group/world-readable credential state is rejected. `bloomctl achievements
 account status` reports only configured/enabled/authenticated/mode booleans and
 never returns the username or token. Network login/UI wiring will pass an
 authenticated token into this boundary without placing secrets in argv.
+
+## Structured launch policy
+
+Schema-1 `BloomLaunchRequest` accepts a strict `achievements` object containing
+enabled state, mode, immutable transport, resolved RA Game ID, and exact-core
+certification status. Hardcore plus proxy is rejected at validation. Bloom
+writes credentials and `cheevos_*` values only to a mode-`0600` append config
+under `/tmp/bloom-session/`, then adds that path to the session request. The
+permanent RetroArch configuration is never read or modified by this operation.
 - Proxy cache: `not_applicable`, `not_cached`, or `cached`.
 - Pending awards: a non-negative aggregate count.
 
