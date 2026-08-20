@@ -1,9 +1,22 @@
 name: Test build
 on:
   pull_request:
-    paths-ignore:
-      - '**/README.md'
-      - 'website/'
+    paths:
+      - '.github/workflows/test.yml'
+      - '.gitmodules'
+      - 'Makefile'
+      - 'src/**/Makefile'
+      - 'src/**/*.c'
+      - 'src/**/*.h'
+      - 'src/**/*.cpp'
+      - 'src/**/*.hpp'
+      - 'test/Makefile'
+      - 'test/**/*.c'
+      - 'test/**/*.h'
+      - 'test/**/*.cpp'
+      - 'test/**/*.hpp'
+      - 'third-party/**'
+      - 'tools/checkout-submodules.sh'
 
 permissions:
   contents: read
@@ -31,8 +44,17 @@ jobs:
         sudo ln -s /usr/lib/libgtest_main.a /usr/local/lib/libgtest_main.a
     - name: Checkout repository
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - name: Resolve submodule cache key
+      id: submodules
+      shell: bash
+      run: echo "sha=$(git ls-files --stage | awk '$1 == 160000 { print $2, $4 }' | sha256sum | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
+    - name: Restore submodule object cache
+      uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4.2.0
       with:
-        submodules: recursive
+        path: .git/modules
+        key: submodules-${{ runner.os }}-${{ steps.submodules.outputs.sha }}
+    - name: Checkout pinned submodules
+      run: tools/checkout-submodules.sh
     - name: Run static analysis
       run: |
         make static-analysis

@@ -446,10 +446,13 @@ Planned work includes safe updates and rollback, optional synchronization and of
   the requested gpSP default. Mini Plus preflight and a 10-second gpSP session
   pass. A physical gpSP Softcore unlock and post-session server verification
   also pass. Physical Rich Presence remains pending.
-- [x] RA-26: enforce a dedicated CI regression gate for exact core/source
-  policy, required RA fixtures, service-only proxy integration, immutable
-  transport, Hardcore routing, redaction-sensitive shell behavior, and focused
-  offline tests without production RA network access.
+- [x] RA-26: enforce release-sensitive regression contracts inside the complete
+  shell gate for exact core/source policy, required RA fixtures, service-only
+  proxy integration, immutable transport, Hardcore routing, redaction-sensitive
+  behavior, and focused offline tests without production RA network access.
+  Pull-request scheduling now runs one shell gate for shell-only changes, limits
+  native/ARM jobs to compile-relevant paths, cancels superseded runs, and caches
+  exact pinned submodule objects with bounded checkout retries.
 - [ ] Keep RA-27 as a future consumer of the same `bloom-ra` API when Bloom owns
   the primary library browser; closed MainUI replacement is not a prerequisite
   for the P0 GameSwitcher badge.
