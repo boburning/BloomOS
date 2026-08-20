@@ -325,6 +325,10 @@ Planned work includes safe updates and rollback, optional synchronization and of
   cartridge ZIP hashing are implemented; physical Mini Plus validation maps
   known GBA and SNES fixtures to their real RA Game IDs. Disc, CHD, playlist,
   and remaining archive-boundary fixtures are still pending.
+- [ ] RA-04: finish the production catalog fetch path. Transactional full-console
+  import and a secure installed-game development refresh bridge are implemented;
+  Mini Plus validation persists ten exact RA matches offline. On-device TLS or
+  authenticated bulk Web API acquisition remains pending.
 
 - [ ] Deliver the ordered RA-00 through RA-26 implementation in
   [`RETROACHIEVEMENTS.md`](RETROACHIEVEMENTS.md): exact rcheevos identification,

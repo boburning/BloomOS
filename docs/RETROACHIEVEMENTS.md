@@ -128,6 +128,13 @@ staged response, validates every required field and hash, and publishes it in a
 single database transaction. Empty or malformed responses roll back without
 replacing the prior known-good generation.
 
+For development and physical validation, `tools/bloom-ra-refresh-installed.ps1`
+uses the pinned SSH identity, the device-local login token, and RA's Connect
+hash/patch interfaces to resolve only hashes already indexed on the device. It
+never prints the token, imports metadata through bounded stdin, and marks this
+partial catalog `stale` rather than claiming a complete console catalog. The
+bulk Web API provider remains the release refresh path.
+
 ## Incremental scanner
 
 The default scanner uses one low-priority hashing worker. It reuses a prior
