@@ -380,6 +380,11 @@ Planned work includes safe updates and rollback, optional synchronization and of
   preemptive frames, load-state, and cheat controls; it also completed graceful
   exit/save flush/cleanup and restored the account to Softcore. Server-side
   Hardcore recognition and representative achievement behavior remain pending.
+- [ ] RA-16: complete the direct RA vertical slice. Mini Plus now physically
+  proves token login, exact Game ID 568 recognition, continued gameplay,
+  graceful exit, save flush, and MainUI return through the real direct path.
+  Rich Presence, a deliberate operator-approved unlock, and independent
+  server-progress preservation remain pending.
 - [ ] RA-18: ship the schema-1 `bloom-ra-proxy` adapter. Host coverage now
   proves absent-package degradation, bounded status/pending/cache translation,
   input rejection, and stop behavior without config mutation. Physical package
