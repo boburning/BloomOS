@@ -3,16 +3,28 @@
 #include <sqlite3/sqlite3.h>
 
 #include <chrono>
+#include <cstdio>
 #include <filesystem>
 #include <fstream>
 
 extern "C" {
 #include "../src/bloomRa/bloom_ra_catalog.h"
 #include "../src/bloomRa/bloom_ra_database.h"
+#include "../src/bloomRa/bloom_ra.h"
 #include "../src/bloomRa/bloom_ra_scanner.h"
 }
 
 namespace {
+
+int playlist_hash_calls;
+int playlist_hasher(unsigned int console_id, const char *, char hash[33])
+{
+    ++playlist_hash_calls;
+    if (console_id != 12)
+        return 0;
+    std::snprintf(hash, 33, "%s", "6d8c25fc66fe48250957c0af0639d376");
+    return 1;
+}
 
 class BloomRaScannerTest : public ::testing::Test {
   protected:
@@ -33,6 +45,7 @@ class BloomRaScannerTest : public ::testing::Test {
     }
     void TearDown() override
     {
+        bloom_ra_set_disc_hasher_for_test(nullptr);
         sqlite3_close(database_);
         std::filesystem::remove_all(root_);
     }
@@ -86,6 +99,36 @@ TEST_F(BloomRaScannerTest, UnsupportedSystemIsPersistedWithoutHashing)
                                  &result));
     EXPECT_STREQ("unsupported_system", result.status);
     EXPECT_EQ(0, result.identified);
+}
+
+TEST_F(BloomRaScannerTest, PlaylistSkipsOnlyWhileItsFirstDiscSignalsAreUnchanged)
+{
+    auto disc = root_ / "disc1.chd";
+    auto playlist = root_ / "game.m3u";
+    std::ofstream(disc, std::ios::binary) << "synthetic disc v1";
+    std::ofstream(playlist) << "disc1.chd\n";
+    playlist_hash_calls = 0;
+    bloom_ra_set_disc_hasher_for_test(playlist_hasher);
+    BloomRaScanResult result = {};
+    ASSERT_EQ(SQLITE_OK,
+              bloom_ra_scan_game(database_, game_id, "psx", playlist.c_str(), root_.c_str(), "PS/game.m3u", 0,
+                                 &result));
+    EXPECT_EQ(0, result.skipped);
+    EXPECT_EQ(1, playlist_hash_calls);
+    ASSERT_EQ(SQLITE_OK,
+              bloom_ra_scan_game(database_, game_id, "psx", playlist.c_str(), root_.c_str(), "PS/game.m3u", 0,
+                                 &result));
+    EXPECT_EQ(1, result.skipped);
+    EXPECT_EQ(1, playlist_hash_calls);
+    auto original_time = std::filesystem::last_write_time(disc);
+    std::ofstream(disc, std::ios::binary | std::ios::trunc) << "synthetic disc v2 with changed size";
+    std::filesystem::last_write_time(disc, original_time + std::chrono::seconds(2));
+    ASSERT_EQ(SQLITE_OK,
+              bloom_ra_scan_game(database_, game_id, "psx", playlist.c_str(), root_.c_str(), "PS/game.m3u", 0,
+                                 &result));
+    EXPECT_EQ(0, result.skipped);
+    EXPECT_EQ(2, playlist_hash_calls);
+    bloom_ra_set_disc_hasher_for_test(nullptr);
 }
 
 } // namespace

@@ -3,7 +3,7 @@
 
 #include <sqlite3/sqlite3.h>
 
-#define BLOOM_RA_DATABASE_SCHEMA_VERSION 1
+#define BLOOM_RA_DATABASE_SCHEMA_VERSION 2
 #define BLOOM_RA_DATABASE_PATH "/mnt/SDCARD/.bloom/achievements/catalog.sqlite3"
 
 int bloom_ra_database_open(const char *path, sqlite3 **database);

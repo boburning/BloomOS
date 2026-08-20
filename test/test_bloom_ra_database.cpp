@@ -36,7 +36,7 @@ TEST_F(BloomRaDatabaseTest, FreshMigrationCreatesVersionedCatalogAndLibrarySchem
     ASSERT_EQ(SQLITE_OK, bloom_ra_database_migrate(database_));
     int version = 0, indexed = -1, identified = -1;
     EXPECT_EQ(SQLITE_OK, bloom_ra_database_health(database_, &version, &indexed, &identified));
-    EXPECT_EQ(1, version);
+    EXPECT_EQ(2, version);
     EXPECT_EQ(0, indexed);
     EXPECT_EQ(0, identified);
     EXPECT_EQ(5, scalar("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN "
@@ -48,7 +48,24 @@ TEST_F(BloomRaDatabaseTest, MigrationIsTransactionalAndIdempotent)
     ASSERT_EQ(SQLITE_OK, bloom_ra_database_migrate(database_));
     ASSERT_EQ(SQLITE_OK, bloom_ra_database_migrate(database_));
     EXPECT_EQ(1, scalar("SELECT COUNT(*) FROM schema_version"));
-    EXPECT_EQ(1, scalar("SELECT version FROM schema_version"));
+    EXPECT_EQ(2, scalar("SELECT version FROM schema_version"));
+}
+
+TEST_F(BloomRaDatabaseTest, VersionOneUpgradeAddsPlaylistDependencySignalsAndPreservesRows)
+{
+    ASSERT_EQ(SQLITE_OK, bloom_ra_database_migrate(database_));
+    ASSERT_EQ(SQLITE_OK,
+              sqlite3_exec(database_,
+                           "INSERT INTO library_games VALUES"
+                           "('bloom-game-v1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa','psx','PS/game.m3u',10,20,12,'hash',NULL,NULL,NULL,30,0,2,'unmatched',NULL,NULL);"
+                           "ALTER TABLE library_games DROP COLUMN dependency_size;"
+                           "ALTER TABLE library_games DROP COLUMN dependency_mtime;"
+                           "UPDATE schema_version SET version=1;",
+                           nullptr, nullptr, nullptr));
+    ASSERT_EQ(SQLITE_OK, bloom_ra_database_migrate(database_));
+    EXPECT_EQ(2, scalar("SELECT version FROM schema_version"));
+    EXPECT_EQ(1, scalar("SELECT COUNT(*) FROM library_games"));
+    EXPECT_EQ(2, scalar("SELECT COUNT(*) FROM pragma_table_info('library_games') WHERE name LIKE 'dependency_%'"));
 }
 
 TEST_F(BloomRaDatabaseTest, RefusesNewerOrStructurallyIncompleteSchema)
@@ -66,8 +83,8 @@ TEST_F(BloomRaDatabaseTest, HealthCountsOnlyIdentifiedRowsWithoutExposingGameDat
     ASSERT_EQ(SQLITE_OK,
               sqlite3_exec(database_,
                            "INSERT INTO library_games VALUES"
-                           "('bloom-game-v1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa','gba','GBA/a.gba',1,2,5,NULL,NULL,NULL,NULL,3,0,1,'unmatched'),"
-                           "('bloom-game-v1:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb','gba','GBA/b.gba',1,2,5,'hash',NULL,1,2,3,0,1,'identified');",
+                           "('bloom-game-v1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa','gba','GBA/a.gba',1,2,5,NULL,NULL,NULL,NULL,3,0,1,'unmatched',NULL,NULL),"
+                           "('bloom-game-v1:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb','gba','GBA/b.gba',1,2,5,'hash',NULL,1,2,3,0,1,'identified',NULL,NULL);",
                            nullptr, nullptr, nullptr));
     int version = 0, indexed = 0, identified = 0;
     ASSERT_EQ(SQLITE_OK, bloom_ra_database_health(database_, &version, &indexed, &identified));
@@ -121,7 +138,7 @@ TEST_F(BloomRaDatabaseTest, BadgeRequiresExactOfficialGameWithAchievements)
     ASSERT_EQ(SQLITE_OK,
               sqlite3_exec(database_,
                            "INSERT INTO library_games VALUES"
-                           "('bloom-game-v1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa','gba','GBA/a.gba',1,2,5,'hash',1234,1,42,3,1,1,'identified')",
+                           "('bloom-game-v1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa','gba','GBA/a.gba',1,2,5,'hash',1234,1,42,3,1,1,'identified',NULL,NULL)",
                            nullptr, nullptr, nullptr));
     BloomRaGame game = {};
     char error[128] = {};
@@ -145,7 +162,7 @@ TEST_F(BloomRaDatabaseTest, CachedValidBadgeSurvivesStaleCatalogStatus)
     ASSERT_EQ(SQLITE_OK,
               sqlite3_exec(database_,
                            "INSERT INTO library_games VALUES"
-                           "('bloom-game-v1:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb','snes','SFC/b.sfc',1,2,3,'hash',22,1,5,3,1,1,'stale')",
+                           "('bloom-game-v1:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb','snes','SFC/b.sfc',1,2,3,'hash',22,1,5,3,1,1,'stale',NULL,NULL)",
                            nullptr, nullptr, nullptr));
     BloomRaGame game = {};
     char error[128] = {};
@@ -167,10 +184,10 @@ TEST_F(BloomRaDatabaseTest, SmartCollectionDerivesOnlyExactBadgeMembers)
     ASSERT_EQ(SQLITE_OK,
               sqlite3_exec(database_,
                            "INSERT INTO library_games VALUES"
-                           "('bloom-game-v1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa','snes','SFC/a.sfc',1,2,3,'a',10,1,5,3,1,1,'identified'),"
-                           "('bloom-game-v1:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb','gba','GBA/b.gba',1,2,5,'b',11,1,8,3,1,1,'stale'),"
-                           "('bloom-game-v1:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc','gba','GBA/c.gba',1,2,5,'c',12,0,8,3,1,1,'identified'),"
-                           "('bloom-game-v1:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd','gba','GBA/d.gba',1,2,5,'d',13,1,0,3,1,1,'identified')",
+                           "('bloom-game-v1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa','snes','SFC/a.sfc',1,2,3,'a',10,1,5,3,1,1,'identified',NULL,NULL),"
+                           "('bloom-game-v1:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb','gba','GBA/b.gba',1,2,5,'b',11,1,8,3,1,1,'stale',NULL,NULL),"
+                           "('bloom-game-v1:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc','gba','GBA/c.gba',1,2,5,'c',12,0,8,3,1,1,'identified',NULL,NULL),"
+                           "('bloom-game-v1:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd','gba','GBA/d.gba',1,2,5,'d',13,1,0,3,1,1,'identified',NULL,NULL)",
                            nullptr, nullptr, nullptr));
     std::vector<std::string> items;
     unsigned long count = 0;

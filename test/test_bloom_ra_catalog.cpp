@@ -80,7 +80,7 @@ TEST_F(BloomRaCatalogTest, RefreshUpdatesMetadataReferencedByIndexedLibraryRows)
     ASSERT_EQ(SQLITE_OK, provider_->import_console(database_, 5, "initial", initial));
     ASSERT_EQ(SQLITE_OK,
               sqlite3_exec(database_,
-                           "INSERT INTO library_games VALUES('bloom-game-v1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa','gba','GBA/a.zip',1,2,5,'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',5,1,1,3,1,2,'identified')",
+                           "INSERT INTO library_games VALUES('bloom-game-v1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa','gba','GBA/a.zip',1,2,5,'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',5,1,1,3,1,2,'identified',NULL,NULL)",
                            nullptr, nullptr, nullptr));
     ASSERT_EQ(SQLITE_OK, provider_->import_console(database_, 5, "updated", updated));
     int game_id = 0, achievements = 0;
