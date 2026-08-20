@@ -1,0 +1,32 @@
+diff --git a/third_party/rcheevos_glue/rchash_glue.h b/third_party/rcheevos_glue/rchash_glue.h
+index fbf7590..74f8711 100644
+--- a/third_party/rcheevos_glue/rchash_glue.h
++++ b/third_party/rcheevos_glue/rchash_glue.h
+@@ -29,0 +30,4 @@ typedef int (*raproxy_ds_read_fn)(void* ctx, long long offset, void* buffer, int
++/* Bloom extension: generate the authoritative hash for one explicit console. */
++int bloom_rhash_file_for_console(unsigned int console_id, const char* path,
++                                 char out_hash[33]);
++
+diff --git a/third_party/rcheevos_glue/rchash_glue.c b/third_party/rcheevos_glue/rchash_glue.c
+index e97068d..5995258 100644
+--- a/third_party/rcheevos_glue/rchash_glue.c
++++ b/third_party/rcheevos_glue/rchash_glue.c
+@@ -158,0 +159,18 @@ static void rao_ensure_hooks(void)
++int bloom_rhash_file_for_console(unsigned int console_id, const char* path,
++      char out_hash[33])
++{
++   rc_hash_iterator_t iterator;
++   int result;
++
++   if (!path || !out_hash || console_id == 0)
++      return 0;
++
++   rao_ensure_hooks();
++   rc_hash_initialize_iterator(&iterator, path, NULL, 0);
++   result = rc_hash_generate(out_hash, console_id, &iterator);
++   rc_hash_destroy_iterator(&iterator);
++   if (!result)
++      out_hash[0] = '\0';
++   return result;
++}
++

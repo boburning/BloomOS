@@ -4,6 +4,7 @@
 #include "../bloomGameId/bloom_game_id.h"
 #include "rc_hash.h"
 
+#include <dlfcn.h>
 #include <limits.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -14,6 +15,33 @@
 
 static _Thread_local char active_hash_root[PATH_MAX];
 static void set_error(char *error, size_t size, const char *format, ...);
+
+typedef int (*BloomRhashFileForConsole)(unsigned int console_id, const char *path, char hash[33]);
+
+#ifdef BLOOM_TEST
+static BloomRhashFileForConsole test_disc_hasher;
+
+void bloom_ra_set_disc_hasher_for_test(BloomRhashFileForConsole hasher)
+{
+    test_disc_hasher = hasher;
+}
+#endif
+
+static int bridge_hash(uint32_t console_id, const char *path, char hash[33])
+{
+#ifdef BLOOM_TEST
+    if (test_disc_hasher != NULL)
+        return test_disc_hasher(console_id, path, hash) ? 0 : -1;
+#endif
+    void *library = dlopen("/mnt/SDCARD/.tmp_update/lib/libbloom-rchash.so", RTLD_NOW | RTLD_LOCAL);
+    if (library == NULL)
+        return -1;
+    BloomRhashFileForConsole hasher =
+        (BloomRhashFileForConsole)dlsym(library, "bloom_rhash_file_for_console");
+    int result = hasher != NULL && hasher(console_id, path, hash) && strlen(hash) == 32 ? 0 : -1;
+    dlclose(library);
+    return result;
+}
 
 static bool path_in_active_root(const char *path, char resolved[PATH_MAX])
 {
@@ -221,6 +249,17 @@ int bloom_ra_hash_file(const char *system_id, const char *rom_path, const char *
         }
         hash_path = archive_name;
         hash_content = archive_content;
+    }
+    int external_disc = dot != NULL && (strcasecmp(dot, ".chd") == 0 || strcasecmp(dot, ".pbp") == 0);
+    if (external_disc) {
+        int result = bridge_hash(console_id, resolved_path, hash);
+        free(archive_content);
+        active_hash_root[0] = '\0';
+        if (result != 0) {
+            set_error(error, error_size, "rcheevos disc hash bridge is unavailable or rejected content");
+            return -1;
+        }
+        return 0;
     }
     rc_hash_iterator_t iterator;
     rc_hash_initialize_iterator(&iterator, hash_path, hash_content, archive_size);

@@ -28,11 +28,13 @@ CFILES := $(CFILES) ../src/gameSwitcher/gameSwitcherIdentity.c
 CFILES := $(CFILES) ../src/gameSwitcher/gameSwitcherAchievements.c
 CFILES := $(CFILES) ../src/common/utils/udp.c
 include ../src/common/config.mk
-CFLAGS += -I../third-party/rcheevos/include -I../third-party/rcheevos/src \
+CFLAGS += -I. -DBLOOM_TEST=1 -I../third-party/rcheevos/include -I../third-party/rcheevos/src \
 	-I../third-party/zlib -I../third-party/zlib/contrib/minizip -DRC_HASH_NO_ENCRYPTED
+CXXFLAGS += -I. -DBLOOM_TEST=1
 
 TARGET = test
 LDFLAGS := $(LDFLAGS) -L../lib -s -lSDL_image -lSDL -lSDL_rotozoom -lsqlite3 -lgtest -lgtest_main -lpthread
+LDFLAGS := $(LDFLAGS) -ldl
 
 include ../src/common/commands.mk
 include ../src/common/recipes.mk

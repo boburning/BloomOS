@@ -68,6 +68,14 @@ license_file = "third-party/rcheevos/LICENSE"
 build_recipe = "src/bloomRa/Makefile"
 hash_version = 1
 
+[bloom_rhash]
+purpose = "Bloom-owned CHD/PBP hashing bridge"
+source_lock = "build/raofflineproxy/sources.json"
+source_revisions = "rcheevos 2ad0b8672f68a48148620164510b963039e49eb1; libchdr 6cde5348eb118da3baf94f75a69577a005a484fd; RAOfflineProxy glue be6898e6dc26338bf82421ff7602fd37932be449"
+build_recipe = "build/rhash/build.sh"
+integration = "core runtime; independent of the optional RAOfflineProxy service package"
+license = "GPL-3.0-only adapter/glue with MIT rcheevos and BSD-3-Clause libchdr"
+
 [raofflineproxy]
 version = "1.11.1-alpha1"
 source_revision = "be6898e6dc26338bf82421ff7602fd37932be449"

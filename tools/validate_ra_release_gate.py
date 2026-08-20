@@ -39,6 +39,22 @@ def validate(root: Path) -> list[str]:
         if item["revision"] not in dependencies and item["name"] in {"raofflineproxy", "python-runtime"}:
             errors.append(f"dependency lock omits {item['name']} revision")
 
+    bridge_files = (
+        "build/rhash/build.sh",
+        "build/rhash/fetch.sh",
+        "build/rhash/raofflineproxy-console-hash.patch",
+    )
+    for path in bridge_files:
+        if not (root / path).is_file():
+            errors.append(f"missing Bloom disc hash bridge input: {path}")
+    makefile = (root / "Makefile").read_text(encoding="utf-8")
+    if "build/rhash/build.sh" not in makefile or "libbloom-rchash.so" not in makefile:
+        errors.append("core build omits the Bloom disc hash bridge")
+    for revision in ("2ad0b8672f68a48148620164510b963039e49eb1", "6cde5348eb118da3baf94f75a69577a005a484fd",
+                     "be6898e6dc26338bf82421ff7602fd37932be449"):
+        if revision not in dependencies:
+            errors.append(f"dependency lock omits disc hash bridge revision {revision}")
+
     missing_tests = sorted(path for path in REQUIRED_TESTS if not (root / path).is_file())
     if missing_tests:
         errors.append("missing RA regression tests: " + ",".join(missing_tests))

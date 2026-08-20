@@ -8,10 +8,12 @@
 
 @test "RetroAchievements release gate rejects permanent proxy config integration" {
     repository="$BATS_TEST_TMPDIR/repository"
-    mkdir -p "$repository/build/raofflineproxy" "$repository/src" "$repository/test/shell" "$repository/tools"
+    mkdir -p "$repository/build/raofflineproxy" "$repository/build/rhash" "$repository/src" "$repository/test/shell" "$repository/tools"
     cp /workspace/build/ra-core-policy.json /workspace/build/core-manifest.json \
         /workspace/build/dependencies.lock "$repository/build/"
     cp /workspace/build/raofflineproxy/sources.json "$repository/build/raofflineproxy/"
+    cp /workspace/build/rhash/* "$repository/build/rhash/"
+    cp /workspace/Makefile "$repository/"
     cp -R /workspace/src/bloomLaunch /workspace/src/bloomRaProxy "$repository/src/"
     cp /workspace/tools/validate_ra_core_policy.py /workspace/tools/validate_raofflineproxy_sources.py \
         /workspace/tools/validate_ra_release_gate.py "$repository/tools/"

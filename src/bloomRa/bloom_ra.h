@@ -33,5 +33,9 @@ int bloom_ra_get_game_from_database(sqlite3 *database, const char *game_id, Bloo
 int bloom_ra_console_id(const char *system_id, uint32_t *console_id);
 int bloom_ra_hash_file(const char *system_id, const char *rom_path, const char *rom_root, char hash[33], char *error,
                        size_t error_size);
+#ifdef BLOOM_TEST
+typedef int (*BloomRaDiscHasherForTest)(unsigned int console_id, const char *path, char hash[33]);
+void bloom_ra_set_disc_hasher_for_test(BloomRaDiscHasherForTest hasher);
+#endif
 
 #endif

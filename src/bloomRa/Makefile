@@ -23,6 +23,7 @@ CFLAGS += -I../../third-party/rcheevos/include -I../../third-party/rcheevos/src 
 	-I../../third-party/zlib -I../../third-party/zlib/contrib/minizip -DRC_HASH_NO_ENCRYPTED
 LDFLAGS += -lpthread
 LDFLAGS += -lsqlite3
+LDFLAGS += -ldl
 LDFLAGS += -Wl,-rpath,/mnt/SDCARD/.tmp_update/lib
 include ../common/commands.mk
 include ../common/recipes.mk

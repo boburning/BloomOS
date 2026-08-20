@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "bloom_base_commit": "9a062e876e0d7ece07e24ee51cfa36fe59a9b2d1",
+  "device_family": "miyoo-mini-plus",
+  "tested_at": "2026-08-20T02:37:00Z",
+  "operator": "boburning",
+  "test_scope": "ra02-authoritative-chd-hashing",
+  "system": "ps",
+  "ra_console_id": 12,
+  "hash_bridge_sha256": "801f3db3e522e072a2bd33af2aa3700f8c362b2442e96859e948340e3759eea7",
+  "bloom_ra_sha256": "7a1befb823f72f8b11c6dbedca87fc5a0c49f5120977e4f485fd6a22b00a350c",
+  "expected_ra_content_hash": "dba482bd96967a00db9abba36dea4ade",
+  "results": {
+    "locked_source_fetch": "pass",
+    "armv7_cross_build": "pass",
+    "host_real_chd_hash": "pass",
+    "device_real_chd_hash": "pass",
+    "host_device_hash_match": "pass",
+    "scan_errors": 0,
+    "scan_duration_seconds": 0.74,
+    "temporary_fixture_removed": "pass",
+    "temporary_index_row_removed": "pass"
+  },
+  "privacy": {
+    "rom_path_or_title_recorded": false,
+    "rom_content_recorded": false,
+    "credential_recorded": false
+  },
+  "notes": "An operator-owned PS1 CHD was streamed temporarily to the device. bloom-ra invoked the independently shipped Bloom disc hash bridge and persisted the same authoritative rcheevos hash produced on the host. The fixture and its exact temporary database row were removed after validation; a rollback database copy remains in the device development-backup area."
+}

@@ -1,11 +1,22 @@
 #include <gtest/gtest.h>
 
+#include <cstdio>
 #include <filesystem>
 #include <fstream>
 
 extern "C" {
 #include "../src/bloomRa/bloom_ra.h"
 }
+
+namespace {
+int mock_disc_hasher(unsigned int console_id, const char *, char hash[33])
+{
+    if (console_id != 12)
+        return 0;
+    std::snprintf(hash, 33, "%s", "dba482bd96967a00db9abba36dea4ade");
+    return 1;
+}
+} // namespace
 
 TEST(BloomRaTest, StatusIsVersionedAndOfflineWithoutConfiguration)
 {
@@ -114,5 +125,36 @@ TEST(BloomRaTest, RejectsSymlinkedRomAtBloomBoundary)
     char hash[33] = {};
     char error[128] = {};
     EXPECT_NE(0, bloom_ra_hash_file("gba", link.c_str(), root, hash, error, sizeof(error)));
+    std::filesystem::remove_all(root);
+}
+
+TEST(BloomRaTest, RoutesChdThroughThePinnedDiscHashBridge)
+{
+    char directory_template[] = "/tmp/bloom-ra-chd-XXXXXX";
+    const char *root = mkdtemp(directory_template);
+    ASSERT_NE(nullptr, root);
+    std::filesystem::path disc = std::filesystem::path(root) / "fixture.chd";
+    std::ofstream(disc, std::ios::binary) << "synthetic bridge fixture";
+    bloom_ra_set_disc_hasher_for_test(mock_disc_hasher);
+    char hash[33] = {};
+    char error[128] = {};
+    ASSERT_EQ(0, bloom_ra_hash_file("psx", disc.c_str(), root, hash, error, sizeof(error))) << error;
+    EXPECT_STREQ("dba482bd96967a00db9abba36dea4ade", hash);
+    bloom_ra_set_disc_hasher_for_test(nullptr);
+    std::filesystem::remove_all(root);
+}
+
+TEST(BloomRaTest, ChdFailsClosedWhenTheBridgeIsUnavailable)
+{
+    char directory_template[] = "/tmp/bloom-ra-chd-missing-XXXXXX";
+    const char *root = mkdtemp(directory_template);
+    ASSERT_NE(nullptr, root);
+    std::filesystem::path disc = std::filesystem::path(root) / "fixture.chd";
+    std::ofstream(disc, std::ios::binary) << "synthetic bridge fixture";
+    bloom_ra_set_disc_hasher_for_test(nullptr);
+    char hash[33] = {};
+    char error[128] = {};
+    EXPECT_NE(0, bloom_ra_hash_file("psx", disc.c_str(), root, hash, error, sizeof(error)));
+    EXPECT_STREQ("rcheevos disc hash bridge is unavailable or rejected content", error);
     std::filesystem::remove_all(root);
 }

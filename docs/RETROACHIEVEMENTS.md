@@ -385,6 +385,13 @@ optional and ineligible for a stable public release until that provenance gate
 is deliberately resolved. Packaging does not start the proxy or touch any
 RetroArch configuration.
 
+RA-02 reuses the exact locked rcheevos, libchdr, and upstream glue sources to
+build `libbloom-rchash.so` as a Bloom core-runtime component for CHD/PBP
+identification. This bridge is available even when the optional proxy package
+is not installed. Bloom validates the requested content path against the ROM
+root before calling it; playlist references continue through Bloom's guarded
+multi-file path rather than through the bridge's unrestricted file reader.
+
 `bloom-ra-proxy` is the schema-1 boundary used by the rest of Bloom. Its initial
 surface is `status`, `start`, `stop`, `cached-game RA_GAME_ID`, `pending`, and
 `health`. An absent optional package is a successful, explicit `not_installed`
