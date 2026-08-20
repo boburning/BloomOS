@@ -299,6 +299,10 @@ achievements_command() {
                     [ "$#" -eq 3 ] || { usage; return 2; }
                     "$BLOOM_RA_PROXY" "$2" "$3"
                     ;;
+                cache-favorites|cache-recent|cache-all)
+                    [ "$#" -eq 2 ] || { usage; return 2; }
+                    "$BLOOM_RA_PROXY" "$2"
+                    ;;
                 *) usage; return 2 ;;
             esac
             ;;

@@ -28,7 +28,7 @@ printf 'bloom-ra-proxy %s\n' "$*" >>"$MOCK_LOG"
 case "$1" in
 status) printf '%s\n' '{"schema":1,"service":"bloom-ra-proxy","installed":false}' ;;
 pending) printf '%s\n' '{"schema":1,"service":"bloom-ra-proxy","pending_awards":0,"online":false,"running":false,"state":"clear"}' ;;
-cache-rom|cache-system) printf '%s\n' '{"schema":1,"service":"bloom-ra-proxy","cached":true}' ;;
+cache-rom|cache-system|cache-favorites|cache-recent|cache-all) printf '%s\n' '{"schema":1,"service":"bloom-ra-proxy","cached":true}' ;;
 *) exit 2 ;;
 esac
 EOF
@@ -142,6 +142,12 @@ teardown() {
     run sh /workspace/static/build/.tmp_update/bin/bloomctl achievements proxy cache-system gba
     [ "$status" -eq 0 ]
     grep -F 'bloom-ra-proxy cache-system gba' "$MOCK_LOG"
+
+    for selector in cache-favorites cache-recent cache-all; do
+        run sh /workspace/static/build/.tmp_update/bin/bloomctl achievements proxy "$selector"
+        [ "$status" -eq 0 ]
+        grep -F "bloom-ra-proxy $selector" "$MOCK_LOG"
+    done
 }
 
 @test "achievements CLI rejects unsupported and malformed command shapes" {

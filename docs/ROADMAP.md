@@ -425,8 +425,9 @@ Planned work includes safe updates and rollback, optional synchronization and of
   Bloom's canonical token without command-line/log output or permanent
   RetroArch mutation, and removes its mode-`0600` temporary config after use.
   Mini Plus physically cached RA Game ID 8038 over verified TLS and reported it
-  through the adapter. UI progress/cancel presentation and
-  Favorites/Recent/all selectors remain.
+  through the adapter. Favorites, Recent, and all supported-system selectors
+  now run serially with resumable upstream state and privacy-bounded aggregate
+  results. Graphical progress/cancel presentation remains.
 - [ ] RA-22: add pending-award UX. The public aggregate command now separates
   clear, pending, waiting-for-network, and authentication-required states while
   exposing only pending count and bounded transport booleans. Bloom does not

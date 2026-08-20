@@ -12,6 +12,8 @@ JQ_BIN=${BLOOM_JQ_BIN:-/mnt/SDCARD/.tmp_update/bin/jq}
 CREDENTIALS=${BLOOM_RA_CREDENTIALS:-/appconfigs/bloom/achievements/credentials}
 RUNTIME_DIR=${BLOOM_RA_PROXY_RUNTIME_DIR:-/tmp/bloom-ra-proxy}
 RUNTIME_ACCOUNT=$RUNTIME_DIR/credentials.append
+FAVORITES=${BLOOM_RA_PROXY_FAVORITES:-$ROM_ROOT/favourite.json}
+RECENTS=${BLOOM_RA_PROXY_RECENTS:-$ROM_ROOT/recentlist.json}
 
 json_error() {
     printf '{"schema":1,"service":"bloom-ra-proxy","error":{"code":"%s"}}\n' "$1" >&2
@@ -115,6 +117,73 @@ validated_rom() {
     resolved=$(readlink -f "$1") || return 1
     root=$(readlink -f "$ROM_ROOT") || return 1
     case "$resolved" in "$root"/*) printf '%s' "$resolved" ;; *) return 1 ;; esac
+}
+
+finish_batch() {
+    rm -f "$RUNTIME_ACCOUNT"
+    [ -z "${batch_file:-}" ] || rm -f "$batch_file"
+}
+
+cache_json_list() {
+    selector=$1
+    source=$2
+    installed || json_error not_installed
+    [ ! -e "$source" ] || { [ -f "$source" ] && [ ! -L "$source" ]; } || json_error unsafe_collection_path
+    validate_endpoint_config
+    prepare_runtime_paths
+    sync_account
+    batch_file=$RUNTIME_DIR/cache-list.$$
+    trap finish_batch EXIT
+    trap 'finish_batch; exit 130' HUP INT TERM
+    if [ -e "$source" ]; then
+        "$JQ_BIN" -Rr 'fromjson? | select((.type == 0 or .type == 1) and (.rompath | type == "string")) | .rompath' \
+            "$source" | awk '!seen[$0]++' >"$batch_file" || json_error invalid_collection
+    else
+        : >"$batch_file"
+    fi
+    processed=0
+    cached=0
+    errors=0
+    while IFS= read -r candidate; do
+        [ -n "$candidate" ] || continue
+        processed=$((processed + 1))
+        if rom=$(validated_rom "$candidate") && run_upstream cache-rom --path "$rom" >/dev/null 2>&1; then
+            cached=$((cached + 1))
+        else
+            errors=$((errors + 1))
+        fi
+    done <"$batch_file"
+    [ "$errors" -eq 0 ] && state=complete || state=partial
+    printf '{"schema":1,"service":"bloom-ra-proxy","selector":"%s","processed":%s,"cached":%s,"errors":%s,"state":"%s"}\n' \
+        "$selector" "$processed" "$cached" "$errors" "$state"
+    [ "$errors" -eq 0 ]
+}
+
+cache_all() {
+    installed || json_error not_installed
+    root=$(readlink -f "$ROM_ROOT") || json_error invalid_rom_root
+    validate_endpoint_config
+    prepare_runtime_paths
+    sync_account
+    trap finish_batch EXIT
+    trap 'finish_batch; exit 130' HUP INT TERM
+    processed=0
+    cached=0
+    errors=0
+    for folder in GB GBC GBA FC FDS SFC PS MD SEGACD THIRTYTWOX GG MS SEGASGONE ARCADE CPS1 CPS2 CPS3 NEOGEO ATARI SEVENTYEIGHTHUNDRED LYNX PCE PCECD SGFX VB WS NGP COLECO MSX CPC AMIGA; do
+        directory=$root/$folder
+        [ -e "$directory" ] || continue
+        processed=$((processed + 1))
+        if [ ! -L "$directory" ] && [ -d "$directory" ] && run_upstream cache-folder-listing --path "$directory" >/dev/null 2>&1; then
+            cached=$((cached + 1))
+        else
+            errors=$((errors + 1))
+        fi
+    done
+    [ "$errors" -eq 0 ] && state=complete || state=partial
+    printf '{"schema":1,"service":"bloom-ra-proxy","selector":"all","processed_systems":%s,"cached_systems":%s,"errors":%s,"state":"%s"}\n' \
+        "$processed" "$cached" "$errors" "$state"
+    [ "$errors" -eq 0 ]
 }
 
 print_status() {
@@ -240,6 +309,18 @@ case "${1:-}" in
             rm -f "$RUNTIME_ACCOUNT"
             json_error cache_failed
         fi
+        ;;
+    cache-favorites)
+        [ "$#" -eq 1 ] || json_error invalid_arguments
+        cache_json_list favorites "$FAVORITES"
+        ;;
+    cache-recent)
+        [ "$#" -eq 1 ] || json_error invalid_arguments
+        cache_json_list recent "$RECENTS"
+        ;;
+    cache-all)
+        [ "$#" -eq 1 ] || json_error invalid_arguments
+        cache_all
         ;;
     *) json_error invalid_command ;;
 esac

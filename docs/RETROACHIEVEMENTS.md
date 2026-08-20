@@ -73,6 +73,9 @@ bloomctl achievements proxy status
 bloomctl achievements proxy pending
 bloomctl achievements proxy cache-rom ROM_PATH
 bloomctl achievements proxy cache-system SYSTEM
+bloomctl achievements proxy cache-favorites
+bloomctl achievements proxy cache-recent
+bloomctl achievements proxy cache-all
 ```
 
 ## Persistent data
@@ -414,7 +417,9 @@ the configured ROM root and maps canonical system IDs to their known library
 directories before invoking upstream. System batches run in the foreground, so
 the caller can cancel them normally; upstream persists each completed cache
 entry, making a later retry resumable without a Bloom-owned queue. Favorites,
-Recent, all-game selection, progress UI, and rate-limit presentation remain
+Recent, and all supported-system selectors use the same foreground contract.
+They report bounded aggregate processed/cached/error counts without exposing ROM
+paths or titles. Graphical progress/cancel controls and rate-limit presentation remain
 consumer work on this backend.
 
 Before proxy startup or caching, the adapter imports Bloom's canonical account
