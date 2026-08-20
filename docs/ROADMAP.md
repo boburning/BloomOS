@@ -413,8 +413,11 @@ Planned work includes safe updates and rollback, optional synchronization and of
 - [ ] RA-20: resolve direct/proxy transport before launch and freeze it after
   session append-config generation. Host tests cover direct Softcore, proxy
   Softcore, unavailable-proxy rejection, forced-direct Hardcore, and permanent
-  config immutability. Physical direct Softcore and Hardcore routing now pass;
-  physical proxy routing remains pending.
+  config immutability. Physical direct Softcore and Hardcore routing pass. Mini
+  Plus validation now also proves pre-launch proxy startup, a fixed loopback
+  endpoint, immutable proxy session state, mode-`0600` append config, unchanged
+  permanent RetroArch config, and clean account/proxy restoration. A real cached
+  offline award remains part of RA-21/RA-23 validation.
 - [ ] RA-21: add offline-cache UX. The adapter now safely supports resumable,
   foreground per-ROM and per-system caching with ROM-root confinement. UI
   progress/cancel presentation and Favorites/Recent/all selectors remain.

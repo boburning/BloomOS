@@ -9,6 +9,7 @@ CORE_ROOT=${BLOOM_CORE_ROOT:-/mnt/SDCARD/RetroArch/.retroarch/cores}
 CREDENTIALS=${BLOOM_RA_CREDENTIALS:-/appconfigs/bloom/achievements/credentials}
 SESSION_ROOT=${BLOOM_SESSION_ROOT:-/tmp/bloom-session}
 RA_LOG=${BLOOM_RA_LOG_BIN:-/mnt/SDCARD/.tmp_update/bin/bloom-ra-log}
+PROXY_BIN=${BLOOM_RA_PROXY_BIN:-/mnt/SDCARD/.tmp_update/bin/bloom-ra-proxy}
 
 fail() { printf 'bloom-ra-session-prepare: %s\n' "$*" >&2; exit 1; }
 fail_category() {
@@ -93,16 +94,25 @@ if [ "$certification" = incompatible ]; then
 fi
 [ "$mode" != hardcore ] || [ "$hardcore_status" != unsupported ] ||
     fail_category hardcore_incompatible "Hardcore is unsupported by the selected core"
-if [ "$offline" = true ]; then
-    fail_category proxy_unavailable "Offline Casual proxy routing is not yet available in the session adapter"
+transport=direct
+proxy_host=-
+proxy_requested=false
+if [ "$mode" = softcore ] && [ "$offline" = true ]; then
+    proxy_requested=true
+    [ -x "$PROXY_BIN" ] || fail_category proxy_unavailable "Offline Casual proxy is unavailable"
+    "$PROXY_BIN" start >/dev/null 2>&1 || fail_category proxy_unavailable "Offline Casual proxy could not be started"
+    endpoint=$("$PROXY_BIN" endpoint 2>/dev/null) || fail_category proxy_unavailable "Offline Casual proxy endpoint is unavailable"
+    proxy_host=$(json_value "$endpoint" '.host') || fail_category proxy_unavailable "Offline Casual proxy endpoint is invalid"
+    [ "$proxy_host" = 127.0.0.1:8080 ] || fail_category proxy_unavailable "Offline Casual proxy endpoint is invalid"
+    transport=proxy
 fi
 
-"$LAUNCH_BIN" resolve-achievements "$request" true "$mode" false true "$ra_game_id" "$certification" ||
+"$LAUNCH_BIN" resolve-achievements "$request" true "$mode" "$proxy_requested" true "$ra_game_id" "$certification" ||
     fail "achievement policy could not be resolved"
 [ -f "$CREDENTIALS" ] && [ ! -L "$CREDENTIALS" ] || fail "RA credential is unavailable"
 rm -f "$SESSION_ROOT/ra.cfg"
-"$LAUNCH_BIN" write-ra-config "$request" "$SESSION_ROOT/ra.cfg" "$username" - <"$CREDENTIALS" ||
+"$LAUNCH_BIN" write-ra-config "$request" "$SESSION_ROOT/ra.cfg" "$username" "$proxy_host" <"$CREDENTIALS" ||
     fail_category config_generation_failed "achievement session config could not be generated"
-[ ! -x "$RA_LOG" ] || "$RA_LOG" launch "$mode" direct "$core" "$core_sha" "$certification" >/dev/null 2>&1 || true
-printf '{"schema":1,"enabled":true,"mode":"%s","transport":"direct","ra_game_id":%s,"core_certification":"%s"}\n' \
-    "$mode" "$ra_game_id" "$certification"
+[ ! -x "$RA_LOG" ] || "$RA_LOG" launch "$mode" "$transport" "$core" "$core_sha" "$certification" >/dev/null 2>&1 || true
+printf '{"schema":1,"enabled":true,"mode":"%s","transport":"%s","ra_game_id":%s,"core_certification":"%s"}\n' \
+    "$mode" "$transport" "$ra_game_id" "$certification"

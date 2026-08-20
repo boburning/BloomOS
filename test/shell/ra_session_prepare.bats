@@ -11,6 +11,7 @@ setup() {
     export BLOOM_CORE_ROOT="$BLOOM_TEST_ROOT/cores"
     export BLOOM_RA_CREDENTIALS="$BLOOM_TEST_ROOT/credentials"
     export BLOOM_SESSION_ROOT="$BLOOM_TEST_ROOT/session"
+    export BLOOM_RA_PROXY_BIN="$MOCK_BIN/bloom-ra-proxy"
     mkdir -p "$BLOOM_CORE_ROOT" "$BLOOM_SESSION_ROOT"
     printf '%s' core-bytes >"$BLOOM_CORE_ROOT/gambatte_libretro.so"
     printf '%s' fixture-token >"$BLOOM_RA_CREDENTIALS"
@@ -70,6 +71,18 @@ cores:)
 esac
 EOF
     chmod +x "$BLOOM_RA_BIN"
+
+    cat >"$BLOOM_RA_PROXY_BIN" <<'EOF'
+#!/bin/sh
+printf 'proxy:%s\n' "$*" >>"$MOCK_LOG"
+[ "${RA_PROXY_FAIL:-0}" -eq 0 ] || exit 1
+case "$1" in
+start) printf '%s\n' '{"schema":1,"service":"bloom-ra-proxy","installed":true}' ;;
+endpoint) printf '%s\n' '{"schema":1,"service":"bloom-ra-proxy","host":"127.0.0.1:8080"}' ;;
+*) exit 1 ;;
+esac
+EOF
+    chmod +x "$BLOOM_RA_PROXY_BIN"
 }
 
 @test "GBA Hardcore selects the structured mGBA fallback before policy resolution" {
@@ -133,16 +146,38 @@ teardown() { teardown_bloom_fixture; }
     grep -F 'log:prepare-failure hardcore_unidentified' "$MOCK_LOG"
 }
 
-@test "offline casual request fails explicitly and records only an allowlisted category" {
+@test "offline casual request starts the proxy and freezes proxy transport into the session" {
     export BLOOM_RA_LOG_BIN="$MOCK_BIN/bloom-ra-log"
     printf '#!/bin/sh\nprintf "log:%%s\\n" "$*" >>"$MOCK_LOG"\n' >"$BLOOM_RA_LOG_BIN"
     chmod +x "$BLOOM_RA_LOG_BIN"
     sed -i 's/"offline_casual":false/"offline_casual":true/' "$BLOOM_RA_BIN"
     run "$PREPARE" "$REQUEST"
-    [ "$status" -eq 1 ]
-    [[ "$output" == *'Offline Casual proxy routing is not yet available'* ]]
-    grep -F 'log:prepare-failure proxy_unavailable' "$MOCK_LOG"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'"transport":"proxy"'* ]]
+    grep -F 'proxy:start' "$MOCK_LOG"
+    grep -F 'proxy:endpoint' "$MOCK_LOG"
+    grep -F 'true softcore true true 1234 best_effort' "$MOCK_LOG"
+    grep -F '127.0.0.1:8080' "$MOCK_LOG"
     ! grep -E '^log:.*(BloomUser|fixture-token)' "$MOCK_LOG"
+}
+
+@test "offline casual proxy failure is explicit and does not generate a config" {
+    export RA_PROXY_FAIL=1
+    sed -i 's/"offline_casual":false/"offline_casual":true/' "$BLOOM_RA_BIN"
+    run "$PREPARE" "$REQUEST"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *'Offline Casual proxy could not be started'* ]]
+    [ ! -e "$BLOOM_SESSION_ROOT/ra.cfg" ]
+}
+
+@test "Hardcore remains direct even when offline casual is configured" {
+    sed -i 's/"mode":"softcore"/"mode":"hardcore"/' "$BLOOM_RA_BIN"
+    sed -i 's/"offline_casual":false/"offline_casual":true/' "$BLOOM_RA_BIN"
+    run "$PREPARE" "$REQUEST"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'"transport":"direct"'* ]]
+    ! grep -F 'proxy:' "$MOCK_LOG"
+    grep -F 'true hardcore false true 1234 best_effort' "$MOCK_LOG"
 }
 
 @test "incompatible core disables softcore RA without blocking the game" {

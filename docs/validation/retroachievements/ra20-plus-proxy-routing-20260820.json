@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "bloom_base_commit": "2ca5ca267318e04204f08d5aef5211b85e715571",
+  "device_family": "miyoo-mini-plus",
+  "tested_at": "2026-08-20T04:28:16Z",
+  "operator": "boburning",
+  "test_scope": "ra20-immutable-softcore-proxy-routing",
+  "runtime_blobs": {
+    "bloom_ra_proxy_git_blob": "9c05c40b1bdfcdb56b6bbf8a8123ef1f4896efd5",
+    "session_prepare_git_blob": "b93f3faba1e45e5d7e9b2f0bc48babedef24a576"
+  },
+  "results": {
+    "proxy_started_before_policy_resolution": "pass",
+    "proxy_endpoint": "127.0.0.1:8080",
+    "softcore_transport": "proxy",
+    "session_policy_immutable": "pass",
+    "temporary_config_mode": "0600",
+    "permanent_retroarch_config_unchanged": true,
+    "account_setting_restored": true,
+    "final_service_running": false
+  },
+  "privacy": {
+    "credential_recorded": false,
+    "username_recorded": false,
+    "rom_path_or_title_recorded": false,
+    "content_hash_recorded": false,
+    "award_details_recorded": false
+  },
+  "notes": "This validates Bloom-owned session routing and lifecycle only. No achievement was awarded and no cached-offline claim is made. Cached-game and cross-device award/flush testing remain RA-21 and RA-23 work."
+}

@@ -48,6 +48,22 @@ SH
     [[ "$output" == *'"pending_awards":3'* ]]
 }
 
+@test "adapter owns the fixed loopback session endpoint" {
+    make_upstream
+    run "$ADAPTER" endpoint
+    [ "$status" -eq 0 ]
+    [ "$output" = '{"schema":1,"service":"bloom-ra-proxy","host":"127.0.0.1:8080"}' ]
+}
+
+@test "adapter rejects upstream endpoint overrides" {
+    make_upstream
+    mkdir -p "$BLOOM_RA_PROXY_CONFIG_DIR"
+    printf '%s\n' '{"proxy_port":9000}' >"$BLOOM_RA_PROXY_CONFIG_DIR/config.json"
+    run "$ADAPTER" endpoint
+    [ "$status" -eq 1 ]
+    [[ "$output" == *'"code":"unsupported_endpoint_override"'* ]]
+}
+
 @test "cached-game validates identifiers and does not expose titles" {
     make_upstream
     run "$ADAPTER" cached-game 42
