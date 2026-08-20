@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "bloom_commit": "817567d0",
+  "device_family": "miyoo-mini-plus",
+  "tested_at": "2026-08-20T00:13:59Z",
+  "operator": "boburning",
+  "test_scope": "direct-login-and-game-recognition",
+  "system": "gba",
+  "core": "gpsp_libretro.so",
+  "core_sha256": "519e19c015a27ac82ca32f026c9f0c58b407ce31e4512495de19bd1828452587",
+  "ra_game_id": 568,
+  "results": {
+    "direct_login_notification": "pass",
+    "exact_game_recognition_notification": "pass",
+    "official_set_count_observed": 67,
+    "gameplay_continued_after_login": "pass",
+    "graceful_retroarch_exit": "pass",
+    "save_flush": "pass",
+    "mainui_return": "pass",
+    "rich_presence": "not_independently_verified",
+    "achievement_unlock": "not_tested",
+    "server_progress_preserved": "not_independently_verified"
+  },
+  "privacy": {
+    "framebuffer_capture_committed": false,
+    "username_recorded": false,
+    "user_progress_recorded": false,
+    "credential_recorded": false,
+    "rom_path_or_hash_recorded": false
+  },
+  "notes": "A short-lived local framebuffer sequence was inspected to confirm the RetroAchievements login and exact-game notifications, then retained only as an ignored development artifact. The observed official-set count exposed a catalog-provider discrepancy tracked under RA-04."
+}

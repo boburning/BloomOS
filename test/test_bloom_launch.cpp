@@ -86,6 +86,30 @@ TEST_F(BloomLaunchTest, CreatesCanonicalJsonWithoutTreatingPathsAsCode)
     EXPECT_NE(0, bloom_launch_get_string(request_.c_str(), "environment", core, sizeof(core), error_, sizeof(error_)));
 }
 
+TEST_F(BloomLaunchTest, RoutesAppendConfigThroughSessionRunner)
+{
+    std::filesystem::path session_root = std::filesystem::path("/tmp/bloom-session") / root_.filename();
+    std::filesystem::create_directories(session_root);
+    request_ = session_root / "request.json";
+    write_request();
+    std::ifstream input(request_);
+    std::string request((std::istreambuf_iterator<char>(input)), std::istreambuf_iterator<char>());
+    input.close();
+    size_t configs = request.find("\"append_configs\": []");
+    ASSERT_NE(configs, std::string::npos);
+    request.replace(configs, strlen("\"append_configs\": []"),
+                    "\"append_configs\": [\"/tmp/bloom-session/ra.cfg\"]");
+    std::ofstream(request_) << request;
+
+    ASSERT_EQ(0, bloom_launch_write_legacy(request_.c_str(), command_.c_str(), error_, sizeof(error_))) << error_;
+    std::ifstream file(command_);
+    std::string command((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+    EXPECT_EQ("LD_PRELOAD=/mnt/SDCARD/miyoo/lib/libpadsp.so "
+              "\"/mnt/SDCARD/.tmp_update/bin/bloom-launch-run\" \"" + request_.string() + "\"\n",
+              command);
+    std::filesystem::remove_all(session_root);
+}
+
 TEST_F(BloomLaunchTest, AddsValidatedDirectAchievementPolicy)
 {
     ASSERT_EQ(0, bloom_launch_create_file(

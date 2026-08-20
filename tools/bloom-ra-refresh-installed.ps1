@@ -76,7 +76,11 @@ try {
                 throw "RetroAchievements metadata lookup failed for an identified game."
             }
             $patch = $response.PatchData
-            $achievementCount = @($patch.Achievements).Count
+            $achievementRows = @($patch.Achievements)
+            if (@($achievementRows | Where-Object { $null -eq $_.Flags }).Count -gt 0) {
+                throw "RetroAchievements metadata omitted achievement publication status."
+            }
+            $achievementCount = @($achievementRows | Where-Object { [int]$_.Flags -eq 3 }).Count
             if ($achievementCount -le 0 -or [int]$patch.ConsoleID -ne [int]$candidate.console_id) {
                 continue
             }

@@ -61,6 +61,7 @@ teardown() { teardown_bloom_fixture; }
 
 @test "session follows the explicit successful lifecycle" {
     start_running_session
+    printf '%s\n' credential-bearing-config >"$BLOOM_SESSION_ROOT/ra.cfg"
     printf '112.99 50.00\n' >"$BLOOM_UPTIME_FILE"
     stop_to_flushing
     "$SESSION" flush-saves
@@ -72,6 +73,26 @@ teardown() { teardown_bloom_fixture; }
     printf '%s' "$output" | grep -F '"pid":123'
     printf '%s' "$output" | grep -F '"duration_seconds":12'
     grep -Eq '^[0-9a-f]{64}$' "$BLOOM_SESSION_ROOT/request_sha256"
+    [ ! -e "$BLOOM_SESSION_ROOT/ra.cfg" ]
+}
+
+@test "session prepares RA policy on its private request copy" {
+    export BLOOM_RA_PREPARE_BIN="$MOCK_BIN/bloom-ra-session-prepare"
+    cat >"$BLOOM_RA_PREPARE_BIN" <<'EOF'
+#!/bin/sh
+printf '%s\n' "$1" >"$BLOOM_TEST_ROOT/prepared-request"
+printf '\n' >>"$1"
+EOF
+    chmod +x "$BLOOM_RA_PREPARE_BIN"
+
+    "$SESSION" start "$REQUEST"
+
+    case "$(cat "$BLOOM_TEST_ROOT/prepared-request")" in
+        "$BLOOM_SESSION_ROOT/request.json.tmp."*) ;;
+        *) false ;;
+    esac
+    [ "$(wc -l <"$REQUEST")" -eq 1 ]
+    [ "$(wc -l <"$BLOOM_SESSION_ROOT/request.json")" -eq 2 ]
 }
 
 @test "wall-clock changes cannot alter monotonic session duration" {
@@ -116,6 +137,7 @@ teardown() { teardown_bloom_fixture; }
 
 @test "failed scoped save flush makes the session terminally failed" {
     start_running_session
+    printf '%s\n' credential-bearing-config >"$BLOOM_SESSION_ROOT/ra.cfg"
     stop_to_flushing
     printf '#!/bin/sh\nexit 1\n' >"$BLOOM_SAVE_FLUSH_BIN"
     chmod +x "$BLOOM_SAVE_FLUSH_BIN"
@@ -125,6 +147,7 @@ teardown() { teardown_bloom_fixture; }
     grep -Fx FAILED "$BLOOM_SESSION_ROOT/state"
     grep -Fx save_flush_failed "$BLOOM_SESSION_ROOT/failure_reason"
     [ ! -e "$BLOOM_SESSION_ROOT/save_flush.json" ]
+    [ ! -e "$BLOOM_SESSION_ROOT/ra.cfg" ]
 }
 
 @test "invalid and stale transitions leave state unchanged" {

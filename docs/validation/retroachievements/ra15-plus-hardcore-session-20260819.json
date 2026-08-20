@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "bloom_commit": "817567d0",
+  "device_family": "miyoo-mini-plus",
+  "tested_at": "2026-08-20T00:05:58Z",
+  "operator": "boburning",
+  "test_scope": "hardcore-session-enforcement",
+  "system": "gba",
+  "core": "gpsp_libretro.so",
+  "core_sha256": "519e19c015a27ac82ca32f026c9f0c58b407ce31e4512495de19bd1828452587",
+  "ra_game_id": 568,
+  "duration_seconds": 60,
+  "results": {
+    "hardcore_enabled": "pass",
+    "direct_transport_enforced": "pass",
+    "append_config_in_process_argv": "pass",
+    "auto_load_disabled": "pass",
+    "rewind_disabled": "pass",
+    "run_ahead_disabled": "pass",
+    "preemptive_frames_disabled": "pass",
+    "load_state_hotkey_disabled": "pass",
+    "cheat_hotkey_disabled": "pass",
+    "graceful_retroarch_exit": "pass",
+    "save_flush": "pass",
+    "mainui_return": "pass",
+    "session_config_cleanup": "pass",
+    "temporary_launcher_cleanup": "pass",
+    "account_mode_restored_to_softcore": "pass",
+    "ra_server_hardcore_session": "not_observed"
+  },
+  "notes": "The device account mode was changed only for the bounded test and restored automatically. This validates Bloom launch enforcement, not an upstream server-side Hardcore award."
+}

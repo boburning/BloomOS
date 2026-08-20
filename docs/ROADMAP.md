@@ -332,8 +332,12 @@ Planned work includes safe updates and rollback, optional synchronization and of
   and remaining archive-boundary fixtures are still pending.
 - [ ] RA-04: finish the production catalog fetch path. Transactional full-console
   import and a secure installed-game development refresh bridge are implemented;
-  Mini Plus validation persists ten exact RA matches offline. On-device TLS or
-  authenticated bulk Web API acquisition remains pending.
+  Mini Plus validation persists ten exact RA matches offline. The bridge now
+  excludes Connect achievements not flagged as published/core. Boktai exposed
+  a remaining provider discrepancy (68 published Connect rows versus the 67
+  achievements shown by the live client and official game page), so exact
+  public achievement counts remain a production-provider release gate.
+  On-device TLS or authenticated bulk Web API acquisition remains pending.
 
 - [ ] Deliver the ordered RA-00 through RA-26 implementation in
   [`RETROACHIEVEMENTS.md`](RETROACHIEVEMENTS.md): exact rcheevos identification,
@@ -361,8 +365,26 @@ Planned work includes safe updates and rollback, optional synchronization and of
 - [ ] RA-14: finish session-runner integration for structured RA launch policy.
   `BloomLaunchRequest`, immutable transport resolution, and mode-`0600`
   temporary append configs are implemented; the launch CLI now accepts tokens
-  only through stdin. Wiring the normal launcher/session path and physical
-  direct-session validation remain pending.
+  only through stdin. The normal `bloom-session` path now resolves canonical
+  account, exact-game, and exact-core policy into a private request copy and
+  session-only config. Mini Plus preparation validated exact Game ID 568,
+  best-effort gpSP policy, mode-`0600` config creation, credential presence,
+  and byte-identical permanent RetroArch config. A 60-second physical direct
+  Softcore session then proved the config reached RetroArch, graceful exit,
+  save flush, MainUI return, and removal of both private config and temporary
+  launcher. Observable live RA login, Rich Presence, and unlock validation
+  remain pending.
+- [ ] RA-15: finish Hardcore enforcement and certification. Host policy rejects
+  proxy transport and silent downgrade. A 60-second Mini Plus session proved
+  direct transport plus runtime disabling of auto-load, rewind, run-ahead,
+  preemptive frames, load-state, and cheat controls; it also completed graceful
+  exit/save flush/cleanup and restored the account to Softcore. Server-side
+  Hardcore recognition and representative achievement behavior remain pending.
+- [ ] RA-16: complete the direct RA vertical slice. Mini Plus now physically
+  proves token login, exact Game ID 568 recognition, continued gameplay,
+  graceful exit, save flush, and MainUI return through the real direct path.
+  Rich Presence, a deliberate operator-approved unlock, and independent
+  server-progress preservation remain pending.
 - [ ] RA-18: ship the schema-1 `bloom-ra-proxy` adapter. Host coverage now
   proves absent-package degradation, bounded status/pending/cache translation,
   input rejection, and stop behavior without config mutation. Physical package
@@ -373,7 +395,8 @@ Planned work includes safe updates and rollback, optional synchronization and of
 - [ ] RA-20: resolve direct/proxy transport before launch and freeze it after
   session append-config generation. Host tests cover direct Softcore, proxy
   Softcore, unavailable-proxy rejection, forced-direct Hardcore, and permanent
-  config immutability; physical session validation remains pending.
+  config immutability. Physical direct Softcore and Hardcore routing now pass;
+  physical proxy routing remains pending.
 - [ ] RA-21: add offline-cache UX. The adapter now safely supports resumable,
   foreground per-ROM and per-system caching with ROM-root confinement. UI
   progress/cancel presentation and Favorites/Recent/all selectors remain.

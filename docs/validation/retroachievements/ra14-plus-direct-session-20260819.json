@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "bloom_commit": "817567d0",
+  "device_family": "miyoo-mini-plus",
+  "tested_at": "2026-08-20T00:02:46Z",
+  "operator": "boburning",
+  "test_scope": "direct-softcore-session-execution",
+  "system": "gba",
+  "core": "gpsp_libretro.so",
+  "core_sha256": "519e19c015a27ac82ca32f026c9f0c58b407ce31e4512495de19bd1828452587",
+  "ra_game_id": 568,
+  "mode": "softcore",
+  "transport": "direct",
+  "core_certification": "best_effort",
+  "duration_seconds": 60,
+  "results": {
+    "retroarch_launch": "pass",
+    "session_append_config_in_process_argv": "pass",
+    "credential_present_in_mode_0600_config": "pass",
+    "graceful_retroarch_exit": "pass",
+    "save_flush": "pass",
+    "mainui_return": "pass",
+    "command_cleanup": "pass",
+    "session_config_cleanup": "pass",
+    "temporary_launcher_cleanup": "pass",
+    "live_ra_login": "not_observed",
+    "rich_presence": "not_observed",
+    "achievement_unlock": "not_tested"
+  },
+  "metrics": {
+    "start_rss_kb": 24320,
+    "peak_rss_kb": 30212,
+    "shutdown_method": "retroarch_quit"
+  },
+  "notes": "A prior smoke run correctly exposed that the append config was not in RetroArch argv; this evidence was recorded only after the session runner fixed and revalidated that boundary. No credential, ROM path, content hash, title, or log content is recorded."
+}

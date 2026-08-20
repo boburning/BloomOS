@@ -1,0 +1,29 @@
+#!/bin/sh
+set -eu
+umask 077
+
+SESSION_ROOT=${BLOOM_SESSION_ROOT:-/tmp/bloom-session}
+BLOOM_LAUNCH=${BLOOM_LAUNCH_BIN:-/mnt/SDCARD/.tmp_update/bin/bloom-launch}
+BLOOM_OVERRIDE=${BLOOM_LAUNCH_OVERRIDE_BIN:-/mnt/SDCARD/.tmp_update/bin/bloom-launch-override}
+JQ_BIN=${BLOOM_JQ_BIN:-/mnt/SDCARD/.tmp_update/bin/jq}
+
+fail() { printf 'bloom-launch-run: %s\n' "$*" >&2; exit 1; }
+[ "$#" -eq 1 ] || fail "expected one session request"
+request=$1
+[ "$request" = "$SESSION_ROOT/request.json" ] || fail "request is outside the active session"
+[ -x "$BLOOM_LAUNCH" ] && [ -x "$BLOOM_OVERRIDE" ] && [ -x "$JQ_BIN" ] || fail "launch services are unavailable"
+"$BLOOM_LAUNCH" validate "$request" >/dev/null || fail "session request is invalid"
+
+launcher=$("$BLOOM_LAUNCH" get "$request" launcher) || fail "launcher is unavailable"
+rom=$("$BLOOM_LAUNCH" get "$request" rom_path) || fail "ROM is unavailable"
+config_count=$("$JQ_BIN" -er '.append_configs | length' "$request" 2>/dev/null) || fail "append config is invalid"
+[ "$config_count" -eq 1 ] || fail "exactly one append config is required"
+append_config=$("$JQ_BIN" -er '.append_configs[0]' "$request" 2>/dev/null) || fail "append config is invalid"
+[ "$append_config" = "$SESSION_ROOT/ra.cfg" ] || fail "append config is outside the active session"
+[ -f "$append_config" ] && [ ! -L "$append_config" ] || fail "append config is unavailable"
+
+temporary=$(BLOOM_SESSION_ROOT="$SESSION_ROOT" "$BLOOM_OVERRIDE" create "$launcher" "$append_config") ||
+    fail "temporary launcher could not be created"
+cleanup() { "$BLOOM_OVERRIDE" remove "$temporary" >/dev/null 2>&1 || true; }
+trap cleanup EXIT HUP INT TERM
+"$temporary" "$rom"

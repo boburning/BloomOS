@@ -46,6 +46,21 @@ teardown() { teardown_bloom_fixture; }
     [ "$(sha256sum "$LAUNCHER" | awk '{print $1}')" = "$before" ]
 }
 
+@test "supports only the protected active-session RA config" {
+    export BLOOM_SESSION_ROOT="$BLOOM_TEST_ROOT/session"
+    mkdir -p "$BLOOM_SESSION_ROOT"
+    printf '%s\n' private-config >"$BLOOM_SESSION_ROOT/ra.cfg"
+    before="$(sha256sum "$LAUNCHER" | awk '{print $1}')"
+
+    run "$OVERRIDE" create "$LAUNCHER" "$BLOOM_SESSION_ROOT/ra.cfg"
+
+    [ "$status" -eq 0 ]
+    temporary="$output"
+    grep -F -- "-v --appendconfig \"$BLOOM_SESSION_ROOT/ra.cfg\"" "$temporary"
+    [ "$(sha256sum "$LAUNCHER" | awk '{print $1}')" = "$before" ]
+    "$OVERRIDE" remove "$temporary"
+}
+
 @test "rejects external launchers links and arbitrary configs" {
     outside="$BLOOM_TEST_ROOT/launch.sh"
     cp "$LAUNCHER" "$outside"
