@@ -88,7 +88,7 @@ int bloom_ra_account_load(const char *settings_path, const char *credentials_pat
     struct stat metadata;
     if (lstat(settings_path, &metadata) != 0)
         return errno == ENOENT ? 0 : -1;
-    if (!S_ISREG(metadata.st_mode) || S_ISLNK(metadata.st_mode) || (metadata.st_mode & 077) != 0) {
+    if (!S_ISREG(metadata.st_mode) || S_ISLNK(metadata.st_mode)) {
         set_error(error, error_size, "account settings are invalid");
         return -1;
     }
