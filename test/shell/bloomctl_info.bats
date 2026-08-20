@@ -35,6 +35,22 @@ printf '%s\n' '{"schema":1,"healthy":true,"total":0,"unverified":0,"referenced":
 EOF
     chmod +x "$default_snapshot"
     export BLOOM_SAVE_SNAPSHOT_BIN="$default_snapshot"
+    default_ra="$BLOOM_TEST_ROOT/default-ra"
+    cat >"$default_ra" <<'EOF'
+#!/bin/sh
+[ "$1" = status ] || exit 2
+printf '%s\n' '{"schema":1,"service":"bloom-ra","enabled":false,"state":"not_configured","catalog":{"status":"unavailable"},"indexed_games":0,"identified_games":0}'
+EOF
+    chmod +x "$default_ra"
+    export BLOOM_RA_BIN="$default_ra"
+    default_proxy="$BLOOM_TEST_ROOT/default-ra-proxy"
+    cat >"$default_proxy" <<'EOF'
+#!/bin/sh
+[ "$1" = status ] || exit 2
+printf '%s\n' '{"schema":1,"service":"bloom-ra-proxy","installed":false,"running":false,"state":"not_installed"}'
+EOF
+    chmod +x "$default_proxy"
+    export BLOOM_RA_PROXY_BIN="$default_proxy"
 }
 
 teardown() {
@@ -261,6 +277,32 @@ EOF
     printf '%s' "$output" | grep -F '"play_activity": {"schema":1,"healthy":true,"quick_check":"ok"}'
     printf '%s' "$output" | grep -F '"update_state": {"schema":1,"healthy":true,"phase":"idle"}'
     printf '%s' "$output" | grep -F '"save_snapshots": {"schema":1,"healthy":true,"total":0,"unverified":0,"referenced":0}'
+    printf '%s' "$output" | grep -F '"retroachievements": {"schema":1,"healthy":true,"enabled":false'
+}
+
+@test "health allowlists RetroAchievements fields and redacts secrets and game data" {
+    cat >"$BLOOM_RA_BIN" <<'EOF'
+#!/bin/sh
+printf '%s\n' '{"schema":1,"enabled":true,"state":"ready","username":"private-user","token":"secret-token","catalog":{"status":"ready"},"indexed_games":12,"identified_games":5,"rom_path":"/private/game.zip"}'
+EOF
+    cat >"$BLOOM_RA_PROXY_BIN" <<'EOF'
+#!/bin/sh
+printf '%s\n' '{"schema":1,"installed":true,"upstream":{"cached_games_count":4,"pending_awards_count":2,"service_running":true,"award":"private achievement"}}'
+EOF
+    chmod +x "$BLOOM_RA_BIN" "$BLOOM_RA_PROXY_BIN"
+    cat >"$SDCARD/.tmp_update/bin/playActivity" <<'EOF'
+#!/bin/sh
+printf '%s\n' '{"schema":1,"healthy":true}'
+EOF
+    chmod +x "$SDCARD/.tmp_update/bin/playActivity"
+
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl health --json
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'"cached_games":4,"pending_awards":2'* ]]
+    [[ "$output" != *'private-user'* ]]
+    [[ "$output" != *'secret-token'* ]]
+    [[ "$output" != *'/private/game.zip'* ]]
+    [[ "$output" != *'private achievement'* ]]
 }
 
 @test "health fails when snapshot inventory contains unverified evidence" {

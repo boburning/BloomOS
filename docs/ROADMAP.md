@@ -351,6 +351,10 @@ Planned work includes safe updates and rollback, optional synchronization and of
 - [ ] RA-21: add offline-cache UX. The adapter now safely supports resumable,
   foreground per-ROM and per-system caching with ROM-root confinement. UI
   progress/cancel presentation and Favorites/Recent/all selectors remain.
+- [ ] RA-24: add aggregate RA health and support-export diagnostics. Health now
+  allowlists catalog/proxy counts and rejects or discards secrets, ROM paths,
+  titles, award details, and unexpected fields. Bounded structured RA log export
+  remains pending.
 - [ ] Keep RA-27 as a future consumer of the same `bloom-ra` API when Bloom owns
   the primary library browser; closed MainUI replacement is not a prerequisite
   for the P0 GameSwitcher badge.
