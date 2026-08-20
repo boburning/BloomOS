@@ -63,6 +63,7 @@ mkdir "$STAGE/logs"
 for source in \
     "${BLOOM_ROOT}/mnt/SDCARD/.tmp_update/logs/bloom-update-boot.log" \
     "${BLOOM_ROOT}/mnt/SDCARD/.tmp_update/logs/bloom-test-runner.log" \
+    "${BLOOM_ROOT}/mnt/SDCARD/.bloom/logs/retroachievements.log" \
     "${BLOOM_ROOT}/appconfigs/bloom-shutdown.log"
 do
     [ -f "$source" ] && [ ! -L "$source" ] || continue

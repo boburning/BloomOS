@@ -8,6 +8,7 @@ JQ_BIN=${BLOOM_JQ_BIN:-/mnt/SDCARD/.tmp_update/bin/jq}
 CORE_ROOT=${BLOOM_CORE_ROOT:-/mnt/SDCARD/RetroArch/.retroarch/cores}
 CREDENTIALS=${BLOOM_RA_CREDENTIALS:-/appconfigs/bloom/achievements/credentials}
 SESSION_ROOT=${BLOOM_SESSION_ROOT:-/tmp/bloom-session}
+RA_LOG=${BLOOM_RA_LOG_BIN:-/mnt/SDCARD/.tmp_update/bin/bloom-ra-log}
 
 fail() { printf 'bloom-ra-session-prepare: %s\n' "$*" >&2; exit 1; }
 json_value() { printf '%s' "$1" | "$JQ_BIN" -er "$2" 2>/dev/null; }
@@ -77,5 +78,6 @@ fi
 rm -f "$SESSION_ROOT/ra.cfg"
 "$LAUNCH_BIN" write-ra-config "$request" "$SESSION_ROOT/ra.cfg" "$username" - <"$CREDENTIALS" ||
     fail "achievement session config could not be generated"
+[ ! -x "$RA_LOG" ] || "$RA_LOG" launch "$mode" direct "$core" "$core_sha" "$certification" >/dev/null 2>&1 || true
 printf '{"schema":1,"enabled":true,"mode":"%s","transport":"direct","ra_game_id":%s,"core_certification":"%s"}\n' \
     "$mode" "$ra_game_id" "$certification"

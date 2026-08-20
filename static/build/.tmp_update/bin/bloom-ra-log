@@ -1,0 +1,47 @@
+#!/bin/sh
+set -eu
+umask 077
+
+LOG_DIR=${BLOOM_RA_LOG_DIR:-/mnt/SDCARD/.bloom/logs}
+LOG_FILE=$LOG_DIR/retroachievements.log
+ROTATED=$LOG_FILE.1
+MAX_BYTES=${BLOOM_RA_LOG_MAX_BYTES:-65536}
+
+fail() { printf 'bloom-ra-log: %s\n' "$*" >&2; exit 1; }
+safe_word() { case "$1" in ''|*[!A-Za-z0-9_.-]*) return 1 ;; esac; }
+
+case "$MAX_BYTES" in ''|*[!0-9]*) fail "invalid log limit" ;; esac
+[ "$MAX_BYTES" -ge 1024 ] && [ "$MAX_BYTES" -le 1048576 ] || fail "invalid log limit"
+case "${1:-}" in
+    launch)
+        [ "$#" -eq 6 ] || fail "launch expects MODE TRANSPORT CORE SHA CERTIFICATION"
+        mode=$2 transport=$3 core=$4 sha=$5 certification=$6
+        case "$mode" in softcore|hardcore) ;; *) fail "invalid mode" ;; esac
+        case "$transport" in direct|proxy) ;; *) fail "invalid transport" ;; esac
+        case "$core" in *_libretro.so) safe_word "$core" || fail "invalid core" ;; *) fail "invalid core" ;; esac
+        case "$sha" in *[!0-9a-f]*|'') fail "invalid core SHA" ;; esac
+        [ "${#sha}" -eq 64 ] || fail "invalid core SHA"
+        case "$certification" in verified|best_effort|incompatible|untested) ;; *) fail "invalid certification" ;; esac
+        line=$(printf '{"schema":1,"event":"launch","mode":"%s","transport":"%s","core":"%s","core_sha256":"%s","core_certification":"%s"}' \
+            "$mode" "$transport" "$core" "$sha" "$certification")
+        ;;
+    finish)
+        [ "$#" -eq 3 ] || fail "finish expects OUTCOME DETAIL"
+        outcome=$2 detail=$3
+        case "$outcome" in stopped|failed) ;; *) fail "invalid outcome" ;; esac
+        safe_word "$detail" || fail "invalid detail"
+        line=$(printf '{"schema":1,"event":"finish","outcome":"%s","detail":"%s"}' "$outcome" "$detail")
+        ;;
+    *) fail "expected {launch|finish}" ;;
+esac
+
+[ ! -L "$LOG_DIR" ] && [ ! -L "$LOG_FILE" ] && [ ! -L "$ROTATED" ] || fail "log path is unsafe"
+mkdir -p "$LOG_DIR" || fail "cannot create log directory"
+[ -d "$LOG_DIR" ] || fail "log directory is unavailable"
+
+if [ -f "$LOG_FILE" ] && [ "$(wc -c <"$LOG_FILE")" -ge "$MAX_BYTES" ]; then
+    [ ! -e "$ROTATED" ] || rm -f "$ROTATED"
+    mv "$LOG_FILE" "$ROTATED" || fail "cannot rotate log"
+fi
+printf '%s\n' "$line" >>"$LOG_FILE" || fail "cannot append log"
+chmod 600 "$LOG_FILE" || fail "cannot protect log"

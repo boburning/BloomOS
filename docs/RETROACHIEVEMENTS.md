@@ -256,6 +256,12 @@ Missing exact-core policy is reported as `untested`, while a known incompatible
 core disables Softcore RA and rejects Hardcore. Offline Casual requests remain
 explicitly unavailable until proxy session routing lands.
 
+RA sessions append only allowlisted launch and finish fields to a mode-`0600`,
+size-bounded rotating log under `.bloom/logs`. The log records mode, transport,
+core basename and SHA, Bloom certification, outcome, and a bounded reason or
+duration. It cannot accept usernames, tokens, game identity, ROM paths, titles,
+or arbitrary text. Support export includes only this already-redacted log.
+
 Hardcore policy additionally rejects Bloom auto-resume and proxy transport,
 requires Rich Presence and leaderboards, disables rewind/run-ahead/preemptive
 frames, and removes load-state, rewind, frame-advance, slowdown, and cheat

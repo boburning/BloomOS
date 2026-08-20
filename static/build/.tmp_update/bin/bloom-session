@@ -6,6 +6,7 @@ PROC_ROOT="${BLOOM_PROC_ROOT:-/proc}"
 UPTIME_FILE="${BLOOM_UPTIME_FILE:-$PROC_ROOT/uptime}"
 BLOOM_LAUNCH="${BLOOM_LAUNCH_BIN:-/mnt/SDCARD/.tmp_update/bin/bloom-launch}"
 BLOOM_RA_PREPARE="${BLOOM_RA_PREPARE_BIN:-/mnt/SDCARD/.tmp_update/bin/bloom-ra-session-prepare}"
+BLOOM_RA_LOG="${BLOOM_RA_LOG_BIN:-/mnt/SDCARD/.tmp_update/bin/bloom-ra-log}"
 BLOOM_SAVE_FLUSH="${BLOOM_SAVE_FLUSH_BIN:-/mnt/SDCARD/.tmp_update/bin/bloom-save-flush}"
 SEND_UDP="${BLOOM_SEND_UDP_BIN:-/mnt/SDCARD/.tmp_update/bin/sendUDP}"
 SIGNAL_BIN="${BLOOM_SIGNAL_BIN:-}"
@@ -25,6 +26,11 @@ LOCK_DIR="$SESSION_ROOT/.lock"
 LOCKED=0
 
 fail() { printf 'bloom-session: %s\n' "$*" >&2; exit 1; }
+
+ra_finish_log() {
+    [ -f "$SESSION_ROOT/ra.cfg" ] || return 0
+    [ ! -x "$BLOOM_RA_LOG" ] || "$BLOOM_RA_LOG" finish "$1" "$2" >/dev/null 2>&1 || true
+}
 
 for wait_value in "$QUIT_WAIT" "$TERM_WAIT" "$KILL_WAIT"; do
     case "$wait_value" in ''|*[!0-9]*) fail "invalid stop timeout" ;; esac
@@ -129,6 +135,7 @@ command_flush_saves() {
     [ "$(current_state)" = FLUSHING ] || fail "session is not FLUSHING"
     [ -x "$BLOOM_SAVE_FLUSH" ] || {
         atomic_line "$REASON_FILE" save_flush_failed
+        ra_finish_log failed save_flush_failed
         rm -f "$SESSION_ROOT/ra.cfg"
         atomic_line "$STATE_FILE" FAILED
         fail "bloom-save-flush is unavailable"
@@ -136,6 +143,7 @@ command_flush_saves() {
     core="$(read_value "$CORE_FILE")"
     case "$core" in ''|*[!A-Za-z0-9_.-]*)
         atomic_line "$REASON_FILE" save_flush_failed
+        ra_finish_log failed save_flush_failed
         rm -f "$SESSION_ROOT/ra.cfg"
         atomic_line "$STATE_FILE" FAILED
         fail "session core is invalid"
@@ -145,6 +153,7 @@ command_flush_saves() {
     if ! (umask 077; "$BLOOM_SAVE_FLUSH" "$core" >"$temporary"); then
         rm -f "$temporary"
         atomic_line "$REASON_FILE" save_flush_failed
+        ra_finish_log failed save_flush_failed
         rm -f "$SESSION_ROOT/ra.cfg"
         atomic_line "$STATE_FILE" FAILED
         fail "save flush failed"
@@ -152,6 +161,7 @@ command_flush_saves() {
     if [ ! -s "$temporary" ] || ! grep -q '"schema":1' "$temporary"; then
         rm -f "$temporary"
         atomic_line "$REASON_FILE" save_flush_failed
+        ra_finish_log failed save_flush_failed
         rm -f "$SESSION_ROOT/ra.cfg"
         atomic_line "$STATE_FILE" FAILED
         fail "save flush result is invalid"
@@ -164,6 +174,7 @@ command_complete() {
     lock
     [ "$(current_state)" = FLUSHING ] || fail "session is not FLUSHING"
     [ -s "$FLUSH_RESULT_FILE" ] && grep -q '"schema":1' "$FLUSH_RESULT_FILE" || fail "save flush is not confirmed"
+    ra_finish_log stopped "$(read_value "$DURATION_FILE")"
     rm -f "$SESSION_ROOT/ra.cfg"
     atomic_line "$STATE_FILE" STOPPED
 }
@@ -193,6 +204,7 @@ command_fail() {
     state="$(current_state)"
     case "$state" in PREPARING|STARTING|RUNNING|STOP_REQUESTED|FLUSHING) ;; *) fail "session is not active" ;; esac
     atomic_line "$REASON_FILE" "$reason"
+    ra_finish_log failed "$reason"
     rm -f "$SESSION_ROOT/ra.cfg"
     atomic_line "$STATE_FILE" FAILED
 }
@@ -225,6 +237,7 @@ stop_failure() {
     lock
     [ "$(current_state)" = STOP_REQUESTED ] || fail "stop failure lost session ownership"
     atomic_line "$REASON_FILE" "$reason"
+    ra_finish_log failed "$reason"
     rm -f "$SESSION_ROOT/ra.cfg"
     atomic_line "$STATE_FILE" FAILED
     unlock
