@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "bloom_commit": "5bf1fbd0",
+  "device_family": "miyoo-mini-plus",
+  "tested_at": "2026-08-20T00:36:54Z",
+  "operator": "boburning",
+  "test_scope": "guarded-certification-preflight-and-session",
+  "system": "gba",
+  "core": "gpsp_libretro.so",
+  "core_sha256": "519e19c015a27ac82ca32f026c9f0c58b407ce31e4512495de19bd1828452587",
+  "bloom_ra_status": "best_effort",
+  "results": {
+    "exact_identification": "pass",
+    "authenticated_login": "pass",
+    "core_policy_exact_sha_match": "pass",
+    "rich_presence": "not_run",
+    "hardcore": "not_run",
+    "session_duration_seconds": 10,
+    "session_exit": "pass",
+    "save_flush": "pass",
+    "mainui_return": "pass",
+    "achievement_unlock": "operator_required"
+  },
+  "privacy": {
+    "username_recorded": false,
+    "credential_recorded": false,
+    "rom_path_or_title_recorded": false,
+    "content_hash_recorded": false
+  },
+  "notes": "The device preflight and explicit bounded session used an operator-provided installed ROM and reported only bounded certification fields. The session started the exact default core, exited gracefully, flushed saves, returned to MainUI, and did not attempt an achievement unlock or mutate the RetroAchievements profile."
+}
