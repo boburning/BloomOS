@@ -370,6 +370,12 @@ Planned work includes safe updates and rollback, optional synchronization and of
   save flush, MainUI return, and removal of both private config and temporary
   launcher. Observable live RA login, Rich Presence, and unlock validation
   remain pending.
+- [ ] RA-15: finish Hardcore enforcement and certification. Host policy rejects
+  proxy transport and silent downgrade. A 60-second Mini Plus session proved
+  direct transport plus runtime disabling of auto-load, rewind, run-ahead,
+  preemptive frames, load-state, and cheat controls; it also completed graceful
+  exit/save flush/cleanup and restored the account to Softcore. Server-side
+  Hardcore recognition and representative achievement behavior remain pending.
 - [ ] RA-18: ship the schema-1 `bloom-ra-proxy` adapter. Host coverage now
   proves absent-package degradation, bounded status/pending/cache translation,
   input rejection, and stop behavior without config mutation. Physical package
@@ -380,7 +386,8 @@ Planned work includes safe updates and rollback, optional synchronization and of
 - [ ] RA-20: resolve direct/proxy transport before launch and freeze it after
   session append-config generation. Host tests cover direct Softcore, proxy
   Softcore, unavailable-proxy rejection, forced-direct Hardcore, and permanent
-  config immutability; physical session validation remains pending.
+  config immutability. Physical direct Softcore and Hardcore routing now pass;
+  physical proxy routing remains pending.
 - [ ] RA-21: add offline-cache UX. The adapter now safely supports resumable,
   foreground per-ROM and per-system caching with ROM-root confinement. UI
   progress/cancel presentation and Favorites/Recent/all selectors remain.
