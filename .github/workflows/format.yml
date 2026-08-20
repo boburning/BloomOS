@@ -3,10 +3,19 @@ name: Check formatting
 on:
   pull_request:
     paths:
-      - 'src/**'
+      - '.clang-format'
+      - '.github/workflows/format.yml'
+      - 'src/**/*.c'
+      - 'src/**/*.h'
+      - 'src/**/*.cpp'
+      - 'src/**/*.hpp'
 
 permissions:
   contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   format:
