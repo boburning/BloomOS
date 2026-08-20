@@ -242,14 +242,17 @@ template, and Bloom release public key carry their exact source revisions.
 Inherited icons and status artwork remain fail-closed until they are replaced
 with reproducible Bloom assets or their original licenses are documented.
 
-RetroAchievements dependencies are architecture-only until their focused
-issues land. RA-02 will pin and source-build an official rcheevos release (the
-RA-00 audit observed MIT-licensed `v12.4.0`) and record its resulting ARM output
-identity. RAOfflineProxy is deferred until RA-17; its repository now declares
-GPL-3.0 and contains Linux/Onion source, correcting the older no-license audit,
-but Bloom must still pin and reproduce its application, Python runtime, native
-libraries, and assets before distribution. Audit revisions and separation of
-direct/proxy responsibilities are recorded in `docs/RETROACHIEVEMENTS.md`.
+RA-02 pins and source-builds MIT-licensed rcheevos `v12.4.0`. RA-17 pins
+RAOfflineProxy `v1.11.1-alpha1`, its rcheevos and libchdr revisions, and the
+upstream-selected ARMv7 CPython runtime in `build/raofflineproxy/sources.json`.
+Every fetched archive is verified by byte count and SHA-256 before extraction.
+Bloom packages only the standard-library service backend and native hash
+bridge; it deliberately excludes upstream's pygame/SDL menu and its unpinned
+vendor downloads. The CPython runtime is an immutable upstream binary input,
+not a Bloom source build, so stable release eligibility remains fail-closed
+until the public provenance policy explicitly admits that artifact or Bloom
+replaces it with a reproducible source build. Direct RA and ordinary launch do
+not depend on this optional package.
 
 ## Lock-file requirements
 

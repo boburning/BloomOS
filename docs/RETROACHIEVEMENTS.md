@@ -319,6 +319,18 @@ and revert behavior. If upstream needs a service-only/external-config mode,
 Bloom proposes the smallest maintainable upstream contribution before carrying
 a local adapter patch.
 
+RA-17 pins upstream `v1.11.1-alpha1` at
+`be6898e6dc26338bf82421ff7602fd37932be449`. The service-only package omits
+pygame, the SDL menu, and their vendor bundle. It builds the native CHD-aware
+hash bridge from the exact rcheevos and libchdr revisions selected upstream,
+then combines it with the pinned ARMv7 CPython 3.9.20 runtime. All four archives
+have immutable URLs, sizes, and SHA-256 values in
+`build/raofflineproxy/sources.json`. The runtime is currently a verified
+upstream binary input rather than a Bloom source build, so the package remains
+optional and ineligible for a stable public release until that provenance gate
+is deliberately resolved. Packaging does not start the proxy or touch any
+RetroArch configuration.
+
 ## Original Mini and offline behavior
 
 Consumers query network capability instead of hardcoding models. With no usable
@@ -424,8 +436,10 @@ RA-27 future Bloom library-browser consumer
 ```
 
 Each issue produces a focused PR, automated tests, contract documentation, and
-honest `pending` hardware status. RAOfflineProxy work cannot begin before the
-direct path and Hardcore invariants are proven.
+honest `pending` hardware status. Host-side RAOfflineProxy packaging and adapter
+work may proceed while RA-16 physical validation is deferred, but proxy
+enablement and public support claims remain blocked until the direct path and
+Hardcore invariants are proven on hardware.
 
 ## Public terminology
 

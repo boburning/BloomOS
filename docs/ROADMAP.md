@@ -328,6 +328,11 @@ Planned work includes safe updates and rollback, optional synchronization and of
   configuration, enforced direct Hardcore, optional softcore-only
   RAOfflineProxy, redacted diagnostics, CI, and physical certification
   ([RA-00 epic #132](https://github.com/boburning/BloomOS/issues/132)).
+- [ ] RA-17: package the pinned RAOfflineProxy service backend and native hash
+  bridge reproducibly. Source/runtime locks and fail-closed verification are
+  implemented; ARM package reproduction and physical installation remain
+  pending. The optional runtime remains outside stable releases until its
+  binary-input provenance is admitted or replaced by a source build.
 - [ ] Keep RA-27 as a future consumer of the same `bloom-ra` API when Bloom owns
   the primary library browser; closed MainUI replacement is not a prerequisite
   for the P0 GameSwitcher badge.
