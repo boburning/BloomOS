@@ -221,6 +221,14 @@ static bool valid_request(cJSON *root, char *error, size_t error_size)
         set_error(error, error_size, "request launch configuration is invalid");
         return false;
     }
+    if (achievements != NULL) {
+        cJSON *achievement_mode = cJSON_GetObjectItemCaseSensitive(achievements, "mode");
+        if (cJSON_IsString(achievement_mode) && strcmp(achievement_mode->valuestring, "hardcore") == 0 &&
+            cJSON_IsTrue(autoload)) {
+            set_error(error, error_size, "Hardcore cannot auto-load state");
+            return false;
+        }
+    }
     char expected_game_id[BLOOM_GAME_ID_LENGTH + 1];
     char relative_path[4096];
     char game_id_error[128];
@@ -503,8 +511,17 @@ int bloom_launch_write_ra_config(const char *request_path, const char *config_pa
     char config[1024];
     int length = snprintf(config, sizeof(config),
                           "cheevos_enable = \"true\"\ncheevos_username = \"%s\"\ncheevos_token = \"%s\"\n"
-                          "cheevos_hardcore_mode_enable = \"%s\"\n",
+                          "cheevos_hardcore_mode_enable = \"%s\"\ncheevos_richpresence_enable = \"true\"\n"
+                          "cheevos_leaderboards_enable = \"true\"\n",
                           username, token, strcmp(mode->valuestring, "hardcore") == 0 ? "true" : "false");
+    if (strcmp(mode->valuestring, "hardcore") == 0)
+        length += snprintf(config + length, sizeof(config) - (size_t)length,
+                           "savestate_auto_load = \"false\"\nrewind_enable = \"false\"\n"
+                           "run_ahead_enabled = \"false\"\npreemptive_frames = \"0\"\n"
+                           "input_load_state = \"nul\"\ninput_rewind = \"nul\"\n"
+                           "input_frame_advance = \"nul\"\ninput_slowmotion = \"nul\"\n"
+                           "input_cheat_index_plus = \"nul\"\ninput_cheat_index_minus = \"nul\"\n"
+                           "input_cheat_toggle = \"nul\"\n");
     if (proxy)
         length += snprintf(config + length, sizeof(config) - (size_t)length, "cheevos_custom_host = \"%s\"\n",
                            proxy_host);

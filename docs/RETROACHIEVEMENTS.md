@@ -229,6 +229,13 @@ certification status. Hardcore plus proxy is rejected at validation. Bloom
 writes credentials and `cheevos_*` values only to a mode-`0600` append config
 under `/tmp/bloom-session/`, then adds that path to the session request. The
 permanent RetroArch configuration is never read or modified by this operation.
+
+Hardcore policy additionally rejects Bloom auto-resume and proxy transport,
+requires Rich Presence and leaderboards, disables rewind/run-ahead/preemptive
+frames, and removes load-state, rewind, frame-advance, slowdown, and cheat
+hotkeys in the session append config. These controls follow the current
+[RetroAchievements Hardcore compliance requirements](https://docs.retroachievements.org/general/hardcore-compliance-requirements.html).
+Bloom never silently downgrades a rejected Hardcore request.
 - Proxy cache: `not_applicable`, `not_cached`, or `cached`.
 - Pending awards: a non-negative aggregate count.
 
