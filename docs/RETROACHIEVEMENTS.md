@@ -331,6 +331,16 @@ optional and ineligible for a stable public release until that provenance gate
 is deliberately resolved. Packaging does not start the proxy or touch any
 RetroArch configuration.
 
+`bloom-ra-proxy` is the schema-1 boundary used by the rest of Bloom. Its initial
+surface is `status`, `start`, `stop`, `cached-game RA_GAME_ID`, `pending`, and
+`health`. An absent optional package is a successful, explicit `not_installed`
+state. The adapter accepts only numeric RA game IDs, bounds upstream JSON, and
+returns aggregate cache/award state without titles or award details. It starts
+upstream's foreground `run-service` operation directly; it never calls
+`start-proxy`, `stop-proxy`, or another command that patches or reverts emulator
+configuration. `bloomctl achievements proxy status|pending` exposes the two
+initial read-only public operations.
+
 ## Original Mini and offline behavior
 
 Consumers query network capability instead of hardcoding models. With no usable

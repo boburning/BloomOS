@@ -18,6 +18,7 @@ BLOOM_SAVE_SNAPSHOT="${BLOOM_SAVE_SNAPSHOT_BIN:-$SCRIPT_DIR/bloom-save-snapshot}
 BLOOM_DIAGNOSTICS_EXPORT="${BLOOM_DIAGNOSTICS_EXPORT_BIN:-$SCRIPT_DIR/bloom-diagnostics-export}"
 BLOOM_GAME_SMOKE="${BLOOM_GAME_SMOKE_BIN:-$SCRIPT_DIR/bloom-game-smoke}"
 BLOOM_RA="${BLOOM_RA_BIN:-$SCRIPT_DIR/bloom-ra}"
+BLOOM_RA_PROXY="${BLOOM_RA_PROXY_BIN:-$SCRIPT_DIR/bloom-ra-proxy}"
 
 path() {
     printf '%s%s' "$BLOOM_ROOT" "$1"
@@ -198,7 +199,7 @@ usage() {
     printf '       bloomctl logs export\n' >&2
     printf '       bloomctl platform capabilities\n' >&2
     printf '       bloomctl test smoke SYSTEM ROM_PATH [DURATION_SECONDS]\n' >&2
-    printf '       bloomctl achievements {status|game BLOOM_GAME_ID|collection|cores|account status|scan --changed|--all|--system SYSTEM|--status|--cancel}\n' >&2
+    printf '       bloomctl achievements {status|game BLOOM_GAME_ID|collection|cores|account status|proxy status|pending|scan --changed|--all|--system SYSTEM|--status|--cancel}\n' >&2
 }
 
 achievements_command() {
@@ -223,6 +224,15 @@ achievements_command() {
         account)
             [ "$#" -eq 2 ] && [ "$2" = status ] || { usage; return 2; }
             "$BLOOM_RA" account status
+            ;;
+        proxy)
+            [ "$#" -eq 2 ] || { usage; return 2; }
+            [ -x "$BLOOM_RA_PROXY" ] || { printf 'bloomctl: achievements proxy adapter is unavailable\n' >&2; return 1; }
+            case "$2" in
+                status) "$BLOOM_RA_PROXY" status ;;
+                pending) "$BLOOM_RA_PROXY" pending ;;
+                *) usage; return 2 ;;
+            esac
             ;;
         scan)
             case "${2:-}" in

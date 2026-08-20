@@ -159,6 +159,7 @@ core: $(CACHE)/.setup shared-libs
 	@cd $(SRC_DIR)/bloomSaveFlush && BUILD_DIR=$(BIN_DIR) make
 	@cd $(SRC_DIR)/bloomGameId && BUILD_DIR=$(BIN_DIR) make
 	@cd $(SRC_DIR)/bloomRa && BUILD_DIR=$(BIN_DIR) make
+	@cp $(SRC_DIR)/bloomRaProxy/bloom-ra-proxy $(BIN_DIR)/bloom-ra-proxy
 	@cp $(ROOT_DIR)/build/ra-core-policy.json $(BUILD_DIR)/.tmp_update/config/ra-core-policy.json
 
 # Build dependencies for installer
