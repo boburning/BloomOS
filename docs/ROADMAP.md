@@ -421,9 +421,11 @@ Planned work includes safe updates and rollback, optional synchronization and of
   verifies exact ROM identity and installed core SHA/policy without exposing
   ROM or account data and reports the current redacted authentication state;
   bounded default-core sessions now automate graceful lifecycle and save-flush
-  validation. Mini Plus preflight and a 10-second gpSP session pass. A physical
-  gpSP Softcore unlock and post-session server verification also pass. Physical
-  Rich Presence remains pending.
+  validation. Certification results now report the exact post-policy core and
+  SHA used by the session, so a GBA Hardcore request records mGBA rather than
+  the requested gpSP default. Mini Plus preflight and a 10-second gpSP session
+  pass. A physical gpSP Softcore unlock and post-session server verification
+  also pass. Physical Rich Presence remains pending.
 - [x] RA-26: enforce a dedicated CI regression gate for exact core/source
   policy, required RA fixtures, service-only proxy integration, immutable
   transport, Hardcore routing, redaction-sensitive shell behavior, and focused

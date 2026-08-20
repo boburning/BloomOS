@@ -132,6 +132,7 @@ cat >"$SDCARD/.tmp_update/bin/bloom-launch" <<'EOF'
 printf '%s\n' "$*" >>"$MOCK_LOG"
 case "$1" in
 create) printf '%s\n' '{}' >"$2" ;;
+get) printf '%s\n' gambatte_libretro.so ;;
 write-legacy) exit 1 ;;
 esac
 EOF
@@ -150,6 +151,8 @@ fi
 exit 0
 EOF
     chmod +x "$SDCARD/.tmp_update/bin/bloom-session"
+    mkdir -p "$SDCARD/RetroArch/.retroarch/cores"
+    printf core >"$SDCARD/RetroArch/.retroarch/cores/gambatte_libretro.so"
     cat >"$MOCK_BIN/pidof" <<'EOF'
 #!/bin/sh
 exit 0

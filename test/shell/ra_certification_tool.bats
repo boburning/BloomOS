@@ -5,6 +5,7 @@ setup() {
     mkdir -p "$SDCARD/.tmp_update/bin" "$SDCARD/Roms/GBA" "$SDCARD/RetroArch/.retroarch/cores"
     touch "$SDCARD/.bloom-dev" "$SDCARD/Roms/GBA/test.gba"
     printf core >"$SDCARD/RetroArch/.retroarch/cores/gpsp_libretro.so"
+    printf fallback >"$SDCARD/RetroArch/.retroarch/cores/mgba_libretro.so"
     game_id="$BATS_TEST_TMPDIR/game-id"
     cat >"$game_id" <<'SH'
 #!/bin/sh
@@ -13,11 +14,12 @@ SH
     ra="$BATS_TEST_TMPDIR/ra"
     jq_bin=$(command -v jq)
     core_sha=$(sha256sum "$SDCARD/RetroArch/.retroarch/cores/gpsp_libretro.so" | sed 's/[[:space:]].*//')
+    fallback_sha=$(sha256sum "$SDCARD/RetroArch/.retroarch/cores/mgba_libretro.so" | sed 's/[[:space:]].*//')
     cat >"$ra" <<SH
 #!/bin/sh
 case "\$1" in
 game) printf '%s\n' '{"schema":1,"status":"identified","ra_game_id":1234}' ;;
-cores) printf '%s\n' '{"schema":1,"entries":[{"system":"gba","core":"gpsp_libretro.so","binary_sha256":"$core_sha","bloom_ra_status":"best_effort"}]}' ;;
+cores) printf '%s\n' '{"schema":1,"entries":[{"system":"gba","core":"gpsp_libretro.so","binary_sha256":"$core_sha","bloom_ra_status":"best_effort"},{"system":"gba","core":"mgba_libretro.so","binary_sha256":"$fallback_sha","bloom_ra_status":"best_effort"}]}' ;;
 account) printf '%s\n' '{"schema":1,"authenticated":true}' ;;
 *) exit 2 ;;
 esac
@@ -27,9 +29,9 @@ SH
     export BLOOM_RA_BIN="$ra"
     export BLOOM_JQ_BIN="$jq_bin"
     smoke="$BATS_TEST_TMPDIR/smoke"
-    cat >"$smoke" <<'SH'
+    cat >"$smoke" <<SH
 #!/bin/sh
-printf '%s\n' '{"schema":1,"status":"passed","graceful_exit":true,"save_flush":true}'
+printf '%s\n' '{"schema":1,"status":"passed","selected_core":"mgba_libretro.so","selected_core_sha256":"$fallback_sha","graceful_exit":true,"save_flush":true}'
 SH
     chmod +x "$smoke"
     export BLOOM_GAME_SMOKE_BIN="$smoke"
@@ -56,6 +58,8 @@ SH
     [ "$status" -eq 0 ]
     [[ "$output" == *'"session_exit":"pass"'* ]]
     [[ "$output" == *'"save_flush":"pass"'* ]]
+    [[ "$output" == *'"core":"mgba_libretro.so"'* ]]
+    [[ "$output" == *"\"core_sha256\":\"$fallback_sha\""* ]]
     [[ "$output" == *'"unlock_test":"operator_required"'* ]]
 }
 
