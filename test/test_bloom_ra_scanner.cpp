@@ -8,9 +8,9 @@
 #include <fstream>
 
 extern "C" {
+#include "../src/bloomRa/bloom_ra.h"
 #include "../src/bloomRa/bloom_ra_catalog.h"
 #include "../src/bloomRa/bloom_ra_database.h"
-#include "../src/bloomRa/bloom_ra.h"
 #include "../src/bloomRa/bloom_ra_scanner.h"
 }
 
@@ -99,6 +99,28 @@ TEST_F(BloomRaScannerTest, UnsupportedSystemIsPersistedWithoutHashing)
                                  &result));
     EXPECT_STREQ("unsupported_system", result.status);
     EXPECT_EQ(0, result.identified);
+}
+
+TEST_F(BloomRaScannerTest, CancelMarkerInterruptsAtTheNextScanCheckpoint)
+{
+    auto cancel = root_ / "scan.cancel";
+    std::ofstream(cancel) << "";
+    BloomRaScanStats stats = {};
+    EXPECT_EQ(SQLITE_INTERRUPT,
+              bloom_ra_scan_interruption_for_test(nullptr, cancel.c_str(), &stats));
+    EXPECT_EQ(1, stats.canceled);
+    EXPECT_EQ(0, stats.paused);
+}
+
+TEST_F(BloomRaScannerTest, ActiveSessionPausesAtTheNextScanCheckpoint)
+{
+    auto session = root_ / "session.state";
+    std::ofstream(session) << "RUNNING\n";
+    BloomRaScanStats stats = {};
+    EXPECT_EQ(SQLITE_BUSY,
+              bloom_ra_scan_interruption_for_test(session.c_str(), nullptr, &stats));
+    EXPECT_EQ(0, stats.canceled);
+    EXPECT_EQ(1, stats.paused);
 }
 
 TEST_F(BloomRaScannerTest, PlaylistSkipsOnlyWhileItsFirstDiscSignalsAreUnchanged)
