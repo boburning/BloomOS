@@ -151,6 +151,29 @@ int bloom_ra_database_health(sqlite3 *database, int *version, int *indexed_games
     return result;
 }
 
+int bloom_ra_database_catalog_status(sqlite3 *database, char *status, unsigned long status_size)
+{
+    if (database == NULL || status == NULL || status_size == 0)
+        return SQLITE_MISUSE;
+    sqlite3_stmt *statement = NULL;
+    int result = sqlite3_prepare_v2(database, "SELECT status FROM catalog_state", -1, &statement, NULL);
+    if (result == SQLITE_OK && sqlite3_step(statement) == SQLITE_ROW) {
+        const char *value = (const char *)sqlite3_column_text(statement, 0);
+        unsigned long length = value == NULL ? 0 : (unsigned long)strlen(value);
+        if (length == 0 || length >= status_size)
+            result = SQLITE_CORRUPT;
+        else if (strcmp(value, "unavailable") != 0 && strcmp(value, "refreshing") != 0 &&
+                 strcmp(value, "ready") != 0 && strcmp(value, "stale") != 0 && strcmp(value, "error") != 0)
+            result = SQLITE_CORRUPT;
+        else
+            memcpy(status, value, length + 1);
+    }
+    else if (result == SQLITE_OK)
+        result = SQLITE_CORRUPT;
+    sqlite3_finalize(statement);
+    return result;
+}
+
 int bloom_ra_database_collection(sqlite3 *database, BloomRaCollectionVisitor visitor, void *context,
                                  unsigned long *count)
 {

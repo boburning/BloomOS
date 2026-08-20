@@ -340,8 +340,8 @@ Planned work includes safe updates and rollback, optional synchronization and of
 - [ ] RA-13: finish account/settings UI and authentication lifecycle. The
   canonical service, redacted status, hidden host login bootstrap, one-time
   password-to-token exchange, and device-local mode-`0600` JFFS2 token storage
-  are implemented and physically exercised with a disposable token; real RA
-  authentication and sign-out/settings UI remain pending.
+  are implemented and physically exercised with both a disposable token and a
+  real RA login on Mini Plus; sign-out/settings UI remain pending.
 - [ ] RA-18: ship the schema-1 `bloom-ra-proxy` adapter. Host coverage now
   proves absent-package degradation, bounded status/pending/cache translation,
   input rejection, and stop behavior without config mutation. Physical package
@@ -359,7 +359,8 @@ Planned work includes safe updates and rollback, optional synchronization and of
 - [ ] RA-24: add aggregate RA health and support-export diagnostics. Health now
   allowlists catalog/proxy counts and rejects or discards secrets, ROM paths,
   titles, award details, and unexpected fields. Bounded structured RA log export
-  remains pending.
+  remains pending. Native status now reports live redacted account, catalog, and
+  index state; Mini Plus validation confirmed the aggregate health path.
 - [ ] RA-25: add guarded RA certification tooling. Developer-mode preflight now
   verifies exact ROM identity and installed core SHA/policy without exposing
   ROM data; physical login, Rich Presence, Hardcore, lifecycle, save-flush, and

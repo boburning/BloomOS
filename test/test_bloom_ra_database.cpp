@@ -75,6 +75,20 @@ TEST_F(BloomRaDatabaseTest, HealthCountsOnlyIdentifiedRowsWithoutExposingGameDat
     EXPECT_EQ(1, identified);
 }
 
+TEST_F(BloomRaDatabaseTest, CatalogStatusIsBoundedAndAllowlisted)
+{
+    ASSERT_EQ(SQLITE_OK, bloom_ra_database_migrate(database_));
+    char status[32] = {};
+    ASSERT_EQ(SQLITE_OK, bloom_ra_database_catalog_status(database_, status, sizeof(status)));
+    EXPECT_STREQ("unavailable", status);
+    ASSERT_EQ(SQLITE_OK, sqlite3_exec(database_, "UPDATE catalog_state SET status='ready'", nullptr, nullptr, nullptr));
+    ASSERT_EQ(SQLITE_OK, bloom_ra_database_catalog_status(database_, status, sizeof(status)));
+    EXPECT_STREQ("ready", status);
+    ASSERT_EQ(SQLITE_OK,
+              sqlite3_exec(database_, "UPDATE catalog_state SET status='private-path-or-secret'", nullptr, nullptr, nullptr));
+    EXPECT_EQ(SQLITE_CORRUPT, bloom_ra_database_catalog_status(database_, status, sizeof(status)));
+}
+
 TEST(BloomRaDatabaseOpenTest, ConfiguresDurableDatabaseAndRejectsSymlinkBoundary)
 {
     auto root = std::filesystem::temp_directory_path() /

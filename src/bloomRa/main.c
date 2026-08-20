@@ -50,15 +50,37 @@ static void json_string(const char *value)
 
 static int print_status(void)
 {
-    BloomRaStatus status;
-    bloom_ra_get_status(&status);
-    printf("{\"schema\":%d,\"service\":\"bloom-ra\",\"enabled\":%s,\"state\":", status.schema,
-           status.enabled ? "true" : "false");
-    json_string(status.state);
+    BloomRaAccountStatus account;
+    char account_error[128] = {0};
+    if (bloom_ra_account_load(ACCOUNT_SETTINGS, ACCOUNT_CREDENTIALS, &account, account_error,
+                              sizeof(account_error)) != 0) {
+        fprintf(stderr, "{\"schema\":1,\"error\":{\"code\":\"account_state_invalid\"}}\n");
+        return 1;
+    }
+    sqlite3 *database = NULL;
+    int result = open_catalog(&database);
+    int version = 0, indexed = 0, identified = 0;
+    if (result == SQLITE_OK)
+        result = bloom_ra_database_health(database, &version, &indexed, &identified);
+    char catalog_status_buffer[32] = {0};
+    if (result == SQLITE_OK)
+        result = bloom_ra_database_catalog_status(database, catalog_status_buffer,
+                                                  sizeof(catalog_status_buffer));
+    sqlite3_close(database);
+    if (result != SQLITE_OK) {
+        fprintf(stderr, "{\"schema\":1,\"error\":{\"code\":\"database_unavailable\"}}\n");
+        return 1;
+    }
+    const char *state = !account.username[0]     ? "not_configured"
+                        : !account.enabled       ? "disabled"
+                        : !account.authenticated ? "attention_required"
+                                                 : "ready";
+    printf("{\"schema\":1,\"service\":\"bloom-ra\",\"enabled\":%s,\"state\":",
+           account.enabled ? "true" : "false");
+    json_string(state);
     printf(",\"catalog\":{\"status\":");
-    json_string(status.catalog_status);
-    printf("},\"indexed_games\":%lu,\"identified_games\":%lu}\n", status.indexed_games,
-           status.identified_games);
+    json_string(catalog_status_buffer);
+    printf("},\"indexed_games\":%d,\"identified_games\":%d}\n", indexed, identified);
     return 0;
 }
 
