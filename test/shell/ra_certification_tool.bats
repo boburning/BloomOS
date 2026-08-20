@@ -11,18 +11,21 @@ setup() {
 printf '%s\n' 'bloom-game-v1:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
 SH
     ra="$BATS_TEST_TMPDIR/ra"
+    jq_bin=$(command -v jq)
     core_sha=$(sha256sum "$SDCARD/RetroArch/.retroarch/cores/gpsp_libretro.so" | sed 's/[[:space:]].*//')
     cat >"$ra" <<SH
 #!/bin/sh
 case "\$1" in
 game) printf '%s\n' '{"schema":1,"status":"identified","ra_game_id":1234}' ;;
-cores) printf '%s\n' '{"schema":1,"entries":[{"binary_sha256":"$core_sha","bloom_ra_status":"best_effort"}]}' ;;
+cores) printf '%s\n' '{"schema":1,"entries":[{"system":"gba","core":"gpsp_libretro.so","binary_sha256":"$core_sha","bloom_ra_status":"best_effort"}]}' ;;
+account) printf '%s\n' '{"schema":1,"authenticated":true}' ;;
 *) exit 2 ;;
 esac
 SH
     chmod +x "$game_id" "$ra"
     export BLOOM_GAME_ID_BIN="$game_id"
     export BLOOM_RA_BIN="$ra"
+    export BLOOM_JQ_BIN="$jq_bin"
     export BLOOM_SD_ROOT="$SDCARD"
     export TOOL=/workspace/src/bloomRaTest/bloom-ra-test
 }
@@ -33,8 +36,18 @@ SH
     [ "$status" -eq 0 ]
     [[ "$output" == *'"identification":"pass"'* ]]
     [[ "$output" == *'"bloom_ra_status":"best_effort"'* ]]
+    [[ "$output" == *'"login":"pass"'* ]]
     [[ "$output" == *'"unlock_test":"operator_required"'* ]]
     [[ "$output" != *'/Roms/'* ]]
+}
+
+@test "certification preflight reports authentication attention without exposing account data" {
+    sed -i 's/"authenticated":true/"authenticated":false,"username":"PrivateUser"/' "$BLOOM_RA_BIN"
+    encoded=$(printf '%s' "$SDCARD/Roms/GBA/test.gba" | base64 | tr -d '\r\n')
+    run "$TOOL" --system GBA --rom-base64 "$encoded" --core gpsp
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'"login":"attention_required"'* ]]
+    [[ "$output" != *'PrivateUser'* ]]
 }
 
 @test "RA certification preflight requires developer mode and confines ROMs" {

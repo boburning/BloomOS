@@ -4,6 +4,7 @@ set -eu
 SD_ROOT=${BLOOM_SD_ROOT:-/mnt/SDCARD}
 BLOOM_GAME_ID=${BLOOM_GAME_ID_BIN:-$SD_ROOT/.tmp_update/bin/bloom-game-id}
 BLOOM_RA=${BLOOM_RA_BIN:-$SD_ROOT/.tmp_update/bin/bloom-ra}
+JQ_BIN=${BLOOM_JQ_BIN:-$SD_ROOT/.tmp_update/bin/jq}
 
 fail() {
     printf '{"schema":1,"service":"bloom-ra-test","error":{"code":"%s"}}\n' "$1"
@@ -24,19 +25,22 @@ esac
 rom=$(printf '%s' "$4" | base64 -d 2>/dev/null) || fail invalid_rom_encoding
 case "$rom" in "$SD_ROOT/Roms/$folder/"*) ;; *) fail rom_outside_system ;; esac
 [ -f "$rom" ] && [ ! -L "$rom" ] || fail invalid_rom
-[ -x "$BLOOM_GAME_ID" ] && [ -x "$BLOOM_RA" ] || fail service_unavailable
+[ -x "$BLOOM_GAME_ID" ] && [ -x "$BLOOM_RA" ] && [ -x "$JQ_BIN" ] || fail service_unavailable
 
 game_id=$("$BLOOM_GAME_ID" "$system" "$rom" 2>/dev/null) || fail game_id_failed
 ra=$("$BLOOM_RA" game "$game_id" 2>/dev/null) || fail identification_failed
-case "$ra" in *'"status":"identified"'*) identification=pass ;; *) identification=unmatched ;; esac
+identification=$(printf '%s' "$ra" | "$JQ_BIN" -er 'if .status == "identified" and ((.ra.game_id // .ra_game_id // 0) > 0) then "pass" else "unmatched" end' 2>/dev/null) || fail identification_invalid
+
+account=$("$BLOOM_RA" account status 2>/dev/null) || fail account_unavailable
+login=$(printf '%s' "$account" | "$JQ_BIN" -er 'if .authenticated == true then "pass" else "attention_required" end' 2>/dev/null) || fail account_invalid
 
 core_file="$SD_ROOT/RetroArch/.retroarch/cores/${6}_libretro.so"
 [ -f "$core_file" ] && [ ! -L "$core_file" ] || fail core_not_found
 core_sha=$(sha256sum "$core_file" | sed 's/[[:space:]].*//')
 policy=$("$BLOOM_RA" cores 2>/dev/null) || fail core_policy_unavailable
-entry=$(printf '%s' "$policy" | tr '{' '\n' | grep -F "\"binary_sha256\":\"$core_sha\"" | head -n 1 || true)
-core_status=$(printf '%s' "$entry" | sed -n 's/.*"bloom_ra_status":"\([a-z_]*\)".*/\1/p')
-[ -n "$core_status" ] || core_status=untested
+core_status=$(printf '%s' "$policy" | "$JQ_BIN" -er --arg system "$system" --arg core "${6}_libretro.so" --arg sha "$core_sha" \
+    '[.entries[] | select(.system == $system and .core == $core and .binary_sha256 == $sha) | .bloom_ra_status][0] // "untested"' 2>/dev/null) || fail core_policy_invalid
+case "$core_status" in verified|best_effort|incompatible|untested) ;; *) fail core_policy_invalid ;; esac
 
-printf '{"schema":1,"service":"bloom-ra-test","device":"host-reported-separately","system":"%s","core":"%s_libretro.so","core_sha256":"%s","bloom_ra_status":"%s","identification":"%s","login":"not_run","rich_presence":"not_run","hardcore":"not_run","session_exit":"not_run","save_flush":"not_run","unlock_test":"operator_required"}\n' \
-    "$2" "$6" "$core_sha" "$core_status" "$identification"
+printf '{"schema":1,"service":"bloom-ra-test","device":"host-reported-separately","system":"%s","core":"%s_libretro.so","core_sha256":"%s","bloom_ra_status":"%s","identification":"%s","login":"%s","rich_presence":"not_run","hardcore":"not_run","session_exit":"not_run","save_flush":"not_run","unlock_test":"operator_required"}\n' \
+    "$2" "$6" "$core_sha" "$core_status" "$identification" "$login"

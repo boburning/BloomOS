@@ -412,7 +412,8 @@ Planned work includes safe updates and rollback, optional synchronization and of
   config-generation failures; broader network/TLS failure coverage remains pending.
 - [ ] RA-25: add guarded RA certification tooling. Developer-mode preflight now
   verifies exact ROM identity and installed core SHA/policy without exposing
-  ROM data; physical login, Rich Presence, Hardcore, lifecycle, save-flush, and
+  ROM or account data and reports the current redacted authentication state;
+  physical Rich Presence, repeatable lifecycle/save-flush automation, and
   explicit operator unlock execution remain pending.
 - [x] RA-26: enforce a dedicated CI regression gate for exact core/source
   policy, required RA fixtures, service-only proxy integration, immutable
