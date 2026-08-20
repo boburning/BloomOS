@@ -1,0 +1,37 @@
+{
+  "schema": 1,
+  "state": "pending",
+  "bloom_commit": null,
+  "device": null,
+  "device_revision": null,
+  "core": "gpsp_libretro.so",
+  "core_sha256": "519e19c015a27ac82ca32f026c9f0c58b407ce31e4512495de19bd1828452587",
+  "operator": null,
+  "tested_at": null,
+  "fixtures": [],
+  "results": {
+    "identification": "pending",
+    "wrong_hash_rejection": "pending",
+    "softcore_unlocks": "pending",
+    "representative_memory": "pending",
+    "save_ram": "pending",
+    "rich_presence": "pending",
+    "leaderboards": "pending",
+    "hardcore": "pending",
+    "reset": "pending",
+    "state_policy": "pending",
+    "rtc": "pending",
+    "session_lifecycle": "pending",
+    "save_flush": "pending",
+    "network_loss_restore": "pending",
+    "performance": "pending"
+  },
+  "metrics": {
+    "launch_ms": null,
+    "peak_rss_kib": null,
+    "average_fps": null,
+    "audio_notes": null,
+    "mgba_comparison": null
+  },
+  "notes": "Template only; this is not certification evidence."
+}
