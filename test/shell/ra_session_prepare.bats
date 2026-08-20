@@ -27,6 +27,7 @@ get)
     case "$3" in
     game_id) printf '%s\n' bloom-game-v1:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ;;
     system_id) printf '%s\n' gb ;;
+    rom_path) printf '%s\n' '/mnt/SDCARD/Roms/GB/Fixture.gb' ;;
     core) printf '%s\n' "${RA_REQUEST_CORE:-gambatte_libretro.so}" ;;
     *) exit 1 ;;
     esac
@@ -52,9 +53,14 @@ account:launch)
     printf '%s\n' '{"schema":1,"enabled":true,"authenticated":true,"username":"BloomUser","mode":"softcore","offline_casual":false}'
     ;;
 game:*)
-    if [ "${RA_GAME_MISSING:-0}" -eq 1 ]; then id=null; badge=false; else id=1234; badge=true; fi
-    printf '{"schema":1,"has_ra_badge":%s,"ra":{"game_id":%s}}\n' "$badge" "$id"
+    if [ "${RA_GAME_MISSING:-0}" -eq 1 ] && { [ ! -f "$BLOOM_TEST_ROOT/lazy-scanned" ] || [ "${RA_LAZY_SCAN_MATCH:-0}" -ne 1 ]; }; then
+        id=null; badge=false; game_status=unindexed
+    else
+        id=1234; badge=true; game_status=identified
+    fi
+    printf '{"schema":1,"status":"%s","has_ra_badge":%s,"ra":{"game_id":%s}}\n' "$game_status" "$badge" "$id"
     ;;
+scan:--game) touch "$BLOOM_TEST_ROOT/lazy-scanned"; printf '%s\n' '{"schema":1,"processed":1}' ;;
 cores:)
     status=${RA_CORE_STATUS:-best_effort}
     hardcore=${RA_HARDCORE_STATUS:-untested}
@@ -102,6 +108,16 @@ teardown() { teardown_bloom_fixture; }
     [[ "$output" == *'"enabled":false'* ]]
     grep -F 'false disabled false false 0 not_applicable' "$MOCK_LOG"
     [ ! -e "$BLOOM_SESSION_ROOT/ra.cfg" ]
+}
+
+@test "unindexed launch performs one bounded identification attempt before resolving RA" {
+    export RA_GAME_MISSING=1
+    export RA_LAZY_SCAN_MATCH=1
+    run "$PREPARE" "$REQUEST"
+    [ "$status" -eq 0 ]
+    [ -f "$BLOOM_TEST_ROOT/lazy-scanned" ]
+    [[ "$output" == *'"enabled":true'* ]]
+    grep -F 'true softcore false true 1234 best_effort' "$MOCK_LOG"
 }
 
 @test "unknown Hardcore game fails before launch without downgrading" {

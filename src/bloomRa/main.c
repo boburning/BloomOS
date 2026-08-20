@@ -4,6 +4,8 @@
 #include "bloom_ra_database.h"
 #include "bloom_ra_scanner.h"
 
+#include "../bloomGameId/bloom_game_id.h"
+
 #include "cjson/cJSON.h"
 
 #include <ctype.h>
@@ -449,6 +451,49 @@ static int scan_run(const ScanSystem *selected, int force)
     return result == SQLITE_OK || result == SQLITE_INTERRUPT || result == SQLITE_BUSY ? 0 : 1;
 }
 
+static int scan_game_at_launch(const char *game_id, const char *system_id, const char *rom_path)
+{
+    const ScanSystem *selected = NULL;
+    for (size_t i = 0; i < sizeof(scan_systems) / sizeof(scan_systems[0]); i++) {
+        if (strcmp(scan_systems[i].system, system_id) == 0) {
+            selected = &scan_systems[i];
+            break;
+        }
+    }
+    char prefix[PATH_MAX];
+    char expected_game_id[BLOOM_GAME_ID_LENGTH + 1];
+    char normalized[PATH_MAX];
+    char error[128] = {0};
+    if (selected == NULL || !bloom_game_id_valid(game_id) ||
+        snprintf(prefix, sizeof(prefix), "/mnt/SDCARD/Roms/%s/", selected->folder) >= (int)sizeof(prefix) ||
+        strncmp(rom_path, prefix, strlen(prefix)) != 0 || rom_path[strlen(prefix)] == '\0' ||
+        bloom_game_id_create(system_id, rom_path, expected_game_id, sizeof(expected_game_id), normalized,
+                             sizeof(normalized), error, sizeof(error)) != 0 ||
+        strcmp(expected_game_id, game_id) != 0) {
+        fprintf(stderr, "{\"schema\":1,\"error\":{\"code\":\"scan_game_invalid\"}}\n");
+        return 1;
+    }
+    if (acquire_scan_lock() != 0) {
+        fprintf(stderr, "{\"schema\":1,\"error\":{\"code\":\"scan_already_running\"}}\n");
+        return 1;
+    }
+    sqlite3 *database = NULL;
+    int result = open_catalog(&database);
+    BloomRaScanResult scan = {0};
+    if (result == SQLITE_OK)
+        result = bloom_ra_scan_game(database, game_id, system_id, rom_path, "/mnt/SDCARD/Roms", normalized, 0, &scan);
+    if (database != NULL)
+        sqlite3_close(database);
+    release_scan_lock();
+    if (result != SQLITE_OK) {
+        fprintf(stderr, "{\"schema\":1,\"error\":{\"code\":\"scan_game_failed\"}}\n");
+        return 1;
+    }
+    printf("{\"schema\":1,\"processed\":1,\"skipped\":%s,\"identified\":%s}\n",
+           scan.skipped ? "true" : "false", scan.identified ? "true" : "false");
+    return 0;
+}
+
 static int scan_command(int argc, char **argv)
 {
     if (argc == 1 && strcmp(argv[0], "--status") == 0)
@@ -466,6 +511,8 @@ static int scan_command(int argc, char **argv)
         fprintf(stderr, "{\"schema\":1,\"error\":{\"code\":\"unsupported_system\"}}\n");
         return 1;
     }
+    if (argc == 4 && strcmp(argv[0], "--game") == 0)
+        return scan_game_at_launch(argv[1], argv[2], argv[3]);
     return 2;
 }
 
@@ -575,7 +622,7 @@ static int print_catalog_candidates(void)
 
 static int usage(void)
 {
-    fprintf(stderr, "Usage: bloom-ra {status|game BLOOM_GAME_ID|collection|cores|account status|sign-out|set FIELD VALUE|account configure USERNAME MODE disabled|automatic|catalog candidates|import-console|import-installed CONSOLE REVISION|scan --changed|--all|--system SYSTEM|--status|--cancel}\n");
+    fprintf(stderr, "Usage: bloom-ra {status|game BLOOM_GAME_ID|collection|cores|account status|sign-out|set FIELD VALUE|account configure USERNAME MODE disabled|automatic|catalog candidates|import-console|import-installed CONSOLE REVISION|scan --changed|--all|--system SYSTEM|--game GAME_ID SYSTEM ROM_PATH|--status|--cancel}\n");
     return 2;
 }
 
