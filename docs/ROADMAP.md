@@ -407,8 +407,9 @@ Planned work includes safe updates and rollback, optional synchronization and of
   include that redacted log. Native status reports live redacted account,
   catalog, and index state. Mini Plus validation confirmed two structured
   session events, enforced JFFS2 mode `0600`, forbidden-data absence, and an
-  identical allowlisted support-export copy. Broader diagnostic failure-category
-  coverage remains pending.
+  identical allowlisted support-export copy. Preparation failures now emit only
+  bounded categories for account, request, core-policy, Hardcore, proxy, and
+  config-generation failures; broader network/TLS failure coverage remains pending.
 - [ ] RA-25: add guarded RA certification tooling. Developer-mode preflight now
   verifies exact ROM identity and installed core SHA/policy without exposing
   ROM data; physical login, Rich Presence, Hardcore, lifecycle, save-flush, and

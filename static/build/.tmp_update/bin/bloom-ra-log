@@ -32,7 +32,16 @@ case "${1:-}" in
         safe_word "$detail" || fail "invalid detail"
         line=$(printf '{"schema":1,"event":"finish","outcome":"%s","detail":"%s"}' "$outcome" "$detail")
         ;;
-    *) fail "expected {launch|finish}" ;;
+    prepare-failure)
+        [ "$#" -eq 2 ] || fail "prepare-failure expects CATEGORY"
+        category=$2
+        case "$category" in
+            account_invalid|hardcore_unidentified|request_invalid|core_unavailable|core_policy_invalid|hardcore_incompatible|proxy_unavailable|config_generation_failed) ;;
+            *) fail "invalid failure category" ;;
+        esac
+        line=$(printf '{"schema":1,"event":"prepare_failure","category":"%s"}' "$category")
+        ;;
+    *) fail "expected {launch|finish|prepare-failure}" ;;
 esac
 
 [ ! -L "$LOG_DIR" ] && [ ! -L "$LOG_FILE" ] && [ ! -L "$ROTATED" ] || fail "log path is unsafe"

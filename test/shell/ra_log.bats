@@ -12,15 +12,17 @@ setup() {
 
 teardown() { teardown_bloom_fixture; }
 
-@test "logger writes only allowlisted launch and finish fields" {
+@test "logger writes only allowlisted launch finish and preparation failure fields" {
     "$LOGGER" launch softcore direct gpsp_libretro.so "$SHA" best_effort
     "$LOGGER" finish stopped 60
+    "$LOGGER" prepare-failure proxy_unavailable
 
     log="$BLOOM_RA_LOG_DIR/retroachievements.log"
     [ "$(stat -c %a "$log")" = 600 ]
-    [ "$(wc -l <"$log")" -eq 2 ]
+    [ "$(wc -l <"$log")" -eq 3 ]
     grep -F '"core":"gpsp_libretro.so"' "$log"
     grep -F '"detail":"60"' "$log"
+    grep -F '"category":"proxy_unavailable"' "$log"
     ! grep -E 'token|username|rom|game_id|path' "$log"
 }
 
@@ -28,6 +30,8 @@ teardown() { teardown_bloom_fixture; }
     run "$LOGGER" launch softcore direct 'private/path_libretro.so' "$SHA" best_effort
     [ "$status" -eq 1 ]
     run "$LOGGER" finish failed 'private reason'
+    [ "$status" -eq 1 ]
+    run "$LOGGER" prepare-failure 'private/reason'
     [ "$status" -eq 1 ]
 
     mkdir -p "$BLOOM_TEST_ROOT/outside"

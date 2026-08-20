@@ -91,12 +91,28 @@ teardown() { teardown_bloom_fixture; }
 }
 
 @test "unknown Hardcore game fails before launch without downgrading" {
+    export BLOOM_RA_LOG_BIN="$MOCK_BIN/bloom-ra-log"
+    printf '#!/bin/sh\nprintf "log:%%s\\n" "$*" >>"$MOCK_LOG"\n' >"$BLOOM_RA_LOG_BIN"
+    chmod +x "$BLOOM_RA_LOG_BIN"
     export RA_GAME_MISSING=1
     sed -i 's/"mode":"softcore"/"mode":"hardcore"/' "$BLOOM_RA_BIN"
     run "$PREPARE" "$REQUEST"
     [ "$status" -eq 1 ]
     [[ "$output" == *'Hardcore requires exact game identification'* ]]
     ! grep -F 'false disabled' "$MOCK_LOG"
+    grep -F 'log:prepare-failure hardcore_unidentified' "$MOCK_LOG"
+}
+
+@test "offline casual request fails explicitly and records only an allowlisted category" {
+    export BLOOM_RA_LOG_BIN="$MOCK_BIN/bloom-ra-log"
+    printf '#!/bin/sh\nprintf "log:%%s\\n" "$*" >>"$MOCK_LOG"\n' >"$BLOOM_RA_LOG_BIN"
+    chmod +x "$BLOOM_RA_LOG_BIN"
+    sed -i 's/"offline_casual":false/"offline_casual":true/' "$BLOOM_RA_BIN"
+    run "$PREPARE" "$REQUEST"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *'Offline Casual proxy routing is not yet available'* ]]
+    grep -F 'log:prepare-failure proxy_unavailable' "$MOCK_LOG"
+    ! grep -E '^log:.*(BloomUser|fixture-token)' "$MOCK_LOG"
 }
 
 @test "incompatible core disables softcore RA without blocking the game" {
