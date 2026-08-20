@@ -601,6 +601,7 @@ int bloom_launch_write_legacy(const char *request_path, const char *command_path
         return -1;
     cJSON *launcher = cJSON_GetObjectItemCaseSensitive(request, "launcher");
     cJSON *rom_path = cJSON_GetObjectItemCaseSensitive(request, "rom_path");
+    cJSON *configs = cJSON_GetObjectItemCaseSensitive(request, "append_configs");
     if (!legacy_representable(launcher->valuestring) || !legacy_representable(rom_path->valuestring)) {
         set_error(error, error_size, "path cannot cross the legacy MainUI boundary");
         cJSON_Delete(request);
@@ -623,9 +624,21 @@ int bloom_launch_write_legacy(const char *request_path, const char *command_path
         return -1;
     }
     FILE *file = fdopen(fd, "w");
-    int failed = file == NULL || fputs("LD_PRELOAD=/mnt/SDCARD/miyoo/lib/libpadsp.so ", file) == EOF ||
-                 write_legacy_quoted(file, launcher->valuestring) != 0 || fputc(' ', file) == EOF ||
+    int failed = file == NULL || fputs("LD_PRELOAD=/mnt/SDCARD/miyoo/lib/libpadsp.so ", file) == EOF;
+    if (!failed && cJSON_GetArraySize(configs) > 0) {
+        if (!path_under(request_path, "/tmp/bloom-session/") || !legacy_representable(request_path)) {
+            failed = 1;
+            set_error(error, error_size, "session request cannot cross the legacy MainUI boundary");
+        }
+        else {
+            failed = fputs("\"/mnt/SDCARD/.tmp_update/bin/bloom-launch-run\" ", file) == EOF ||
+                     write_legacy_quoted(file, request_path) != 0 || fputc('\n', file) == EOF;
+        }
+    }
+    else if (!failed) {
+        failed = write_legacy_quoted(file, launcher->valuestring) != 0 || fputc(' ', file) == EOF ||
                  write_legacy_quoted(file, rom_path->valuestring) != 0 || fputc('\n', file) == EOF;
+    }
     if (!failed)
         failed = fflush(file) != 0 || fsync(fd) != 0 || fchmod(fd, 0755) != 0;
     if (file != NULL)

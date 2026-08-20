@@ -19,7 +19,13 @@ case "${1:-}" in
         launcher="$2"
         append_config="$3"
         valid_launcher "$launcher" || fail "launcher path is unsafe"
-        case "$append_config" in /tmp/reset.cfg|/tmp/auto_load_state.cfg) ;; *) fail "append config is unsupported" ;; esac
+        case "$append_config" in
+            /tmp/reset.cfg|/tmp/auto_load_state.cfg) ;;
+            "${BLOOM_SESSION_ROOT:-/tmp/bloom-session}/ra.cfg")
+                [ -f "$append_config" ] && [ ! -L "$append_config" ] || fail "append config is unavailable"
+                ;;
+            *) fail "append config is unsupported" ;;
+        esac
         directory="$(dirname "$launcher")"
         temporary="$directory/.bloom-launch-override-$$.sh"
         [ ! -e "$temporary" ] || fail "temporary launcher already exists"
