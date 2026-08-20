@@ -427,6 +427,14 @@ No core/device is `verified` from host tests. Update and rollback preserve the
 catalog and proxy award queue. Stable completion requires the Definition of
 Done tracked in the RA-00 epic and child issues.
 
+RA-26 adds a dedicated pull-request/merge-queue gate for all
+RetroAchievements-sensitive paths. It revalidates exact core SHAs and evidence
+rules, immutable proxy sources, dependency revisions, the required regression
+fixture set, service-only proxy integration, transport immutability, Hardcore
+direct routing, and session-only custom-host configuration. The focused shell
+matrix runs without production RA network access. Native/ASan behavior remains
+covered by Bloom's normal test workflow.
+
 ## Reference snapshot (2026-08-19)
 
 RA-00 inspected these current primary repositories before implementation:
