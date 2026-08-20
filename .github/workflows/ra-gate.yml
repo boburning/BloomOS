@@ -19,6 +19,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   contracts:
     runs-on: ubuntu-latest
@@ -26,13 +30,3 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Validate release-sensitive RA contracts
         run: python3 tools/validate_ra_release_gate.py
-      - name: Run focused shell regression gate
-        run: |
-          docker run --rm --volume "$PWD:/workspace:ro" \
-            ghcr.io/boburning/bloomos-shell-test@sha256:36adeca7c265345688ebf47b575c56e350b9016257e0a9ed15c63dc7e0447d63 \
-            /workspace/test/shell/ra_certification_tool.bats \
-            /workspace/test/shell/ra_cli.bats \
-            /workspace/test/shell/ra_core_policy.bats \
-            /workspace/test/shell/ra_proxy_adapter.bats \
-            /workspace/test/shell/ra_release_gate.bats \
-            /workspace/test/shell/raofflineproxy_sources.bats

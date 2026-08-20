@@ -4,8 +4,11 @@ on:
   pull_request:
     paths:
       - '.github/workflows/shell-test.yml'
+      - '.github/workflows/ra-gate.yml'
       - 'Makefile'
       - 'src/**/*.sh'
+      - 'src/bloomLaunch/**'
+      - 'src/bloomRa/**'
       - 'src/bloomRaProxy/**'
       - 'src/bloomRaTest/**'
       - 'static/**/*.sh'
@@ -17,6 +20,7 @@ on:
       - 'tools/shell_test_inputs.py'
       - 'tools/legacy_manifest.py'
       - 'build/core-manifest.json'
+      - 'build/ra-core-policy.json'
       - 'build/dependencies.lock'
       - 'build/openbor/**'
       - 'build/pixelreader/**'
@@ -33,6 +37,10 @@ on:
 
 permissions:
   contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   shell-test:
