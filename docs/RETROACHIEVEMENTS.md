@@ -425,6 +425,12 @@ startup it remains only until the service stops so the first proxied login can
 be served. RAOfflineProxy remains responsible for its own authenticated cache
 records and pending-award integrity.
 
+`bloomctl achievements proxy pending` returns only aggregate state: pending
+count, proxy running state, last observed online state, and one of `clear`,
+`pending`, `waiting_for_network`, or `authentication_required`. It never lists
+achievement names. Upstream does not currently expose a durable last-flush
+record, so Bloom does not invent one from logs or proxy database internals.
+
 ## Original Mini and offline behavior
 
 Consumers query network capability instead of hardcoding models. With no usable

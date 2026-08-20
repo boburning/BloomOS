@@ -427,6 +427,12 @@ Planned work includes safe updates and rollback, optional synchronization and of
   Mini Plus physically cached RA Game ID 8038 over verified TLS and reported it
   through the adapter. UI progress/cancel presentation and
   Favorites/Recent/all selectors remain.
+- [ ] RA-22: add pending-award UX. The public aggregate command now separates
+  clear, pending, waiting-for-network, and authentication-required states while
+  exposing only pending count and bounded transport booleans. Bloom does not
+  parse upstream's database or claim a last-flush result that upstream does not
+  expose. A graphical settings/detail surface and a real queued-award flush
+  remain pending.
 - [ ] RA-24: add aggregate RA health and support-export diagnostics. Health now
   allowlists catalog/proxy counts and rejects or discards secrets, ROM paths,
   titles, award details, and unexpected fields. Session launch/finish diagnostics

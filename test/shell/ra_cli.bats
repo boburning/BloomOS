@@ -27,7 +27,7 @@ printf '%s\n' "$1" >"$BLOOM_TEST_ROOT/proxy-args"
 printf 'bloom-ra-proxy %s\n' "$*" >>"$MOCK_LOG"
 case "$1" in
 status) printf '%s\n' '{"schema":1,"service":"bloom-ra-proxy","installed":false}' ;;
-pending) printf '%s\n' '{"schema":1,"service":"bloom-ra-proxy","pending_awards":0}' ;;
+pending) printf '%s\n' '{"schema":1,"service":"bloom-ra-proxy","pending_awards":0,"online":false,"running":false,"state":"clear"}' ;;
 cache-rom|cache-system) printf '%s\n' '{"schema":1,"service":"bloom-ra-proxy","cached":true}' ;;
 *) exit 2 ;;
 esac
@@ -127,6 +127,7 @@ teardown() {
     run sh /workspace/static/build/.tmp_update/bin/bloomctl achievements proxy pending
     [ "$status" -eq 0 ]
     [[ "$output" == *'"pending_awards":0'* ]]
+    [[ "$output" == *'"state":"clear"'* ]]
     [ "$(cat "$BLOOM_TEST_ROOT/proxy-args")" = pending ]
 }
 
