@@ -244,6 +244,12 @@ account status` reports only configured/enabled/authenticated/mode booleans and
 never returns the username or token. Network login/UI wiring will pass an
 authenticated token into this boundary without placing secrets in argv.
 
+Tweaks exposes the graphical account/settings surface on every Mini family
+device. It consumes only the redacted account and aggregate proxy contracts,
+delegates mutations to `bloomctl`, and directs sign-in to Bloom's computer-side
+one-time password-to-token helper. It never reads or stores a password, username,
+token, proxy database, ROM path, or individual award detail.
+
 ## Structured launch policy
 
 Schema-1 `BloomLaunchRequest` accepts a strict `achievements` object containing

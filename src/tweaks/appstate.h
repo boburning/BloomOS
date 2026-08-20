@@ -59,6 +59,8 @@ static List _menu_date_time;
 static List _menu_system_display;
 static List _menu_user_blue_light;
 static List _menu_system_startup;
+static List _menu_retroachievements;
+static List _menu_ra_offline_cache;
 static List _menu_button_action;
 static List _menu_button_action_mainui_menu;
 static List _menu_button_action_ingame_menu;
@@ -80,6 +82,8 @@ void menu_free_all(void)
     list_free(&_menu_date_time);
     list_free(&_menu_system_display);
     list_free(&_menu_system_startup);
+    list_free(&_menu_retroachievements);
+    list_free(&_menu_ra_offline_cache);
     list_free(&_menu_button_action);
     list_free(&_menu_button_action_mainui_menu);
     list_free(&_menu_button_action_ingame_menu);
