@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "bloom_base_commit": "4f7cbdbd",
+  "device_family": "miyoo-mini-plus",
+  "tested_at": "2026-08-20T03:20:00Z",
+  "operator": "boburning",
+  "test_scope": "ra03-playlist-dependency-schema-v2",
+  "results": {
+    "schema_v1_to_v2_migration": "pass",
+    "existing_rows_before": 13,
+    "existing_rows_after": 13,
+    "dependency_columns": 2,
+    "health_after_migration": "ready",
+    "first_playlist_scan_skipped": 2,
+    "second_playlist_scan_skipped": 3,
+    "playlist_dependency_size_persisted": "pass",
+    "temporary_playlist_removed": "pass",
+    "temporary_index_row_removed": "pass"
+  },
+  "privacy": {
+    "rom_path_or_title_recorded": false,
+    "content_hash_recorded": false,
+    "credential_recorded": false
+  },
+  "notes": "A backed-up live schema-v1 catalog migrated transactionally to v2 on the Mini Plus with every existing row preserved. A temporary playlist referencing an existing operator-owned CHD was hashed on the first changed scan and skipped on the second because both playlist and first-disc signals were unchanged. The temporary playlist and exact row were removed; the durable catalog remains at schema v2."
+}

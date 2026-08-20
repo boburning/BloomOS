@@ -332,8 +332,9 @@ Planned work includes safe updates and rollback, optional synchronization and of
   CHD/PBP bridge produces the authoritative hash for a real operator-owned CHD
   on both the host and Mini Plus, with matching evidence. A real two-disc PS1
   playlist now validates upstream first-disc semantics on the host and Plus
-  while rejecting unconfined first entries. Guarded PBP and remaining
-  archive-boundary fixtures are still pending.
+  while rejecting unconfined first entries. Schema-v2 dependency signals also
+  skip unchanged playlists without trusting the `.m3u` file alone. Guarded PBP
+  and remaining archive-boundary fixtures are still pending.
 - [ ] RA-04: finish the production catalog fetch path. Transactional full-console
   import and a secure installed-game development refresh bridge are implemented;
   Mini Plus validation persists ten exact RA matches offline. The bridge now

@@ -44,7 +44,7 @@ static int bridge_hash(uint32_t console_id, const char *path, char hash[33])
     return result;
 }
 
-static int validate_playlist_first_disc(const char *playlist, char *error, size_t error_size)
+static int validate_playlist_first_disc(const char *playlist, struct stat *dependency, char *error, size_t error_size)
 {
     FILE *file = fopen(playlist, "rb");
     if (file == NULL) {
@@ -80,7 +80,8 @@ static int validate_playlist_first_disc(const char *playlist, char *error, size_
         int written = snprintf(candidate, sizeof(candidate), "%.*s/%s", (int)(slash - playlist), playlist, line);
         char resolved[PATH_MAX];
         fclose(file);
-        if (written < 0 || (size_t)written >= sizeof(candidate) || !path_in_active_root(candidate, resolved)) {
+        if (written < 0 || (size_t)written >= sizeof(candidate) || !path_in_active_root(candidate, resolved) ||
+            (dependency != NULL && stat(resolved, dependency) != 0)) {
             set_error(error, error_size, "playlist entry escapes the ROM root or is not a regular file");
             return -1;
         }
@@ -89,6 +90,34 @@ static int validate_playlist_first_disc(const char *playlist, char *error, size_
     fclose(file);
     set_error(error, error_size, "playlist has no bounded disc entry");
     return -1;
+}
+
+int bloom_ra_playlist_dependency(const char *playlist_path, const char *rom_root, int64_t *size, int64_t *mtime,
+                                 char *error, size_t error_size)
+{
+    if (playlist_path == NULL || rom_root == NULL || size == NULL || mtime == NULL)
+        return -1;
+    struct stat root_status;
+    if (lstat(rom_root, &root_status) != 0 || !S_ISDIR(root_status.st_mode) || S_ISLNK(root_status.st_mode) ||
+        realpath(rom_root, active_hash_root) == NULL) {
+        set_error(error, error_size, "ROM root is unavailable or unsafe");
+        active_hash_root[0] = '\0';
+        return -1;
+    }
+    char playlist[PATH_MAX];
+    struct stat dependency;
+    int result = path_in_active_root(playlist_path, playlist)
+                     ? validate_playlist_first_disc(playlist, &dependency, error, error_size)
+                     : -1;
+    if (result == 0) {
+        *size = (int64_t)dependency.st_size;
+        *mtime = (int64_t)dependency.st_mtime;
+    }
+    else if (error != NULL && error[0] == '\0') {
+        set_error(error, error_size, "playlist path escapes the ROM root or is not a regular file");
+    }
+    active_hash_root[0] = '\0';
+    return result;
 }
 
 static bool path_in_active_root(const char *path, char resolved[PATH_MAX])
@@ -302,7 +331,7 @@ int bloom_ra_hash_file(const char *system_id, const char *rom_path, const char *
                         (strcasecmp(dot, ".chd") == 0 || strcasecmp(dot, ".pbp") == 0 ||
                          strcasecmp(dot, ".m3u") == 0);
     if (external_disc) {
-        if (strcasecmp(dot, ".m3u") == 0 && validate_playlist_first_disc(resolved_path, error, error_size) != 0) {
+        if (strcasecmp(dot, ".m3u") == 0 && validate_playlist_first_disc(resolved_path, NULL, error, error_size) != 0) {
             free(archive_content);
             active_hash_root[0] = '\0';
             return -1;

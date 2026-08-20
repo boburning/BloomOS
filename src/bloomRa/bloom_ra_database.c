@@ -68,7 +68,7 @@ int bloom_ra_database_version(sqlite3 *database, int *version)
     return result;
 }
 
-static int validate_schema(sqlite3 *database)
+static int validate_tables(sqlite3 *database)
 {
     static const char *tables[] = {"schema_version", "catalog_state", "ra_games", "ra_hashes", "library_games"};
     for (size_t i = 0; i < sizeof(tables) / sizeof(tables[0]); i++) {
@@ -78,6 +78,29 @@ static int validate_schema(sqlite3 *database)
             return result == SQLITE_OK ? SQLITE_CORRUPT : result;
     }
     return SQLITE_OK;
+}
+
+static int validate_schema(sqlite3 *database)
+{
+    int result = validate_tables(database);
+    if (result != SQLITE_OK)
+        return result;
+    sqlite3_stmt *statement = NULL;
+    result = sqlite3_prepare_v2(database, "PRAGMA table_info(library_games)", -1, &statement, NULL);
+    if (result != SQLITE_OK)
+        return result;
+    int dependency_size = 0;
+    int dependency_mtime = 0;
+    int step;
+    while ((step = sqlite3_step(statement)) == SQLITE_ROW) {
+        const unsigned char *name = sqlite3_column_text(statement, 1);
+        dependency_size |= name != NULL && strcmp((const char *)name, "dependency_size") == 0;
+        dependency_mtime |= name != NULL && strcmp((const char *)name, "dependency_mtime") == 0;
+    }
+    sqlite3_finalize(statement);
+    if (step != SQLITE_DONE)
+        return step;
+    return dependency_size && dependency_mtime ? SQLITE_OK : SQLITE_CORRUPT;
 }
 
 int bloom_ra_database_migrate(sqlite3 *database)
@@ -90,31 +113,43 @@ int bloom_ra_database_migrate(sqlite3 *database)
         return validate_schema(database);
     if (version < 0 || version > BLOOM_RA_DATABASE_SCHEMA_VERSION)
         return SQLITE_MISMATCH;
+    if (version == 1) {
+        result = validate_tables(database);
+        if (result != SQLITE_OK)
+            return result;
+    }
     result = sqlite3_exec(database, "BEGIN IMMEDIATE", NULL, NULL, NULL);
     if (result != SQLITE_OK)
         return result;
-    result = sqlite3_exec(
-        database,
-        "CREATE TABLE schema_version(version INTEGER NOT NULL);"
-        "INSERT INTO schema_version VALUES(0);"
-        "CREATE TABLE catalog_state("
-        "catalog_generation INTEGER NOT NULL DEFAULT 0,provider TEXT,provider_revision TEXT,"
-        "refreshed_at INTEGER,last_success_at INTEGER,status TEXT NOT NULL);"
-        "INSERT INTO catalog_state(status) VALUES('unavailable');"
-        "CREATE TABLE ra_games(ra_game_id INTEGER PRIMARY KEY,ra_console_id INTEGER NOT NULL,title TEXT NOT NULL,"
-        "official_set INTEGER NOT NULL CHECK(official_set IN(0,1)),achievement_count INTEGER NOT NULL CHECK(achievement_count>=0),"
-        "metadata_revision TEXT);"
-        "CREATE TABLE ra_hashes(ra_console_id INTEGER NOT NULL,ra_content_hash TEXT NOT NULL,ra_game_id INTEGER NOT NULL,"
-        "UNIQUE(ra_console_id,ra_content_hash),FOREIGN KEY(ra_game_id) REFERENCES ra_games(ra_game_id));"
-        "CREATE TABLE library_games("
-        "bloom_game_id TEXT PRIMARY KEY,system_id TEXT NOT NULL,normalized_rom_path TEXT NOT NULL,file_size INTEGER NOT NULL,"
-        "file_mtime INTEGER NOT NULL,ra_console_id INTEGER,ra_content_hash TEXT,ra_game_id INTEGER,official_set INTEGER,"
-        "achievement_count INTEGER,indexed_at INTEGER,catalog_generation INTEGER NOT NULL DEFAULT 0,hash_version INTEGER NOT NULL,"
-        "status TEXT NOT NULL CHECK(status IN('identified','unmatched','unsupported_system','hash_error','deferred','stale')),"
-        "FOREIGN KEY(ra_game_id) REFERENCES ra_games(ra_game_id));"
-        "CREATE INDEX library_games_system_status ON library_games(system_id,status);"
-        "UPDATE schema_version SET version=1;",
-        NULL, NULL, NULL);
+    if (version == 0)
+        result = sqlite3_exec(
+            database,
+            "CREATE TABLE schema_version(version INTEGER NOT NULL);"
+            "INSERT INTO schema_version VALUES(0);"
+            "CREATE TABLE catalog_state("
+            "catalog_generation INTEGER NOT NULL DEFAULT 0,provider TEXT,provider_revision TEXT,"
+            "refreshed_at INTEGER,last_success_at INTEGER,status TEXT NOT NULL);"
+            "INSERT INTO catalog_state(status) VALUES('unavailable');"
+            "CREATE TABLE ra_games(ra_game_id INTEGER PRIMARY KEY,ra_console_id INTEGER NOT NULL,title TEXT NOT NULL,"
+            "official_set INTEGER NOT NULL CHECK(official_set IN(0,1)),achievement_count INTEGER NOT NULL CHECK(achievement_count>=0),"
+            "metadata_revision TEXT);"
+            "CREATE TABLE ra_hashes(ra_console_id INTEGER NOT NULL,ra_content_hash TEXT NOT NULL,ra_game_id INTEGER NOT NULL,"
+            "UNIQUE(ra_console_id,ra_content_hash),FOREIGN KEY(ra_game_id) REFERENCES ra_games(ra_game_id));"
+            "CREATE TABLE library_games("
+            "bloom_game_id TEXT PRIMARY KEY,system_id TEXT NOT NULL,normalized_rom_path TEXT NOT NULL,file_size INTEGER NOT NULL,"
+            "file_mtime INTEGER NOT NULL,ra_console_id INTEGER,ra_content_hash TEXT,ra_game_id INTEGER,official_set INTEGER,"
+            "achievement_count INTEGER,indexed_at INTEGER,catalog_generation INTEGER NOT NULL DEFAULT 0,hash_version INTEGER NOT NULL,"
+            "status TEXT NOT NULL CHECK(status IN('identified','unmatched','unsupported_system','hash_error','deferred','stale')),"
+            "dependency_size INTEGER,dependency_mtime INTEGER,FOREIGN KEY(ra_game_id) REFERENCES ra_games(ra_game_id));"
+            "CREATE INDEX library_games_system_status ON library_games(system_id,status);"
+            "UPDATE schema_version SET version=2;",
+            NULL, NULL, NULL);
+    else if (version == 1)
+        result = sqlite3_exec(database,
+                              "ALTER TABLE library_games ADD COLUMN dependency_size INTEGER;"
+                              "ALTER TABLE library_games ADD COLUMN dependency_mtime INTEGER;"
+                              "UPDATE schema_version SET version=2;",
+                              NULL, NULL, NULL);
     if (result == SQLITE_OK)
         result = validate_schema(database);
     if (result == SQLITE_OK)

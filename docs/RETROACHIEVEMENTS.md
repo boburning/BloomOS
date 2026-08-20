@@ -392,9 +392,9 @@ is not installed. Bloom validates the requested content path against the ROM
 root before calling it. For playlists, Bloom parses and validates the first
 non-comment entry as a relative, regular, ROM-root-confined file before the
 bridge applies rcheevos' authoritative first-disc hashing semantics.
-Changed scans currently revalidate playlists instead of trusting only the tiny
-`.m3u` file's size and mtime; persisting the first-disc dependency stat is the
-remaining optimization before large playlist libraries are considered final.
+Schema-v2 playlist rows persist the first disc's size and mtime separately from
+the `.m3u` file signals. Changed scans therefore skip a playlist only when both
+the playlist and its authoritative first disc are unchanged.
 
 `bloom-ra-proxy` is the schema-1 boundary used by the rest of Bloom. Its initial
 surface is `status`, `start`, `stop`, `cached-game RA_GAME_ID`, `pending`, and

@@ -15,19 +15,24 @@
 
 #define BLOOM_RA_HASH_VERSION 2
 
-static int unchanged(sqlite3 *database, const char *game_id, sqlite3_int64 size, sqlite3_int64 mtime, int *is_unchanged,
+static int unchanged(sqlite3 *database, const char *game_id, sqlite3_int64 size, sqlite3_int64 mtime,
+                     sqlite3_int64 dependency_size, sqlite3_int64 dependency_mtime, int *is_unchanged,
                      const char **status)
 {
     sqlite3_stmt *statement = NULL;
     int result = sqlite3_prepare_v2(
         database,
-        "SELECT status FROM library_games WHERE bloom_game_id=?1 AND file_size=?2 AND file_mtime=?3 AND hash_version=?4",
+        "SELECT status FROM library_games WHERE bloom_game_id=?1 AND file_size=?2 AND file_mtime=?3 AND hash_version=?4 "
+        "AND ((?5<0 AND dependency_size IS NULL AND dependency_mtime IS NULL) OR "
+        "(dependency_size=?5 AND dependency_mtime=?6))",
         -1, &statement, NULL);
     if (result == SQLITE_OK) {
         sqlite3_bind_text(statement, 1, game_id, -1, SQLITE_STATIC);
         sqlite3_bind_int64(statement, 2, size);
         sqlite3_bind_int64(statement, 3, mtime);
         sqlite3_bind_int(statement, 4, BLOOM_RA_HASH_VERSION);
+        sqlite3_bind_int64(statement, 5, dependency_size);
+        sqlite3_bind_int64(statement, 6, dependency_mtime);
         int step = sqlite3_step(statement);
         *is_unchanged = step == SQLITE_ROW;
         if (step == SQLITE_ROW) {
@@ -160,21 +165,24 @@ int bloom_ra_scan_tree(sqlite3 *database, const char *system_id, const char *sys
 }
 
 static int store(sqlite3 *database, const char *game_id, const char *system_id, const char *normalized_path,
-                 sqlite3_int64 size, sqlite3_int64 mtime, int console_id, const char *hash, int ra_game_id,
-                 int achievements, const char *status)
+                 sqlite3_int64 size, sqlite3_int64 mtime, sqlite3_int64 dependency_size,
+                 sqlite3_int64 dependency_mtime, int console_id, const char *hash, int ra_game_id, int achievements,
+                 const char *status)
 {
     sqlite3_stmt *statement = NULL;
     int result = sqlite3_prepare_v2(
         database,
         "INSERT INTO library_games(bloom_game_id,system_id,normalized_rom_path,file_size,file_mtime,ra_console_id,"
-        "ra_content_hash,ra_game_id,official_set,achievement_count,indexed_at,catalog_generation,hash_version,status) "
+        "ra_content_hash,ra_game_id,official_set,achievement_count,indexed_at,catalog_generation,hash_version,status,"
+        "dependency_size,dependency_mtime) "
         "VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,strftime('%s','now'),"
-        "(SELECT catalog_generation FROM catalog_state),?11,?12) "
+        "(SELECT catalog_generation FROM catalog_state),?11,?12,?13,?14) "
         "ON CONFLICT(bloom_game_id) DO UPDATE SET system_id=excluded.system_id,normalized_rom_path=excluded.normalized_rom_path,"
         "file_size=excluded.file_size,file_mtime=excluded.file_mtime,ra_console_id=excluded.ra_console_id,"
         "ra_content_hash=excluded.ra_content_hash,ra_game_id=excluded.ra_game_id,official_set=excluded.official_set,"
         "achievement_count=excluded.achievement_count,indexed_at=excluded.indexed_at,"
-        "catalog_generation=excluded.catalog_generation,hash_version=excluded.hash_version,status=excluded.status",
+        "catalog_generation=excluded.catalog_generation,hash_version=excluded.hash_version,status=excluded.status,"
+        "dependency_size=excluded.dependency_size,dependency_mtime=excluded.dependency_mtime",
         -1, &statement, NULL);
     if (result == SQLITE_OK) {
         sqlite3_bind_text(statement, 1, game_id, -1, SQLITE_STATIC);
@@ -204,6 +212,14 @@ static int store(sqlite3 *database, const char *game_id, const char *system_id, 
         }
         sqlite3_bind_int(statement, 11, BLOOM_RA_HASH_VERSION);
         sqlite3_bind_text(statement, 12, status, -1, SQLITE_STATIC);
+        if (dependency_size >= 0) {
+            sqlite3_bind_int64(statement, 13, dependency_size);
+            sqlite3_bind_int64(statement, 14, dependency_mtime);
+        }
+        else {
+            sqlite3_bind_null(statement, 13);
+            sqlite3_bind_null(statement, 14);
+        }
         int step = sqlite3_step(statement);
         result = step == SQLITE_DONE ? SQLITE_OK : step;
     }
@@ -225,13 +241,23 @@ int bloom_ra_scan_game(sqlite3 *database, const char *bloom_game_id, const char 
     scan_result->status = "hash_error";
     const char *extension = strrchr(rom_path, '.');
     int composite_playlist = extension != NULL && strcasecmp(extension, ".m3u") == 0;
-    /* A playlist's content identity includes its first referenced disc. Until
-     * the dependency stat is persisted separately, never reuse a playlist row
-     * from the small .m3u file's size/mtime alone. */
-    if (!force && !composite_playlist) {
+    sqlite3_int64 dependency_size = -1;
+    sqlite3_int64 dependency_mtime = -1;
+    if (composite_playlist) {
+        int64_t size = 0;
+        int64_t mtime = 0;
+        char dependency_error[128] = {0};
+        if (bloom_ra_playlist_dependency(rom_path, rom_root, &size, &mtime, dependency_error,
+                                         sizeof(dependency_error)) == 0) {
+            dependency_size = (sqlite3_int64)size;
+            dependency_mtime = (sqlite3_int64)mtime;
+        }
+    }
+    if (!force && (!composite_playlist || dependency_size >= 0)) {
         int is_unchanged = 0;
         const char *status = NULL;
-        int result = unchanged(database, bloom_game_id, metadata.st_size, metadata.st_mtime, &is_unchanged, &status);
+        int result = unchanged(database, bloom_game_id, metadata.st_size, metadata.st_mtime, dependency_size,
+                               dependency_mtime, &is_unchanged, &status);
         if (result != SQLITE_OK)
             return result;
         if (is_unchanged) {
@@ -244,14 +270,14 @@ int bloom_ra_scan_game(sqlite3 *database, const char *bloom_game_id, const char 
     uint32_t console_id = 0;
     if (bloom_ra_console_id(system_id, &console_id) != 0) {
         scan_result->status = "unsupported_system";
-        return store(database, bloom_game_id, system_id, normalized_rom_path, metadata.st_size, metadata.st_mtime, 0,
-                     NULL, 0, 0, scan_result->status);
+        return store(database, bloom_game_id, system_id, normalized_rom_path, metadata.st_size, metadata.st_mtime,
+                     dependency_size, dependency_mtime, 0, NULL, 0, 0, scan_result->status);
     }
     char hash[33] = {0};
     char error[128] = {0};
     if (bloom_ra_hash_file(system_id, rom_path, rom_root, hash, error, sizeof(error)) != 0)
         return store(database, bloom_game_id, system_id, normalized_rom_path, metadata.st_size, metadata.st_mtime,
-                     (int)console_id, NULL, 0, 0, scan_result->status);
+                     dependency_size, dependency_mtime, (int)console_id, NULL, 0, 0, scan_result->status);
     int ra_game_id = 0;
     int achievements = 0;
     int resolve = bloom_ra_catalog_resolve(database, (int)console_id, hash, &ra_game_id, &achievements);
@@ -266,5 +292,6 @@ int bloom_ra_scan_game(sqlite3 *database, const char *bloom_game_id, const char 
         return resolve;
     }
     return store(database, bloom_game_id, system_id, normalized_rom_path, metadata.st_size, metadata.st_mtime,
-                 (int)console_id, hash, ra_game_id, achievements, scan_result->status);
+                 dependency_size, dependency_mtime, (int)console_id, hash, ra_game_id, achievements,
+                 scan_result->status);
 }
