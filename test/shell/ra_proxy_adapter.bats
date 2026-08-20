@@ -11,8 +11,14 @@ make_upstream() {
     cat >"$BLOOM_RA_PROXY_UPSTREAM" <<'SH'
 #!/bin/sh
 case "$1" in
-home-status) printf '%s\n' '{"cached_games_count":2,"pending_awards_count":3,"service_running":false,"service_pid":null,"autostart_enabled":false,"is_online":false}' ;;
-service-status) printf '%s\n' '{"running":false,"pid":null}' ;;
+home-status)
+    if [ -f "$BLOOM_RA_PROXY_CONFIG_DIR/running" ]; then
+        printf '{"cached_games_count":2,"pending_awards_count":3,"service_running":true,"service_pid":%s,"autostart_enabled":false,"is_online":false}\n' "$(cat "$BLOOM_RA_PROXY_CONFIG_DIR/running")"
+    else
+        printf '%s\n' '{"cached_games_count":2,"pending_awards_count":3,"service_running":false,"service_pid":null,"autostart_enabled":false,"is_online":false}'
+    fi
+    ;;
+run-service) printf '%s\n' "$$" >"$BLOOM_RA_PROXY_CONFIG_DIR/running"; sleep 30 ;;
 pending-awards-count) printf '%s\n' '3' ;;
 cached-games) printf '%s\n' 'Example ##GAMEID:42' ;;
 *) exit 2 ;;
@@ -63,6 +69,16 @@ SH
     [ "$status" -eq 0 ]
     [[ "$output" == *'"state":"stopped"'* ]]
     [ ! -e "$BATS_TEST_TMPDIR/retroarch.cfg" ]
+}
+
+@test "service lifecycle consumes the pinned home-status JSON contract" {
+    make_upstream
+    run "$ADAPTER" start
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'"service_running":true'* ]]
+    run "$ADAPTER" stop
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'"state":"stopped"'* ]]
 }
 
 @test "service start rejects a symlinked durable config path" {

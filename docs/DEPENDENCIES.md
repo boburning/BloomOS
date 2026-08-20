@@ -248,7 +248,11 @@ upstream-selected ARMv7 CPython runtime in `build/raofflineproxy/sources.json`.
 Every fetched archive is verified by byte count and SHA-256 before extraction.
 Bloom packages only the standard-library service backend and native hash
 bridge; it deliberately excludes upstream's pygame/SDL menu and its unpinned
-vendor downloads. The CPython runtime is an immutable upstream binary input,
+vendor downloads. The package also removes developer-only Python files and
+fails if any symbolic link remains, because Bloom's durable component root is
+FAT32. It copies `libutil.so.1` from Bloom's immutable Miyoo cross-toolchain
+because the standalone CPython executable requires it and Miyoo firmware does
+not provide it. The CPython runtime is an immutable upstream binary input,
 not a Bloom source build, so stable release eligibility remains fail-closed
 until the public provenance policy explicitly admits that artifact or Bloom
 replaces it with a reproducible source build. Direct RA and ordinary launch do

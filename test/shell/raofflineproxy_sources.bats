@@ -37,3 +37,9 @@ PY
     [ "$status" -eq 1 ]
     [[ "$output" == *"byte count mismatch"* ]]
 }
+
+@test "RAOfflineProxy package recipe rejects FAT-incompatible symlinks" {
+    run grep -F 'find "${WORK_DIR}/package" -type l' /workspace/build/raofflineproxy/build.sh
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'RAOfflineProxy package is not FAT-compatible'* || "$output" == *'find "${WORK_DIR}/package" -type l'* ]]
+}
