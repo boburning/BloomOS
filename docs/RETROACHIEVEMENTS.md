@@ -389,8 +389,12 @@ RA-02 reuses the exact locked rcheevos, libchdr, and upstream glue sources to
 build `libbloom-rchash.so` as a Bloom core-runtime component for CHD/PBP
 identification. This bridge is available even when the optional proxy package
 is not installed. Bloom validates the requested content path against the ROM
-root before calling it; playlist references continue through Bloom's guarded
-multi-file path rather than through the bridge's unrestricted file reader.
+root before calling it. For playlists, Bloom parses and validates the first
+non-comment entry as a relative, regular, ROM-root-confined file before the
+bridge applies rcheevos' authoritative first-disc hashing semantics.
+Changed scans currently revalidate playlists instead of trusting only the tiny
+`.m3u` file's size and mtime; persisting the first-disc dependency stat is the
+remaining optimization before large playlist libraries are considered final.
 
 `bloom-ra-proxy` is the schema-1 boundary used by the rest of Bloom. Its initial
 surface is `status`, `start`, `stop`, `cached-game RA_GAME_ID`, `pending`, and

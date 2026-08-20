@@ -9,8 +9,10 @@ extern "C" {
 }
 
 namespace {
+int disc_hasher_calls;
 int mock_disc_hasher(unsigned int console_id, const char *, char hash[33])
 {
+    ++disc_hasher_calls;
     if (console_id != 12)
         return 0;
     std::snprintf(hash, 33, "%s", "dba482bd96967a00db9abba36dea4ade");
@@ -140,6 +142,66 @@ TEST(BloomRaTest, RoutesChdThroughThePinnedDiscHashBridge)
     char error[128] = {};
     ASSERT_EQ(0, bloom_ra_hash_file("psx", disc.c_str(), root, hash, error, sizeof(error))) << error;
     EXPECT_STREQ("dba482bd96967a00db9abba36dea4ade", hash);
+    bloom_ra_set_disc_hasher_for_test(nullptr);
+    std::filesystem::remove_all(root);
+}
+
+TEST(BloomRaTest, RoutesAConfinedPlaylistThroughTheDiscHashBridge)
+{
+    char directory_template[] = "/tmp/bloom-ra-m3u-XXXXXX";
+    const char *root = mkdtemp(directory_template);
+    ASSERT_NE(nullptr, root);
+    std::filesystem::path disc = std::filesystem::path(root) / "disc one.chd";
+    std::filesystem::path playlist = std::filesystem::path(root) / "game.m3u";
+    std::ofstream(disc, std::ios::binary) << "synthetic disc";
+    std::ofstream(playlist) << "# first disc is authoritative\n\ndisc one.chd\nsecond disc.chd\n";
+    disc_hasher_calls = 0;
+    bloom_ra_set_disc_hasher_for_test(mock_disc_hasher);
+    char hash[33] = {};
+    char error[128] = {};
+    ASSERT_EQ(0, bloom_ra_hash_file("psx", playlist.c_str(), root, hash, error, sizeof(error))) << error;
+    EXPECT_EQ(1, disc_hasher_calls);
+    EXPECT_STREQ("dba482bd96967a00db9abba36dea4ade", hash);
+    bloom_ra_set_disc_hasher_for_test(nullptr);
+    std::filesystem::remove_all(root);
+}
+
+TEST(BloomRaTest, RejectsAPlaylistWhoseFirstDiscEscapesTheRomRoot)
+{
+    char directory_template[] = "/tmp/bloom-ra-m3u-escape-XXXXXX";
+    const char *root = mkdtemp(directory_template);
+    ASSERT_NE(nullptr, root);
+    std::filesystem::path playlist = std::filesystem::path(root) / "game.m3u";
+    std::ofstream(playlist) << "../outside.chd\n";
+    disc_hasher_calls = 0;
+    bloom_ra_set_disc_hasher_for_test(mock_disc_hasher);
+    char hash[33] = {};
+    char error[128] = {};
+    EXPECT_NE(0, bloom_ra_hash_file("psx", playlist.c_str(), root, hash, error, sizeof(error)));
+    EXPECT_EQ(0, disc_hasher_calls);
+    EXPECT_STREQ("playlist entry escapes the ROM root or is not a regular file", error);
+    bloom_ra_set_disc_hasher_for_test(nullptr);
+    std::filesystem::remove_all(root);
+}
+
+TEST(BloomRaTest, RejectsASymlinkedPlaylistDiscBeforeCallingTheBridge)
+{
+    char directory_template[] = "/tmp/bloom-ra-m3u-link-XXXXXX";
+    const char *root = mkdtemp(directory_template);
+    ASSERT_NE(nullptr, root);
+    std::filesystem::path disc = std::filesystem::path(root) / "disc.chd";
+    std::filesystem::path link = std::filesystem::path(root) / "linked.chd";
+    std::filesystem::path playlist = std::filesystem::path(root) / "game.m3u";
+    std::ofstream(disc, std::ios::binary) << "synthetic disc";
+    ASSERT_EQ(0, symlink(disc.c_str(), link.c_str()));
+    std::ofstream(playlist) << "linked.chd\n";
+    disc_hasher_calls = 0;
+    bloom_ra_set_disc_hasher_for_test(mock_disc_hasher);
+    char hash[33] = {};
+    char error[128] = {};
+    EXPECT_NE(0, bloom_ra_hash_file("psx", playlist.c_str(), root, hash, error, sizeof(error)));
+    EXPECT_EQ(0, disc_hasher_calls);
+    EXPECT_STREQ("playlist entry escapes the ROM root or is not a regular file", error);
     bloom_ra_set_disc_hasher_for_test(nullptr);
     std::filesystem::remove_all(root);
 }

@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "bloom_base_commit": "7cd7bc6d",
+  "device_family": "miyoo-mini-plus",
+  "tested_at": "2026-08-20T03:10:00Z",
+  "operator": "boburning",
+  "test_scope": "ra02-guarded-m3u-hashing",
+  "system": "ps",
+  "ra_console_id": 12,
+  "expected_ra_content_hash": "6d8c25fc66fe48250957c0af0639d376",
+  "results": {
+    "host_real_m3u_hash": "pass",
+    "host_first_disc_hash": "pass",
+    "host_playlist_disc_hash_match": "pass",
+    "device_real_m3u_hash": "pass",
+    "device_first_disc_hash": "pass",
+    "device_playlist_disc_hash_match": "pass",
+    "scan_errors": 0,
+    "scan_duration_seconds": 0.50,
+    "relative_first_disc_confinement": "pass",
+    "temporary_fixtures_removed": "pass",
+    "temporary_index_rows_removed": "pass"
+  },
+  "privacy": {
+    "rom_path_or_title_recorded": false,
+    "rom_content_recorded": false,
+    "credential_recorded": false
+  },
+  "notes": "An operator-owned two-disc PS1 playlist was tested in place on the NAS and temporarily streamed to the Mini Plus. The playlist and first CHD produced the same authoritative rcheevos hash, confirming upstream first-disc semantics. Bloom validates the first non-comment playlist entry as a relative, regular, ROM-root-confined path before invoking the CHD-aware bridge. Device fixtures and both exact temporary database rows were removed after validation."
+}
