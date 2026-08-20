@@ -5,6 +5,7 @@ setup() {
     export BLOOM_RA_PROXY_UPSTREAM="$BATS_TEST_TMPDIR/raofflineproxy"
     export BLOOM_RA_PROXY_CONFIG_DIR="$BATS_TEST_TMPDIR/config"
     export BLOOM_RA_PROXY_LOG_FILE="$BATS_TEST_TMPDIR/proxy.log"
+    export BLOOM_RA_PROXY_ROM_ROOT="$BATS_TEST_TMPDIR/Roms"
 }
 
 make_upstream() {
@@ -21,6 +22,8 @@ home-status)
 run-service) printf '%s\n' "$$" >"$BLOOM_RA_PROXY_CONFIG_DIR/running"; sleep 30 ;;
 pending-awards-count) printf '%s\n' '3' ;;
 cached-games) printf '%s\n' 'Example ##GAMEID:42' ;;
+cache-rom) printf '%s\n' "$*" >"$BLOOM_RA_PROXY_CONFIG_DIR/cache-rom.args" ;;
+cache-folder-listing) printf '%s\n' "$*" >"$BLOOM_RA_PROXY_CONFIG_DIR/cache-system.args" ;;
 *) exit 2 ;;
 esac
 SH
@@ -88,4 +91,24 @@ SH
     run "$ADAPTER" start
     [ "$status" -eq 1 ]
     [[ "$output" == *'"code":"unsafe_config_path"'* ]]
+}
+
+@test "cache operations confine paths and preserve arguments as data" {
+    make_upstream
+    mkdir -p "$BLOOM_RA_PROXY_CONFIG_DIR" "$BLOOM_RA_PROXY_ROM_ROOT/GBA"
+    rom="$BLOOM_RA_PROXY_ROM_ROOT/GBA/Bob's game.zip"
+    printf rom >"$rom"
+    run "$ADAPTER" cache-rom "$rom"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'"cached":true'* ]]
+    grep -F -- "--path $rom" "$BLOOM_RA_PROXY_CONFIG_DIR/cache-rom.args"
+
+    run "$ADAPTER" cache-system gba
+    [ "$status" -eq 0 ]
+    grep -F -- "--path $BLOOM_RA_PROXY_ROM_ROOT/GBA" "$BLOOM_RA_PROXY_CONFIG_DIR/cache-system.args"
+
+    printf outside >"$BATS_TEST_TMPDIR/outside.rom"
+    run "$ADAPTER" cache-rom "$BATS_TEST_TMPDIR/outside.rom"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *'"code":"invalid_rom_path"'* ]]
 }
