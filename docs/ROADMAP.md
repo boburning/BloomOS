@@ -338,7 +338,9 @@ Planned work includes safe updates and rollback, optional synchronization and of
 - [ ] RA-05: finish the incremental scanner. Changed scans persist completed
   rows for safe restart, use one low-priority worker, and now recheck cancel and
   active-session signals before every directory entry so large flat libraries
-  yield promptly to gameplay. Durable scan-position reporting remains pending.
+  yield promptly to gameplay. Session preparation also makes one bounded,
+  exact-GameID identification attempt for an unindexed launch. Durable
+  scan-position reporting remains pending.
 - [ ] RA-04: finish the production catalog fetch path. Transactional full-console
   import and a secure installed-game development refresh bridge are implemented;
   Mini Plus validation persists ten exact RA matches offline. The bridge now

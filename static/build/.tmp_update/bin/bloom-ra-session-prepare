@@ -43,11 +43,19 @@ offline=$(json_boolean "$account" '.offline_casual') || fail_category account_in
 username=$(json_value "$account" '.username') || fail_category account_invalid "account username is invalid"
 
 game_id=$("$LAUNCH_BIN" get "$request" game_id) || fail "request GameID is unavailable"
-game=$("$RA_BIN" game "$game_id" 2>/dev/null) || {
+game=$("$RA_BIN" game "$game_id" 2>/dev/null) || game=''
+game_status=$(printf '%s' "$game" | "$JQ_BIN" -er '.status' 2>/dev/null || printf '%s' invalid)
+if [ "$game_status" = unindexed ]; then
+    system=$("$LAUNCH_BIN" get "$request" system_id) || fail "request system is unavailable"
+    rom_path=$("$LAUNCH_BIN" get "$request" rom_path) || fail "request ROM path is unavailable"
+    "$RA_BIN" scan --game "$game_id" "$system" "$rom_path" >/dev/null 2>&1 || true
+    game=$("$RA_BIN" game "$game_id" 2>/dev/null) || game=''
+fi
+if [ -z "$game" ]; then
     [ "$mode" = hardcore ] && fail_category hardcore_unidentified "Hardcore requires exact game identification"
     disable_ra
     exit 0
-}
+fi
 ra_game_id=$(printf '%s' "$game" | "$JQ_BIN" -er '.ra.game_id // 0' 2>/dev/null) || fail "game metadata is invalid"
 if [ "$ra_game_id" -le 0 ]; then
     [ "$mode" = hardcore ] && fail_category hardcore_unidentified "Hardcore requires exact game identification"
