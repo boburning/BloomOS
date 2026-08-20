@@ -34,12 +34,14 @@ SH
     chmod +x "$smoke"
     export BLOOM_GAME_SMOKE_BIN="$smoke"
     export BLOOM_SD_ROOT="$SDCARD"
-    export TOOL=/workspace/src/bloomRaTest/bloom-ra-test
+    export TOOL="$BATS_TEST_TMPDIR/bloom-ra-test"
+    tr -d '\r' </workspace/src/bloomRaTest/bloom-ra-test >"$TOOL"
+    chmod +x "$TOOL"
 }
 
 @test "guarded RA certification preflight reports no private ROM data" {
     encoded=$(printf '%s' "$SDCARD/Roms/GBA/test.gba" | base64 | tr -d '\r\n')
-    run "$TOOL" --system GBA --rom-base64 "$encoded" --core gpsp
+    run sh "$TOOL" --system GBA --rom-base64 "$encoded" --core gpsp
     [ "$status" -eq 0 ]
     [[ "$output" == *'"identification":"pass"'* ]]
     [[ "$output" == *'"bloom_ra_status":"best_effort"'* ]]
@@ -50,7 +52,7 @@ SH
 
 @test "certification session mode reports only a validated lifecycle result" {
     encoded=$(printf '%s' "$SDCARD/Roms/GBA/test.gba" | base64 | tr -d '\r\n')
-    run "$TOOL" --system GBA --rom-base64 "$encoded" --core gpsp --session-seconds 5
+    run sh "$TOOL" --system GBA --rom-base64 "$encoded" --core gpsp --session-seconds 5
     [ "$status" -eq 0 ]
     [[ "$output" == *'"session_exit":"pass"'* ]]
     [[ "$output" == *'"save_flush":"pass"'* ]]
@@ -59,11 +61,11 @@ SH
 
 @test "certification session mode rejects unbounded duration and a non-default core" {
     encoded=$(printf '%s' "$SDCARD/Roms/GBA/test.gba" | base64 | tr -d '\r\n')
-    run "$TOOL" --system GBA --rom-base64 "$encoded" --core gpsp --session-seconds 901
+    run sh "$TOOL" --system GBA --rom-base64 "$encoded" --core gpsp --session-seconds 901
     [ "$status" -eq 1 ]
     [[ "$output" == *'invalid_session_duration'* ]]
     cp "$SDCARD/RetroArch/.retroarch/cores/gpsp_libretro.so" "$SDCARD/RetroArch/.retroarch/cores/mgba_libretro.so"
-    run "$TOOL" --system GBA --rom-base64 "$encoded" --core mgba --session-seconds 5
+    run sh "$TOOL" --system GBA --rom-base64 "$encoded" --core mgba --session-seconds 5
     [ "$status" -eq 1 ]
     [[ "$output" == *'session_core_not_default'* ]]
 }
@@ -71,7 +73,7 @@ SH
 @test "certification preflight reports authentication attention without exposing account data" {
     sed -i 's/"authenticated":true/"authenticated":false,"username":"PrivateUser"/' "$BLOOM_RA_BIN"
     encoded=$(printf '%s' "$SDCARD/Roms/GBA/test.gba" | base64 | tr -d '\r\n')
-    run "$TOOL" --system GBA --rom-base64 "$encoded" --core gpsp
+    run sh "$TOOL" --system GBA --rom-base64 "$encoded" --core gpsp
     [ "$status" -eq 0 ]
     [[ "$output" == *'"login":"attention_required"'* ]]
     [[ "$output" != *'PrivateUser'* ]]
@@ -80,13 +82,13 @@ SH
 @test "RA certification preflight requires developer mode and confines ROMs" {
     rm "$SDCARD/.bloom-dev"
     encoded=$(printf '%s' "$SDCARD/Roms/GBA/test.gba" | base64 | tr -d '\r\n')
-    run "$TOOL" --system GBA --rom-base64 "$encoded" --core gpsp
+    run sh "$TOOL" --system GBA --rom-base64 "$encoded" --core gpsp
     [ "$status" -eq 1 ]
     [[ "$output" == *'developer_mode_required'* ]]
     touch "$SDCARD/.bloom-dev"
     printf rom >"$BATS_TEST_TMPDIR/outside.gba"
     encoded=$(printf '%s' "$BATS_TEST_TMPDIR/outside.gba" | base64 | tr -d '\r\n')
-    run "$TOOL" --system GBA --rom-base64 "$encoded" --core gpsp
+    run sh "$TOOL" --system GBA --rom-base64 "$encoded" --core gpsp
     [ "$status" -eq 1 ]
     [[ "$output" == *'rom_outside_system'* ]]
 }
