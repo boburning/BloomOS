@@ -332,8 +332,12 @@ Planned work includes safe updates and rollback, optional synchronization and of
   and remaining archive-boundary fixtures are still pending.
 - [ ] RA-04: finish the production catalog fetch path. Transactional full-console
   import and a secure installed-game development refresh bridge are implemented;
-  Mini Plus validation persists ten exact RA matches offline. On-device TLS or
-  authenticated bulk Web API acquisition remains pending.
+  Mini Plus validation persists ten exact RA matches offline. The bridge now
+  excludes Connect achievements not flagged as published/core. Boktai exposed
+  a remaining provider discrepancy (68 published Connect rows versus the 67
+  achievements shown by the live client and official game page), so exact
+  public achievement counts remain a production-provider release gate.
+  On-device TLS or authenticated bulk Web API acquisition remains pending.
 
 - [ ] Deliver the ordered RA-00 through RA-26 implementation in
   [`RETROACHIEVEMENTS.md`](RETROACHIEVEMENTS.md): exact rcheevos identification,
