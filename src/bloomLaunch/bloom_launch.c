@@ -330,6 +330,32 @@ static int fsync_parent_directory(const char *path)
     return result;
 }
 
+int bloom_launch_resolve_achievement_transport(const char *request_path, int enabled, const char *mode,
+                                               int offline_casual, int proxy_ready, int ra_game_id,
+                                               const char *core_certification, char *error, size_t error_size)
+{
+    if (!enabled)
+        return bloom_launch_set_achievements(request_path, 0, "disabled", "unavailable", 0, "not_applicable",
+                                             error, error_size);
+    if (mode == NULL || core_certification == NULL) {
+        set_error(error, error_size, "achievement policy field is invalid");
+        return -1;
+    }
+    if (strcmp(mode, "hardcore") == 0)
+        return bloom_launch_set_achievements(request_path, 1, "hardcore", "direct", ra_game_id,
+                                             core_certification, error, error_size);
+    if (strcmp(mode, "softcore") != 0) {
+        set_error(error, error_size, "achievement mode is invalid");
+        return -1;
+    }
+    if (offline_casual && !proxy_ready) {
+        set_error(error, error_size, "offline casual proxy is unavailable");
+        return -1;
+    }
+    return bloom_launch_set_achievements(request_path, 1, "softcore", offline_casual ? "proxy" : "direct",
+                                         ra_game_id, core_certification, error, error_size);
+}
+
 static int atomic_write_bytes(const char *path, const char *data, size_t length, mode_t mode, char *error,
                               size_t error_size)
 {
@@ -454,6 +480,12 @@ int bloom_launch_set_achievements(const char *request_path, int enabled, const c
     cJSON *request = NULL;
     if (load_valid(request_path, &request, error, error_size) != 0)
         return -1;
+    cJSON *configs = cJSON_GetObjectItemCaseSensitive(request, "append_configs");
+    if (cJSON_IsArray(configs) && cJSON_GetArraySize(configs) != 0) {
+        cJSON_Delete(request);
+        set_error(error, error_size, "achievement session policy is immutable after config generation");
+        return -1;
+    }
     cJSON_DeleteItemFromObjectCaseSensitive(request, "achievements");
     cJSON *achievements = cJSON_AddObjectToObject(request, "achievements");
     if (achievements == NULL || cJSON_AddBoolToObject(achievements, "enabled", enabled != 0) == NULL ||

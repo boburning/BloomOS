@@ -12,6 +12,9 @@ int bloom_launch_get_string(const char *request_path, const char *field, char *v
                             size_t error_size);
 int bloom_launch_set_achievements(const char *request_path, int enabled, const char *mode, const char *transport,
                                   int ra_game_id, const char *core_certification, char *error, size_t error_size);
+int bloom_launch_resolve_achievement_transport(const char *request_path, int enabled, const char *mode,
+                                               int offline_casual, int proxy_ready, int ra_game_id,
+                                               const char *core_certification, char *error, size_t error_size);
 int bloom_launch_write_ra_config(const char *request_path, const char *config_path, const char *username,
                                  const char *token, const char *proxy_host, char *error, size_t error_size);
 
