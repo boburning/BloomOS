@@ -17,6 +17,7 @@ case "$6" in ''|*[!a-z0-9_]*) fail invalid_core ;; esac
 case "$2" in
     GB) folder=GB; system=gb ;; GBC) folder=GBC; system=gbc ;; GBA) folder=GBA; system=gba ;;
     FC) folder=FC; system=nes ;; SFC) folder=SFC; system=snes ;; PSX) folder=PS; system=psx ;;
+    SEGASGONE) folder=SEGASGONE; system=sg1000 ;;
     *) fail unsupported_system ;;
 esac
 

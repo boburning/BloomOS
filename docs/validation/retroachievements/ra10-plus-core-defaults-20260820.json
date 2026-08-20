@@ -1,0 +1,38 @@
+{
+  "schema": 1,
+  "bloom_base_commit": "5063a8bc",
+  "device_family": "miyoo-mini-plus",
+  "tested_at": "2026-08-20",
+  "operator": "boburning",
+  "test_scope": "ra10-default-core-launch-performance-and-lifecycle",
+  "results": [
+    {
+      "system": "SNES",
+      "core": "snes9x_libretro.so",
+      "core_sha256": "cc29502cedb70a39f4182777874ffe8d4e0c57ad2194bd9ee1a1c337a45d9bb2",
+      "duration_seconds": 180,
+      "peak_rss_kb": 27664,
+      "graceful_exit": true,
+      "save_flush": true,
+      "mainui_return": true,
+      "command_cleanup": true
+    },
+    {
+      "system": "SG-1000",
+      "core": "genesis_plus_gx_libretro.so",
+      "core_sha256": "d759d47e147c90d4ecf5713705462cef3801235e3fe48e2d34aca8c80549f11d",
+      "duration_seconds": 180,
+      "peak_rss_kb": 17160,
+      "graceful_exit": true,
+      "save_flush": true,
+      "mainui_return": true,
+      "command_cleanup": true
+    }
+  ],
+  "privacy": {
+    "credential_recorded": false,
+    "rom_path_or_title_recorded": false,
+    "rom_hash_recorded": false
+  },
+  "notes": "Both exact packaged default cores completed bounded physical-device sessions through Bloom's structured launch and session lifecycle. These checks validate launch stability, resource use, clean exit, save flushing, and MainUI recovery; they do not by themselves promote either core to Bloom RA verified status or assert visual, audio, input, achievement-unlock, Hardcore, or leaderboard certification."
+}

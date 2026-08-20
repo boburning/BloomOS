@@ -219,7 +219,10 @@ PCSX-ReARMed retain `best_effort` Bloom status pending exact-binary testing,
 while no core is marked `verified` without physical evidence.
 RA-10 changes the packaged SNES default from Beetle Supafaust to current
 Snes9x and the SG-1000 default from Gearsystem to Genesis Plus GX. Both exact
-new binaries remain `untested` in Bloom policy pending device validation.
+new binaries passed bounded Mini Plus launch, memory, exit, save-flush, and
+MainUI-return validation. They remain `untested` for RA behavior until the
+achievement, Rich Presence, leaderboard, and Hardcore certification matrix is
+completed.
 Game Gear, Master System, Caprice32, and FBNeo default decisions remain
 explicitly deferred until their performance and ROM-set compatibility can be
 measured without weakening existing fallbacks.
@@ -250,6 +253,7 @@ frames, and removes load-state, rewind, frame-advance, slowdown, and cheat
 hotkeys in the session append config. These controls follow the current
 [RetroAchievements Hardcore compliance requirements](https://docs.retroachievements.org/general/hardcore-compliance-requirements.html).
 Bloom never silently downgrades a rejected Hardcore request.
+
 - Proxy cache: `not_applicable`, `not_cached`, or `cached`.
 - Pending awards: a non-negative aggregate count.
 
