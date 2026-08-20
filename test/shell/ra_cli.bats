@@ -13,6 +13,7 @@ case "$1" in
     game) printf '%s\n' "{\"schema\":1,\"game_id\":\"$2\",\"status\":\"unindexed\",\"has_ra_badge\":false}" ;;
     collection) printf '%s\n' '{"schema":1,"collection":"retroachievements","items":[],"count":0}' ;;
     cores) printf '%s\n' '{"schema":1,"entries":[]}' ;;
+    account) printf '%s\n' '{"schema":1,"configured":false,"authenticated":false}' ;;
     scan) printf '%s\n' '{"schema":1,"processed":0,"identified":0}' ;;
     *) exit 2 ;;
 esac
@@ -76,6 +77,15 @@ teardown() {
     [ "$status" -eq 0 ]
     printf '%s' "$output" | grep -F '"entries":[]'
     [ "$(sed -n '1p' "$BLOOM_TEST_ROOT/ra-args")" = cores ]
+}
+
+@test "achievements account status exposes only the bounded status operation" {
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl achievements account status
+
+    [ "$status" -eq 0 ]
+    printf '%s' "$output" | grep -F '"authenticated":false'
+    [ "$(sed -n '1p' "$BLOOM_TEST_ROOT/ra-args")" = account ]
+    [ "$(sed -n '2p' "$BLOOM_TEST_ROOT/ra-args")" = status ]
 }
 
 @test "achievements CLI rejects unsupported and malformed command shapes" {

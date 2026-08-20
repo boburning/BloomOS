@@ -210,6 +210,16 @@ and [unsupported cores](https://docs.retroachievements.org/developer-docs/unsupp
 references. They remain distinct from Bloom certification: gpSP and
 PCSX-ReARMed retain `best_effort` Bloom status pending exact-binary testing,
 while no core is marked `verified` without physical evidence.
+## Account and secret ownership
+
+`bloom-ra` owns schema-1 enabled, username, mode, and offline-casual settings
+under the durable achievements root. The RA session token is stored in a
+separate mode-`0600` credential file; no password is retained. Writes use an
+exclusive temporary file, `fsync`, and atomic rename, and symlinked or
+group/world-readable credential state is rejected. `bloomctl achievements
+account status` reports only configured/enabled/authenticated/mode booleans and
+never returns the username or token. Network login/UI wiring will pass an
+authenticated token into this boundary without placing secrets in argv.
 - Proxy cache: `not_applicable`, `not_cached`, or `cached`.
 - Pending awards: a non-negative aggregate count.
 
