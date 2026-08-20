@@ -373,7 +373,10 @@ Planned work includes safe updates and rollback, optional synchronization and of
   are implemented and physically exercised with both a disposable token and a
   real RA login on Mini Plus. Redacted account status, enable/mode/offline
   settings mutations, and sign-out are available through the stable CLI;
-  the graphical settings surface remains pending.
+  Tweaks now provides the graphical account status, enable/mode/offline controls,
+  secure sign-in guidance, sign-out, connection check, changed-game scan,
+  offline-cache selectors, and aggregate pending-award status. Physical UI
+  validation remains pending.
 - [ ] RA-14: finish session-runner integration for structured RA launch policy.
   `BloomLaunchRequest`, immutable transport resolution, and mode-`0600`
   temporary append configs are implemented; the launch CLI now accepts tokens
