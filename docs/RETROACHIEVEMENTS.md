@@ -76,6 +76,7 @@ bloomctl achievements proxy cache-system SYSTEM
 bloomctl achievements proxy cache-favorites
 bloomctl achievements proxy cache-recent
 bloomctl achievements proxy cache-all
+bloomctl achievements network status
 ```
 
 ## Persistent data
@@ -344,6 +345,13 @@ Online readiness queries `bloom-platform` capabilities and distinguishes no
 network hardware, disabled/unassociated Wi-Fi, DNS, TLS/time, and RA service
 failures. Ordinary play is not blocked by RA failure. Hardcore follows current
 RA requirements and is never faked.
+
+`bloomctl achievements network status` performs this bounded probe only when
+explicitly requested. It checks the local platform, association, and usable
+clock before a five-second connection/ten-second total HTTPS request. Its
+schema-1 result contains only `online` and a generic state category; it never
+includes an address, response body, account identity, or credential. Normal
+badge rendering and aggregate health do not invoke the network.
 
 ## Optional RAOfflineProxy
 

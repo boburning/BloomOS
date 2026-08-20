@@ -443,7 +443,10 @@ Planned work includes safe updates and rollback, optional synchronization and of
   session events, enforced JFFS2 mode `0600`, forbidden-data absence, and an
   identical allowlisted support-export copy. Preparation failures now emit only
   bounded categories for account, request, core-policy, Hardcore, proxy, and
-  config-generation failures; broader network/TLS failure coverage remains pending.
+  config-generation failures. An explicit bounded readiness probe now separates
+  absent network hardware, Wi-Fi state, association, clock, DNS, TLS, timeout,
+  and RA-service failures without adding network I/O to ordinary health rendering.
+  Physical failure-path validation remains pending.
 - [ ] RA-25: add guarded RA certification tooling. Developer-mode preflight now
   verifies exact ROM identity and installed core SHA/policy without exposing
   ROM or account data and reports the current redacted authentication state;
