@@ -111,8 +111,7 @@ static int settings_detail_label(BloomShellSettingsPage page, const BloomShellQu
         if (row == 0)
             return bloom_shell_status_label(status, 1, label, label_size);
         if (row == 1) {
-            int length = snprintf(label, label_size, "Storage: See System Health");
-            return length >= 0 && (size_t)length < label_size ? 0 : -1;
+            return bloom_shell_storage_label(status, label, label_size);
         }
         if (row == 2 && support_export_result != 0) {
             int length = snprintf(label, label_size, "Health: Support export %s",

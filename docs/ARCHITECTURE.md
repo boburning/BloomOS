@@ -153,7 +153,8 @@ page and Back restores the prior top-level selection. Display, Audio, and
 Network reuse the same event-driven fixed adapters as Quick Settings; Controls,
 Gameplay, Appearance, and Advanced expose stable plain-language policy values.
 System and RetroAchievements retain bounded status summaries loaded before the
-render loop, while System also identifies the installed BloomOS version. Confirm
+render loop. System shows bounded free storage derived by the existing health
+probe and identifies the installed BloomOS version. Confirm
 on System Health invokes only the fixed `bloomctl logs export` operation with a
 bounded wait and reports completion without exposing paths; the exporter remains
 responsible for allowlisting and privacy. START
