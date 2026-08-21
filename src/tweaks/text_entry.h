@@ -27,8 +27,14 @@ typedef struct {
     TextKeyAction action;
 } TextKey;
 
-#define CHAR_KEY(character) {#character, #character[0], TEXT_KEY_CHAR}
-#define NAMED_KEY(name, key_action) {name, 0, key_action}
+#define CHAR_KEY(character)                      \
+    {                                            \
+        #character, #character[0], TEXT_KEY_CHAR \
+    }
+#define NAMED_KEY(name, key_action) \
+    {                               \
+        name, 0, key_action         \
+    }
 
 static const TextKey text_keys_lower[][10] = {
     {CHAR_KEY(1), CHAR_KEY(2), CHAR_KEY(3), CHAR_KEY(4), CHAR_KEY(5), CHAR_KEY(6), CHAR_KEY(7), CHAR_KEY(8), CHAR_KEY(9), CHAR_KEY(0)},
