@@ -6,6 +6,7 @@ PLATFORM=${BLOOM_PLATFORM_BIN:-/mnt/SDCARD/.tmp_update/bin/bloom-platform}
 JSONVAL=${BLOOM_NETWORK_JSONVAL_BIN:-/customer/app/jsonval}
 LIB_DIR=${BLOOM_NETWORK_LIB_DIR:-$ROOT/mnt/SDCARD/.tmp_update/lib}
 BACKEND=${BLOOM_NETWORK_BACKEND_BIN:-/mnt/SDCARD/.tmp_update/script/network/update_networking.sh}
+SETTINGS=${BLOOM_SETTINGS_BIN:-/mnt/SDCARD/.tmp_update/bin/bloom-settings}
 
 result() {
     printf '{"schema":1,"service":"bloom-network","available":%s,"wifi_capable":%s,"wifi_enabled":%s,"associated":%s,"state":"%s"}\n' \
@@ -14,6 +15,11 @@ result() {
 
 operation_result() {
     printf '{"schema":1,"service":"bloom-network","operation":"reconcile","applied":%s,"state":"%s"}\n' "$1" "$2"
+}
+
+preference_result() {
+    printf '{"schema":1,"service":"bloom-network","operation":"%s","preference_saved":%s,"applied":%s,"state":"%s"}\n' \
+        "$1" "$2" "$3" "$4"
 }
 
 wifi_capability() {
@@ -60,8 +66,29 @@ reconcile() {
     operation_result true applied
 }
 
+set_preference() {
+    operation=$1
+    case "$operation" in
+        enable) desired=true ;;
+        disable) desired=false ;;
+        *) preference_result "$operation" false false invalid_arguments; return 2 ;;
+    esac
+    wifi=$(wifi_capability) || { preference_result "$operation" false false platform_unavailable; return 1; }
+    [ "$wifi" = true ] || { preference_result "$operation" false false no_network_hardware; return 1; }
+    [ -x "$SETTINGS" ] || { preference_result "$operation" false false settings_unavailable; return 1; }
+    "$SETTINGS" set device.wifi_enabled "$desired" >/dev/null 2>&1 || {
+        preference_result "$operation" false false settings_rejected
+        return 1
+    }
+    [ -x "$BACKEND" ] || { preference_result "$operation" true false backend_unavailable; return 1; }
+    "$BACKEND" check >/dev/null 2>&1 || { preference_result "$operation" true false backend_failed; return 1; }
+    preference_result "$operation" true true applied
+}
+
 case "$#:${1:-}:${2:-}" in
     1:status:) status ;;
     2:request:reconcile) reconcile ;;
+    2:request:enable) set_preference enable ;;
+    2:request:disable) set_preference disable ;;
     *) result false false false false invalid_arguments; exit 2 ;;
 esac

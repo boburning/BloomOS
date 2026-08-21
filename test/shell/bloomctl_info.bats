@@ -565,7 +565,7 @@ SH
     [ "$status" -eq 2 ]
 }
 
-@test "bloomctl network delegates only status and fixed reconciliation" {
+@test "bloomctl network delegates only bounded status reconciliation and preference operations" {
     service="$BATS_TEST_TMPDIR/bloom-network"
     cat >"$service" <<'SH'
 #!/bin/sh
@@ -585,5 +585,15 @@ SH
 
     run env BLOOM_NETWORK_BIN="$service" \
         sh /workspace/static/build/.tmp_update/bin/bloomctl network enable
+    [ "$status" -eq 0 ]
+    [ "$output" = '{"schema":1,"arguments":"request enable"}' ]
+
+    run env BLOOM_NETWORK_BIN="$service" \
+        sh /workspace/static/build/.tmp_update/bin/bloomctl network disable
+    [ "$status" -eq 0 ]
+    [ "$output" = '{"schema":1,"arguments":"request disable"}' ]
+
+    run env BLOOM_NETWORK_BIN="$service" \
+        sh /workspace/static/build/.tmp_update/bin/bloomctl network restart
     [ "$status" -eq 2 ]
 }

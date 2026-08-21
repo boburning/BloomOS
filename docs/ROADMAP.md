@@ -371,8 +371,11 @@ Current frontend progress:
   confirms the real firmware setting reader and sysfs association path. Normal
   runtime reconciliation now uses a single fixed Bloom operation; an exact-hash
   Plus candidate preserved association, the Wi-Fi/DHCP processes, and SSH while
-  original Mini is an explicit no-network no-op.
-  Suspend/lid, brightness, volume, clock, Wi-Fi mutation, and inherited
+  original Mini is an explicit no-network no-op. Bounded enable/disable now
+  persists only the canonical Bloom Wi-Fi preference before applying that
+  fixed backend, with separate settings/apply failures; a no-op Plus enable
+  preserved the exact settings hash and association.
+  Suspend/lid, brightness, volume, clock, and inherited
   network-backend replacement remain pending.
 - [ ] Bloom Shell vertical slice and supervised MainUI fallback.
 

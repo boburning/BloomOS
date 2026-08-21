@@ -7,7 +7,9 @@ setup() {
     export BLOOM_NETWORK_JSONVAL_BIN="$BATS_TEST_TMPDIR/jsonval"
     export BLOOM_NETWORK_LIB_DIR="$BATS_TEST_TMPDIR/runtime-lib"
     export BLOOM_NETWORK_BACKEND_BIN="$BATS_TEST_TMPDIR/update-networking"
+    export BLOOM_SETTINGS_BIN="$BATS_TEST_TMPDIR/bloom-settings"
     export BACKEND_LOG="$BATS_TEST_TMPDIR/backend.log"
+    export SETTINGS_LOG="$BATS_TEST_TMPDIR/settings.log"
     mkdir -p "$BLOOM_NETWORK_ROOT/sys/class/net/wlan0"
     printf up >"$BLOOM_NETWORK_ROOT/sys/class/net/wlan0/operstate"
     printf 1 >"$BLOOM_NETWORK_ROOT/sys/class/net/wlan0/carrier"
@@ -17,7 +19,11 @@ setup() {
 #!/bin/sh
 printf '%s\n' "$*" >"$BACKEND_LOG"
 SH
-    chmod +x "$BLOOM_PLATFORM_BIN" "$BLOOM_NETWORK_JSONVAL_BIN" "$BLOOM_NETWORK_BACKEND_BIN"
+    cat >"$BLOOM_SETTINGS_BIN" <<'SH'
+#!/bin/sh
+printf '%s\n' "$*" >"$SETTINGS_LOG"
+SH
+    chmod +x "$BLOOM_PLATFORM_BIN" "$BLOOM_NETWORK_JSONVAL_BIN" "$BLOOM_NETWORK_BACKEND_BIN" "$BLOOM_SETTINGS_BIN"
 }
 
 @test "status reports associated Wi-Fi without exposing network identity" {
@@ -104,4 +110,42 @@ SH
     runtime=/workspace/static/build/.tmp_update/runtime.sh
     grep -F '$sysdir/bin/bloom-network request reconcile' "$runtime"
     ! grep -F '$sysdir/script/network/update_networking.sh check' "$runtime"
+}
+
+@test "enable and disable persist only the canonical Wi-Fi field before applying" {
+    run "$SERVICE" request enable
+    [ "$status" -eq 0 ]
+    [ "$output" = '{"schema":1,"service":"bloom-network","operation":"enable","preference_saved":true,"applied":true,"state":"applied"}' ]
+    [ "$(cat "$SETTINGS_LOG")" = 'set device.wifi_enabled true' ]
+    [ "$(cat "$BACKEND_LOG")" = check ]
+
+    run "$SERVICE" request disable
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'"operation":"disable"'* ]]
+    [ "$(cat "$SETTINGS_LOG")" = 'set device.wifi_enabled false' ]
+    [ "$(cat "$BACKEND_LOG")" = check ]
+}
+
+@test "preference mutation reports settings and apply failures separately" {
+    printf '#!/bin/sh\nexit 1\n' >"$BLOOM_SETTINGS_BIN"
+    chmod +x "$BLOOM_SETTINGS_BIN"
+    run "$SERVICE" request enable
+    [ "$status" -eq 1 ]
+    [[ "$output" == *'"preference_saved":false,"applied":false,"state":"settings_rejected"'* ]]
+
+    printf '#!/bin/sh\nexit 0\n' >"$BLOOM_SETTINGS_BIN"
+    printf '#!/bin/sh\nexit 1\n' >"$BLOOM_NETWORK_BACKEND_BIN"
+    chmod +x "$BLOOM_SETTINGS_BIN" "$BLOOM_NETWORK_BACKEND_BIN"
+    run "$SERVICE" request disable
+    [ "$status" -eq 1 ]
+    [[ "$output" == *'"preference_saved":true,"applied":false,"state":"backend_failed"'* ]]
+}
+
+@test "preference mutation refuses hardware without networking" {
+    printf '#!/bin/sh\nprintf false\n' >"$BLOOM_PLATFORM_BIN"
+    chmod +x "$BLOOM_PLATFORM_BIN"
+    run "$SERVICE" request enable
+    [ "$status" -eq 1 ]
+    [[ "$output" == *'"state":"no_network_hardware"'* ]]
+    [ ! -e "$SETTINGS_LOG" ]
 }
