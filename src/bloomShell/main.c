@@ -107,7 +107,8 @@ static void render_label(SDL_Surface *screen, TTF_Font *font, const char *label,
 
 static int settings_detail_label(BloomShellSettingsPage page, const BloomShellQuickValues *values,
                                  const BloomShellStatus *status, int support_export_result,
-                                 int ra_form_result, size_t row, char *label, size_t label_size)
+                                 int update_confirm_result, int ra_form_result, size_t row,
+                                 char *label, size_t label_size)
 {
     if (page == BLOOM_SHELL_SETTINGS_SYSTEM) {
         if (row == 0)
@@ -123,6 +124,17 @@ static int settings_detail_label(BloomShellSettingsPage page, const BloomShellQu
         if (row == 2)
             return bloom_shell_status_label(status, 0, label, label_size);
         if (row == 3) {
+            int length = snprintf(
+                label, label_size, "Update action: %s",
+                update_confirm_result > 0   ? "confirmed"
+                : update_confirm_result < 0 ? "confirmation failed"
+                : status->ready && status->update_healthy &&
+                        strcmp(status->update_phase, "testing") == 0
+                    ? "Confirm tested update"
+                    : "No action available");
+            return length >= 0 && (size_t)length < label_size ? 0 : -1;
+        }
+        if (row == 4) {
             int length = snprintf(label, label_size, "About: BloomOS %s", BLOOM_VERSION);
             return length >= 0 && (size_t)length < label_size ? 0 : -1;
         }
@@ -207,6 +219,30 @@ static void draw_ra_sign_out(SDL_Surface *screen, const BloomUiLayout *layout, T
                  dialog->selected == 1 ? canvas : cream);
 }
 
+static void draw_update_confirm(SDL_Surface *screen, const BloomUiLayout *layout, TTF_Font *font,
+                                const BloomUiDialogFocus *dialog)
+{
+    if (bloom_ui_render_dialog(screen, layout, dialog) != 0)
+        return;
+    SDL_Color cream = {243, 226, 189, 0};
+    SDL_Color canvas = {33, 23, 17, 0};
+    int width = layout->content.width * 4 / 5;
+    int height = layout->viewport_height / 3;
+    int x = (layout->viewport_width - width) / 2;
+    int y = (layout->viewport_height - height) / 2;
+    int gap = 12;
+    int button_width = (width - 48 - gap) / 2;
+    int button_height = layout->row_height * 2 / 3;
+    int button_y = y + height - button_height - 20;
+    render_label(screen, font, "Keep this tested update?", x + 24, y + 18, width - 48, cream);
+    render_label(screen, font, "Cancel", x + 24 + button_width / 3,
+                 button_y + button_height / 4, button_width * 2 / 3,
+                 dialog->selected == 0 ? canvas : cream);
+    render_label(screen, font, "Confirm", x + 24 + button_width + gap + button_width / 4,
+                 button_y + button_height / 4, button_width * 3 / 4,
+                 dialog->selected == 1 ? canvas : cream);
+}
+
 static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *layout, TTF_Font *font,
                  BloomUiDestination destination, const BloomUiFocus *library_focus,
                  const BloomUiFocus *collections_focus, const BloomLibraryGame *games,
@@ -216,9 +252,10 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
                  const BloomShellStatus *status, const BloomShellCapabilities *capabilities,
                  const BloomShellQuickValues *quick_values,
                  BloomShellSettingsPage settings_page, int support_export_result,
-                 int ra_form_result, int quick_settings, int ra_form_open,
+                 int update_confirm_result, int ra_form_result, int quick_settings, int ra_form_open,
                  const BloomShellRaForm *ra_form, int ra_sign_out_open,
                  const BloomUiDialogFocus *ra_sign_out_dialog,
+                 int update_confirm_open, const BloomUiDialogFocus *update_confirm_dialog,
                  const BloomUiFocus *quick_settings_focus)
 {
     const BloomUiFocus *focus = destination == BLOOM_UI_DESTINATION_COLLECTIONS
@@ -306,7 +343,7 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
                                     : status_label;
             if (settings_page != BLOOM_SHELL_SETTINGS_TOP &&
                 settings_detail_label(settings_page, quick_values, status, support_export_result,
-                                      ra_form_result, item, status_label,
+                                      update_confirm_result, ra_form_result, item, status_label,
                                       sizeof(status_label)) != 0)
                 label = NULL;
             if (label != NULL)
@@ -327,6 +364,8 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
         draw_ra_form(screen, layout, font, ra_form);
     if (ra_sign_out_open)
         draw_ra_sign_out(screen, layout, font, ra_sign_out_dialog);
+    if (update_confirm_open)
+        draw_update_confirm(screen, layout, font, update_confirm_dialog);
 #ifdef PLATFORM_MIYOOMINI
     bloom_ui_rotate_180(screen);
     SDL_BlitSurface(screen, NULL, video, NULL);
@@ -422,16 +461,21 @@ int main(int argc, char **argv)
     BloomShellSettingsPage settings_page = BLOOM_SHELL_SETTINGS_TOP;
     size_t settings_top_selected = 0;
     int support_export_result = 0;
+    int update_confirm_result = 0;
     int ra_form_result = 0;
     int ra_form_open = 0;
     BloomShellRaForm ra_form;
     bloom_shell_ra_form_init(&ra_form);
     int ra_sign_out_open = 0;
     BloomUiDialogFocus ra_sign_out_dialog = {0};
+    int update_confirm_open = 0;
+    BloomUiDialogFocus update_confirm_dialog = {0};
     draw(screen, video, &layout, font, destination, &library_focus, &collections_focus, games,
          favorites, &recent, has_recent, home_selected, &settings_focus, &apps_focus, apps, &status,
-         &capabilities, &quick_values, settings_page, support_export_result, ra_form_result,
+         &capabilities, &quick_values, settings_page, support_export_result, update_confirm_result,
+         ra_form_result,
          quick_settings, ra_form_open, &ra_form, ra_sign_out_open, &ra_sign_out_dialog,
+         update_confirm_open, &update_confirm_dialog,
          &quick_settings_focus);
     int running = 1;
     int exit_code = 0;
@@ -446,7 +490,23 @@ int main(int argc, char **argv)
         if (event.type != SDL_KEYDOWN)
             continue;
         BloomUiAction action = bloom_ui_normalize_input(bloom_ui_input_from_sdl_key(event.key.keysym.sym));
-        if (ra_sign_out_open && action == BLOOM_UI_ACTION_FOCUS_LEFT)
+        if (update_confirm_open && action == BLOOM_UI_ACTION_FOCUS_LEFT)
+            bloom_ui_dialog_step(&update_confirm_dialog, -1);
+        else if (update_confirm_open && action == BLOOM_UI_ACTION_FOCUS_RIGHT)
+            bloom_ui_dialog_step(&update_confirm_dialog, 1);
+        else if (update_confirm_open && action == BLOOM_UI_ACTION_BACK)
+            update_confirm_open = 0;
+        else if (update_confirm_open && action == BLOOM_UI_ACTION_CONFIRM) {
+            if (update_confirm_dialog.selected == 1) {
+                update_confirm_result =
+                    bloom_shell_update_confirm(BLOOMCTL_BINARY) == 0 ? 1 : -1;
+                bloom_shell_status_load(BLOOM_STATUS_BINARY, &status);
+            }
+            update_confirm_open = 0;
+        }
+        else if (update_confirm_open)
+            continue;
+        else if (ra_sign_out_open && action == BLOOM_UI_ACTION_FOCUS_LEFT)
             bloom_ui_dialog_step(&ra_sign_out_dialog, -1);
         else if (ra_sign_out_open && action == BLOOM_UI_ACTION_FOCUS_RIGHT)
             bloom_ui_dialog_step(&ra_sign_out_dialog, 1);
@@ -606,6 +666,15 @@ int main(int argc, char **argv)
         }
         else if (action == BLOOM_UI_ACTION_CONFIRM &&
                  destination == BLOOM_UI_DESTINATION_SETTINGS &&
+                 settings_page == BLOOM_SHELL_SETTINGS_SYSTEM && settings_focus.selected == 3 &&
+                 update_confirm_result == 0 && status.ready && status.update_healthy &&
+                 strcmp(status.update_phase, "testing") == 0 &&
+                 bloom_ui_dialog_init(&update_confirm_dialog, 2, 0, 1) == 0) {
+            update_confirm_result = 0;
+            update_confirm_open = 1;
+        }
+        else if (action == BLOOM_UI_ACTION_CONFIRM &&
+                 destination == BLOOM_UI_DESTINATION_SETTINGS &&
                  settings_page == BLOOM_SHELL_SETTINGS_RETROACHIEVEMENTS &&
                  settings_focus.selected == 0 && !status.ra_enabled) {
             bloom_shell_ra_form_init(&ra_form);
@@ -654,8 +723,10 @@ int main(int argc, char **argv)
             draw(screen, video, &layout, font, destination, &library_focus, &collections_focus,
                  games, favorites, &recent, has_recent, home_selected, &settings_focus, &apps_focus,
                  apps, &status, &capabilities, &quick_values, settings_page,
-                 support_export_result, ra_form_result, quick_settings, ra_form_open, &ra_form,
-                 ra_sign_out_open, &ra_sign_out_dialog, &quick_settings_focus);
+                 support_export_result, update_confirm_result, ra_form_result, quick_settings,
+                 ra_form_open, &ra_form,
+                 ra_sign_out_open, &ra_sign_out_dialog, update_confirm_open,
+                 &update_confirm_dialog, &quick_settings_focus);
     }
     TTF_CloseFont(font);
     bloom_shell_ra_form_clear(&ra_form);

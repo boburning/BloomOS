@@ -70,6 +70,11 @@ TEST(BloomShellSettings, UnknownModelsAndOutOfRangeRowsFailClosed)
     EXPECT_EQ(nullptr, bloom_shell_quick_settings_label(&capabilities, 3));
 }
 
+TEST(BloomShellSettings, SystemPageIncludesGuardedUpdateAction)
+{
+    EXPECT_EQ(5U, bloom_shell_settings_page_count(BLOOM_SHELL_SETTINGS_SYSTEM));
+}
+
 TEST(BloomShellSettings, ParsesAndFormatsBoundedCanonicalValues)
 {
     BloomShellCapabilities capabilities{};
