@@ -133,6 +133,12 @@ standard input, is cleared immediately after submission, and the child is
 bounded by a ten-second timeout. The form defaults to softcore with automatic
 offline-casual support, leaving policy changes to their dedicated Settings rows.
 
+Pull-request CI resolves an explicit affected-component graph. Component-scoped
+cppcheck runs examine one bounded preprocessor configuration because native,
+AddressSanitizer, and ARM builds compile the real configurations; shared or
+unknown changes retain the exhaustive repository scan, and merge-queue ARM
+validation always performs the full OS build.
+
 Confirming a game creates a schema-1 structured request, asks `bloom-session`
 to own the immutable session, and publishes the existing quoted command adapter
 only after validation. Runtime opt-in is controlled by the development-only
