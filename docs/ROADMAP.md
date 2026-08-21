@@ -385,8 +385,12 @@ Current frontend progress:
   `bloom-time` now owns RTC/clock status and validated boot reconciliation;
   exact-hash Plus evidence took the no-mutation RTC path while no-RTC fallback
   and failure semantics are host-tested.
-  Suspend/lid, non-Plus public volume backends, and inherited network-backend
-  replacement remain pending.
+  `bloom-lid status` now normalizes both observed Flip hall-sensor paths and
+  fails closed for missing, linked, or malformed state. Plus exact-hash
+  evidence confirms the explicit unsupported path without mutation; Flip
+  suspend/resume policy remains deferred for physical validation.
+  Suspend mutation, non-Plus public volume backends, and inherited
+  network-backend replacement remain pending.
 - [ ] Bloom Shell vertical slice and supervised MainUI fallback.
 
 ## Historical BloomOS foundation

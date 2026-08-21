@@ -1,0 +1,55 @@
+#!/bin/sh
+set -eu
+
+ROOT=${BLOOM_LID_ROOT:-}
+PLATFORM=${BLOOM_PLATFORM_BIN:-/mnt/SDCARD/.tmp_update/bin/bloom-platform}
+
+lid_path() {
+    if [ -n "${BLOOM_LID_PATH:-}" ]; then
+        printf '%s\n' "$BLOOM_LID_PATH"
+        return 0
+    fi
+    for candidate in \
+        "$ROOT/sys/devices/platform/hall-mh248/hallvalue" \
+        "$ROOT/sys/devices/soc0/soc/soc:hall-mh248/hallvalue"
+    do
+        if [ -e "$candidate" ] || [ -L "$candidate" ]; then
+            printf '%s\n' "$candidate"
+            return 0
+        fi
+    done
+    return 1
+}
+
+status() {
+    [ -x "$PLATFORM" ] || {
+        printf '%s\n' '{"schema":1,"service":"bloom-lid","available":false,"closed":null,"state":"platform_unavailable"}'
+        return 1
+    }
+    model=$($PLATFORM model 2>/dev/null) || model=unknown
+    path=$(lid_path) || {
+        if [ "$model" = mini_flip ]; then
+            printf '%s\n' '{"schema":1,"service":"bloom-lid","available":false,"closed":null,"state":"sensor_unavailable"}'
+            return 1
+        fi
+        printf '%s\n' '{"schema":1,"service":"bloom-lid","available":false,"closed":null,"state":"unsupported"}'
+        return 0
+    }
+    if [ -L "$path" ] || [ ! -r "$path" ]; then
+        printf '%s\n' '{"schema":1,"service":"bloom-lid","available":false,"closed":null,"state":"sensor_error"}'
+        return 1
+    fi
+    value=''
+    IFS= read -r value <"$path" || true
+    case "$value" in
+        0) printf '%s\n' '{"schema":1,"service":"bloom-lid","available":true,"closed":true,"state":"closed"}' ;;
+        1) printf '%s\n' '{"schema":1,"service":"bloom-lid","available":true,"closed":false,"state":"open"}' ;;
+        *) printf '%s\n' '{"schema":1,"service":"bloom-lid","available":false,"closed":null,"state":"sensor_error"}'; return 1 ;;
+    esac
+}
+
+[ "$#" -eq 1 ] && [ "$1" = status ] || {
+    printf '%s\n' '{"schema":1,"service":"bloom-lid","available":false,"closed":null,"state":"invalid_arguments"}'
+    exit 2
+}
+status

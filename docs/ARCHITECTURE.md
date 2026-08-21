@@ -247,6 +247,17 @@ continues with a bounded diagnostic if time cannot be restored. The public
 `bloomctl time status` surface is read-only; normal UI rendering never performs
 time or network mutation.
 
+## Bloom lid boundary
+
+`bloom-lid status` is the read-only lid-state boundary. It normalizes both the
+current Flip `/sys/devices/platform` hall-sensor layout and the earlier
+`/sys/devices/soc0` layout, reports only open/closed state, and rejects linked
+or malformed sensor data. A Flip identity with no readable sensor is an error;
+hardware without lid capability reports `unsupported`. `bloom-platform` and
+early model detection consume the same two observed layouts. Lid-triggered
+suspend remains separate and must not land until the state boundary is
+physically validated on Flip hardware.
+
 ## Structured launch boundary
 
 `bloom-launch` owns schema-1 `BloomLaunchRequest` validation and atomic request

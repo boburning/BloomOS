@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "date": "2026-08-21",
+  "operator": "Codex remote automation",
+  "device": {"family": "mini_plus", "model_id": 354},
+  "installed_build": {"version": "0.1.0-dev-9b5c3aa8", "update_state": "known_good"},
+  "candidate": {
+    "source_base_commit": "cb3c791c",
+    "sha256": "28e2cc55efa35ffc81d0b1aa533828f20d4cd95f54dec865675ed3af048dd920"
+  },
+  "status": {"available": false, "closed": null, "state": "unsupported"},
+  "checks": {
+    "upload_hash_matches": "pass",
+    "capability_result": "explicitly_unsupported",
+    "temporary_candidate_cleanup": "pass"
+  },
+  "notes": "This proves the non-lid Plus path only. Both Flip sysfs layouts and all malformed-state behavior are host-tested; physical Flip open/close and suspend/resume validation remain pending."
+}

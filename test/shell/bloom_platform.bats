@@ -58,6 +58,20 @@ platform() { run sh "$PLATFORM" "$@"; }
     printf '%s' "$output" | grep -F '"lid": true'
 }
 
+@test "Flip current firmware hall path is also normalized centrally" {
+    hall="$BLOOM_ROOT/sys/devices/platform/hall-mh248"
+    mkdir -p "$hall"
+    printf '1\n' >"$hall/hallvalue"
+
+    platform capability lid
+    [ "$status" -eq 0 ]
+    [ "$output" = true ]
+
+    platform model
+    [ "$status" -eq 0 ]
+    [ "$output" = mini_flip ]
+}
+
 @test "unknown capabilities and extra arguments fail closed" {
     platform capability rumble
     [ "$status" -eq 2 ]
