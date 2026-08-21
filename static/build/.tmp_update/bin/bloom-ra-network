@@ -2,7 +2,7 @@
 set -eu
 
 ROOT=${BLOOM_RA_NETWORK_ROOT:-}
-PLATFORM=${BLOOM_PLATFORM_BIN:-/mnt/SDCARD/.tmp_update/bin/bloom-platform}
+NETWORK=${BLOOM_NETWORK_BIN:-/mnt/SDCARD/.tmp_update/bin/bloom-network}
 CURL=${BLOOM_CURL_BIN:-/mnt/SDCARD/.tmp_update/bin/curl}
 DATE=${BLOOM_DATE_BIN:-date}
 ENDPOINT=${BLOOM_RA_NETWORK_ENDPOINT:-https://retroachievements.org/}
@@ -26,22 +26,15 @@ result() {
 }
 
 [ "$#" -eq 1 ] && [ "$1" = status ] || { result false invalid_arguments; exit 2; }
-[ -x "$PLATFORM" ] || { result false platform_unavailable; exit 1; }
-
-wifi=$($PLATFORM capability wifi 2>/dev/null) || { result false platform_unavailable; exit 1; }
-case "$wifi" in
-    false) result false no_network_hardware; exit 0 ;;
-    true) ;;
-    *) result false platform_unavailable; exit 1 ;;
+[ -x "$NETWORK" ] || { result false network_status_unavailable; exit 1; }
+network_status=0
+network=$($NETWORK status 2>/dev/null) || network_status=$?
+state=$(printf '%s\n' "$network" | sed -n 's/.*"state":"\([a-z_]*\)".*/\1/p')
+case "$network_status:$state" in
+    0:associated) ;;
+    0:no_network_hardware|0:wifi_disabled|0:not_associated) result false "$state"; exit 0 ;;
+    *) result false network_status_unavailable; exit 1 ;;
 esac
-
-interface=$ROOT/sys/class/net/wlan0
-[ -d "$interface" ] || { result false wifi_disabled; exit 0; }
-operstate=''
-carrier=''
-[ ! -r "$interface/operstate" ] || IFS= read -r operstate <"$interface/operstate" || true
-[ ! -r "$interface/carrier" ] || IFS= read -r carrier <"$interface/carrier" || true
-[ "$operstate" = up ] && [ "$carrier" = 1 ] || { result false not_associated; exit 0; }
 
 epoch=$($DATE +%s 2>/dev/null) || { result false clock_invalid; exit 0; }
 case "$epoch" in ''|*[!0-9]*) result false clock_invalid; exit 0 ;; esac

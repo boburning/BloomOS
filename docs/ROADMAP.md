@@ -364,8 +364,13 @@ Current frontend progress:
   implemented with model-aware status, fixed reboot/poweroff requests, and
   fail-closed unknown hardware. Runtime shutdown and automatic update rollback
   use it while retaining the proven low-level FAT-clean shutdown implementation;
-  keymon and charging state now use the same adapter. Suspend/lid, brightness,
-  volume, clock, Wi-Fi, and network-service ownership remain pending.
+  keymon and charging state now use the same adapter. The read-only
+  `bloom-network` boundary now separates capability, enabled state, and local
+  association without exposing network identity; the RA readiness probe
+  consumes it before its bounded internet/TLS check. Exact-hash Plus evidence
+  confirms the real firmware setting reader and sysfs association path.
+  Suspend/lid, brightness, volume, clock, Wi-Fi mutation, and inherited
+  network-service ownership remain pending.
 - [ ] Bloom Shell vertical slice and supervised MainUI fallback.
 
 ## Historical BloomOS foundation

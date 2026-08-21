@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "date": "2026-08-21",
+  "operator": "Codex remote automation",
+  "device": {"family": "mini_plus", "model_id": 354},
+  "installed_build": {"version": "0.1.0-dev-9b5c3aa8", "update_state": "known_good"},
+  "candidate": {
+    "source_base_commit": "b91bdd43",
+    "sha256": "d7b61e8868b36aa25eb1b8c76cb4695bc00f9149e829b28fb397d356ed0a147e"
+  },
+  "status": {
+    "available": true,
+    "wifi_capable": true,
+    "wifi_enabled": true,
+    "associated": true,
+    "state": "associated"
+  },
+  "checks": {
+    "upload_hash_matches": "pass",
+    "platform_capability": "pass",
+    "firmware_setting_reader": "pass",
+    "firmware_library_path": "pass",
+    "sysfs_association": "pass",
+    "bounded_privacy_safe_json": "pass",
+    "temporary_candidate_cleanup": "pass"
+  },
+  "notes": "Read-only candidate validation over the existing Wi-Fi connection. The first probe exposed the firmware jsonval runtime-library requirement; the corrected exact-hash candidate then passed. No radio, credential, or service state was changed."
+}

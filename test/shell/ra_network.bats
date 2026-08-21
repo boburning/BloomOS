@@ -3,17 +3,14 @@
 setup() {
     export PROBE=/workspace/static/build/.tmp_update/bin/bloom-ra-network
     export BLOOM_RA_NETWORK_ROOT="$BATS_TEST_TMPDIR/root"
-    export BLOOM_PLATFORM_BIN="$BATS_TEST_TMPDIR/bloom-platform"
+    export BLOOM_NETWORK_BIN="$BATS_TEST_TMPDIR/bloom-network"
     export BLOOM_CURL_BIN="$BATS_TEST_TMPDIR/curl"
     export BLOOM_DATE_BIN="$BATS_TEST_TMPDIR/date"
     export BLOOM_RA_NETWORK_CA_FILE="$BATS_TEST_TMPDIR/cacert.pem"
     : >"$BLOOM_RA_NETWORK_CA_FILE"
-    mkdir -p "$BLOOM_RA_NETWORK_ROOT/sys/class/net/wlan0"
-    printf up >"$BLOOM_RA_NETWORK_ROOT/sys/class/net/wlan0/operstate"
-    printf 1 >"$BLOOM_RA_NETWORK_ROOT/sys/class/net/wlan0/carrier"
-    cat >"$BLOOM_PLATFORM_BIN" <<'SH'
+    cat >"$BLOOM_NETWORK_BIN" <<'SH'
 #!/bin/sh
-printf '%s\n' true
+printf '%s\n' '{"schema":1,"service":"bloom-network","available":true,"wifi_capable":true,"wifi_enabled":true,"associated":true,"state":"associated"}'
 SH
     cat >"$BLOOM_DATE_BIN" <<'SH'
 #!/bin/sh
@@ -23,7 +20,15 @@ SH
 #!/bin/sh
 printf '%s' 200
 SH
-    chmod +x "$BLOOM_PLATFORM_BIN" "$BLOOM_DATE_BIN" "$BLOOM_CURL_BIN"
+    chmod +x "$BLOOM_NETWORK_BIN" "$BLOOM_DATE_BIN" "$BLOOM_CURL_BIN"
+}
+
+write_network_state() {
+    cat >"$BLOOM_NETWORK_BIN" <<SH
+#!/bin/sh
+printf '%s\n' '{"schema":1,"state":"$1"}'
+SH
+    chmod +x "$BLOOM_NETWORK_BIN"
 }
 
 @test "readiness probe reports a bounded ready state" {
@@ -51,29 +56,23 @@ SH
     [[ "$output" == *'"state":"tls_unavailable"'* ]]
 }
 
-@test "readiness probe distinguishes hardware wifi association and clock" {
-    printf '#!/bin/sh\nprintf false\n' >"$BLOOM_PLATFORM_BIN"
-    chmod +x "$BLOOM_PLATFORM_BIN"
+@test "readiness probe consumes bounded local network state and checks clock" {
+    write_network_state no_network_hardware
     run "$PROBE" status
     [ "$status" -eq 0 ]
     [[ "$output" == *'"state":"no_network_hardware"'* ]]
 
-    printf '#!/bin/sh\nprintf true\n' >"$BLOOM_PLATFORM_BIN"
-    chmod +x "$BLOOM_PLATFORM_BIN"
-    rm -rf "$BLOOM_RA_NETWORK_ROOT/sys/class/net/wlan0"
+    write_network_state wifi_disabled
     run "$PROBE" status
     [ "$status" -eq 0 ]
     [[ "$output" == *'"state":"wifi_disabled"'* ]]
 
-    mkdir -p "$BLOOM_RA_NETWORK_ROOT/sys/class/net/wlan0"
-    printf down >"$BLOOM_RA_NETWORK_ROOT/sys/class/net/wlan0/operstate"
-    printf 0 >"$BLOOM_RA_NETWORK_ROOT/sys/class/net/wlan0/carrier"
+    write_network_state not_associated
     run "$PROBE" status
     [ "$status" -eq 0 ]
     [[ "$output" == *'"state":"not_associated"'* ]]
 
-    printf up >"$BLOOM_RA_NETWORK_ROOT/sys/class/net/wlan0/operstate"
-    printf 1 >"$BLOOM_RA_NETWORK_ROOT/sys/class/net/wlan0/carrier"
+    write_network_state associated
     printf '#!/bin/sh\nprintf 100\n' >"$BLOOM_DATE_BIN"
     chmod +x "$BLOOM_DATE_BIN"
     run "$PROBE" status
