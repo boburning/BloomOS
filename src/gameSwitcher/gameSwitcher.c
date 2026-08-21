@@ -9,6 +9,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
@@ -37,6 +38,25 @@
 
 int main(int argc, char *argv[])
 {
+    if (argc == 2 && strcmp(argv[1], "--bloom-recents-probe") == 0) {
+        GameSwitcherLibraryRecent *recents = calloc(MAX_HISTORY, sizeof(*recents));
+        size_t count = 0;
+        int result = recents == NULL
+                         ? -1
+                         : gameswitcher_library_read_recents(BLOOM_LIBRARY_DATABASE_PATH,
+                                                             MAX_HISTORY, recents, MAX_HISTORY, &count);
+        free(recents);
+        if (result != 0) {
+            fputs("{\"schema\":1,\"service\":\"game-switcher\",\"ready\":false}\n", stdout);
+            return EXIT_FAILURE;
+        }
+        printf("{\"schema\":1,\"service\":\"game-switcher\",\"ready\":true,"
+               "\"canonical_recents\":%zu}\n",
+               count);
+        return EXIT_SUCCESS;
+    }
+    if (argc > 2 || (argc == 2 && strcmp(argv[1], "--overlay") != 0))
+        return EXIT_FAILURE;
     appState.is_overlay = argc > 1 && strcmp(argv[1], "--overlay") == 0;
 
     log_setName("gameSwitcher");
