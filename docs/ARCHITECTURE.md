@@ -155,6 +155,13 @@ Original Mini omits Wi-Fi while Plus and Flip include it. This initial slice is
 navigation-only: mutations remain disabled until they can use the canonical
 settings service and apply hardware state atomically.
 
+The canonical service exposes `bloomctl settings values` as the bounded,
+read-only bridge for future UI consumers. Its schema-1 response includes only
+generation, authority, brightness, volume, mute, and Wi-Fi state; it does not
+serialize themes, control mappings, account data, credentials, or preserved
+legacy fields. Mutations continue through the existing allowlisted `set`
+boundary rather than accepting arbitrary JSON.
+
 Bloom Shell applies that policy at a single supervised launch boundary. Only
 `bloom-native` and reviewed `onion-compatible` rows may stage a command;
 `mainui-dependent` and `development-only` rows remain visible but cannot launch

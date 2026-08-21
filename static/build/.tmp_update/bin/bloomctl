@@ -263,7 +263,7 @@ usage() {
     printf '       bloomctl saves snapshots\n' >&2
     printf '       bloomctl logs export\n' >&2
     printf '       bloomctl platform capabilities\n' >&2
-    printf '       bloomctl settings {status|import-onion|sync-onion|reconcile-onion|materialize-onion|activate-bloom|rollback-authority|set FIELD VALUE}\n' >&2
+    printf '       bloomctl settings {status|values|import-onion|sync-onion|reconcile-onion|materialize-onion|activate-bloom|rollback-authority|set FIELD VALUE}\n' >&2
     printf '       bloomctl power {status|reboot|poweroff}\n' >&2
     printf '       bloomctl network {status|reconcile|enable|disable}\n' >&2
     printf '       bloomctl controls {status|brightness VALUE|volume VALUE}\n' >&2
@@ -410,7 +410,7 @@ platform_command() {
 settings_command() {
     [ -x "$BLOOM_SETTINGS" ] || { printf 'bloomctl: settings service is unavailable\n' >&2; return 1; }
     case "${1:-}" in
-        status|import-onion|sync-onion|reconcile-onion|materialize-onion|activate-bloom|rollback-authority)
+        status|values|import-onion|sync-onion|reconcile-onion|materialize-onion|activate-bloom|rollback-authority)
             [ "$#" -eq 1 ] || { usage; return 2; }
             "$BLOOM_SETTINGS" "$1"
             ;;
