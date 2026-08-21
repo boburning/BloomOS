@@ -398,3 +398,21 @@ int bloom_shell_quick_settings_adjust(const BloomShellCapabilities *capabilities
     }
     return -1;
 }
+
+int bloom_shell_mute_toggle(BloomShellQuickValues *values, const char *controls_path)
+{
+    if (values == NULL || !values->ready)
+        return -1;
+    if (values->mute) {
+        char volume[4];
+        snprintf(volume, sizeof(volume), "%d", values->volume);
+        if (run_request(controls_path, "request", "volume", volume) != 0)
+            return -1;
+        values->mute = 0;
+        return 0;
+    }
+    if (run_request(controls_path, "request", "mute", "true") != 0)
+        return -1;
+    values->mute = 1;
+    return 0;
+}

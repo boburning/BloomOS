@@ -105,6 +105,34 @@ apply_volume() {
         "$value" "$raw" "$persisted" "$model"
 }
 
+apply_mute() {
+    [ "$1" = true ] || {
+        printf '%s\n' '{"schema":1,"service":"bloom-controls","control":"mute","persisted":false,"applied":false,"state":"invalid_value"}'
+        return 2
+    }
+    json_model >/dev/null || {
+        printf '%s\n' '{"schema":1,"service":"bloom-controls","control":"mute","persisted":false,"applied":false,"state":"platform_unavailable"}'
+        return 1
+    }
+    [ -x "$VOLUME" ] && [ -x "$SETTINGS" ] || {
+        printf '%s\n' '{"schema":1,"service":"bloom-controls","control":"mute","persisted":false,"applied":false,"state":"control_unavailable"}'
+        return 1
+    }
+    "$VOLUME" status 2>/dev/null | grep -q '"available":true' || {
+        printf '%s\n' '{"schema":1,"service":"bloom-controls","control":"mute","persisted":false,"applied":false,"state":"control_unavailable"}'
+        return 1
+    }
+    "$SETTINGS" set device.mute true >/dev/null 2>&1 || {
+        printf '%s\n' '{"schema":1,"service":"bloom-controls","control":"mute","persisted":false,"applied":false,"state":"settings_rejected"}'
+        return 1
+    }
+    "$VOLUME" apply -60 >/dev/null 2>&1 || {
+        printf '%s\n' '{"schema":1,"service":"bloom-controls","control":"mute","persisted":true,"applied":false,"state":"apply_failed"}'
+        return 1
+    }
+    printf '%s\n' '{"schema":1,"service":"bloom-controls","control":"mute","value":true,"persisted":true,"applied":true,"state":"applied"}'
+}
+
 apply_brightness() {
     value=$1
     persisted=$2
@@ -153,5 +181,6 @@ case "$#:${1:-}:${2:-}" in
     3:request:brightness) apply_brightness "$3" true ;;
     3:apply:volume) apply_volume "$3" false ;;
     3:request:volume) apply_volume "$3" true ;;
+    3:request:mute) apply_mute "$3" ;;
     *) printf '%s\n' '{"schema":1,"service":"bloom-controls","available":false,"state":"invalid_arguments"}'; exit 2 ;;
 esac
