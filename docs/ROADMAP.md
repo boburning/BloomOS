@@ -416,6 +416,8 @@ Current frontend progress:
   renderer. RetroAchievements Settings now opens that keyboard for bounded
   username and token entry, masks the token, submits it through fixed arguments
   and standard input, clears it immediately, and reports success or failure.
+  Signed-in accounts use the shared safe-default confirmation dialog before a
+  fixed-argument sign-out request can remove credentials.
   Any
   non-launch exit or crash removes incomplete handoff state
   and falls back to MainUI. An exact-hash Plus probe loaded the live read-only

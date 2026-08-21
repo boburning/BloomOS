@@ -156,3 +156,29 @@ void bloom_shell_ra_form_clear(BloomShellRaForm *form)
     if (form != NULL)
         memset(form, 0, sizeof(*form));
 }
+
+int bloom_shell_ra_sign_out(const char *bloom_ra_path)
+{
+    if (bloom_ra_path == NULL || bloom_ra_path[0] != '/')
+        return -1;
+    pid_t child = fork();
+    if (child < 0)
+        return -1;
+    if (child == 0) {
+        execl(bloom_ra_path, bloom_ra_path, "account", "sign-out", (char *)NULL);
+        _exit(127);
+    }
+    int status = 0;
+    for (int attempt = 0; attempt < 100; ++attempt) {
+        pid_t result = waitpid(child, &status, WNOHANG);
+        if (result == child)
+            return WIFEXITED(status) && WEXITSTATUS(status) == 0 ? 0 : -1;
+        if (result < 0 && errno != EINTR)
+            return -1;
+        usleep(100000);
+    }
+    kill(child, SIGKILL);
+    while (waitpid(child, &status, 0) < 0 && errno == EINTR) {
+    }
+    return -1;
+}

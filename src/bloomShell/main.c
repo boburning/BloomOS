@@ -132,8 +132,10 @@ static int settings_detail_label(BloomShellSettingsPage page, const BloomShellQu
         if (row == 0)
             return bloom_shell_status_label(status, 2, label, label_size);
         if (row == 1) {
-            const char *connection = ra_form_result > 0                    ? "Sign-in complete"
-                                     : ra_form_result < 0                  ? "Sign-in failed"
+            const char *connection = ra_form_result == 1                   ? "Sign-in complete"
+                                     : ra_form_result == -1                ? "Sign-in failed"
+                                     : ra_form_result == 2                 ? "Signed out"
+                                     : ra_form_result == -2                ? "Sign-out failed"
                                      : status->ready && status->ra_healthy ? "Ready"
                                                                            : "Needs attention";
             int length = snprintf(label, label_size, "Connection: %s", connection);
@@ -180,6 +182,31 @@ static void draw_ra_form(SDL_Surface *screen, const BloomUiLayout *layout, TTF_F
     }
 }
 
+static void draw_ra_sign_out(SDL_Surface *screen, const BloomUiLayout *layout, TTF_Font *font,
+                             const BloomUiDialogFocus *dialog)
+{
+    if (bloom_ui_render_dialog(screen, layout, dialog) != 0)
+        return;
+    SDL_Color cream = {243, 226, 189, 0};
+    SDL_Color canvas = {33, 23, 17, 0};
+    int width = layout->content.width * 4 / 5;
+    int height = layout->viewport_height / 3;
+    int x = (layout->viewport_width - width) / 2;
+    int y = (layout->viewport_height - height) / 2;
+    int gap = 12;
+    int button_width = (width - 48 - gap) / 2;
+    int button_height = layout->row_height * 2 / 3;
+    int button_y = y + height - button_height - 20;
+    render_label(screen, font, "Sign out of RetroAchievements?", x + 24, y + 18, width - 48,
+                 cream);
+    render_label(screen, font, "Cancel", x + 24 + button_width / 3,
+                 button_y + button_height / 4, button_width * 2 / 3,
+                 dialog->selected == 0 ? canvas : cream);
+    render_label(screen, font, "Sign out", x + 24 + button_width + gap + button_width / 4,
+                 button_y + button_height / 4, button_width * 3 / 4,
+                 dialog->selected == 1 ? canvas : cream);
+}
+
 static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *layout, TTF_Font *font,
                  BloomUiDestination destination, const BloomUiFocus *library_focus,
                  const BloomUiFocus *collections_focus, const BloomLibraryGame *games,
@@ -190,7 +217,8 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
                  const BloomShellQuickValues *quick_values,
                  BloomShellSettingsPage settings_page, int support_export_result,
                  int ra_form_result, int quick_settings, int ra_form_open,
-                 const BloomShellRaForm *ra_form,
+                 const BloomShellRaForm *ra_form, int ra_sign_out_open,
+                 const BloomUiDialogFocus *ra_sign_out_dialog,
                  const BloomUiFocus *quick_settings_focus)
 {
     const BloomUiFocus *focus = destination == BLOOM_UI_DESTINATION_COLLECTIONS
@@ -297,6 +325,8 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
                          layout->content.width - 40, cream);
     if (ra_form_open)
         draw_ra_form(screen, layout, font, ra_form);
+    if (ra_sign_out_open)
+        draw_ra_sign_out(screen, layout, font, ra_sign_out_dialog);
 #ifdef PLATFORM_MIYOOMINI
     bloom_ui_rotate_180(screen);
     SDL_BlitSurface(screen, NULL, video, NULL);
@@ -396,10 +426,13 @@ int main(int argc, char **argv)
     int ra_form_open = 0;
     BloomShellRaForm ra_form;
     bloom_shell_ra_form_init(&ra_form);
+    int ra_sign_out_open = 0;
+    BloomUiDialogFocus ra_sign_out_dialog = {0};
     draw(screen, video, &layout, font, destination, &library_focus, &collections_focus, games,
          favorites, &recent, has_recent, home_selected, &settings_focus, &apps_focus, apps, &status,
          &capabilities, &quick_values, settings_page, support_export_result, ra_form_result,
-         quick_settings, ra_form_open, &ra_form, &quick_settings_focus);
+         quick_settings, ra_form_open, &ra_form, ra_sign_out_open, &ra_sign_out_dialog,
+         &quick_settings_focus);
     int running = 1;
     int exit_code = 0;
     while (running) {
@@ -413,7 +446,22 @@ int main(int argc, char **argv)
         if (event.type != SDL_KEYDOWN)
             continue;
         BloomUiAction action = bloom_ui_normalize_input(bloom_ui_input_from_sdl_key(event.key.keysym.sym));
-        if (ra_form_open && action == BLOOM_UI_ACTION_FOCUS_UP)
+        if (ra_sign_out_open && action == BLOOM_UI_ACTION_FOCUS_LEFT)
+            bloom_ui_dialog_step(&ra_sign_out_dialog, -1);
+        else if (ra_sign_out_open && action == BLOOM_UI_ACTION_FOCUS_RIGHT)
+            bloom_ui_dialog_step(&ra_sign_out_dialog, 1);
+        else if (ra_sign_out_open && action == BLOOM_UI_ACTION_BACK)
+            ra_sign_out_open = 0;
+        else if (ra_sign_out_open && action == BLOOM_UI_ACTION_CONFIRM) {
+            if (ra_sign_out_dialog.selected == 1) {
+                ra_form_result = bloom_shell_ra_sign_out(BLOOM_RA_BINARY) == 0 ? 2 : -2;
+                bloom_shell_status_load(BLOOM_STATUS_BINARY, &status);
+            }
+            ra_sign_out_open = 0;
+        }
+        else if (ra_sign_out_open)
+            continue;
+        else if (ra_form_open && action == BLOOM_UI_ACTION_FOCUS_UP)
             bloom_shell_ra_form_move(&ra_form, 0, -1);
         else if (ra_form_open && action == BLOOM_UI_ACTION_FOCUS_DOWN)
             bloom_shell_ra_form_move(&ra_form, 0, 1);
@@ -564,6 +612,14 @@ int main(int argc, char **argv)
             ra_form_result = 0;
             ra_form_open = 1;
         }
+        else if (action == BLOOM_UI_ACTION_CONFIRM &&
+                 destination == BLOOM_UI_DESTINATION_SETTINGS &&
+                 settings_page == BLOOM_SHELL_SETTINGS_RETROACHIEVEMENTS &&
+                 settings_focus.selected == 0 && status.ra_enabled &&
+                 bloom_ui_dialog_init(&ra_sign_out_dialog, 2, 0, 1) == 0) {
+            ra_form_result = 0;
+            ra_sign_out_open = 1;
+        }
         else if (action == BLOOM_UI_ACTION_CONFIRM && destination == BLOOM_UI_DESTINATION_LIBRARY &&
                  library_focus.item_count > 0) {
             char error[256] = {0};
@@ -599,7 +655,7 @@ int main(int argc, char **argv)
                  games, favorites, &recent, has_recent, home_selected, &settings_focus, &apps_focus,
                  apps, &status, &capabilities, &quick_values, settings_page,
                  support_export_result, ra_form_result, quick_settings, ra_form_open, &ra_form,
-                 &quick_settings_focus);
+                 ra_sign_out_open, &ra_sign_out_dialog, &quick_settings_focus);
     }
     TTF_CloseFont(font);
     bloom_shell_ra_form_clear(&ra_form);

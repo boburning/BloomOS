@@ -91,3 +91,26 @@ TEST(BloomShellRaFormTest, RejectsIncompleteOrRelativeSubmissions)
     EXPECT_STREQ("", form.username);
     EXPECT_STREQ("", form.token);
 }
+
+TEST(BloomShellRaFormTest, SignsOutWithFixedArgumentsWithoutAShell)
+{
+    const auto directory = std::filesystem::temp_directory_path() /
+                           ("bloom-ra-sign-out-" + std::to_string(getpid()));
+    std::filesystem::create_directory(directory);
+    const auto script = directory / "bloom-ra";
+    const auto arguments = directory / "arguments";
+    {
+        std::ofstream output(script);
+        output << "#!/bin/sh\n"
+                  "printf '%s\\n' \"$*\" >\"$(dirname \"$0\")/arguments\"\n"
+                  "[ \"$#\" -eq 2 ] && [ \"$1\" = account ] && [ \"$2\" = sign-out ]\n";
+    }
+    ASSERT_EQ(0, chmod(script.c_str(), 0700));
+    ASSERT_EQ(0, bloom_shell_ra_sign_out(script.c_str()));
+    std::ifstream input(arguments);
+    std::string value;
+    std::getline(input, value);
+    EXPECT_EQ("account sign-out", value);
+    EXPECT_NE(0, bloom_shell_ra_sign_out("bloom-ra"));
+    std::filesystem::remove_all(directory);
+}
