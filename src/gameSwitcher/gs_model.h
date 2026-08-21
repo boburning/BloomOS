@@ -14,6 +14,7 @@
 
 #define MAX_HISTORY 100
 #define BLOOM_LIBRARY_DATABASE_PATH "/mnt/SDCARD/.bloom/library/catalog.sqlite3"
+#define BLOOM_GAMESWITCHER_REQUEST_PATH "/mnt/SDCARD/.tmp_update/game-switcher-launch.json"
 
 #define ROM_SCREENS_DIR "/mnt/SDCARD/Saves/CurrentProfile/romScreens"
 #define HISTORY_PATH "/mnt/SDCARD/Saves/CurrentProfile/lists/content_history.lpl"
@@ -31,6 +32,7 @@ typedef struct {
     int type;
     int lineNo;
     bool bloom_owned;
+    char system_id[STR_MAX * 2];
 } RecentItem;
 
 // Game history list

@@ -200,7 +200,22 @@ int main(int argc, char *argv[])
     }
     else {
         printf_debug("Resuming game - current_game : %i - index: %i\n", appState.current_game, game_list[appState.current_game].index);
-        resumeGame(game_list[appState.current_game].index);
+        Game_s *game = &game_list[appState.current_game];
+        if (game->recentItem.bloom_owned) {
+            GameSwitcherLibraryRecent recent = {0};
+            char error[256] = {0};
+            snprintf(recent.game_id, sizeof(recent.game_id), "%s", game->game_id);
+            snprintf(recent.system_id, sizeof(recent.system_id), "%s", game->recentItem.system_id);
+            snprintf(recent.rom_path, sizeof(recent.rom_path), "%s", game->recentItem.rompath);
+            snprintf(recent.launcher, sizeof(recent.launcher), "%s", game->recentItem.launch);
+            if (gameswitcher_library_stage_recent(BLOOM_LIBRARY_DATABASE_PATH, &recent,
+                                                  BLOOM_GAMESWITCHER_REQUEST_PATH,
+                                                  CMD_TO_RUN_PATH, error, sizeof(error)) != 0)
+                printf_debug("Canonical resume failed: %s\n", error);
+        }
+        else {
+            resumeGame(game->index);
+        }
         overlay_exit();
         render_showFullscreenMessage("LOADING", true);
     }

@@ -116,6 +116,8 @@ static bool readBloomHistory(size_t limit)
                  recents[index].image_path);
         snprintf(game->recentItem.launch, sizeof(game->recentItem.launch), "%s",
                  recents[index].launcher);
+        snprintf(game->recentItem.system_id, sizeof(game->recentItem.system_id), "%s",
+                 recents[index].system_id);
         game->recentItem.type = 5;
         game->recentItem.lineNo = -1;
         game->recentItem.bloom_owned = true;
