@@ -1,0 +1,106 @@
+#!/bin/sh
+set -eu
+
+ROOT=${BLOOM_TIME_ROOT:-}
+PLATFORM=${BLOOM_PLATFORM_BIN:-/mnt/SDCARD/.tmp_update/bin/bloom-platform}
+DATE=${BLOOM_DATE_BIN:-date}
+PLAY_ACTIVITY=${BLOOM_PLAY_ACTIVITY_BIN:-/mnt/SDCARD/.tmp_update/bin/playActivity}
+SAVED_TIME=${BLOOM_SAVED_TIME_PATH:-$ROOT/mnt/SDCARD/Saves/CurrentProfile/saves/currentTime.txt}
+ADD_HOURS=${BLOOM_ADD_HOURS_PATH:-$ROOT/mnt/SDCARD/.tmp_update/config/startup/addHours}
+NTP_FLAG=${BLOOM_NTP_FLAG_PATH:-$ROOT/mnt/SDCARD/.tmp_update/config/.ntpState}
+RTC_FLAG=${BLOOM_RTC_FLAG_PATH:-$ROOT/tmp/rtc_available}
+USABLE_EPOCH=1577836800
+
+platform_rtc() {
+    [ -x "$PLATFORM" ] || return 1
+    rtc=$($PLATFORM capability rtc 2>/dev/null) || return 1
+    case "$rtc" in true|false) printf '%s' "$rtc" ;; *) return 1 ;; esac
+}
+
+current_epoch() {
+    epoch=$($DATE +%s 2>/dev/null) || return 1
+    case "$epoch" in ''|*[!0-9]*) return 1 ;; esac
+    printf '%s' "$epoch"
+}
+
+status() {
+    rtc=$(platform_rtc) || {
+        printf '%s\n' '{"schema":1,"service":"bloom-time","available":false,"state":"platform_unavailable"}'
+        return 1
+    }
+    epoch=$(current_epoch) || {
+        printf '{"schema":1,"service":"bloom-time","available":true,"rtc":%s,"clock_usable":false,"state":"clock_invalid"}\n' "$rtc"
+        return 0
+    }
+    if [ "$epoch" -ge "$USABLE_EPOCH" ]; then usable=true; state=ready; else usable=false; state=clock_invalid; fi
+    printf '{"schema":1,"service":"bloom-time","available":true,"rtc":%s,"clock_usable":%s,"state":"%s"}\n' \
+        "$rtc" "$usable" "$state"
+}
+
+reconcile() {
+    rtc=$(platform_rtc) || {
+        printf '%s\n' '{"schema":1,"service":"bloom-time","operation":"reconcile","applied":false,"state":"platform_unavailable"}'
+        return 1
+    }
+    epoch=$(current_epoch) || epoch=0
+    if [ "$rtc" = true ]; then
+        mkdir -p "${RTC_FLAG%/*}" 2>/dev/null || true
+        : >"$RTC_FLAG" 2>/dev/null || true
+        if [ "$epoch" -ge "$USABLE_EPOCH" ]; then state=rtc_preserved; result=0; else state=rtc_clock_invalid; result=1; fi
+        printf '{"schema":1,"service":"bloom-time","operation":"reconcile","rtc":true,"applied":false,"state":"%s"}\n' "$state"
+        return "$result"
+    fi
+    if [ "$epoch" -ge "$USABLE_EPOCH" ]; then
+        printf '%s\n' '{"schema":1,"service":"bloom-time","operation":"reconcile","rtc":false,"applied":false,"state":"system_clock_preserved"}'
+        return 0
+    fi
+    [ -f "$SAVED_TIME" ] && [ ! -L "$SAVED_TIME" ] && [ -r "$SAVED_TIME" ] || {
+        printf '%s\n' '{"schema":1,"service":"bloom-time","operation":"reconcile","rtc":false,"applied":false,"state":"saved_time_unavailable"}'
+        return 1
+    }
+    saved=''
+    IFS= read -r saved <"$SAVED_TIME" || true
+    case "$saved" in ''|*[!0-9]*)
+        printf '%s\n' '{"schema":1,"service":"bloom-time","operation":"reconcile","rtc":false,"applied":false,"state":"saved_time_invalid"}'
+        return 1
+        ;;
+    esac
+    [ "$saved" -le 2147483647 ] || {
+        printf '%s\n' '{"schema":1,"service":"bloom-time","operation":"reconcile","rtc":false,"applied":false,"state":"saved_time_invalid"}'
+        return 1
+    }
+    hours=4
+    if [ -f "$ADD_HOURS" ] && [ ! -L "$ADD_HOURS" ]; then
+        IFS= read -r hours <"$ADD_HOURS" || true
+        case "$hours" in ''|*[!0-9]*) hours=invalid ;; esac
+        [ "$hours" != invalid ] && [ "$hours" -le 24 ] || {
+            printf '%s\n' '{"schema":1,"service":"bloom-time","operation":"reconcile","rtc":false,"applied":false,"state":"offset_invalid"}'
+            return 1
+        }
+    fi
+    [ -x "$PLAY_ACTIVITY" ] || {
+        printf '%s\n' '{"schema":1,"service":"bloom-time","operation":"reconcile","rtc":false,"applied":false,"state":"activity_unavailable"}'
+        return 1
+    }
+    "$DATE" +%s -s "@$saved" >/dev/null 2>&1 || {
+        printf '%s\n' '{"schema":1,"service":"bloom-time","operation":"reconcile","rtc":false,"applied":false,"state":"clock_set_failed"}'
+        return 1
+    }
+    "$PLAY_ACTIVITY" stop_all >/dev/null 2>&1 || {
+        printf '%s\n' '{"schema":1,"service":"bloom-time","operation":"reconcile","rtc":false,"applied":true,"state":"activity_close_failed"}'
+        return 1
+    }
+    final=$saved
+    if [ ! -f "$NTP_FLAG" ]; then final=$((saved + hours * 3600)); fi
+    "$DATE" +%s -s "@$final" >/dev/null 2>&1 || {
+        printf '%s\n' '{"schema":1,"service":"bloom-time","operation":"reconcile","rtc":false,"applied":true,"state":"clock_set_failed"}'
+        return 1
+    }
+    printf '%s\n' '{"schema":1,"service":"bloom-time","operation":"reconcile","rtc":false,"applied":true,"state":"saved_time_restored"}'
+}
+
+case "$#:${1:-}" in
+    1:status) status ;;
+    1:reconcile) reconcile ;;
+    *) printf '%s\n' '{"schema":1,"service":"bloom-time","available":false,"state":"invalid_arguments"}'; exit 2 ;;
+esac

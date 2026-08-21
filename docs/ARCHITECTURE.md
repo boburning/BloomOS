@@ -220,10 +220,25 @@ later hardware-apply failure.
 The separate internal `apply brightness` operation never persists state. Boot
 uses it after preparing the PWM period, removing the duplicated curve and raw
 duty-cycle write from `runtime.sh`. Unknown hardware and unavailable controls
-fail closed. Volume and clock controls will extend this boundary only after
-their real device backends are characterized; the Plus, for example, exposes
+fail closed. Volume control will extend this boundary only after its real
+device backend is characterized; the Plus, for example, exposes
 the firmware audio server but not the historical `/dev/mi_ao` node while
 MainUI is idle.
+
+## Bloom time boundary
+
+`bloom-time` owns capability-aware wall-clock status and boot reconciliation.
+It distinguishes RTC presence from whether the clock is usable. A valid RTC or
+already-usable system clock is preserved without setting time. Hardware without
+RTC may restore only a regular, bounded saved epoch; the compatibility offset
+is range-checked and suppressed when network time is enabled. Missing, linked,
+or malformed fallback data never reaches `date`.
+
+Before the no-RTC path changes the final wall clock, it requires and closes the
+legacy Play Activity boundary. Boot invokes only `bloom-time reconcile` and
+continues with a bounded diagnostic if time cannot be restored. The public
+`bloomctl time status` surface is read-only; normal UI rendering never performs
+time or network mutation.
 
 ## Structured launch boundary
 

@@ -25,6 +25,7 @@ BLOOM_LIBRARY="${BLOOM_LIBRARY_BIN:-$SCRIPT_DIR/bloom-library}"
 BLOOM_POWER="${BLOOM_POWER_BIN:-$SCRIPT_DIR/bloom-power}"
 BLOOM_NETWORK="${BLOOM_NETWORK_BIN:-$SCRIPT_DIR/bloom-network}"
 BLOOM_CONTROLS="${BLOOM_CONTROLS_BIN:-$SCRIPT_DIR/bloom-controls}"
+BLOOM_TIME="${BLOOM_TIME_BIN:-$SCRIPT_DIR/bloom-time}"
 
 path() {
     printf '%s%s' "$BLOOM_ROOT" "$1"
@@ -265,6 +266,7 @@ usage() {
     printf '       bloomctl power {status|reboot|poweroff}\n' >&2
     printf '       bloomctl network {status|reconcile|enable|disable}\n' >&2
     printf '       bloomctl controls {status|brightness VALUE}\n' >&2
+    printf '       bloomctl time status\n' >&2
     printf '       bloomctl library {status|import-onion|import-legacy|scan --changed|--all|--system SYSTEM|games --limit N [--after GAME_ID]|games --system SYSTEM --limit N [--after GAME_ID]}\n' >&2
     printf '       bloomctl test smoke SYSTEM ROM_PATH [DURATION_SECONDS]\n' >&2
     printf '       bloomctl test achievements --system SYSTEM --rom-base64 DATA --core CORE [--session-seconds N [--operator-unlock I_ACCEPT_PROFILE_CHANGES]]\n' >&2
@@ -493,6 +495,12 @@ controls_command() {
     esac
 }
 
+time_command() {
+    [ -x "$BLOOM_TIME" ] || { printf 'bloomctl: time service is unavailable\n' >&2; return 1; }
+    [ "$#" -eq 1 ] && [ "$1" = status ] || { usage; return 2; }
+    "$BLOOM_TIME" status
+}
+
 logs_command() {
     case "${1:-}" in
         export)
@@ -617,6 +625,10 @@ case "${1:-}" in
     controls)
         shift
         controls_command "$@"
+        ;;
+    time)
+        shift
+        time_command "$@"
         ;;
     test)
         shift

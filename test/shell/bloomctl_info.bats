@@ -620,3 +620,21 @@ SH
         sh /workspace/static/build/.tmp_update/bin/bloomctl controls volume 10
     [ "$status" -eq 2 ]
 }
+
+@test "bloomctl time exposes only bounded status" {
+    service="$BATS_TEST_TMPDIR/bloom-time"
+    cat >"$service" <<'SH'
+#!/bin/sh
+printf '{"schema":1,"arguments":"%s"}\n' "$*"
+SH
+    chmod +x "$service"
+
+    run env BLOOM_TIME_BIN="$service" \
+        sh /workspace/static/build/.tmp_update/bin/bloomctl time status
+    [ "$status" -eq 0 ]
+    [ "$output" = '{"schema":1,"arguments":"status"}' ]
+
+    run env BLOOM_TIME_BIN="$service" \
+        sh /workspace/static/build/.tmp_update/bin/bloomctl time reconcile
+    [ "$status" -eq 2 ]
+}

@@ -64,6 +64,7 @@ BLOOM_RUNTIME_SOURCE_IDS = {
     "runtime-tmp-update-bin-bloom-save-snapshot",
     "runtime-tmp-update-bin-bloom-session",
     "runtime-tmp-update-bin-bloom-test-runner",
+    "runtime-tmp-update-bin-bloom-time",
     "runtime-tmp-update-bin-bloom-update-activate",
     "runtime-tmp-update-bin-bloom-update-boot",
     "runtime-tmp-update-bin-bloom-update-bootstrap",
