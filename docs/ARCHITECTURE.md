@@ -144,6 +144,16 @@ imports keep that default unless the reviewed config declares a valid
 return the class with the launch path so consumers can enforce policy without
 guessing from an app name or script contents.
 
+Bloom Shell applies that policy at a single supervised launch boundary. Only
+`bloom-native` and reviewed `onion-compatible` rows may stage a command;
+`mainui-dependent` and `development-only` rows remain visible but cannot launch
+from the ordinary shell. The launcher must be a non-symlink executable regular
+file below `App/`. Its absolute path is shell-quoted as data in a mode-0700
+temporary file, flushed, atomically renamed to the runtime command path, and
+followed by a parent-directory flush. No application arguments are accepted.
+After staging, exit status 20 transfers control to the existing runtime loop,
+which executes the application and returns to Bloom Shell.
+
 Game enumeration and consumer queries live behind the same service.
 `bloomctl library scan --changed|--all|--system SYSTEM`
 enumerates only extensions declared by the imported system configuration,

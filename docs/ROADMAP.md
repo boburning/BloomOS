@@ -403,7 +403,10 @@ Current frontend progress:
   MainUI list. Collections consumes canonical GB favorites, with L1/R1 navigation
   limited to the three destinations that have real models. Library, favorite, and
   Home resume selections stage through the structured launch and session services,
-  and return through the runtime loop. Render-time
+  and return through the runtime loop. Apps are classified explicitly; only
+  `bloom-native` and reviewed `onion-compatible` launchers can cross the
+  supervised, atomic `App/` command boundary, while MainUI-dependent and
+  development-only rows are refused. Render-time
   subprocesses are prohibited by a shell gate. A fixed development flag enables
   the path, while any non-launch exit or crash removes incomplete handoff state
   and falls back to MainUI. An exact-hash Plus probe loaded the live read-only
