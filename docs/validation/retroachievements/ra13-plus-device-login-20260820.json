@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "base_commit": "80a5b161",
+  "device_family": "miyoo-mini-plus",
+  "tested_at": "2026-08-20T23:40:00Z",
+  "operator": "boburning",
+  "test_scope": "device-native-account-login-ui",
+  "tweaks_sha256": "98da8b4b6726d112d73998250fc33bf202fb4452cbb3dcca059bab4ae66e9252",
+  "results": {
+    "tweaks_framebuffer_visible_after_mainui": "pass",
+    "qwerty_keyboard_rendered": "pass",
+    "uppercase_and_ascii_symbol_modes_visible": "pass",
+    "password_masked": "pass",
+    "real_password_to_token_login": "pass",
+    "redacted_authenticated_status": "pass",
+    "account_remained_enabled": "pass"
+  },
+  "privacy": {
+    "framebuffer_capture_committed": false,
+    "username_recorded": false,
+    "password_recorded": false,
+    "token_recorded": false
+  },
+  "notes": "The release-candidate Tweaks binary and stdin-only login helper were hot-deployed with exact SHA verification. The operator completed a real on-device login and accepted the revised keyboard after a second physical UI pass. Bloom subsequently reported configured, enabled, and authenticated without exposing account identity or credentials."
+}

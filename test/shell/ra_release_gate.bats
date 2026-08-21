@@ -19,7 +19,7 @@
         /workspace/tools/validate_ra_release_gate.py "$repository/tools/"
     for path in test_bloom_launch.cpp test_bloom_ra.cpp test_bloom_ra_account.cpp test_bloom_ra_catalog.cpp \
         test_bloom_ra_database.cpp test_bloom_ra_scanner.cpp; do touch "$repository/test/$path"; done
-    for path in ra_cli.bats ra_core_policy.bats ra_network.bats ra_settings_ui.bats ra_proxy_adapter.bats raofflineproxy_sources.bats \
+    for path in ra_cli.bats ra_core_policy.bats ra_network.bats ra_settings_ui.bats ra_device_login.bats ra_proxy_adapter.bats raofflineproxy_sources.bats \
         ra_certification_tool.bats; do touch "$repository/test/shell/$path"; done
     printf '%s\n' 'run_upstream start-proxy' >>"$repository/src/bloomRaProxy/bloom-ra-proxy"
     run python3 "$repository/tools/validate_ra_release_gate.py" --repository "$repository"

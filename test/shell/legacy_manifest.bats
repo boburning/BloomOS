@@ -6,7 +6,7 @@
         --manifest /workspace/build/legacy-manifest.json
 
     [ "$status" -eq 0 ]
-    [[ "$output" == "legacy manifest validate: 311 components" ]]
+    [[ "$output" == "legacy manifest validate: 312 components" ]]
     [ ! -e "/workspace/static/packages/RApp/SNK - Neo Geo (GnGeo)" ]
     [ ! -e "/workspace/static/packages/RApp/PICO-8 (PICO-8 standalone)" ]
     [ ! -e "/workspace/static/packages/RApp/SCUMM (ScummVM standalone)" ]
@@ -38,6 +38,7 @@ assert "runtime-miyoo" not in components
 assert "runtime-tmp-update-bin" not in components
 assert components["runtime-tmp-update-bin-adv"]["path"] == "static/build/.tmp_update/bin/adv"
 assert components["runtime-tmp-update-bin-bloomctl"]["path"] == "static/build/.tmp_update/bin/bloomctl"
+assert components["runtime-tmp-update-bin-bloom-ra-login"]["path"] == "static/build/.tmp_update/bin/bloom-ra-login"
 assert components["runtime-miyoo-app-skin"]["path"] == "static/build/miyoo/app/skin"
 assert components["runtime-miyoo-lib-libpadsp-so"]["path"] == "static/build/miyoo/lib/libpadsp.so"
 assert components["runtime-tmp-update-bin-bloomctl"]["resolution"] == "source-build"
@@ -91,7 +92,7 @@ import sys
 components = json.load(open(sys.argv[1], encoding="utf-8"))["components"]
 runtime = [item for item in components if item["id"].startswith("runtime-")]
 bloom = [item for item in runtime if item["source"] == "https://github.com/boburning/BloomOS"]
-assert len(bloom) == 34
+assert len(bloom) == 35
 assert all(item["resolution"] == "source-build" for item in bloom)
 assert all(item["source_revision"] == "release-commit" for item in bloom)
 PY
