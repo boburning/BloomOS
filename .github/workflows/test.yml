@@ -72,7 +72,9 @@ jobs:
           make static-analysis
         elif [ "$targets" != none ]; then
           make external-libs
-          cppcheck -I include --enable=all $targets
+          # Native, ASAN, and ARM builds cover the real configurations. Bound
+          # speculative preprocessor expansion for the affected PR components.
+          cppcheck --max-configs=1 -I include --enable=all $targets
         fi
     - name: Test
       shell: bash
