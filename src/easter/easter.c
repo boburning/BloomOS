@@ -162,8 +162,8 @@ int main(int argc, char *argv[])
             TTF_Init();
 
             // Read the text from the text file
-            sprintf(gText, "%s", "Onion ");
-            charIndex = 6;
+            sprintf(gText, "%s", "BloomOS ");
+            charIndex = 8;
 
             FILE *file =
                 fopen("/mnt/SDCARD/.tmp_update/onionVersion/version.txt", "r");
