@@ -126,6 +126,13 @@ The shared renderer also presents the four-row lower-case, upper-case, and
 symbol keyboard model with an explicit focus treatment. Font adapters can
 overlay glyphs without changing navigation or credential state.
 
+Bloom Shell's RetroAchievements sign-in form owns bounded username and token
+buffers around that keyboard model. Token presentation is always masked; the
+token crosses the fixed `bloom-ra account configure` boundary only through
+standard input, is cleared immediately after submission, and the child is
+bounded by a ten-second timeout. The form defaults to softcore with automatic
+offline-casual support, leaving policy changes to their dedicated Settings rows.
+
 Confirming a game creates a schema-1 structured request, asks `bloom-session`
 to own the immutable session, and publishes the existing quoted command adapter
 only after validation. Runtime opt-in is controlled by the development-only

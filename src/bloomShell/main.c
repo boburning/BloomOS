@@ -1,4 +1,5 @@
 #include "bloom_shell_launch.h"
+#include "bloom_shell_ra_form.h"
 #include "bloom_shell_settings.h"
 #include "bloom_shell_status.h"
 
@@ -24,6 +25,7 @@
 #define BLOOM_CONTROLS_BINARY "/mnt/SDCARD/.tmp_update/bin/bloom-controls"
 #define BLOOM_NETWORK_BINARY "/mnt/SDCARD/.tmp_update/bin/bloom-network"
 #define BLOOM_PLATFORM_BINARY "/mnt/SDCARD/.tmp_update/bin/bloom-platform"
+#define BLOOM_RA_BINARY "/mnt/SDCARD/.tmp_update/bin/bloom-ra"
 #define DEVICE_MODEL_PATH "/tmp/deviceModel"
 #define GB_CORE "gambatte_libretro.so"
 #define GAME_PAGE_SIZE 100
@@ -105,7 +107,7 @@ static void render_label(SDL_Surface *screen, TTF_Font *font, const char *label,
 
 static int settings_detail_label(BloomShellSettingsPage page, const BloomShellQuickValues *values,
                                  const BloomShellStatus *status, int support_export_result,
-                                 size_t row, char *label, size_t label_size)
+                                 int ra_form_result, size_t row, char *label, size_t label_size)
 {
     if (page == BLOOM_SHELL_SETTINGS_SYSTEM) {
         if (row == 0)
@@ -130,14 +132,52 @@ static int settings_detail_label(BloomShellSettingsPage page, const BloomShellQu
         if (row == 0)
             return bloom_shell_status_label(status, 2, label, label_size);
         if (row == 1) {
-            int length = snprintf(label, label_size, "Connection: %s",
-                                  status->ready && status->ra_healthy ? "Ready"
-                                                                      : "Needs attention");
+            const char *connection = ra_form_result > 0                    ? "Sign-in complete"
+                                     : ra_form_result < 0                  ? "Sign-in failed"
+                                     : status->ready && status->ra_healthy ? "Ready"
+                                                                           : "Needs attention";
+            int length = snprintf(label, label_size, "Connection: %s", connection);
             return length >= 0 && (size_t)length < label_size ? 0 : -1;
         }
         return -1;
     }
     return bloom_shell_settings_page_format(page, values, row, label, label_size);
+}
+
+static void draw_ra_form(SDL_Surface *screen, const BloomUiLayout *layout, TTF_Font *font,
+                         const BloomShellRaForm *form)
+{
+    if (bloom_ui_render_keyboard(screen, layout, &form->keyboard) != 0)
+        return;
+    SDL_Color cream = {243, 226, 189, 0};
+    SDL_Color canvas = {33, 23, 17, 0};
+    char label[192];
+    if (bloom_shell_ra_form_label(form, label, sizeof(label)) == 0)
+        render_label(screen, font, label, layout->content.x + 16, layout->content.y + 8,
+                     layout->content.width - 32, cream);
+    render_label(screen, font, "A Type  B Delete  X Mode  Y Field  START Save",
+                 layout->content.x + 16, layout->content.y + 40, layout->content.width - 32,
+                 cream);
+
+    int height = layout->content.height * 3 / 4;
+    int keyboard_y = layout->content.y + layout->content.height - height;
+    int gap = layout->viewport_width >= 720 ? 6 : 4;
+    int row_height = height / 4;
+    for (size_t row = 0; row < 4; ++row) {
+        size_t count = bloom_ui_keyboard_row_length(form->keyboard.mode, row);
+        int key_width = (layout->content.width - gap * ((int)count + 1)) / (int)count;
+        int row_width = (int)count * key_width + ((int)count - 1) * gap;
+        int row_x = layout->content.x + (layout->content.width - row_width) / 2;
+        for (size_t column = 0; column < count; ++column) {
+            BloomUiKeyboardFocus key = {.mode = form->keyboard.mode, .row = row, .column = column};
+            char glyph[2] = {bloom_ui_keyboard_character(&key), '\0'};
+            int selected = form->keyboard.row == row && form->keyboard.column == column;
+            render_label(screen, font, glyph,
+                         row_x + (int)column * (key_width + gap) + key_width / 3,
+                         keyboard_y + (int)row * row_height + gap + row_height / 5,
+                         key_width / 2, selected ? canvas : cream);
+        }
+    }
 }
 
 static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *layout, TTF_Font *font,
@@ -149,7 +189,8 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
                  const BloomShellStatus *status, const BloomShellCapabilities *capabilities,
                  const BloomShellQuickValues *quick_values,
                  BloomShellSettingsPage settings_page, int support_export_result,
-                 int quick_settings,
+                 int ra_form_result, int quick_settings, int ra_form_open,
+                 const BloomShellRaForm *ra_form,
                  const BloomUiFocus *quick_settings_focus)
 {
     const BloomUiFocus *focus = destination == BLOOM_UI_DESTINATION_COLLECTIONS
@@ -237,7 +278,8 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
                                     : status_label;
             if (settings_page != BLOOM_SHELL_SETTINGS_TOP &&
                 settings_detail_label(settings_page, quick_values, status, support_export_result,
-                                      item, status_label, sizeof(status_label)) != 0)
+                                      ra_form_result, item, status_label,
+                                      sizeof(status_label)) != 0)
                 label = NULL;
             if (label != NULL)
                 render_label(screen, font, label, layout->content.x + 20,
@@ -253,6 +295,8 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
                          layout->content.x + 20,
                          layout->content.y + (int)row * layout->row_height + layout->row_height / 3,
                          layout->content.width - 40, cream);
+    if (ra_form_open)
+        draw_ra_form(screen, layout, font, ra_form);
 #ifdef PLATFORM_MIYOOMINI
     bloom_ui_rotate_180(screen);
     SDL_BlitSurface(screen, NULL, video, NULL);
@@ -348,10 +392,14 @@ int main(int argc, char **argv)
     BloomShellSettingsPage settings_page = BLOOM_SHELL_SETTINGS_TOP;
     size_t settings_top_selected = 0;
     int support_export_result = 0;
+    int ra_form_result = 0;
+    int ra_form_open = 0;
+    BloomShellRaForm ra_form;
+    bloom_shell_ra_form_init(&ra_form);
     draw(screen, video, &layout, font, destination, &library_focus, &collections_focus, games,
          favorites, &recent, has_recent, home_selected, &settings_focus, &apps_focus, apps, &status,
-         &capabilities, &quick_values, settings_page, support_export_result, quick_settings,
-         &quick_settings_focus);
+         &capabilities, &quick_values, settings_page, support_export_result, ra_form_result,
+         quick_settings, ra_form_open, &ra_form, &quick_settings_focus);
     int running = 1;
     int exit_code = 0;
     while (running) {
@@ -365,7 +413,42 @@ int main(int argc, char **argv)
         if (event.type != SDL_KEYDOWN)
             continue;
         BloomUiAction action = bloom_ui_normalize_input(bloom_ui_input_from_sdl_key(event.key.keysym.sym));
-        if (action == BLOOM_UI_ACTION_QUICK_SETTINGS) {
+        if (ra_form_open && action == BLOOM_UI_ACTION_FOCUS_UP)
+            bloom_shell_ra_form_move(&ra_form, 0, -1);
+        else if (ra_form_open && action == BLOOM_UI_ACTION_FOCUS_DOWN)
+            bloom_shell_ra_form_move(&ra_form, 0, 1);
+        else if (ra_form_open && action == BLOOM_UI_ACTION_FOCUS_LEFT)
+            bloom_shell_ra_form_move(&ra_form, -1, 0);
+        else if (ra_form_open && action == BLOOM_UI_ACTION_FOCUS_RIGHT)
+            bloom_shell_ra_form_move(&ra_form, 1, 0);
+        else if (ra_form_open && action == BLOOM_UI_ACTION_CONFIRM)
+            bloom_shell_ra_form_append(&ra_form);
+        else if (ra_form_open && action == BLOOM_UI_ACTION_CONTEXT)
+            bloom_shell_ra_form_cycle_mode(&ra_form);
+        else if (ra_form_open && action == BLOOM_UI_ACTION_TOGGLE_FAVORITE)
+            bloom_shell_ra_form_toggle_field(&ra_form);
+        else if (ra_form_open && action == BLOOM_UI_ACTION_BACK) {
+            size_t length = ra_form.field == BLOOM_SHELL_RA_FIELD_USERNAME
+                                ? strlen(ra_form.username)
+                                : strlen(ra_form.token);
+            if (length > 0)
+                bloom_shell_ra_form_backspace(&ra_form);
+            else {
+                bloom_shell_ra_form_clear(&ra_form);
+                ra_form_open = 0;
+            }
+        }
+        else if (ra_form_open && action == BLOOM_UI_ACTION_QUICK_SETTINGS) {
+            ra_form_result = bloom_shell_ra_form_submit(BLOOM_RA_BINARY, &ra_form) == 0 ? 1 : -1;
+            if (ra_form_result > 0) {
+                bloom_shell_status_load(BLOOM_STATUS_BINARY, &status);
+                bloom_shell_ra_form_clear(&ra_form);
+                ra_form_open = 0;
+            }
+        }
+        else if (ra_form_open)
+            continue;
+        else if (action == BLOOM_UI_ACTION_QUICK_SETTINGS) {
             quick_settings = !quick_settings;
         }
         else if (action == BLOOM_UI_ACTION_BACK && quick_settings) {
@@ -473,6 +556,14 @@ int main(int argc, char **argv)
                  settings_page == BLOOM_SHELL_SETTINGS_SYSTEM && settings_focus.selected == 2) {
             support_export_result = bloom_shell_support_export(BLOOMCTL_BINARY) == 0 ? 1 : -1;
         }
+        else if (action == BLOOM_UI_ACTION_CONFIRM &&
+                 destination == BLOOM_UI_DESTINATION_SETTINGS &&
+                 settings_page == BLOOM_SHELL_SETTINGS_RETROACHIEVEMENTS &&
+                 settings_focus.selected == 0 && !status.ra_enabled) {
+            bloom_shell_ra_form_init(&ra_form);
+            ra_form_result = 0;
+            ra_form_open = 1;
+        }
         else if (action == BLOOM_UI_ACTION_CONFIRM && destination == BLOOM_UI_DESTINATION_LIBRARY &&
                  library_focus.item_count > 0) {
             char error[256] = {0};
@@ -507,9 +598,11 @@ int main(int argc, char **argv)
             draw(screen, video, &layout, font, destination, &library_focus, &collections_focus,
                  games, favorites, &recent, has_recent, home_selected, &settings_focus, &apps_focus,
                  apps, &status, &capabilities, &quick_values, settings_page,
-                 support_export_result, quick_settings, &quick_settings_focus);
+                 support_export_result, ra_form_result, quick_settings, ra_form_open, &ra_form,
+                 &quick_settings_focus);
     }
     TTF_CloseFont(font);
+    bloom_shell_ra_form_clear(&ra_form);
     SDL_FreeSurface(screen);
     TTF_Quit();
     SDL_Quit();
