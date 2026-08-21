@@ -94,19 +94,35 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
                  BloomUiDestination destination, const BloomUiFocus *library_focus,
                  const BloomUiFocus *collections_focus, const BloomLibraryGame *games,
                  const BloomLibraryGame *favorites, const BloomLibraryGame *recent, int has_recent,
-                 size_t home_selected)
+                 size_t home_selected, const BloomUiFocus *settings_focus,
+                 const BloomShellStatus *status)
 {
     const BloomUiFocus *focus = destination == BLOOM_UI_DESTINATION_COLLECTIONS
                                     ? collections_focus
                                     : library_focus;
     const BloomLibraryGame *rows = destination == BLOOM_UI_DESTINATION_COLLECTIONS ? favorites : games;
+    size_t item_count = destination == BLOOM_UI_DESTINATION_HOME   ? (has_recent ? 2 : 1)
+                        : destination == BLOOM_UI_DESTINATION_APPS ? 1
+                        : destination == BLOOM_UI_DESTINATION_SETTINGS
+                            ? settings_focus->item_count
+                            : focus->item_count;
+    size_t selected = destination == BLOOM_UI_DESTINATION_HOME   ? home_selected
+                      : destination == BLOOM_UI_DESTINATION_APPS ? 0
+                      : destination == BLOOM_UI_DESTINATION_SETTINGS
+                          ? settings_focus->selected
+                          : focus->selected;
+    size_t window_start = destination == BLOOM_UI_DESTINATION_HOME ||
+                                  destination == BLOOM_UI_DESTINATION_APPS
+                              ? 0
+                          : destination == BLOOM_UI_DESTINATION_SETTINGS
+                              ? settings_focus->window_start
+                              : focus->window_start;
     BloomUiScene scene = {
         .destination = destination,
-        .item_count = destination == BLOOM_UI_DESTINATION_HOME ? (has_recent ? 2 : 1)
-                                                               : focus->item_count,
-        .selected = destination == BLOOM_UI_DESTINATION_HOME ? home_selected : focus->selected,
-        .window_start = destination == BLOOM_UI_DESTINATION_HOME ? 0 : focus->window_start,
-        .healthy = 1,
+        .item_count = item_count,
+        .selected = selected,
+        .window_start = window_start,
+        .healthy = status->ready && status->healthy,
     };
     bloom_ui_render_shell(screen, layout, &scene);
     SDL_Color cream = {243, 226, 189, 0};
@@ -127,6 +143,21 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
             render_label(screen, font, label, layout->content.x + 20,
                          layout->content.y + layout->row_height / 3,
                          layout->content.width - 40, cream);
+        }
+    }
+    else if (destination == BLOOM_UI_DESTINATION_APPS) {
+        render_label(screen, font, "Applications migration in progress", layout->content.x + 20,
+                     layout->content.y + layout->row_height / 3, layout->content.width - 40,
+                     cream);
+    }
+    else if (destination == BLOOM_UI_DESTINATION_SETTINGS) {
+        for (size_t row = 0; row < settings_focus->item_count; ++row) {
+            char label[96];
+            if (bloom_shell_status_label(status, row, label, sizeof(label)) == 0)
+                render_label(screen, font, label, layout->content.x + 20,
+                             layout->content.y + (int)row * layout->row_height +
+                                 layout->row_height / 3,
+                             layout->content.width - 40, cream);
         }
     }
     else
@@ -200,10 +231,12 @@ int main(int argc, char **argv)
     size_t home_selected = 0;
     BloomUiFocus library_focus;
     BloomUiFocus collections_focus;
+    BloomUiFocus settings_focus;
     bloom_ui_focus_init(&library_focus, game_count);
     bloom_ui_focus_init(&collections_focus, favorite_count);
+    bloom_ui_focus_init(&settings_focus, 3);
     draw(screen, video, &layout, font, destination, &library_focus, &collections_focus, games,
-         favorites, &recent, has_recent, home_selected);
+         favorites, &recent, has_recent, home_selected, &settings_focus, &status);
     int running = 1;
     int exit_code = 0;
     while (running) {
@@ -224,17 +257,9 @@ int main(int argc, char **argv)
                 running = 0;
         }
         else if (action == BLOOM_UI_ACTION_NEXT_DESTINATION)
-            destination = destination == BLOOM_UI_DESTINATION_HOME
-                              ? BLOOM_UI_DESTINATION_LIBRARY
-                          : destination == BLOOM_UI_DESTINATION_LIBRARY
-                              ? BLOOM_UI_DESTINATION_COLLECTIONS
-                              : BLOOM_UI_DESTINATION_HOME;
+            destination = bloom_ui_destination_step(destination, 1);
         else if (action == BLOOM_UI_ACTION_PREVIOUS_DESTINATION)
-            destination = destination == BLOOM_UI_DESTINATION_HOME
-                              ? BLOOM_UI_DESTINATION_COLLECTIONS
-                          : destination == BLOOM_UI_DESTINATION_COLLECTIONS
-                              ? BLOOM_UI_DESTINATION_LIBRARY
-                              : BLOOM_UI_DESTINATION_HOME;
+            destination = bloom_ui_destination_step(destination, -1);
         else if ((action == BLOOM_UI_ACTION_FOCUS_UP || action == BLOOM_UI_ACTION_FOCUS_DOWN) &&
                  destination == BLOOM_UI_DESTINATION_HOME && has_recent)
             home_selected = home_selected == 0 ? 1 : 0;
@@ -261,6 +286,12 @@ int main(int argc, char **argv)
         else if (action == BLOOM_UI_ACTION_FOCUS_DOWN &&
                  destination == BLOOM_UI_DESTINATION_COLLECTIONS)
             bloom_ui_focus_step(&collections_focus, 1, layout.visible_rows);
+        else if (action == BLOOM_UI_ACTION_FOCUS_UP &&
+                 destination == BLOOM_UI_DESTINATION_SETTINGS)
+            bloom_ui_focus_step(&settings_focus, -1, layout.visible_rows);
+        else if (action == BLOOM_UI_ACTION_FOCUS_DOWN &&
+                 destination == BLOOM_UI_DESTINATION_SETTINGS)
+            bloom_ui_focus_step(&settings_focus, 1, layout.visible_rows);
         else if (action == BLOOM_UI_ACTION_CONFIRM && destination == BLOOM_UI_DESTINATION_LIBRARY &&
                  library_focus.item_count > 0) {
             char error[256] = {0};
@@ -284,7 +315,7 @@ int main(int argc, char **argv)
         }
         if (running)
             draw(screen, video, &layout, font, destination, &library_focus, &collections_focus,
-                 games, favorites, &recent, has_recent, home_selected);
+                 games, favorites, &recent, has_recent, home_selected, &settings_focus, &status);
     }
     TTF_CloseFont(font);
     SDL_FreeSurface(screen);

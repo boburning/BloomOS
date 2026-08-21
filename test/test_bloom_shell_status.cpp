@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <cstdio>
 #include <filesystem>
 #include <fstream>
 
@@ -70,4 +71,24 @@ TEST(BloomShellStatusTest, LoadsHealthWithoutUsingAShell)
     EXPECT_EQ(1, status.healthy);
     EXPECT_STREQ("known_good", status.update_phase);
     std::filesystem::remove(script);
+}
+
+TEST(BloomShellStatusTest, FormatsPlainLanguageSettingsRows)
+{
+    BloomShellStatus status{};
+    status.ready = 1;
+    status.system_healthy = 1;
+    status.update_healthy = 1;
+    status.ra_healthy = 1;
+    status.ra_enabled = 0;
+    snprintf(status.update_phase, sizeof(status.update_phase), "%s", "testing");
+    char label[96] = {};
+    ASSERT_EQ(0, bloom_shell_status_label(&status, 0, label, sizeof(label)));
+    EXPECT_STREQ("System health: Good", label);
+    ASSERT_EQ(0, bloom_shell_status_label(&status, 1, label, sizeof(label)));
+    EXPECT_STREQ("Updates: Testing an update", label);
+    ASSERT_EQ(0, bloom_shell_status_label(&status, 2, label, sizeof(label)));
+    EXPECT_STREQ("RetroAchievements: Off", label);
+    EXPECT_NE(0, bloom_shell_status_label(&status, 3, label, sizeof(label)));
+    EXPECT_NE(0, bloom_shell_status_label(&status, 0, label, 4));
 }
