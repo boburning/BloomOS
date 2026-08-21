@@ -2,6 +2,10 @@
 
 #include <SDL/SDL.h>
 
+#include <errno.h>
+#include <fcntl.h>
+#include <unistd.h>
+
 static const uint32_t palette[BLOOM_UI_COLOR_COUNT] = {
     0x211711, /* canvas */
     0x352319, /* surface */
@@ -174,4 +178,46 @@ int bloom_ui_rotate_180(SDL_Surface *surface)
         SDL_UnlockSurface(surface);
     }
     return 0;
+}
+
+static int write_all_at(int file, const Uint8 *bytes, size_t size, off_t offset)
+{
+    while (size > 0) {
+        ssize_t written = pwrite(file, bytes, size, offset);
+        if (written < 0 && errno == EINTR)
+            continue;
+        if (written <= 0)
+            return -1;
+        bytes += written;
+        size -= (size_t)written;
+        offset += written;
+    }
+    return 0;
+}
+
+int bloom_ui_publish_framebuffer_pages(SDL_Surface *surface, const char *framebuffer_path,
+                                       size_t page_count)
+{
+    if (surface == NULL || surface->format == NULL || surface->format->BitsPerPixel != 32 ||
+        surface->pixels == NULL || surface->w <= 0 || surface->h <= 0 ||
+        framebuffer_path == NULL || framebuffer_path[0] == '\0' || page_count == 0)
+        return -1;
+    const size_t row_size = (size_t)surface->w * sizeof(Uint32);
+    const size_t page_size = row_size * (size_t)surface->h;
+    if ((size_t)surface->pitch < row_size || page_size > (size_t)INT64_MAX / page_count)
+        return -1;
+    if (SDL_MUSTLOCK(surface) && SDL_LockSurface(surface) != 0)
+        return -1;
+    int file = open(framebuffer_path, O_WRONLY);
+    int result = file < 0 ? -1 : 0;
+    const Uint8 *pixels = surface->pixels;
+    for (size_t page = 0; result == 0 && page < page_count; ++page)
+        for (int row = 0; result == 0 && row < surface->h; ++row)
+            result = write_all_at(file, pixels + (size_t)row * (size_t)surface->pitch, row_size,
+                                  (off_t)(page * page_size + (size_t)row * row_size));
+    if (file >= 0 && close(file) != 0)
+        result = -1;
+    if (SDL_MUSTLOCK(surface))
+        SDL_UnlockSurface(surface);
+    return result;
 }
