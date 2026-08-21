@@ -58,6 +58,13 @@ network association, and battery state are deliberately excluded; consumers
 obtain those capabilities from `bloom-platform` instead of persisting them as
 user settings.
 
+While authority remains `legacy`, normal boot performs an idempotent import and
+sync after Onion has loaded its per-device `system.json`. Keymon reconciles
+shared-memory settings changes after persisting them, and the WPS path reconciles
+its explicit Wi-Fi preference update. Each bridge is optional and fail-open for
+legacy behavior; a missing or unhealthy canonical service cannot block boot,
+input handling, networking, or game launch.
+
 ## BloomPlatform foundation
 
 `bloom-platform` is the first device-side capability boundary. Its schema-1,
