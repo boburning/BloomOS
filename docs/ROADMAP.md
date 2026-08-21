@@ -425,6 +425,8 @@ Current frontend progress:
   into the shell. Every category now opens a bounded detail page, with
   Display, Audio, and Network reusing the fixed adapters and the remaining
   pages exposing stable policy or status summaries without render-time work.
+  Audio mute is actionable through the canonical control adapter and restores
+  the persisted volume when unmuted.
   System Health now offers a fixed, timeout-bounded support export with explicit
   completion or failure feedback. Guarded update actions, RetroAchievements account interaction,
   reusable keyboard flows, and physical readability/input and

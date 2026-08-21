@@ -162,7 +162,7 @@ Original Mini omits Wi-Fi while Plus and Flip include it. The shell loads one
 bounded canonical value snapshot before entering the render loop and displays
 explicit unavailable state if that read fails. Left and right requests are
 event-driven fixed-argument executions of the Bloom brightness, volume, and
-network adapters; the in-memory value changes only after the adapter succeeds.
+mute, and network adapters; the in-memory value changes only after the adapter succeeds.
 No settings subprocess runs while rendering, and arbitrary fields or commands
 cannot cross this boundary.
 

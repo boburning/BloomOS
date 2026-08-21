@@ -59,6 +59,17 @@ SH
     [ "$(cat "$VOLUME_LOG")" = 'apply -10' ]
 }
 
+@test "public mute request persists mute and applies silence" {
+    run "$SERVICE" request mute true
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'"control":"mute","value":true,"persisted":true,"applied":true'* ]]
+    [ "$(cat "$SETTINGS_LOG")" = 'set device.mute true' ]
+    [ "$(cat "$VOLUME_LOG")" = 'apply -60' ]
+
+    run "$SERVICE" request mute false
+    [ "$status" -eq 2 ]
+}
+
 @test "volume rejects invalid values and separates persistence from apply failure" {
     run "$SERVICE" request volume 21
     [ "$status" -eq 2 ]

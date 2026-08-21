@@ -466,6 +466,11 @@ int main(int argc, char **argv)
         }
         else if (action == BLOOM_UI_ACTION_CONFIRM &&
                  destination == BLOOM_UI_DESTINATION_SETTINGS &&
+                 settings_page == BLOOM_SHELL_SETTINGS_AUDIO && settings_focus.selected == 1) {
+            bloom_shell_mute_toggle(&quick_values, BLOOM_CONTROLS_BINARY);
+        }
+        else if (action == BLOOM_UI_ACTION_CONFIRM &&
+                 destination == BLOOM_UI_DESTINATION_SETTINGS &&
                  settings_page == BLOOM_SHELL_SETTINGS_SYSTEM && settings_focus.selected == 2) {
             support_export_result = bloom_shell_support_export(BLOOMCTL_BINARY) == 0 ? 1 : -1;
         }

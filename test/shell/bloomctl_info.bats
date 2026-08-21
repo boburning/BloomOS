@@ -614,7 +614,7 @@ SH
     [ "$status" -eq 2 ]
 }
 
-@test "bloomctl controls delegates status and bounded brightness or volume" {
+@test "bloomctl controls delegates status and bounded brightness, volume, or mute" {
     service="$BATS_TEST_TMPDIR/bloom-controls"
     cat >"$service" <<'SH'
 #!/bin/sh
@@ -636,6 +636,11 @@ SH
         sh /workspace/static/build/.tmp_update/bin/bloomctl controls volume 10
     [ "$status" -eq 0 ]
     [ "$output" = '{"schema":1,"arguments":"request volume 10"}' ]
+
+    run env BLOOM_CONTROLS_BIN="$service" \
+        sh /workspace/static/build/.tmp_update/bin/bloomctl controls mute true
+    [ "$status" -eq 0 ]
+    [ "$output" = '{"schema":1,"arguments":"request mute true"}' ]
 
     run env BLOOM_CONTROLS_BIN="$service" \
         sh /workspace/static/build/.tmp_update/bin/bloomctl controls mute

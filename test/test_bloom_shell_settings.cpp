@@ -184,6 +184,28 @@ TEST(BloomShellSettings, ParsesAndFormatsBoundedBatteryState)
                      &values));
 }
 
+TEST(BloomShellSettings, MuteToggleUsesFixedAdapterAndUpdatesOnlyAfterSuccess)
+{
+    const auto script = std::filesystem::temp_directory_path() /
+                        ("bloom-shell-mute-" + std::to_string(getpid()));
+    {
+        std::ofstream output(script);
+        output << "#!/bin/sh\n[ \"$*\" = 'request mute true' ]\n";
+    }
+    ASSERT_EQ(0, chmod(script.c_str(), 0700));
+    BloomShellQuickValues values{1, 1, 4, 9, 0, 0};
+    ASSERT_EQ(0, bloom_shell_mute_toggle(&values, script.c_str()));
+    EXPECT_TRUE(values.mute);
+    {
+        std::ofstream output(script);
+        output << "#!/bin/sh\n[ \"$*\" = 'request volume 9' ]\n";
+    }
+    ASSERT_EQ(0, chmod(script.c_str(), 0700));
+    ASSERT_EQ(0, bloom_shell_mute_toggle(&values, script.c_str()));
+    EXPECT_FALSE(values.mute);
+    std::filesystem::remove(script);
+}
+
 TEST(BloomShellSettings, EveryVisibleCategoryMapsToABoundedDetailPage)
 {
     BloomShellCapabilities capabilities{};

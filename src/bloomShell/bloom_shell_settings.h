@@ -57,5 +57,6 @@ int bloom_shell_quick_settings_format(const BloomShellCapabilities *capabilities
 int bloom_shell_quick_settings_adjust(const BloomShellCapabilities *capabilities,
                                       BloomShellQuickValues *values, size_t row, int direction,
                                       const char *controls_path, const char *network_path);
+int bloom_shell_mute_toggle(BloomShellQuickValues *values, const char *controls_path);
 
 #endif
