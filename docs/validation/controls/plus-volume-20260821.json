@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "date": "2026-08-21",
+  "operator": "Codex remote automation",
+  "device": {"family": "mini_plus", "model_id": 354},
+  "installed_build": {"version": "0.1.0-dev-9b5c3aa8", "update_state": "known_good"},
+  "candidate": {
+    "source_base_commit": "9317d349",
+    "sha256": "27a327b934b61b671d2dbf083e4e7a27a1c59e5fe6bb18b767edc0997239d14b"
+  },
+  "operation": {
+    "request": "raw -60",
+    "canonical_logical_value": 0,
+    "persisted": false,
+    "applied": true,
+    "backend": "audio_server_fifo"
+  },
+  "checks": {
+    "upload_hash_matches": "pass",
+    "fifo_type": "fifo",
+    "audio_server_pid_before": 844,
+    "audio_server_pid_after": 844,
+    "canonical_settings_hash_before": "24c35391101d40789feac06966bb6ce75063cded0d0178b21c75f72744e0dd8d",
+    "canonical_settings_hash_after": "24c35391101d40789feac06966bb6ce75063cded0d0178b21c75f72744e0dd8d",
+    "temporary_candidate_cleanup": "pass"
+  },
+  "notes": "The persisted level was zero and audioserver was launched at -60, so the exact candidate sent the same raw level to avoid an unreviewed audible change. Host tests cover the complete logical range and failure semantics. Physical audible range, latency, mute, rapid button adjustment, resume, and signed-install behavior remain pending."
+}

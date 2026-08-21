@@ -4,6 +4,7 @@ set -eu
 ROOT=${BLOOM_CONTROLS_ROOT:-}
 PLATFORM=${BLOOM_PLATFORM_BIN:-/mnt/SDCARD/.tmp_update/bin/bloom-platform}
 SETTINGS=${BLOOM_SETTINGS_BIN:-/mnt/SDCARD/.tmp_update/bin/bloom-settings}
+VOLUME=${BLOOM_VOLUME_BIN:-/mnt/SDCARD/.tmp_update/bin/bloom-volume}
 AWK=${BLOOM_AWK_BIN:-awk}
 PWM_DUTY=${BLOOM_PWM_DUTY_PATH:-$ROOT/sys/class/pwm/pwmchip0/pwm0/duty_cycle}
 
@@ -17,6 +18,18 @@ valid_brightness() {
     case "$1" in 0|1|2|3|4|5|6|7|8|9|10) return 0 ;; *) return 1 ;; esac
 }
 
+valid_volume() {
+    case "$1" in 0|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20) return 0 ;; *) return 1 ;; esac
+}
+
+raw_volume() {
+    if [ "$1" -eq 0 ]; then
+        printf '%s\n' -60
+    else
+        "$AWK" -v value="$1" 'BEGIN { print int((48 * log(1 + value) / log(10)) + 0.5) - 60 }'
+    fi
+}
+
 raw_brightness() {
     "$AWK" -v value="$1" 'BEGIN { print int(3 * exp(0.350656 * value) + 0.5) }'
 }
@@ -26,14 +39,70 @@ status() {
         printf '%s\n' '{"schema":1,"service":"bloom-controls","available":false,"state":"platform_unavailable"}'
         return 1
     }
+    volume='{"schema":1,"service":"bloom-volume","available":false,"backend":"audio_server_fifo"}'
+    if [ -x "$VOLUME" ]; then
+        candidate=$($VOLUME status 2>/dev/null) || candidate=''
+        case "$candidate" in \{*\}) volume=$candidate ;; esac
+    fi
     if [ ! -r "$PWM_DUTY" ]; then
-        printf '{"schema":1,"service":"bloom-controls","available":true,"model":"%s","brightness":{"available":false,"raw":null}}\n' "$model"
+        printf '{"schema":1,"service":"bloom-controls","available":true,"model":"%s","brightness":{"available":false,"raw":null},"volume":%s}\n' "$model" "$volume"
         return 0
     fi
     raw=''
     IFS= read -r raw <"$PWM_DUTY" || true
     case "$raw" in ''|*[!0-9]*) raw=null ;; esac
-    printf '{"schema":1,"service":"bloom-controls","available":true,"model":"%s","brightness":{"available":true,"raw":%s}}\n' "$model" "$raw"
+    printf '{"schema":1,"service":"bloom-controls","available":true,"model":"%s","brightness":{"available":true,"raw":%s},"volume":%s}\n' "$model" "$raw" "$volume"
+}
+
+apply_volume() {
+    value=$1
+    persisted=$2
+    valid_volume "$value" || {
+        printf '%s\n' '{"schema":1,"service":"bloom-controls","control":"volume","persisted":false,"applied":false,"state":"invalid_value"}'
+        return 2
+    }
+    model=$(json_model) || {
+        printf '%s\n' '{"schema":1,"service":"bloom-controls","control":"volume","persisted":false,"applied":false,"state":"platform_unavailable"}'
+        return 1
+    }
+    [ -x "$VOLUME" ] || {
+        printf '%s\n' '{"schema":1,"service":"bloom-controls","control":"volume","persisted":false,"applied":false,"state":"control_unavailable"}'
+        return 1
+    }
+    volume_status=$($VOLUME status 2>/dev/null) || volume_status=''
+    case "$volume_status" in
+        *'"available":true'*) ;;
+        *)
+            printf '%s\n' '{"schema":1,"service":"bloom-controls","control":"volume","persisted":false,"applied":false,"state":"control_unavailable"}'
+            return 1
+            ;;
+    esac
+    if [ "$persisted" = true ]; then
+        [ -x "$SETTINGS" ] || {
+            printf '%s\n' '{"schema":1,"service":"bloom-controls","control":"volume","persisted":false,"applied":false,"state":"settings_unavailable"}'
+            return 1
+        }
+        if ! "$SETTINGS" set device.volume "$value" >/dev/null 2>&1; then
+            printf '%s\n' '{"schema":1,"service":"bloom-controls","control":"volume","persisted":false,"applied":false,"state":"settings_rejected"}'
+            return 1
+        fi
+        if ! "$SETTINGS" set device.mute false >/dev/null 2>&1; then
+            printf '%s\n' '{"schema":1,"service":"bloom-controls","control":"volume","persisted":false,"applied":false,"state":"settings_rejected"}'
+            return 1
+        fi
+    fi
+    raw=$(raw_volume "$value") || raw=''
+    case "$raw" in ''|*[!0-9-]*)
+        printf '{"schema":1,"service":"bloom-controls","control":"volume","persisted":%s,"applied":false,"state":"calculation_failed"}\n' "$persisted"
+        return 1
+        ;;
+    esac
+    "$VOLUME" apply "$raw" >/dev/null 2>&1 || {
+        printf '{"schema":1,"service":"bloom-controls","control":"volume","persisted":%s,"applied":false,"state":"apply_failed"}\n' "$persisted"
+        return 1
+    }
+    printf '{"schema":1,"service":"bloom-controls","control":"volume","value":%s,"raw":%s,"persisted":%s,"applied":true,"state":"applied","model":"%s"}\n' \
+        "$value" "$raw" "$persisted" "$model"
 }
 
 apply_brightness() {
@@ -82,5 +151,7 @@ case "$#:${1:-}:${2:-}" in
     1:status:) status ;;
     3:apply:brightness) apply_brightness "$3" false ;;
     3:request:brightness) apply_brightness "$3" true ;;
+    3:apply:volume) apply_volume "$3" false ;;
+    3:request:volume) apply_volume "$3" true ;;
     *) printf '%s\n' '{"schema":1,"service":"bloom-controls","available":false,"state":"invalid_arguments"}'; exit 2 ;;
 esac
