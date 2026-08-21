@@ -88,7 +88,7 @@ static void render_label(SDL_Surface *screen, TTF_Font *font, const char *label,
     }
 }
 
-static void draw(SDL_Surface *screen, const BloomUiLayout *layout, TTF_Font *font,
+static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *layout, TTF_Font *font,
                  BloomUiDestination destination, const BloomUiFocus *library_focus,
                  const BloomUiFocus *collections_focus, const BloomLibraryGame *games,
                  const BloomLibraryGame *favorites, const BloomLibraryGame *recent, int has_recent,
@@ -136,8 +136,14 @@ static void draw(SDL_Surface *screen, const BloomUiLayout *layout, TTF_Font *fon
                          layout->content.width - 40, cream);
 #ifdef PLATFORM_MIYOOMINI
     bloom_ui_rotate_180(screen);
+    for (int page = 0; page < 3; ++page) {
+        SDL_BlitSurface(screen, NULL, video, NULL);
+        SDL_Flip(video);
+    }
+#else
+    SDL_BlitSurface(screen, NULL, video, NULL);
+    SDL_Flip(video);
 #endif
-    SDL_Flip(screen);
 }
 
 int main(int argc, char **argv)
@@ -174,9 +180,12 @@ int main(int argc, char **argv)
         free(games);
         return 1;
     }
-    SDL_Surface *screen = SDL_SetVideoMode(width, height, 32, SDL_HWSURFACE);
+    SDL_Surface *video = SDL_SetVideoMode(width, height, 32, SDL_HWSURFACE);
+    SDL_Surface *screen = SDL_CreateRGBSurface(SDL_SWSURFACE, width, height, 32, 0, 0, 0, 0);
     TTF_Font *font = TTF_OpenFont("/customer/app/wqy-microhei.ttc", height >= 540 ? 26 : 22);
-    if (screen == NULL || font == NULL) {
+    if (video == NULL || screen == NULL || font == NULL) {
+        if (screen != NULL)
+            SDL_FreeSurface(screen);
         free(games);
         return 1;
     }
@@ -189,8 +198,8 @@ int main(int argc, char **argv)
     BloomUiFocus collections_focus;
     bloom_ui_focus_init(&library_focus, game_count);
     bloom_ui_focus_init(&collections_focus, favorite_count);
-    draw(screen, &layout, font, destination, &library_focus, &collections_focus, games, favorites,
-         &recent, has_recent, home_selected);
+    draw(screen, video, &layout, font, destination, &library_focus, &collections_focus, games,
+         favorites, &recent, has_recent, home_selected);
     int running = 1;
     int exit_code = 0;
     while (running) {
@@ -270,10 +279,11 @@ int main(int argc, char **argv)
             }
         }
         if (running)
-            draw(screen, &layout, font, destination, &library_focus, &collections_focus, games,
-                 favorites, &recent, has_recent, home_selected);
+            draw(screen, video, &layout, font, destination, &library_focus, &collections_focus,
+                 games, favorites, &recent, has_recent, home_selected);
     }
     TTF_CloseFont(font);
+    SDL_FreeSurface(screen);
     TTF_Quit();
     SDL_Quit();
     free(games);
