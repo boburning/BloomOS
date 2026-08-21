@@ -1,0 +1,70 @@
+#!/bin/sh
+set -eu
+umask 077
+
+ROOT=${BLOOM_ROOT:-}
+RA=${BLOOM_RA_BIN:-$ROOT/mnt/SDCARD/.tmp_update/bin/bloom-ra}
+CURL=${BLOOM_CURL_BIN:-$ROOT/mnt/SDCARD/.tmp_update/bin/curl}
+JQ=${BLOOM_JQ_BIN:-$ROOT/mnt/SDCARD/.tmp_update/bin/jq}
+LIB_DIR=${BLOOM_RA_LOGIN_LIB_DIR:-$ROOT/mnt/SDCARD/.tmp_update/lib}
+ENDPOINT=${BLOOM_RA_LOGIN_ENDPOINT:-https://retroachievements.org/dorequest.php}
+CA_FILE=${BLOOM_RA_LOGIN_CA_FILE:-}
+
+fail() {
+    printf '{"schema":1,"service":"bloom-ra-login","error":{"code":"%s"}}\n' "$1"
+    exit 1
+}
+
+[ "$#" -eq 0 ] || fail invalid_arguments
+[ -x "$RA" ] && [ -x "$CURL" ] && [ -x "$JQ" ] || fail service_unavailable
+
+username=''
+password=''
+IFS= read -r username || fail invalid_input
+IFS= read -r password || fail invalid_input
+case "$username" in ''|*[!A-Za-z0-9_.-]*) fail invalid_username ;; esac
+[ "${#username}" -le 63 ] || fail invalid_username
+[ -n "$password" ] && [ "${#password}" -le 127 ] || fail invalid_password
+
+if [ -z "$CA_FILE" ]; then
+    for candidate in \
+        "$ROOT/mnt/SDCARD/.tmp_update/etc/ssl/certs/ca-certificates.crt" \
+        "$ROOT/mnt/SDCARD/.bloom/components/raofflineproxy/runtime/python/lib/python3.9/site-packages/pip/_vendor/certifi/cacert.pem" \
+        "$ROOT/etc/ssl/certs/ca-certificates.crt"; do
+        if [ -f "$candidate" ] && [ ! -L "$candidate" ]; then
+            CA_FILE=$candidate
+            break
+        fi
+    done
+fi
+[ -n "$CA_FILE" ] && [ -f "$CA_FILE" ] && [ ! -L "$CA_FILE" ] || fail tls_unavailable
+
+encoded_username=$(printf '%s' "$username" | "$JQ" -sRr @uri 2>/dev/null) || fail invalid_username
+encoded_password=$(printf '%s' "$password" | "$JQ" -sRr @uri 2>/dev/null) || fail invalid_password
+password=''
+response=$(printf 'r=login2&u=%s&p=%s' "$encoded_username" "$encoded_password" | \
+    LD_LIBRARY_PATH="/lib:/config/lib:$LIB_DIR:/customer/lib:$LIB_DIR/parasyte${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" \
+    CURL_CA_BUNDLE="$CA_FILE" \
+    "$CURL" --silent --show-error --fail --connect-timeout 5 --max-time 20 \
+    --user-agent 'BloomOS/0.1.0 (Miyoo) bloom-ra-login/1.0.0' \
+    --header 'Content-Type: application/x-www-form-urlencoded' \
+    --data-binary @- "$ENDPOINT" 2>/dev/null) || {
+        encoded_password=''
+        fail login_unavailable
+    }
+encoded_password=''
+
+token=$(printf '%s' "$response" | "$JQ" -er 'select(.Success == true) | .Token | select(type == "string" and length > 0 and length < 128)' 2>/dev/null) || fail login_rejected
+canonical_username=$(printf '%s' "$response" | "$JQ" -er 'select(.Success == true) | .User | select(type == "string" and length > 0 and length < 64)' 2>/dev/null) || fail login_rejected
+response=''
+case "$canonical_username" in *[!A-Za-z0-9_.-]*) token=''; fail login_rejected ;; esac
+
+status=$(printf '%s\n' "$token" | \
+    LD_LIBRARY_PATH="$LIB_DIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" \
+    "$RA" account configure "$canonical_username" softcore disabled 2>/dev/null) || {
+        token=''
+        fail account_store_failed
+    }
+token=''
+printf '%s' "$status" | "$JQ" -e 'select(.authenticated == true)' >/dev/null 2>&1 || fail account_store_failed
+printf '{"schema":1,"service":"bloom-ra-login","configured":true,"authenticated":true}\n'

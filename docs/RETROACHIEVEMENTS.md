@@ -241,14 +241,17 @@ separate mode-`0600` credential file; no password is retained. Writes use an
 exclusive temporary file, `fsync`, and atomic rename, and symlinked or
 group/world-readable credential state is rejected. `bloomctl achievements
 account status` reports only configured/enabled/authenticated/mode booleans and
-never returns the username or token. Network login/UI wiring will pass an
-authenticated token into this boundary without placing secrets in argv.
+never returns the username or token. Device-native login exchanges credentials
+for an authenticated token without placing the username, password, or token in
+process arguments.
 
 Tweaks exposes the graphical account/settings surface on every Mini family
 device. It consumes only the redacted account and aggregate proxy contracts,
-delegates mutations to `bloomctl`, and directs sign-in to Bloom's computer-side
-one-time password-to-token helper. It never reads or stores a password, username,
-token, proxy database, ROM path, or individual award detail.
+delegates mutations to `bloomctl`, and provides a QWERTY on-screen keyboard for
+the one-time password-to-token exchange. The password is masked, travels only
+over a private child-process standard-input pipe, is cleared from the UI buffer,
+and is never retained. Tweaks never reads the resulting token, proxy database,
+ROM path, or individual award detail.
 
 ## Structured launch policy
 
@@ -332,9 +335,10 @@ stores the token in device-local JFFS2 at
 `/appconfigs/bloom/achievements/credentials` with mode `0600`. Moving an SD
 card therefore moves offline metadata and preferences, but never the online
 credential; each device must be authenticated separately. The host bootstrap
-helper prompts without echo, exchanges the password once for an RA token, and
-sends only that token over pinned SSH standard input. Passwords and tokens are
-never command-line arguments.
+helper remains available for development and recovery. Ordinary users sign in
+directly under Tweaks. The device submits a verified-TLS form to RA's documented
+login endpoint, imports only the returned token through standard input, and
+discards the password. Passwords and tokens are never command-line arguments.
 
 `BloomLaunchRequest` gains a validated achievements policy. Bloom generates a
 temporary RetroArch append config; permanent `retroarch.cfg` is byte-identical

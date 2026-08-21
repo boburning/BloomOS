@@ -73,8 +73,13 @@ int main(int argc, char *argv[])
     signal(SIGINT, sigHandler);
     signal(SIGTERM, sigHandler);
 
-    if (use_display || strlen(apply_tool) == 0)
+    if (use_display || strlen(apply_tool) == 0) {
+        // MainUI may leave the Miyoo framebuffer scanning a secondary page.
+        // Reset to page zero before SDL takes ownership or Tweaks renders into
+        // an invisible page while the physical panel remains black.
+        display_init(false);
         SDL_InitDefault();
+    }
 
     settings_load();
 

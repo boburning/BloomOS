@@ -367,16 +367,18 @@ Planned work includes safe updates and rollback, optional synchronization and of
   directories, uses its pinned runtime CA bundle, and physically runs on Mini
   Plus. The optional runtime remains outside stable releases until its
   binary-input provenance is admitted or replaced by a source build.
-- [ ] RA-13: finish account/settings UI and authentication lifecycle. The
+- [x] RA-13: account/settings UI and authentication lifecycle. The
   canonical service, redacted status, hidden host login bootstrap, one-time
   password-to-token exchange, and device-local mode-`0600` JFFS2 token storage
   are implemented and physically exercised with both a disposable token and a
   real RA login on Mini Plus. Redacted account status, enable/mode/offline
   settings mutations, and sign-out are available through the stable CLI;
   Tweaks now provides the graphical account status, enable/mode/offline controls,
-  secure sign-in guidance, sign-out, connection check, changed-game scan,
+  device-native QWERTY credential entry, sign-out, connection check, changed-game scan,
   offline-cache selectors, and aggregate pending-award status. Physical UI
-  validation remains pending.
+  validation and a real password-to-token login pass on Mini Plus. Passwords
+  remain masked, stdin-only, and are not retained; only the device-local token
+  is stored.
 - [ ] RA-14: finish session-runner integration for structured RA launch policy.
   `BloomLaunchRequest`, immutable transport resolution, and mode-`0600`
   temporary append configs are implemented; the launch CLI now accepts tokens

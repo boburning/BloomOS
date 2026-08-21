@@ -3,13 +3,16 @@
 
 #include <cjson/cJSON.h>
 #include <stdbool.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/wait.h>
+#include <unistd.h>
 
 #include "components/list.h"
 
 #include "./appstate.h"
+#include "./text_entry.h"
 #include "./tools.h"
 
 #define BLOOMCTL_RA "/mnt/SDCARD/.tmp_update/bin/bloomctl achievements"
@@ -119,14 +122,68 @@ static void action_ra_offline(void *pt)
         ra_run_setting(BLOOMCTL_RA " account set offline-casual disabled >/dev/null 2>&1");
 }
 
-static void action_ra_login_help(void *_)
+static bool ra_write_all(int descriptor, const char *value, size_t length)
+{
+    size_t written = 0;
+    while (written < length) {
+        ssize_t result = write(descriptor, value + written, length - written);
+        if (result <= 0)
+            return false;
+        written += (size_t)result;
+    }
+    return true;
+}
+
+static bool ra_submit_login(const char *username, const char *password)
+{
+    int input_pipe[2];
+    if (pipe(input_pipe) != 0)
+        return false;
+    pid_t child = fork();
+    if (child == 0) {
+        int null_output = open("/dev/null", O_WRONLY);
+        dup2(input_pipe[0], STDIN_FILENO);
+        if (null_output >= 0) {
+            dup2(null_output, STDOUT_FILENO);
+            dup2(null_output, STDERR_FILENO);
+        }
+        close(input_pipe[0]);
+        close(input_pipe[1]);
+        execl("/mnt/SDCARD/.tmp_update/bin/bloomctl", "bloomctl", "achievements", "account", "login", (char *)NULL);
+        _exit(127);
+    }
+    close(input_pipe[0]);
+    if (child < 0) {
+        close(input_pipe[1]);
+        return false;
+    }
+    bool sent = ra_write_all(input_pipe[1], username, strlen(username)) &&
+                ra_write_all(input_pipe[1], "\n", 1) &&
+                ra_write_all(input_pipe[1], password, strlen(password)) &&
+                ra_write_all(input_pipe[1], "\n", 1);
+    close(input_pipe[1]);
+    int status = 0;
+    return sent && waitpid(child, &status, 0) == child && WIFEXITED(status) && WEXITSTATUS(status) == 0;
+}
+
+static void action_ra_login(void *_)
 {
     (void)_;
-    _toolDialog("RetroAchievements sign in",
-                "Connect the SD card to a computer\nand run BloomOS's secure RA login\nhelper. Passwords are never stored.",
-                false);
+    char username[64] = {0};
+    char password[128] = {0};
+    if (!text_entry_dialog("RA username", username, sizeof(username), false) ||
+        !text_entry_dialog("RA password", password, sizeof(password), true)) {
+        memset(password, 0, sizeof(password));
+        return;
+    }
+    _toolDialog("RetroAchievements", "Signing in securely...", false);
+    bool authenticated = ra_submit_login(username, password);
+    memset(password, 0, sizeof(password));
+    memset(username, 0, sizeof(username));
+    _toolDialog("RetroAchievements", authenticated ? "Signed in" : "Sign-in failed", false);
     if (video != NULL)
-        msleep(2200);
+        msleep(authenticated ? 1000 : 1800);
+    reset_menus = true;
     all_changed = true;
 }
 
@@ -234,8 +291,10 @@ static void menu_retroachievements(void *_)
                      (ListItem){.label = "", .disabled = true});
         strncpy(_menu_retroachievements.items[0].label, account_label, STR_MAX - 1);
         list_addItemWithInfoNote(&_menu_retroachievements,
-                                 (ListItem){.label = "Sign-in instructions", .action = action_ra_login_help},
-                                 "Bloom uses a computer-assisted one-time\npassword-to-token login. The password is\nnever stored on the SD card or device.");
+                                 (ListItem){.label = "", .action = action_ra_login},
+                                 "Enter your RetroAchievements username and\npassword on-device. Bloom stores only the\nreturned token, never the password.");
+        strncpy(_menu_retroachievements.items[1].label,
+                ra_settings.configured ? "Sign in again" : "Sign in", STR_MAX - 1);
         list_addItemWithInfoNote(&_menu_retroachievements,
                                  (ListItem){.label = "Enable achievements", .item_type = TOGGLE, .disabled = !ra_settings.configured, .value = ra_settings.enabled, .action = action_ra_enabled},
                                  "Enable RetroAchievements for supported\ngames and certified or best-effort cores.");
