@@ -495,6 +495,11 @@ SH
     [ "$output" = "{\"schema\":1,\"arguments\":\"import-onion\",\"library_path\":\"$BLOOM_ROOT/mnt/SDCARD/.tmp_update/lib\"}" ]
 
     run env -u LD_LIBRARY_PATH BLOOM_LIBRARY_BIN="$service" \
+        sh /workspace/static/build/.tmp_update/bin/bloomctl library import-legacy
+    [ "$status" -eq 0 ]
+    [ "$output" = "{\"schema\":1,\"arguments\":\"import-legacy\",\"library_path\":\"$BLOOM_ROOT/mnt/SDCARD/.tmp_update/lib\"}" ]
+
+    run env -u LD_LIBRARY_PATH BLOOM_LIBRARY_BIN="$service" \
         sh /workspace/static/build/.tmp_update/bin/bloomctl library scan --changed
     [ "$status" -eq 0 ]
     [ "$output" = "{\"schema\":1,\"arguments\":\"scan --changed\",\"library_path\":\"$BLOOM_ROOT/mnt/SDCARD/.tmp_update/lib\"}" ]

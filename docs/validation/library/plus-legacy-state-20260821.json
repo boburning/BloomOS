@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "date": "2026-08-21",
+  "operator": "Codex remote automation",
+  "device": {
+    "family": "mini_plus",
+    "model_id": 354
+  },
+  "installed_build": {
+    "version": "0.1.0-dev-9b5c3aa8",
+    "update_state": "known_good"
+  },
+  "candidate": {
+    "source_base_commit": "938d5e3d0a55133044f93c1d43afe379759d1b2a",
+    "binary_sha256": "cea5dcd419a8c49e5255fea762dc7c1fbb52880e9be464948129cda5d2e84a03"
+  },
+  "catalog": {
+    "baseline_schema": 2,
+    "candidate_schema": 3,
+    "generation": 2,
+    "indexed_games": 22,
+    "indexed_systems": 53,
+    "indexed_apps": 23
+  },
+  "fixture_result": {
+    "canonical_favorites": 1,
+    "canonical_recents": 0,
+    "matched": 1,
+    "unmatched": 1,
+    "duplicates": 1,
+    "invalid": 18,
+    "repeat_identical": true
+  },
+  "checks": {
+    "upload_hash_matches": "pass",
+    "arm_binary_executes": "pass",
+    "schema_2_to_3_migration": "pass",
+    "exact_game_id_match": "pass",
+    "duplicate_classification": "pass",
+    "unmatched_classification": "pass",
+    "non_game_recent_rejection": "pass",
+    "repeat_import_idempotent": "pass",
+    "database_restored_byte_identical": "pass",
+    "favorites_restored_byte_identical": "pass",
+    "recents_restored_byte_identical": "pass",
+    "temporary_candidate_cleanup": "pass"
+  },
+  "notes": "Candidate-only validation used one operator-provided installed game without reading or recording ROM content. Public evidence intentionally omits ROM paths and titles. The test restored the prior database and both MainUI lists before cleanup."
+}

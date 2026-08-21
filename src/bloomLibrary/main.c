@@ -1,5 +1,6 @@
 #include "bloom_library_database.h"
 #include "bloom_library_import.h"
+#include "bloom_library_legacy.h"
 #include "bloom_library_query.h"
 #include "bloom_library_scan.h"
 
@@ -16,6 +17,9 @@
 #define EMU_ROOT "/mnt/SDCARD/Emu"
 #define APP_ROOT "/mnt/SDCARD/App"
 #define ROM_ROOT "/mnt/SDCARD/Roms"
+#define FAVORITES_PATH ROM_ROOT "/favourite.json"
+#define RECENTS_PATH ROM_ROOT "/recentlist.json"
+#define RECENTS_HIDDEN_PATH ROM_ROOT "/recentlist-hidden.json"
 
 static int ensure_directory(const char *path)
 {
@@ -126,14 +130,16 @@ int main(int argc, char **argv)
 {
     int status_command = argc == 2 && strcmp(argv[1], "status") == 0;
     int import_command = argc == 2 && strcmp(argv[1], "import-onion") == 0;
+    int import_legacy = argc == 2 && strcmp(argv[1], "import-legacy") == 0;
     int scan_all = argc == 3 && strcmp(argv[1], "scan") == 0 &&
                    (strcmp(argv[2], "--changed") == 0 || strcmp(argv[2], "--all") == 0);
     int scan_system = argc == 4 && strcmp(argv[1], "scan") == 0 &&
                       strcmp(argv[2], "--system") == 0;
     int query_games = argc >= 2 && strcmp(argv[1], "games") == 0;
-    if (!status_command && !import_command && !scan_all && !scan_system && !query_games) {
+    if (!status_command && !import_command && !import_legacy && !scan_all && !scan_system &&
+        !query_games) {
         fprintf(stderr,
-                "Usage: bloom-library status|import-onion|scan "
+                "Usage: bloom-library status|import-onion|import-legacy|scan "
                 "--changed|--all|--system SYSTEM|games --limit N [--after GAME_ID]|games "
                 "--system SYSTEM --limit N [--after GAME_ID]\n");
         return 2;
@@ -162,6 +168,26 @@ int main(int argc, char **argv)
                "\"generation\":%d,\"systems\":%d,\"apps\":%d}\n",
                imported.changed ? "true" : "false", imported.generation, imported.systems,
                imported.apps);
+        return 0;
+    }
+    if (import_legacy) {
+        BloomLibraryLegacyResult imported;
+        char error[160] = {0};
+        struct stat metadata;
+        const char *recents = lstat(RECENTS_HIDDEN_PATH, &metadata) == 0 ? RECENTS_HIDDEN_PATH
+                                                                         : RECENTS_PATH;
+        if (bloom_library_import_legacy(database, ROM_ROOT, FAVORITES_PATH, recents, &imported,
+                                        error, sizeof(error)) != SQLITE_OK) {
+            sqlite3_close(database);
+            fprintf(stderr, "{\"schema\":1,\"error\":{\"code\":\"legacy_import_failed\"}}\n");
+            return 1;
+        }
+        sqlite3_close(database);
+        printf("{\"schema\":1,\"service\":\"bloom-library\",\"favorites\":%d,"
+               "\"recents\":%d,\"matched\":%d,\"unmatched\":%d,\"duplicates\":%d,"
+               "\"invalid\":%d}\n",
+               imported.favorites, imported.recents, imported.matched, imported.unmatched,
+               imported.duplicates, imported.invalid);
         return 0;
     }
     if (scan_all || scan_system) {
@@ -198,8 +224,8 @@ int main(int argc, char **argv)
     sqlite3_close(database);
     printf("{\"schema\":1,\"service\":\"bloom-library\",\"state\":\"%s\","
            "\"database_schema\":%d,\"generation\":%d,\"systems\":%d,\"games\":%d,"
-           "\"apps\":%d,\"favorites\":%d}\n",
+           "\"apps\":%d,\"favorites\":%d,\"recents\":%d}\n",
            health.status, health.schema_version, health.generation, health.systems, health.games,
-           health.apps, health.favorites);
+           health.apps, health.favorites, health.recents);
     return 0;
 }

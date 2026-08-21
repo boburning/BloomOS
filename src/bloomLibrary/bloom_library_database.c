@@ -64,7 +64,7 @@ static int index_exists(sqlite3 *database, const char *name)
     return result;
 }
 
-static int validate_schema(sqlite3 *database, int require_global_index)
+static int validate_schema(sqlite3 *database, int version)
 {
     static const char *const tables[] = {"schema_version", "library_state", "systems", "games",
                                          "apps", "favorites", "legacy_items"};
@@ -80,10 +80,16 @@ static int validate_schema(sqlite3 *database, int require_global_index)
         if (result != SQLITE_OK)
             return result;
     }
-    if (require_global_index) {
+    if (version >= 2) {
         int result = index_exists(database, "games_global_sort");
         if (result != SQLITE_OK)
             return result;
+    }
+    if (version >= 3) {
+        int exists = 0;
+        int result = table_exists(database, "recents", &exists);
+        if (result != SQLITE_OK || !exists)
+            return result == SQLITE_OK ? SQLITE_CORRUPT : result;
     }
     sqlite3_stmt *statement = NULL;
     int result = sqlite3_prepare_v2(database, "SELECT COUNT(*) FROM schema_version", -1,
@@ -119,11 +125,11 @@ int bloom_library_database_migrate(sqlite3 *database)
     if (result != SQLITE_OK)
         return result;
     if (version == BLOOM_LIBRARY_DATABASE_SCHEMA_VERSION)
-        return validate_schema(database, 1);
+        return validate_schema(database, version);
     if (version < 0 || version > BLOOM_LIBRARY_DATABASE_SCHEMA_VERSION)
         return SQLITE_MISMATCH;
     if (version == 1) {
-        result = validate_schema(database, 0);
+        result = validate_schema(database, 1);
         if (result != SQLITE_OK)
             return result;
         result = sqlite3_exec(database, "BEGIN IMMEDIATE", NULL, NULL, NULL);
@@ -134,7 +140,30 @@ int bloom_library_database_migrate(sqlite3 *database)
                 "UPDATE schema_version SET version=2",
                 NULL, NULL, NULL);
         if (result == SQLITE_OK)
-            result = validate_schema(database, 1);
+            result = validate_schema(database, 2);
+        if (result == SQLITE_OK)
+            result = sqlite3_exec(database, "COMMIT", NULL, NULL, NULL);
+        if (result != SQLITE_OK)
+            sqlite3_exec(database, "ROLLBACK", NULL, NULL, NULL);
+        if (result != SQLITE_OK)
+            return result;
+        version = 2;
+    }
+    if (version == 2) {
+        result = validate_schema(database, 2);
+        if (result != SQLITE_OK)
+            return result;
+        result = sqlite3_exec(database, "BEGIN IMMEDIATE", NULL, NULL, NULL);
+        if (result == SQLITE_OK)
+            result = sqlite3_exec(
+                database,
+                "CREATE TABLE recents("
+                "bloom_game_id TEXT PRIMARY KEY,position INTEGER NOT NULL UNIQUE,"
+                "FOREIGN KEY(bloom_game_id) REFERENCES games(bloom_game_id));"
+                "UPDATE schema_version SET version=3",
+                NULL, NULL, NULL);
+        if (result == SQLITE_OK)
+            result = validate_schema(database, 3);
         if (result == SQLITE_OK)
             result = sqlite3_exec(database, "COMMIT", NULL, NULL, NULL);
         if (result != SQLITE_OK)
@@ -147,7 +176,7 @@ int bloom_library_database_migrate(sqlite3 *database)
     result = sqlite3_exec(
         database,
         "CREATE TABLE schema_version(version INTEGER NOT NULL);"
-        "INSERT INTO schema_version VALUES(2);"
+        "INSERT INTO schema_version VALUES(3);"
         "CREATE TABLE library_state("
         "id INTEGER PRIMARY KEY CHECK(id=1),generation INTEGER NOT NULL DEFAULT 0,status TEXT NOT NULL "
         "CHECK(status IN('empty','ready','scanning','stale','error')),source TEXT NOT NULL);"
@@ -171,6 +200,9 @@ int bloom_library_database_migrate(sqlite3 *database)
         "CREATE TABLE favorites("
         "bloom_game_id TEXT PRIMARY KEY,position INTEGER NOT NULL UNIQUE,"
         "FOREIGN KEY(bloom_game_id) REFERENCES games(bloom_game_id));"
+        "CREATE TABLE recents("
+        "bloom_game_id TEXT PRIMARY KEY,position INTEGER NOT NULL UNIQUE,"
+        "FOREIGN KEY(bloom_game_id) REFERENCES games(bloom_game_id));"
         "CREATE TABLE legacy_items("
         "kind TEXT NOT NULL CHECK(kind IN('favorite','recent')),position INTEGER NOT NULL,"
         "legacy_identity TEXT NOT NULL,status TEXT NOT NULL "
@@ -178,7 +210,7 @@ int bloom_library_database_migrate(sqlite3 *database)
         "PRIMARY KEY(kind,position),FOREIGN KEY(bloom_game_id) REFERENCES games(bloom_game_id));",
         NULL, NULL, NULL);
     if (result == SQLITE_OK)
-        result = validate_schema(database, 1);
+        result = validate_schema(database, 3);
     if (result == SQLITE_OK)
         result = sqlite3_exec(database, "COMMIT", NULL, NULL, NULL);
     if (result != SQLITE_OK)
@@ -249,7 +281,7 @@ int bloom_library_database_health(sqlite3 *database, BloomLibraryHealth *health)
     int result = database_version(database, &health->schema_version);
     if (result != SQLITE_OK || health->schema_version != BLOOM_LIBRARY_DATABASE_SCHEMA_VERSION)
         return result == SQLITE_OK ? SQLITE_MISMATCH : result;
-    if ((result = validate_schema(database, 1)) != SQLITE_OK ||
+    if ((result = validate_schema(database, BLOOM_LIBRARY_DATABASE_SCHEMA_VERSION)) != SQLITE_OK ||
         (result = scalar(database, "SELECT generation FROM library_state WHERE id=1",
                          &health->generation)) !=
             SQLITE_OK ||
@@ -261,6 +293,8 @@ int bloom_library_database_health(sqlite3 *database, BloomLibraryHealth *health)
         (result = scalar(database, "SELECT COUNT(*) FROM apps WHERE present=1", &health->apps)) !=
             SQLITE_OK ||
         (result = scalar(database, "SELECT COUNT(*) FROM favorites", &health->favorites)) !=
+            SQLITE_OK ||
+        (result = scalar(database, "SELECT COUNT(*) FROM recents", &health->recents)) !=
             SQLITE_OK)
         return result;
     return SQLITE_OK;

@@ -353,7 +353,12 @@ Current frontend progress:
   Incremental game enumeration/invalidation and bounded GameID-cursor paging
   are implemented; a 10k-game host fixture completes in about 1.1 seconds, and
   an exact-hash Plus candidate indexed 22 installed games with a repeat no-op.
-  Favorite/recent import, signed-update persistence, and consumer cutover
+  Deterministic read-only Onion favorite/recent import is implemented with
+  canonical GameID matching and explicit unmatched, duplicate, and invalid
+  outcomes. An exact-hash Plus candidate matched a real indexed favorite,
+  classified the remaining fixture and app-only recent entries correctly, and
+  repeated idempotently before restoring the database and MainUI lists to their
+  original hashes. Signed-update persistence and Bloom-owned consumer cutover
   remain pending.
 - [ ] Bloom Shell vertical slice and supervised MainUI fallback.
 
