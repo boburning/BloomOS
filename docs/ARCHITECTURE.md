@@ -40,7 +40,13 @@ legacy import. The file explicitly records whether `legacy` compatibility or
 Bloom-owned state after cutover.
 
 During migration, Onion files remain untouched and existing consumers continue
-to use them. Follow-up integration moves consumers behind this boundary before
+to use them. A serialized compatibility sync may refresh known canonical values
+only while authority remains `legacy`; it preserves unknown canonical fields,
+increments generation only for a real change, and is rejected after Bloom
+cutover. Existing Onion save paths invoke the compatibility sync through a fixed
+`fork`/`execl` boundary; they never construct a shell command, and a missing or
+inactive Bloom service cannot prevent the legacy save from completing. Follow-up
+integration moves consumers behind this boundary before authority changes and
 Bloom becomes the sole writer; the presence of an imported schema alone is not
 treated as authority cutover.
 

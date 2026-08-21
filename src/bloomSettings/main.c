@@ -24,7 +24,7 @@ static int ensure_directory(const char *path)
 
 static int usage(void)
 {
-    fprintf(stderr, "Usage: bloom-settings status|import-onion\n");
+    fprintf(stderr, "Usage: bloom-settings status|import-onion|sync-onion\n");
     return 2;
 }
 
@@ -45,6 +45,18 @@ int main(int argc, char **argv)
         printf("{\"schema\":1,\"service\":\"bloom-settings\",\"settings_schema\":%d,"
                "\"state\":\"ready\",\"source\":\"%s\",\"authority\":\"%s\"}\n",
                schema, source, authority);
+        return 0;
+    }
+    if (strcmp(argv[1], "sync-onion") == 0) {
+        BloomSettingsSyncResult result;
+        if (bloom_settings_sync_onion(ONION_SYSTEM_PATH, ONION_CONFIG_ROOT, SETTINGS_PATH,
+                                      &result, error, sizeof(error)) != 0) {
+            fprintf(stderr, "{\"schema\":1,\"error\":{\"code\":\"sync_rejected\"}}\n");
+            return 1;
+        }
+        printf("{\"schema\":1,\"service\":\"bloom-settings\",\"changed\":%s,"
+               "\"generation\":%d}\n",
+               result.changed ? "true" : "false", result.generation);
         return 0;
     }
     if (strcmp(argv[1], "import-onion") != 0)

@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/file.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -96,6 +97,37 @@ static int write_atomic(const char *path, const char *content, size_t length)
     }
     chmod(path, 0600);
     return 0;
+}
+
+static int acquire_settings_lock(const char *settings_path, int *descriptor, char *error,
+                                 size_t error_size)
+{
+    char lock_path[PATH_MAX];
+    if (snprintf(lock_path, sizeof(lock_path), "%s.lock", settings_path) >= (int)sizeof(lock_path)) {
+        set_error(error, error_size, "settings lock path is invalid");
+        return -1;
+    }
+    int lock = open(lock_path, O_RDWR | O_CREAT | O_NOFOLLOW, 0600);
+    if (lock < 0) {
+        set_error(error, error_size, "settings lock is unavailable");
+        return -1;
+    }
+    struct stat metadata;
+    if (fstat(lock, &metadata) != 0 || !S_ISREG(metadata.st_mode) || flock(lock, LOCK_EX) != 0) {
+        close(lock);
+        set_error(error, error_size, "settings lock is invalid");
+        return -1;
+    }
+    *descriptor = lock;
+    return 0;
+}
+
+static void release_settings_lock(int descriptor)
+{
+    if (descriptor >= 0) {
+        flock(descriptor, LOCK_UN);
+        close(descriptor);
+    }
 }
 
 static cJSON *parse_optional_object(const char *path, char **raw, size_t *raw_length, int *missing)
@@ -252,21 +284,12 @@ failure:
     return NULL;
 }
 
-int bloom_settings_status(const char *settings_path, int *schema, char *source, size_t source_size,
-                          char *authority, size_t authority_size, char *error, size_t error_size)
+static int validate_settings_root(const cJSON *root, int *schema, int *generation, char *source,
+                                  size_t source_size, char *authority, size_t authority_size,
+                                  char *error, size_t error_size)
 {
-    char *raw = NULL;
-    size_t length = 0;
-    if (settings_path == NULL || schema == NULL || source == NULL || source_size == 0 ||
-        authority == NULL || authority_size == 0 ||
-        read_regular_file(settings_path, &raw, &length, 0) != 0) {
-        set_error(error, error_size, "settings are unavailable");
-        return -1;
-    }
-    cJSON *root = cJSON_ParseWithLength(raw, length);
-    free(raw);
     const cJSON *schema_node = root ? cJSON_GetObjectItemCaseSensitive(root, "schema") : NULL;
-    const cJSON *generation = root ? cJSON_GetObjectItemCaseSensitive(root, "generation") : NULL;
+    const cJSON *generation_node = root ? cJSON_GetObjectItemCaseSensitive(root, "generation") : NULL;
     const cJSON *authority_node = root ? cJSON_GetObjectItemCaseSensitive(root, "authority") : NULL;
     const cJSON *source_node = root ? cJSON_GetObjectItemCaseSensitive(root, "source") : NULL;
     const cJSON *kind = source_node ? cJSON_GetObjectItemCaseSensitive(source_node, "kind") : NULL;
@@ -274,30 +297,63 @@ int bloom_settings_status(const char *settings_path, int *schema, char *source, 
     const cJSON *interface = root ? cJSON_GetObjectItemCaseSensitive(root, "interface") : NULL;
     const cJSON *behavior = root ? cJSON_GetObjectItemCaseSensitive(root, "behavior") : NULL;
     const cJSON *compatibility = root ? cJSON_GetObjectItemCaseSensitive(root, "compatibility") : NULL;
-    if (!cJSON_IsObject(root) || !cJSON_IsNumber(schema_node) ||
+    if (schema == NULL || generation == NULL || source == NULL || source_size == 0 ||
+        authority == NULL || authority_size == 0 || !cJSON_IsObject(root) ||
+        !cJSON_IsNumber(schema_node) ||
         schema_node->valuedouble != schema_node->valueint || schema_node->valueint != BLOOM_SETTINGS_SCHEMA ||
-        !cJSON_IsNumber(generation) || generation->valueint < 1 ||
-        generation->valuedouble != generation->valueint || !cJSON_IsString(authority_node) ||
+        !cJSON_IsNumber(generation_node) || generation_node->valueint < 1 ||
+        generation_node->valuedouble != generation_node->valueint || !cJSON_IsString(authority_node) ||
         (strcmp(authority_node->valuestring, "legacy") != 0 &&
          strcmp(authority_node->valuestring, "bloom") != 0) ||
         strlen(authority_node->valuestring) >= authority_size || !cJSON_IsObject(source_node) ||
         !cJSON_IsString(kind) || !safe_identifier(kind->valuestring, source_size) ||
         !cJSON_IsObject(device) ||
         !cJSON_IsObject(interface) || !cJSON_IsObject(behavior) || !cJSON_IsObject(compatibility)) {
-        cJSON_Delete(root);
         set_error(error, error_size, "settings schema is invalid or unsupported");
         return -1;
     }
     *schema = schema_node->valueint;
+    *generation = generation_node->valueint;
     snprintf(source, source_size, "%s", kind->valuestring);
     snprintf(authority, authority_size, "%s", authority_node->valuestring);
-    cJSON_Delete(root);
     return 0;
 }
 
-int bloom_settings_import_onion(const char *onion_system_path, const char *onion_config_root,
-                                const char *settings_path, const char *snapshot_path,
-                                BloomSettingsImportResult *result, char *error, size_t error_size)
+static cJSON *load_settings_root(const char *settings_path, char *error, size_t error_size)
+{
+    char *raw = NULL;
+    size_t length = 0;
+    if (read_regular_file(settings_path, &raw, &length, 0) != 0) {
+        set_error(error, error_size, "settings are unavailable");
+        return NULL;
+    }
+    cJSON *root = cJSON_ParseWithLength(raw, length);
+    free(raw);
+    if (!cJSON_IsObject(root)) {
+        cJSON_Delete(root);
+        set_error(error, error_size, "settings schema is invalid or unsupported");
+        return NULL;
+    }
+    return root;
+}
+
+int bloom_settings_status(const char *settings_path, int *schema, char *source, size_t source_size,
+                          char *authority, size_t authority_size, char *error, size_t error_size)
+{
+    if (settings_path == NULL) {
+        set_error(error, error_size, "settings are unavailable");
+        return -1;
+    }
+    cJSON *root = load_settings_root(settings_path, error, error_size);
+    int generation = 0;
+    int result = root == NULL ? -1 : validate_settings_root(root, schema, &generation, source, source_size, authority, authority_size, error, error_size);
+    cJSON_Delete(root);
+    return result;
+}
+
+static int import_onion_unlocked(const char *onion_system_path, const char *onion_config_root,
+                                 const char *settings_path, const char *snapshot_path,
+                                 BloomSettingsImportResult *result, char *error, size_t error_size)
 {
     if (onion_system_path == NULL || onion_config_root == NULL || settings_path == NULL ||
         snapshot_path == NULL || result == NULL) {
@@ -387,5 +443,144 @@ failure:
     cJSON_Delete(keymap);
     free(system_raw);
     free(keymap_raw);
+    return -1;
+}
+
+int bloom_settings_import_onion(const char *onion_system_path, const char *onion_config_root,
+                                const char *settings_path, const char *snapshot_path,
+                                BloomSettingsImportResult *result, char *error, size_t error_size)
+{
+    if (settings_path == NULL) {
+        set_error(error, error_size, "invalid settings import request");
+        return -1;
+    }
+    int lock = -1;
+    if (acquire_settings_lock(settings_path, &lock, error, error_size) != 0)
+        return -1;
+    int outcome = import_onion_unlocked(onion_system_path, onion_config_root, settings_path,
+                                        snapshot_path, result, error, error_size);
+    release_settings_lock(lock);
+    return outcome;
+}
+
+static int replace_section(cJSON *destination, cJSON *source, const char *name)
+{
+    cJSON *replacement = cJSON_Duplicate(cJSON_GetObjectItemCaseSensitive(source, name), 1);
+    if (replacement == NULL)
+        return 0;
+    if (!cJSON_ReplaceItemInObjectCaseSensitive(destination, name, replacement)) {
+        cJSON_Delete(replacement);
+        return 0;
+    }
+    return 1;
+}
+
+int bloom_settings_sync_onion(const char *onion_system_path, const char *onion_config_root,
+                              const char *settings_path, BloomSettingsSyncResult *result,
+                              char *error, size_t error_size)
+{
+    if (onion_system_path == NULL || onion_config_root == NULL || settings_path == NULL ||
+        result == NULL) {
+        set_error(error, error_size, "invalid settings sync request");
+        return -1;
+    }
+    memset(result, 0, sizeof(*result));
+    int lock = -1;
+    if (acquire_settings_lock(settings_path, &lock, error, error_size) != 0)
+        return -1;
+    cJSON *current = load_settings_root(settings_path, error, error_size);
+    char *before = NULL;
+    char *normalized_after = NULL;
+    char *published = NULL;
+    int schema = 0;
+    int generation = 0;
+    char source_name[32] = {0};
+    char authority[16] = {0};
+    if (current == NULL ||
+        validate_settings_root(current, &schema, &generation, source_name, sizeof(source_name),
+                               authority, sizeof(authority), error, error_size) != 0)
+        goto failure;
+    if (strcmp(authority, "legacy") != 0) {
+        set_error(error, error_size, "legacy settings sync is disabled after Bloom cutover");
+        goto failure;
+    }
+    before = cJSON_PrintUnformatted(current);
+    if (before == NULL) {
+        set_error(error, error_size, "legacy settings sync could not be created");
+        goto failure;
+    }
+
+    char *system_raw = NULL;
+    size_t system_length = 0;
+    int system_missing = 0;
+    cJSON *system = parse_optional_object(onion_system_path, &system_raw, &system_length,
+                                          &system_missing);
+    char keymap_path[PATH_MAX];
+    char *keymap_raw = NULL;
+    size_t keymap_length = 0;
+    int keymap_missing = 0;
+    cJSON *keymap = NULL;
+    if (system != NULL && path_join(keymap_path, sizeof(keymap_path), onion_config_root,
+                                    "keymap.json") == 0)
+        keymap = parse_optional_object(keymap_path, &keymap_raw, &keymap_length, &keymap_missing);
+    if (system == NULL || keymap == NULL) {
+        set_error(error, error_size, "legacy settings are invalid");
+        cJSON_Delete(system);
+        cJSON_Delete(keymap);
+        free(system_raw);
+        free(keymap_raw);
+        goto failure;
+    }
+    cJSON *fresh = build_settings(system, keymap, onion_config_root,
+                                  system_missing || keymap_missing);
+    cJSON_Delete(system);
+    cJSON_Delete(keymap);
+    free(system_raw);
+    free(keymap_raw);
+    if (fresh == NULL || !replace_section(current, fresh, "source") ||
+        !replace_section(current, fresh, "device") || !replace_section(current, fresh, "interface") ||
+        !replace_section(current, fresh, "behavior") ||
+        !replace_section(current, fresh, "compatibility")) {
+        cJSON_Delete(fresh);
+        set_error(error, error_size, "legacy settings sync could not be created");
+        goto failure;
+    }
+    cJSON_Delete(fresh);
+
+    cJSON *generation_node = cJSON_GetObjectItemCaseSensitive(current, "generation");
+    normalized_after = cJSON_PrintUnformatted(current);
+    if (normalized_after != NULL && strcmp(before, normalized_after) == 0) {
+        result->generation = generation;
+        cJSON_free(before);
+        cJSON_free(normalized_after);
+        cJSON_Delete(current);
+        release_settings_lock(lock);
+        return 0;
+    }
+    if (normalized_after == NULL) {
+        set_error(error, error_size, "legacy settings sync could not be created");
+        goto failure;
+    }
+    cJSON_SetNumberValue(generation_node, generation + 1);
+    published = cJSON_PrintUnformatted(current);
+    if (published == NULL || write_atomic(settings_path, published, strlen(published)) != 0) {
+        set_error(error, error_size, "legacy settings sync could not be published");
+        goto failure;
+    }
+    cJSON_free(before);
+    cJSON_free(normalized_after);
+    cJSON_free(published);
+    result->changed = 1;
+    result->generation = generation + 1;
+    cJSON_Delete(current);
+    release_settings_lock(lock);
+    return 0;
+
+failure:
+    cJSON_free(before);
+    cJSON_free(normalized_after);
+    cJSON_free(published);
+    cJSON_Delete(current);
+    release_settings_lock(lock);
     return -1;
 }

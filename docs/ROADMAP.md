@@ -336,8 +336,9 @@ Current frontend progress:
   shell geometry, host golden coverage, and semantic Miyoo key mapping landed
   in #238 and #239; physical display/input claims remain tracked by #228.
 - [ ] Bloom settings authority. Schema-1 durable state, exact legacy snapshot,
-  and idempotent Onion import are in progress; consumer cutover and sole-writer
-  enforcement remain before this becomes the active authority.
+  idempotent Onion import, and serialized legacy-authority synchronization are
+  in progress; consumer cutover and sole-writer enforcement remain before this
+  becomes the active authority.
 - [ ] Bloom Shell vertical slice and supervised MainUI fallback.
 
 ## Historical BloomOS foundation
