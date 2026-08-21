@@ -476,22 +476,23 @@ SH
     [ "$status" -eq 2 ]
 }
 
-@test "bloomctl library exposes only the bounded status operation" {
+@test "bloomctl library exposes bounded status and Onion import operations" {
     service="$BATS_TEST_TMPDIR/bloom-library"
     cat >"$service" <<'SH'
 #!/bin/sh
-printf '{"schema":1,"arguments":"%s"}\n' "$*"
+printf '{"schema":1,"arguments":"%s","library_path":"%s"}\n' "$*" "$LD_LIBRARY_PATH"
 SH
     chmod +x "$service"
 
-    run env BLOOM_LIBRARY_BIN="$service" \
+    run env -u LD_LIBRARY_PATH BLOOM_LIBRARY_BIN="$service" \
         sh /workspace/static/build/.tmp_update/bin/bloomctl library status
     [ "$status" -eq 0 ]
-    [ "$output" = '{"schema":1,"arguments":"status"}' ]
+    [ "$output" = "{\"schema\":1,\"arguments\":\"status\",\"library_path\":\"$BLOOM_ROOT/mnt/SDCARD/.tmp_update/lib\"}" ]
 
-    run env BLOOM_LIBRARY_BIN="$service" \
+    run env -u LD_LIBRARY_PATH BLOOM_LIBRARY_BIN="$service" \
         sh /workspace/static/build/.tmp_update/bin/bloomctl library import-onion
-    [ "$status" -eq 2 ]
+    [ "$status" -eq 0 ]
+    [ "$output" = "{\"schema\":1,\"arguments\":\"import-onion\",\"library_path\":\"$BLOOM_ROOT/mnt/SDCARD/.tmp_update/lib\"}" ]
 
     run env BLOOM_LIBRARY_BIN="$service" \
         sh /workspace/static/build/.tmp_update/bin/bloomctl library status extra

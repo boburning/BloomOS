@@ -32,6 +32,11 @@ run_ra() {
     LD_LIBRARY_PATH="$library_dir${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" "$BLOOM_RA" "$@"
 }
 
+run_library() {
+    library_dir="$(path /mnt/SDCARD/.tmp_update/lib)"
+    LD_LIBRARY_PATH="$library_dir${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" "$BLOOM_LIBRARY" "$@"
+}
+
 read_first_line() {
     target="$(path "$1")"
     if [ -r "$target" ]; then
@@ -254,7 +259,7 @@ usage() {
     printf '       bloomctl logs export\n' >&2
     printf '       bloomctl platform capabilities\n' >&2
     printf '       bloomctl settings {status|import-onion|sync-onion|reconcile-onion|materialize-onion|activate-bloom|rollback-authority|set FIELD VALUE}\n' >&2
-    printf '       bloomctl library status\n' >&2
+    printf '       bloomctl library {status|import-onion}\n' >&2
     printf '       bloomctl test smoke SYSTEM ROM_PATH [DURATION_SECONDS]\n' >&2
     printf '       bloomctl test achievements --system SYSTEM --rom-base64 DATA --core CORE [--session-seconds N [--operator-unlock I_ACCEPT_PROFILE_CHANGES]]\n' >&2
     printf '       bloomctl achievements {status|game BLOOM_GAME_ID|collection|cores|account status|login|set FIELD VALUE|sign-out|proxy status|pending|cache-rom ROM_PATH|cache-system SYSTEM|scan --changed|--all|--system SYSTEM|--status|--cancel}\n' >&2
@@ -398,9 +403,9 @@ settings_command() {
 library_command() {
     [ -x "$BLOOM_LIBRARY" ] || { printf 'bloomctl: library service is unavailable\n' >&2; return 1; }
     case "${1:-}" in
-        status)
+        status|import-onion)
             [ "$#" -eq 1 ] || { usage; return 2; }
-            "$BLOOM_LIBRARY" status
+            run_library "$1"
             ;;
         *)
             usage

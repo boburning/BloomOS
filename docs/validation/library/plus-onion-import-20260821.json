@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "date": "2026-08-21",
+  "operator": "Codex remote automation",
+  "device": {
+    "family": "mini_plus",
+    "model_id": 354
+  },
+  "installed_build": {
+    "version": "0.1.0-dev-9b5c3aa8",
+    "update_state": "known_good"
+  },
+  "candidate": {
+    "source_base_commit": "c65e8cd42a9fbd317f7bc3df589a48f04e160d6d",
+    "binary_sha256": "0226998cccd394879d82e965c970aad25d404ddd444bbcb5271d0f3948d7908e",
+    "system_catalog_sha256": "516bff8aff84be8d071ef1b4114b221c29b2279a946b1cff64c4d4fce4927a84"
+  },
+  "discovery": {
+    "installed_system_configs": 53,
+    "installed_app_configs": 23,
+    "imported_systems": 53,
+    "imported_apps": 23,
+    "generation": 1
+  },
+  "checks": {
+    "upload_hashes_match": "pass",
+    "arm_binary_executes": "pass",
+    "fresh_schema_migration": "pass",
+    "first_import_transaction": "pass",
+    "repeated_import_noop": "pass",
+    "bounded_status": "pass",
+    "bloomctl_library_path_isolation": "pass",
+    "device_health_before_test": "pass"
+  },
+  "notes": "Candidate-only validation used the installed Onion Emu/App trees and the packaged SQLite runtime through an explicitly uploaded ARM binary. It did not activate an unsigned Bloom update or alter MainUI authority. Full signed update and consumer cutover evidence remain pending."
+}
