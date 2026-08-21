@@ -89,6 +89,30 @@ canonical commit remains authoritative and diagnostics report that it still
 needs materialization. Arbitrary JSON paths and unbounded values are never
 accepted through the public CLI.
 
+## Bloom library boundary
+
+`bloom-library` is the durable indexed owner for systems, games, applications,
+favorites, and legacy migration evidence. Its SQLite catalog lives at
+`/mnt/SDCARD/.bloom/library/catalog.sqlite3`, outside the replaceable runtime
+tree. Schema migrations are transactional, reject a newer schema, refuse a
+symlinked database path, and retain unmatched or duplicate Onion items as
+explicit migration results rather than guessing or discarding them.
+
+The schema keeps canonical Bloom GameID separate from display metadata and from
+the independent RetroAchievements index. Systems and applications retain the
+fixed compatibility paths needed to launch current packages; games retain file
+size and mtime for incremental invalidation. Rows use a `present` marker so a
+transactional scan can publish one generation without deleting useful prior
+metadata while enumeration is incomplete. UI consumers page and sort through
+local queries only; drawing a library row must never scan the ROM tree or use
+network I/O.
+
+The initial public boundary is `bloomctl library status`. Onion system, app,
+favorite, and recent imports are added behind the same service in subsequent
+focused changes. Until those imports and consumer migrations are physically
+proven, MainUI remains the compatibility authority and the empty canonical
+catalog does not change launch behavior.
+
 ## BloomPlatform foundation
 
 `bloom-platform` is the first device-side capability boundary. Its schema-1,

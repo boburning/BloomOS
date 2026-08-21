@@ -335,15 +335,21 @@ Current frontend progress:
 - [x] Shared Bloom SDL rendering and device-input foundation. Deterministic
   shell geometry, host golden coverage, and semantic Miyoo key mapping landed
   in #238 and #239; physical display/input claims remain tracked by #228.
-- [ ] Bloom settings authority. Schema-1 durable state, exact legacy snapshot,
+- [x] Bloom settings authority. Schema-1 durable state, exact legacy snapshot,
   idempotent Onion import, serialized legacy-authority synchronization, and a
   complete durable keymon/Tweaks settings model are implemented. Boot, MainUI
   shared-memory changes, and WPS preference changes now reconcile the inactive
   canonical copy. Typed canonical reads, fail-closed Onion compatibility
   materialization, allowlisted direct mutations, and guarded activation/rollback
-  are implemented. Automated and Plus cutover/rollback evidence remain before
-  Bloom authority becomes the shipped default; closed-MainUI writes continue
+  are implemented. Signed build `9b5c3aa8` passed Plus activation, mutation,
+  closed-MainUI compatibility reconciliation, rollback, reactivation, automatic
+  reboot persistence, FAT read-only remount, and structured health checks;
+  Bloom is the active authority on that device. Closed-MainUI writes continue
   through the service-owned reconciliation bridge until that UI is replaced.
+- [ ] Bloom library authority. The durable transactional SQLite schema and
+  bounded `bloomctl library status` boundary are in progress. Deterministic
+  Onion system/app/favorite/recent import, incremental game indexing, paging,
+  invalidation, 10k-game fixtures, and consumer cutover remain pending.
 - [ ] Bloom Shell vertical slice and supervised MainUI fallback.
 
 ## Historical BloomOS foundation

@@ -1,0 +1,42 @@
+{
+  "schema": 1,
+  "date": "2026-08-21",
+  "operator": "boburning with Codex remote automation",
+  "device": {
+    "family": "mini_plus",
+    "model_id": 354
+  },
+  "build": {
+    "version": "0.1.0-dev-9b5c3aa8",
+    "commit": "9b5c3aa828b0ea5a6a7b48574d115190d5540a87",
+    "update_state": "known_good"
+  },
+  "settings": {
+    "baseline_generation": 4,
+    "activation_generation": 5,
+    "mutation_generation": 6,
+    "legacy_reconciliation_generation": 7,
+    "rollback_generation": 8,
+    "final_generation": 9,
+    "final_authority": "bloom",
+    "baseline_preference_restored": true,
+    "post_reboot_system_sha256": "24c35391101d40789feac06966bb6ce75063cded0d0178b21c75f72744e0dd8d",
+    "post_reboot_canonical_sha256": "8e8ac797b8af90d36ed9e7cfd0ddf5ba95e36d57ddcbe7fc6e2ed4c05d98c006"
+  },
+  "checks": {
+    "signed_update_confirmed": "pass",
+    "activation": "pass",
+    "repeated_activation_noop": "pass",
+    "allowlisted_mutation_and_materialization": "pass",
+    "closed_mainui_compatibility_reconciliation": "pass",
+    "direct_legacy_sync_rejected_after_cutover": "pass",
+    "rollback": "pass",
+    "repeated_rollback_noop": "pass",
+    "reactivation": "pass",
+    "automatic_usb_powered_reboot": "pass",
+    "authority_and_generation_persisted": "pass",
+    "structured_health": "pass",
+    "fat_read_only_remount": "pass"
+  },
+  "notes": "Validation used the boolean show-expert preference, restored its baseline true value, and left Bloom authority active. Shutdown telemetry recorded remount_ro_final=0 and reboot_command=init."
+}

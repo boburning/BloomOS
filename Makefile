@@ -159,6 +159,7 @@ core: $(CACHE)/.setup shared-libs
 	@cd $(SRC_DIR)/bloomSaveFlush && BUILD_DIR=$(BIN_DIR) make
 	@cd $(SRC_DIR)/bloomGameId && BUILD_DIR=$(BIN_DIR) make
 	@cd $(SRC_DIR)/bloomSettings && BUILD_DIR=$(BIN_DIR) make
+	@cd $(SRC_DIR)/bloomLibrary && BUILD_DIR=$(BIN_DIR) make
 	@CC=arm-linux-gnueabihf-gcc $(ROOT_DIR)/build/rhash/build.sh $(BUILD_DIR)/.tmp_update/lib/libbloom-rchash.so
 	@cd $(SRC_DIR)/bloomRa && BUILD_DIR=$(BIN_DIR) make
 	@cp $(SRC_DIR)/bloomRaProxy/bloom-ra-proxy $(BIN_DIR)/bloom-ra-proxy

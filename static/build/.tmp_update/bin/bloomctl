@@ -21,6 +21,7 @@ BLOOM_RA="${BLOOM_RA_BIN:-$SCRIPT_DIR/bloom-ra}"
 BLOOM_RA_PROXY="${BLOOM_RA_PROXY_BIN:-$SCRIPT_DIR/bloom-ra-proxy}"
 BLOOM_RA_TEST="${BLOOM_RA_TEST_BIN:-$SCRIPT_DIR/bloom-ra-test}"
 BLOOM_SETTINGS="${BLOOM_SETTINGS_BIN:-$SCRIPT_DIR/bloom-settings}"
+BLOOM_LIBRARY="${BLOOM_LIBRARY_BIN:-$SCRIPT_DIR/bloom-library}"
 
 path() {
     printf '%s%s' "$BLOOM_ROOT" "$1"
@@ -253,6 +254,7 @@ usage() {
     printf '       bloomctl logs export\n' >&2
     printf '       bloomctl platform capabilities\n' >&2
     printf '       bloomctl settings {status|import-onion|sync-onion|reconcile-onion|materialize-onion|activate-bloom|rollback-authority|set FIELD VALUE}\n' >&2
+    printf '       bloomctl library status\n' >&2
     printf '       bloomctl test smoke SYSTEM ROM_PATH [DURATION_SECONDS]\n' >&2
     printf '       bloomctl test achievements --system SYSTEM --rom-base64 DATA --core CORE [--session-seconds N [--operator-unlock I_ACCEPT_PROFILE_CHANGES]]\n' >&2
     printf '       bloomctl achievements {status|game BLOOM_GAME_ID|collection|cores|account status|login|set FIELD VALUE|sign-out|proxy status|pending|cache-rom ROM_PATH|cache-system SYSTEM|scan --changed|--all|--system SYSTEM|--status|--cancel}\n' >&2
@@ -393,6 +395,20 @@ settings_command() {
     esac
 }
 
+library_command() {
+    [ -x "$BLOOM_LIBRARY" ] || { printf 'bloomctl: library service is unavailable\n' >&2; return 1; }
+    case "${1:-}" in
+        status)
+            [ "$#" -eq 1 ] || { usage; return 2; }
+            "$BLOOM_LIBRARY" status
+            ;;
+        *)
+            usage
+            return 2
+            ;;
+    esac
+}
+
 logs_command() {
     case "${1:-}" in
         export)
@@ -501,6 +517,10 @@ case "${1:-}" in
     settings)
         shift
         settings_command "$@"
+        ;;
+    library)
+        shift
+        library_command "$@"
         ;;
     test)
         shift
