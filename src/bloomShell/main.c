@@ -19,6 +19,7 @@
 #define SESSION_REQUEST_PATH "/tmp/bloom-session/request.json"
 #define SESSION_BINARY "/mnt/SDCARD/.tmp_update/bin/bloom-session"
 #define BLOOM_STATUS_BINARY "/mnt/SDCARD/.tmp_update/bin/bloom-shell-status"
+#define BLOOMCTL_BINARY "/mnt/SDCARD/.tmp_update/bin/bloomctl"
 #define BLOOM_SETTINGS_BINARY "/mnt/SDCARD/.tmp_update/bin/bloom-settings"
 #define BLOOM_CONTROLS_BINARY "/mnt/SDCARD/.tmp_update/bin/bloom-controls"
 #define BLOOM_NETWORK_BINARY "/mnt/SDCARD/.tmp_update/bin/bloom-network"
@@ -103,14 +104,19 @@ static void render_label(SDL_Surface *screen, TTF_Font *font, const char *label,
 }
 
 static int settings_detail_label(BloomShellSettingsPage page, const BloomShellQuickValues *values,
-                                 const BloomShellStatus *status, size_t row, char *label,
-                                 size_t label_size)
+                                 const BloomShellStatus *status, int support_export_result,
+                                 size_t row, char *label, size_t label_size)
 {
     if (page == BLOOM_SHELL_SETTINGS_SYSTEM) {
         if (row == 0)
             return bloom_shell_status_label(status, 1, label, label_size);
         if (row == 1) {
             int length = snprintf(label, label_size, "Storage: See System Health");
+            return length >= 0 && (size_t)length < label_size ? 0 : -1;
+        }
+        if (row == 2 && support_export_result != 0) {
+            int length = snprintf(label, label_size, "Health: Support export %s",
+                                  support_export_result > 0 ? "complete" : "failed");
             return length >= 0 && (size_t)length < label_size ? 0 : -1;
         }
         if (row == 2)
@@ -143,7 +149,8 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
                  const BloomUiFocus *apps_focus, const BloomLibraryApp *apps,
                  const BloomShellStatus *status, const BloomShellCapabilities *capabilities,
                  const BloomShellQuickValues *quick_values,
-                 BloomShellSettingsPage settings_page, int quick_settings,
+                 BloomShellSettingsPage settings_page, int support_export_result,
+                 int quick_settings,
                  const BloomUiFocus *quick_settings_focus)
 {
     const BloomUiFocus *focus = destination == BLOOM_UI_DESTINATION_COLLECTIONS
@@ -230,8 +237,8 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
                                     ? bloom_shell_settings_label(capabilities, item)
                                     : status_label;
             if (settings_page != BLOOM_SHELL_SETTINGS_TOP &&
-                settings_detail_label(settings_page, quick_values, status, item, status_label,
-                                      sizeof(status_label)) != 0)
+                settings_detail_label(settings_page, quick_values, status, support_export_result,
+                                      item, status_label, sizeof(status_label)) != 0)
                 label = NULL;
             if (label != NULL)
                 render_label(screen, font, label, layout->content.x + 20,
@@ -341,9 +348,11 @@ int main(int argc, char **argv)
     int quick_settings = 0;
     BloomShellSettingsPage settings_page = BLOOM_SHELL_SETTINGS_TOP;
     size_t settings_top_selected = 0;
+    int support_export_result = 0;
     draw(screen, video, &layout, font, destination, &library_focus, &collections_focus, games,
          favorites, &recent, has_recent, home_selected, &settings_focus, &apps_focus, apps, &status,
-         &capabilities, &quick_values, settings_page, quick_settings, &quick_settings_focus);
+         &capabilities, &quick_values, settings_page, support_export_result, quick_settings,
+         &quick_settings_focus);
     int running = 1;
     int exit_code = 0;
     while (running) {
@@ -455,6 +464,11 @@ int main(int argc, char **argv)
                     action == BLOOM_UI_ACTION_FOCUS_RIGHT ? 1 : -1, BLOOM_CONTROLS_BINARY,
                     BLOOM_NETWORK_BINARY);
         }
+        else if (action == BLOOM_UI_ACTION_CONFIRM &&
+                 destination == BLOOM_UI_DESTINATION_SETTINGS &&
+                 settings_page == BLOOM_SHELL_SETTINGS_SYSTEM && settings_focus.selected == 2) {
+            support_export_result = bloom_shell_support_export(BLOOMCTL_BINARY) == 0 ? 1 : -1;
+        }
         else if (action == BLOOM_UI_ACTION_CONFIRM && destination == BLOOM_UI_DESTINATION_LIBRARY &&
                  library_focus.item_count > 0) {
             char error[256] = {0};
@@ -488,8 +502,8 @@ int main(int argc, char **argv)
         if (running)
             draw(screen, video, &layout, font, destination, &library_focus, &collections_focus,
                  games, favorites, &recent, has_recent, home_selected, &settings_focus, &apps_focus,
-                 apps, &status, &capabilities, &quick_values, settings_page, quick_settings,
-                 &quick_settings_focus);
+                 apps, &status, &capabilities, &quick_values, settings_page,
+                 support_export_result, quick_settings, &quick_settings_focus);
     }
     TTF_CloseFont(font);
     SDL_FreeSurface(screen);

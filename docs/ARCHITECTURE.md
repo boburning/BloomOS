@@ -153,7 +153,10 @@ page and Back restores the prior top-level selection. Display, Audio, and
 Network reuse the same event-driven fixed adapters as Quick Settings; Controls,
 Gameplay, Appearance, and Advanced expose stable plain-language policy values.
 System and RetroAchievements retain bounded status summaries loaded before the
-render loop, while System also identifies the installed BloomOS version. START
+render loop, while System also identifies the installed BloomOS version. Confirm
+on System Health invokes only the fixed `bloomctl logs export` operation with a
+bounded wait and reports completion without exposing paths; the exporter remains
+responsible for allowlisting and privacy. START
 opens a compact Quick Settings model from any normal shell destination;
 Original Mini omits Wi-Fi while Plus and Flip include it. The shell loads one
 bounded canonical value snapshot before entering the render loop and displays

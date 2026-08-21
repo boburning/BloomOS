@@ -19,6 +19,8 @@
     grep -F 'bloom_shell_quick_settings_adjust(' "$shell"
     grep -F 'BLOOM_CONTROLS_BINARY,' "$shell"
     grep -F 'BLOOM_NETWORK_BINARY);' "$shell"
+    grep -F 'bloom_shell_support_export(BLOOMCTL_BINARY)' "$shell"
+    grep -F '"Health: Support export %s"' "$shell"
     grep -F 'case BLOOM_SHELL_SETTINGS_SYSTEM:' "$model"
     grep -F 'return 4;' "$model"
     grep -F '"A: Confirm"' "$model"
