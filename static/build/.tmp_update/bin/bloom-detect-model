@@ -3,7 +3,8 @@ set -u
 
 ROOT="${BLOOM_ROOT:-}"
 
-if [ -e "$ROOT/sys/devices/soc0/soc/soc:hall-mh248/hallvalue" ]; then
+if [ -e "$ROOT/sys/devices/platform/hall-mh248/hallvalue" ] ||
+    [ -e "$ROOT/sys/devices/soc0/soc/soc:hall-mh248/hallvalue" ]; then
     model=285
 elif command -v axp >/dev/null 2>&1 && axp 0 >/dev/null 2>&1; then
     model=354

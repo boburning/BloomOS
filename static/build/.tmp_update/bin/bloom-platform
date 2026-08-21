@@ -13,6 +13,19 @@ platform_read() {
     fi
 }
 
+platform_lid_path() {
+    for path in \
+        /sys/devices/platform/hall-mh248/hallvalue \
+        /sys/devices/soc0/soc/soc:hall-mh248/hallvalue
+    do
+        if [ -e "$(platform_path "$path")" ]; then
+            printf '%s' "$path"
+            return 0
+        fi
+    done
+    return 1
+}
+
 platform_model() {
     raw_model="$(platform_read /tmp/deviceModel)"
     case "$raw_model" in
@@ -20,7 +33,7 @@ platform_model() {
         354) printf 'mini_plus' ;;
         283) printf 'mini' ;;
         *)
-            if [ -e "$(platform_path /sys/devices/soc0/soc/soc:hall-mh248/hallvalue)" ]; then
+            if platform_lid_path >/dev/null; then
                 printf 'mini_flip'
             elif [ -e "$(platform_path /customer/app/axp_test)" ]; then
                 printf 'mini_plus'
@@ -66,7 +79,7 @@ platform_capability() {
     case "$capability" in
         wifi) [ "$model" = mini_plus ] || [ "$model" = mini_flip ] || [ -e "$(platform_path /sys/class/net/wlan0)" ] ;;
         ssh) [ "$model" = mini_plus ] || [ "$model" = mini_flip ] ;;
-        lid) [ -e "$(platform_path /sys/devices/soc0/soc/soc:hall-mh248/hallvalue)" ] ;;
+        lid) platform_lid_path >/dev/null ;;
         rtc) [ -e "$(platform_path /tmp/rtc_available)" ] || [ -e "$(platform_path /dev/rtc0)" ] ;;
         input) [ "$(platform_input_count)" -gt 0 ] ;;
         battery) [ "$(platform_battery_backend)" != unavailable ] ;;

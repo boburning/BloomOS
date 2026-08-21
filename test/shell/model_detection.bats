@@ -37,3 +37,13 @@ teardown() { teardown_bloom_fixture; }
     grep -F 'COMPAT_DEVICE_ID="$(bloom-detect-model compatibility-id)"' /workspace/static/build/.tmp_update/runtime.sh
     grep -F 'COMPAT_DEVICE_ID="$(bloom-detect-model compatibility-id)"' /workspace/static/dist/miyoo/app/.tmp_update/install.sh
 }
+
+@test "detects Flip from the current platform hall path" {
+    hall="$BLOOM_TEST_ROOT/sys/devices/platform/hall-mh248"
+    mkdir -p "$hall"
+    printf '1\n' >"$hall/hallvalue"
+
+    run env BLOOM_ROOT="$BLOOM_TEST_ROOT" "$DETECTOR"
+    [ "$status" -eq 0 ]
+    [ "$output" = 285 ]
+}
