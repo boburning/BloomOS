@@ -21,11 +21,13 @@
 #define GAME_CAPACITY_MAX 4096
 #define LAUNCH_READY_EXIT 20
 
-static int load_games(BloomLibraryGame **games, size_t *game_count)
+static int load_games(BloomLibraryGame **games, size_t *game_count, BloomLibraryGame *recent,
+                      int *has_recent)
 {
     sqlite3 *database = NULL;
     *games = calloc(GAME_CAPACITY_MAX, sizeof(**games));
     *game_count = 0;
+    *has_recent = 0;
     if (*games == NULL ||
         sqlite3_open_v2(DATABASE_PATH, &database, SQLITE_OPEN_READONLY, NULL) != SQLITE_OK ||
         sqlite3_exec(database, "PRAGMA query_only=ON", NULL, NULL, NULL) != SQLITE_OK) {
@@ -35,9 +37,12 @@ static int load_games(BloomLibraryGame **games, size_t *game_count)
         *games = NULL;
         return -1;
     }
+    size_t recent_count = 0;
+    int result = bloom_library_query_recents(database, "gb", 1, recent, 1, &recent_count);
+    if (result == SQLITE_OK)
+        *has_recent = recent_count == 1;
     char cursor[79] = {0};
-    int result = SQLITE_OK;
-    while (*game_count < GAME_CAPACITY_MAX) {
+    while (result == SQLITE_OK && *game_count < GAME_CAPACITY_MAX) {
         size_t remaining = GAME_CAPACITY_MAX - *game_count;
         size_t limit = remaining < GAME_PAGE_SIZE ? remaining : GAME_PAGE_SIZE;
         BloomLibraryGamePage page = {0};
@@ -80,20 +85,38 @@ static void render_label(SDL_Surface *screen, TTF_Font *font, const char *label,
 
 static void draw(SDL_Surface *screen, const BloomUiLayout *layout, TTF_Font *font,
                  BloomUiDestination destination, const BloomUiFocus *focus,
-                 const BloomLibraryGame *games)
+                 const BloomLibraryGame *games, const BloomLibraryGame *recent, int has_recent,
+                 size_t home_selected)
 {
     BloomUiScene scene = {
         .destination = destination,
-        .item_count = destination == BLOOM_UI_DESTINATION_HOME ? 1 : focus->item_count,
-        .selected = destination == BLOOM_UI_DESTINATION_HOME ? 0 : focus->selected,
+        .item_count = destination == BLOOM_UI_DESTINATION_HOME ? (has_recent ? 2 : 1)
+                                                               : focus->item_count,
+        .selected = destination == BLOOM_UI_DESTINATION_HOME ? home_selected : focus->selected,
         .window_start = destination == BLOOM_UI_DESTINATION_HOME ? 0 : focus->window_start,
         .healthy = 1,
     };
     bloom_ui_render_shell(screen, layout, &scene);
     SDL_Color cream = {243, 226, 189, 0};
-    if (destination == BLOOM_UI_DESTINATION_HOME)
-        render_label(screen, font, "Browse Game Boy", layout->content.x + 20,
-                     layout->content.y + layout->row_height / 3, layout->content.width - 40, cream);
+    if (destination == BLOOM_UI_DESTINATION_HOME) {
+        char label[640];
+        if (has_recent) {
+            snprintf(label, sizeof(label), "Resume %s", recent->display_title);
+            render_label(screen, font, label, layout->content.x + 20,
+                         layout->content.y + layout->row_height / 3,
+                         layout->content.width - 40, cream);
+            snprintf(label, sizeof(label), "Browse Game Boy");
+            render_label(screen, font, label, layout->content.x + 20,
+                         layout->content.y + layout->row_height + layout->row_height / 3,
+                         layout->content.width - 40, cream);
+        }
+        else {
+            snprintf(label, sizeof(label), "Browse Game Boy");
+            render_label(screen, font, label, layout->content.x + 20,
+                         layout->content.y + layout->row_height / 3,
+                         layout->content.width - 40, cream);
+        }
+    }
     else
         for (size_t row = 0; row < layout->visible_rows && focus->window_start + row < focus->item_count;
              ++row)
@@ -107,12 +130,15 @@ static void draw(SDL_Surface *screen, const BloomUiLayout *layout, TTF_Font *fon
 int main(int argc, char **argv)
 {
     BloomLibraryGame *games = NULL;
+    BloomLibraryGame recent = {0};
     size_t game_count = 0;
-    if (load_games(&games, &game_count) != 0)
+    int has_recent = 0;
+    if (load_games(&games, &game_count, &recent, &has_recent) != 0)
         return 1;
     if (argc == 2 && strcmp(argv[1], "--probe") == 0) {
-        printf("{\"schema\":1,\"service\":\"bloom-shell\",\"ready\":true,\"gb_games\":%zu}\n",
-               game_count);
+        printf("{\"schema\":1,\"service\":\"bloom-shell\",\"ready\":true,\"gb_games\":%zu,"
+               "\"gb_recent\":%s}\n",
+               game_count, has_recent ? "true" : "false");
         free(games);
         return 0;
     }
@@ -143,9 +169,10 @@ int main(int argc, char **argv)
     SDL_EnableKeyRepeat(300, 70);
 
     BloomUiDestination destination = BLOOM_UI_DESTINATION_HOME;
+    size_t home_selected = 0;
     BloomUiFocus focus;
     bloom_ui_focus_init(&focus, game_count);
-    draw(screen, &layout, font, destination, &focus, games);
+    draw(screen, &layout, font, destination, &focus, games, &recent, has_recent, home_selected);
     int running = 1;
     int exit_code = 0;
     while (running) {
@@ -165,8 +192,22 @@ int main(int argc, char **argv)
             else
                 running = 0;
         }
-        else if (action == BLOOM_UI_ACTION_CONFIRM && destination == BLOOM_UI_DESTINATION_HOME)
-            destination = BLOOM_UI_DESTINATION_LIBRARY;
+        else if ((action == BLOOM_UI_ACTION_FOCUS_UP || action == BLOOM_UI_ACTION_FOCUS_DOWN) &&
+                 destination == BLOOM_UI_DESTINATION_HOME && has_recent)
+            home_selected = home_selected == 0 ? 1 : 0;
+        else if (action == BLOOM_UI_ACTION_CONFIRM && destination == BLOOM_UI_DESTINATION_HOME) {
+            if (has_recent && home_selected == 0) {
+                char error[256] = {0};
+                if (bloom_shell_stage_game(&recent, GB_CORE, REQUEST_PATH, COMMAND_PATH,
+                                           SESSION_REQUEST_PATH, SESSION_BINARY, error,
+                                           sizeof(error)) == 0) {
+                    exit_code = LAUNCH_READY_EXIT;
+                    running = 0;
+                }
+            }
+            else
+                destination = BLOOM_UI_DESTINATION_LIBRARY;
+        }
         else if (action == BLOOM_UI_ACTION_FOCUS_UP && destination == BLOOM_UI_DESTINATION_LIBRARY)
             bloom_ui_focus_step(&focus, -1, layout.visible_rows);
         else if (action == BLOOM_UI_ACTION_FOCUS_DOWN && destination == BLOOM_UI_DESTINATION_LIBRARY)
@@ -181,7 +222,8 @@ int main(int argc, char **argv)
             }
         }
         if (running)
-            draw(screen, &layout, font, destination, &focus, games);
+            draw(screen, &layout, font, destination, &focus, games, &recent, has_recent,
+                 home_selected);
     }
     TTF_CloseFont(font);
     TTF_Quit();

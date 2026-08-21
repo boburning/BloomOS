@@ -160,9 +160,13 @@ as `matched`, `unmatched`, `duplicate`, or `invalid` migration evidence. Missing
 lists mean empty state; an unsafe list or database failure preserves the prior
 known-good state. Schema 3 adds canonical recents through an additive migration.
 
-MainUI remains the compatibility authority until Bloom-owned consumers and the
-signed-update/reboot path are physically proven; importing state alone does not
-change launch behavior or create a second writer.
+The Bloom Shell GB vertical slice is the first canonical recent-state consumer:
+its Home screen queries the ordered `recents` relation directly and offers
+one-confirmation resume for the latest present GB game. The bounded query omits
+missing games and systems and does not parse or mutate the MainUI list. MainUI
+remains the compatibility writer until Bloom-owned mutation, signed-update/reboot,
+and physical launch/return paths are proven; this read-only consumer does not
+create a second writer.
 
 ## BloomPlatform foundation
 

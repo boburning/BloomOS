@@ -398,7 +398,9 @@ Current frontend progress:
   inherited auxiliary network services remain pending.
 - [ ] Bloom Shell vertical slice and supervised MainUI fallback. The native
   development shell now renders Home and a cursor-paged Game Boy library from
-  in-memory Bloom catalog rows, stages selection through the structured launch
+  in-memory Bloom catalog rows. Home consumes the canonical recent order and
+  offers one-press resume for the latest present GB game without reparsing the
+  MainUI list. Library selection and Home resume stage through the structured launch
   and session services, and returns through the runtime loop. Render-time
   subprocesses are prohibited by a shell gate. A fixed development flag enables
   the path, while any non-launch exit or crash removes incomplete handoff state
