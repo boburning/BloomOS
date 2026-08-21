@@ -12,10 +12,12 @@ import sys
 SCOPES = (
     "src/tweaks",
     "src/installUI",
+    "src/easter",
     "src/prompt/test.sh",
     "static/configs/Saves/CurrentProfile/states/README.txt",
     "static/configs/Saves/CurrentProfile/saves/README.txt",
     "static/build/autorun.inf",
+    "static/build/.tmp_update/onionVersion/acknowledgments.txt",
 )
 TEXT_SUFFIXES = {".c", ".cc", ".cpp", ".h", ".hpp", ".inf", ".sh", ".txt"}
 ONION = re.compile(r"onion", re.IGNORECASE)
@@ -24,7 +26,8 @@ LEGACY_CREDENTIALS = {
     '"Password: onion\\n"',
     '"Password: onion\\n");',
 }
-INTERNAL_IDENTIFIERS = ("onionVersion", "ONION_VERSION")
+INTERNAL_IDENTIFIERS = ("onionVersion",)
+LEGAL_ATTRIBUTIONS = ("UPSTREAM ONIONUI",)
 
 
 def validate(repository: pathlib.Path) -> tuple[list[str], int]:
@@ -51,8 +54,10 @@ def validate(repository: pathlib.Path) -> tuple[list[str], int]:
                 if not ONION.search(line):
                     continue
                 stripped = line.strip()
-                classified_line = stripped in LEGACY_CREDENTIALS or any(
-                    identifier in line for identifier in INTERNAL_IDENTIFIERS
+                classified_line = (
+                    stripped in LEGACY_CREDENTIALS
+                    or any(identifier in line for identifier in INTERNAL_IDENTIFIERS)
+                    or any(attribution in line.upper() for attribution in LEGAL_ATTRIBUTIONS)
                 )
                 if classified_line:
                     classified += 1

@@ -1,11 +1,15 @@
-CORE TEAM
+MAINTAINED BY
+boburning
+
+BUILT ON THE WORK OF THE
+UPSTREAM ONIONUI CORE TEAM
 Aemiii91
 Schmurtz
 Totofaki
 XK
 tGecko
    
-CONTRIBUTORS
+UPSTREAM CONTRIBUTORS
 Olywa123
 DiMo
 eggs
@@ -33,9 +37,9 @@ Lucario
 Christian Haitian
 Razole
  
-OUR THEME CREATORS
+UPSTREAM THEME CREATORS
   
-TESTERS
+UPSTREAM TESTERS
 Andrez
 Cardsaysmoops
 Deletable_Man
@@ -52,7 +56,7 @@ Sezuko
 therecanonlybeoneandrew
 NexLevel
   
-OUR COMMUNITY
+UPSTREAM COMMUNITY
   
    T
    H

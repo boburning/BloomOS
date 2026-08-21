@@ -70,8 +70,8 @@ Bloom mark, boot identity, installer, SD-card label, and save-folder help copy.
 Four literal `onion` values remain classified as legacy network
 usernames/passwords; they are compatibility credentials, not product copy, and
 require a separate migration before they can be renamed. The internal
-`onionVersion` directory and `ONION_VERSION` installer compile macro remain
-classified migration boundaries. Any other Onion match in those scopes or any
-pixel drift in the generated branding assets fails the shell gate. Later slices
-expand the scanner as each stable UI surface and asset tree moves under Bloom
-ownership.
+`onionVersion` directory remains a classified migration boundary, while the
+About screen labels the retained upstream contributor list explicitly. Any
+other Onion match in those scopes or any pixel drift in the generated branding
+assets fails the shell gate. Later slices expand the scanner as each stable UI
+surface and asset tree moves under Bloom ownership.
