@@ -443,7 +443,7 @@ Planned work includes safe updates and rollback, optional synchronization and of
   parse upstream's database or claim a last-flush result that upstream does not
   expose. A graphical settings/detail surface and a real queued-award flush
   remain pending.
-- [ ] RA-24: add aggregate RA health and support-export diagnostics. Health now
+- [x] RA-24: aggregate RA health and support-export diagnostics. Health
   allowlists catalog/proxy counts and rejects or discards secrets, ROM paths,
   titles, award details, and unexpected fields. Session launch/finish diagnostics
   now use a mode-`0600`, size-bounded rotating allowlist and support export may
@@ -454,8 +454,12 @@ Planned work includes safe updates and rollback, optional synchronization and of
   bounded categories for account, request, core-policy, Hardcore, proxy, and
   config-generation failures. An explicit bounded readiness probe now separates
   absent network hardware, Wi-Fi state, association, clock, DNS, TLS, timeout,
-  and RA-service failures without adding network I/O to ordinary health rendering.
-  Physical failure-path validation remains pending.
+  and RA-service failures without adding network I/O to ordinary health
+  rendering. Mini Plus runtime injection physically confirmed every transport
+  failure category and a healthy real endpoint without changing Wi-Fi state.
+  Support export now reconstructs only valid schema-1 RA log events, drops
+  malformed lines and finish details, and physically passed a forbidden-data
+  archive scan.
 - [ ] RA-25: add guarded RA certification tooling. Developer-mode preflight now
   verifies exact ROM identity and installed core SHA/policy without exposing
   ROM or account data and reports the current redacted authentication state;

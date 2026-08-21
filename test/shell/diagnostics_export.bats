@@ -13,6 +13,7 @@ setup() {
     printf 'safe update log\n' >"$SDCARD/.tmp_update/logs/bloom-update-boot.log"
     printf 'safe shutdown log\n' >"$BLOOM_ROOT/appconfigs/bloom-shutdown.log"
     printf '%s\n' '{"schema":1,"event":"finish","outcome":"stopped","detail":"60"}' >"$BLOOM_ROOT/appconfigs/bloom/logs/retroachievements.log"
+    printf '%s\n' '{"schema":1,"event":"unknown","token":"private-ra-token"}' >>"$BLOOM_ROOT/appconfigs/bloom/logs/retroachievements.log"
     printf 'secret network log\n' >"$SDCARD/.tmp_update/logs/network.log"
     mkdir -p "$SDCARD/Roms" "$SDCARD/Saves" "$SDCARD/.ssh"
     printf 'private rom name\n' >"$SDCARD/Roms/Private Game.zip"
@@ -57,6 +58,8 @@ teardown() {
     tar -xzf "$archive" -C "$extracted"
     grep -F '"privacy": "allowlisted"' "$extracted/manifest.json"
     grep -F '"model":"mini_plus"' "$extracted/info.json"
+    grep -F '{"schema":1,"event":"finish","outcome":"stopped"}' "$extracted/logs/retroachievements.log"
+    ! grep -R -E 'private-ra-token|"detail"' "$extracted"
     ! grep -R -E 'secret network|private rom|private save|private key' "$extracted"
 }
 
