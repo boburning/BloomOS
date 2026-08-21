@@ -634,3 +634,194 @@ TEST_F(BloomSettingsTest, TypedCanonicalReadRejectsOutOfRangeValuesBeforeMateria
                              std::istreambuf_iterator<char>());
     EXPECT_EQ("stale-system", system_after);
 }
+
+TEST_F(BloomSettingsTest, CompatibilityReconcileCommitsLegacyWritesAfterCutover)
+{
+    write(system, R"({"vol":5})");
+    BloomSettingsImportResult imported{};
+    char error[160] = {};
+    ASSERT_EQ(0, bloom_settings_import_onion(system.c_str(), config.c_str(), settings.c_str(),
+                                             snapshot.c_str(), &imported, error, sizeof(error)));
+    set_bloom_authority();
+    write(system, R"({"vol":17})");
+
+    BloomSettingsSyncResult direct{};
+    EXPECT_NE(0, bloom_settings_sync_onion(system.c_str(), config.c_str(), settings.c_str(),
+                                           &direct, error, sizeof(error)));
+    BloomSettingsSyncResult reconciled{};
+    ASSERT_EQ(0, bloom_settings_reconcile_onion(system.c_str(), config.c_str(), settings.c_str(),
+                                                &reconciled, error, sizeof(error)))
+        << error;
+    EXPECT_EQ(1, reconciled.changed);
+    EXPECT_EQ(2, reconciled.generation);
+    cJSON *canonical = load_settings();
+    ASSERT_TRUE(cJSON_IsObject(canonical));
+    EXPECT_STREQ("bloom", cJSON_GetObjectItem(canonical, "authority")->valuestring);
+    EXPECT_EQ(17,
+              cJSON_GetObjectItem(cJSON_GetObjectItem(canonical, "device"), "volume")->valueint);
+    cJSON_Delete(canonical);
+}
+
+TEST_F(BloomSettingsTest, ActivationAndRollbackAreGuardedAndIdempotent)
+{
+    write(system, R"({"vol":12,"brightness":6})");
+    BloomSettingsImportResult imported{};
+    char error[160] = {};
+    ASSERT_EQ(0, bloom_settings_import_onion(system.c_str(), config.c_str(), settings.c_str(),
+                                             snapshot.c_str(), &imported, error, sizeof(error)));
+
+    BloomSettingsAuthorityResult activated{};
+    ASSERT_EQ(0, bloom_settings_activate(settings.c_str(), system.c_str(), config.c_str(),
+                                         &activated, error, sizeof(error)))
+        << error;
+    EXPECT_EQ(1, activated.changed);
+    EXPECT_EQ(2, activated.generation);
+    BloomSettingsAuthorityResult repeated{};
+    ASSERT_EQ(0, bloom_settings_activate(settings.c_str(), system.c_str(), config.c_str(),
+                                         &repeated, error, sizeof(error)))
+        << error;
+    EXPECT_EQ(0, repeated.changed);
+    EXPECT_EQ(2, repeated.generation);
+
+    BloomSettingsAuthorityResult rolled_back{};
+    ASSERT_EQ(0, bloom_settings_rollback_authority(settings.c_str(), &rolled_back, error,
+                                                   sizeof(error)))
+        << error;
+    EXPECT_EQ(1, rolled_back.changed);
+    EXPECT_EQ(3, rolled_back.generation);
+    BloomSettingsAuthorityResult rollback_repeated{};
+    ASSERT_EQ(0, bloom_settings_rollback_authority(settings.c_str(), &rollback_repeated, error,
+                                                   sizeof(error)))
+        << error;
+    EXPECT_EQ(0, rollback_repeated.changed);
+    EXPECT_EQ(3, rollback_repeated.generation);
+}
+
+TEST_F(BloomSettingsTest, FailedActivationRestoresLegacyAuthority)
+{
+    write(system, R"({"vol":7})");
+    BloomSettingsImportResult imported{};
+    char error[160] = {};
+    ASSERT_EQ(0, bloom_settings_import_onion(system.c_str(), config.c_str(), settings.c_str(),
+                                             snapshot.c_str(), &imported, error, sizeof(error)));
+    std::filesystem::remove_all(config);
+
+    BloomSettingsAuthorityResult result{};
+    EXPECT_NE(0, bloom_settings_activate(settings.c_str(), system.c_str(), config.c_str(), &result,
+                                         error, sizeof(error)));
+    EXPECT_EQ(1, result.rolled_back);
+    cJSON *canonical = load_settings();
+    ASSERT_TRUE(cJSON_IsObject(canonical));
+    EXPECT_STREQ("legacy", cJSON_GetObjectItem(canonical, "authority")->valuestring);
+    EXPECT_EQ(result.generation, cJSON_GetObjectItem(canonical, "generation")->valueint);
+    cJSON_Delete(canonical);
+}
+
+TEST_F(BloomSettingsTest, AllowlistedMutationsPublishAndMaterializeCanonicalState)
+{
+    write(system, R"({"vol":5,"theme":"/Themes/Old/"})");
+    BloomSettingsImportResult imported{};
+    char error[160] = {};
+    ASSERT_EQ(0, bloom_settings_import_onion(system.c_str(), config.c_str(), settings.c_str(),
+                                             snapshot.c_str(), &imported, error, sizeof(error)));
+    BloomSettingsAuthorityResult activated{};
+    ASSERT_EQ(0, bloom_settings_activate(settings.c_str(), system.c_str(), config.c_str(),
+                                         &activated, error, sizeof(error)));
+
+    BloomSettingsMutationResult integer_result{};
+    ASSERT_EQ(0, bloom_settings_set(settings.c_str(), system.c_str(), config.c_str(),
+                                    "device.volume", "14", &integer_result, error,
+                                    sizeof(error)))
+        << error;
+    EXPECT_EQ(1, integer_result.changed);
+    EXPECT_EQ(1, integer_result.materialized);
+    BloomSettingsMutationResult boolean_result{};
+    ASSERT_EQ(0, bloom_settings_set(settings.c_str(), system.c_str(), config.c_str(),
+                                    "interface.show_expert", "true", &boolean_result, error,
+                                    sizeof(error)))
+        << error;
+    BloomSettingsMutationResult string_result{};
+    ASSERT_EQ(0, bloom_settings_set(settings.c_str(), system.c_str(), config.c_str(),
+                                    "interface.theme", "/Themes/Bloom/", &string_result, error,
+                                    sizeof(error)))
+        << error;
+
+    cJSON *canonical = load_settings();
+    ASSERT_TRUE(cJSON_IsObject(canonical));
+    EXPECT_EQ(string_result.generation,
+              cJSON_GetObjectItem(canonical, "generation")->valueint);
+    EXPECT_EQ(14,
+              cJSON_GetObjectItem(cJSON_GetObjectItem(canonical, "device"), "volume")->valueint);
+    cJSON_Delete(canonical);
+    std::ifstream system_stream(system);
+    std::string system_content((std::istreambuf_iterator<char>(system_stream)),
+                               std::istreambuf_iterator<char>());
+    cJSON *legacy = cJSON_Parse(system_content.c_str());
+    ASSERT_TRUE(cJSON_IsObject(legacy));
+    EXPECT_EQ(14, cJSON_GetObjectItem(legacy, "vol")->valueint);
+    EXPECT_STREQ("/Themes/Bloom/", cJSON_GetObjectItem(legacy, "theme")->valuestring);
+    cJSON_Delete(legacy);
+    EXPECT_TRUE(std::filesystem::is_regular_file(config / ".showExpert"));
+}
+
+TEST_F(BloomSettingsTest, MutationValidationAndNoOpPreserveGeneration)
+{
+    write(system, R"({"vol":5})");
+    BloomSettingsImportResult imported{};
+    char error[160] = {};
+    ASSERT_EQ(0, bloom_settings_import_onion(system.c_str(), config.c_str(), settings.c_str(),
+                                             snapshot.c_str(), &imported, error, sizeof(error)));
+    BloomSettingsMutationResult legacy_result{};
+    EXPECT_NE(0, bloom_settings_set(settings.c_str(), system.c_str(), config.c_str(),
+                                    "device.volume", "6", &legacy_result, error, sizeof(error)));
+    BloomSettingsAuthorityResult activated{};
+    ASSERT_EQ(0, bloom_settings_activate(settings.c_str(), system.c_str(), config.c_str(),
+                                         &activated, error, sizeof(error)));
+
+    BloomSettingsMutationResult invalid{};
+    EXPECT_NE(0, bloom_settings_set(settings.c_str(), system.c_str(), config.c_str(),
+                                    "device.volume", "21", &invalid, error, sizeof(error)));
+    EXPECT_NE(0, bloom_settings_set(settings.c_str(), system.c_str(), config.c_str(),
+                                    "unsupported.field", "1", &invalid, error, sizeof(error)));
+    EXPECT_NE(0, bloom_settings_set(settings.c_str(), system.c_str(), config.c_str(),
+                                    "interface.theme", "bad\nvalue", &invalid, error,
+                                    sizeof(error)));
+    BloomSettingsMutationResult unchanged{};
+    ASSERT_EQ(0, bloom_settings_set(settings.c_str(), system.c_str(), config.c_str(),
+                                    "device.volume", "5", &unchanged, error, sizeof(error)));
+    EXPECT_EQ(0, unchanged.changed);
+    EXPECT_EQ(activated.generation, unchanged.generation);
+    EXPECT_EQ(1, unchanged.materialized);
+}
+
+TEST_F(BloomSettingsTest, MaterializationFailureKeepsCanonicalMutationAuthoritative)
+{
+    write(system, R"({"vol":5})");
+    BloomSettingsImportResult imported{};
+    char error[160] = {};
+    ASSERT_EQ(0, bloom_settings_import_onion(system.c_str(), config.c_str(), settings.c_str(),
+                                             snapshot.c_str(), &imported, error, sizeof(error)));
+    BloomSettingsAuthorityResult activated{};
+    ASSERT_EQ(0, bloom_settings_activate(settings.c_str(), system.c_str(), config.c_str(),
+                                         &activated, error, sizeof(error)));
+    auto outside = root / "outside-keymap";
+    write(outside, "outside");
+    std::filesystem::remove(config / "keymap.json");
+    std::filesystem::create_symlink(outside, config / "keymap.json");
+
+    BloomSettingsMutationResult result{};
+    EXPECT_NE(0, bloom_settings_set(settings.c_str(), system.c_str(), config.c_str(),
+                                    "device.volume", "18", &result, error, sizeof(error)));
+    EXPECT_EQ(1, result.changed);
+    EXPECT_EQ(0, result.materialized);
+    cJSON *canonical = load_settings();
+    ASSERT_TRUE(cJSON_IsObject(canonical));
+    EXPECT_STREQ("bloom", cJSON_GetObjectItem(canonical, "authority")->valuestring);
+    EXPECT_EQ(18,
+              cJSON_GetObjectItem(cJSON_GetObjectItem(canonical, "device"), "volume")->valueint);
+    cJSON_Delete(canonical);
+    std::ifstream outside_stream(outside);
+    std::string outside_content((std::istreambuf_iterator<char>(outside_stream)),
+                                std::istreambuf_iterator<char>());
+    EXPECT_EQ("outside", outside_content);
+}

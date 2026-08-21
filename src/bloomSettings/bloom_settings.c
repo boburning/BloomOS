@@ -574,9 +574,12 @@ static int replace_section(cJSON *destination, const cJSON *source, const char *
     return 0;
 }
 
-int bloom_settings_sync_onion(const char *onion_system_path, const char *onion_config_root,
-                              const char *settings_path, BloomSettingsSyncResult *result,
-                              char *error, size_t error_size)
+static int reconcile_onion_for_authority(const char *onion_system_path,
+                                         const char *onion_config_root,
+                                         const char *settings_path,
+                                         const char *required_authority,
+                                         BloomSettingsSyncResult *result, char *error,
+                                         size_t error_size)
 {
     if (onion_system_path == NULL || onion_config_root == NULL || settings_path == NULL ||
         result == NULL) {
@@ -599,8 +602,11 @@ int bloom_settings_sync_onion(const char *onion_system_path, const char *onion_c
         validate_settings_root(current, &schema, &generation, source_name, sizeof(source_name),
                                authority, sizeof(authority), error, error_size) != 0)
         goto failure;
-    if (strcmp(authority, "legacy") != 0) {
-        set_error(error, error_size, "legacy settings sync is disabled after Bloom cutover");
+    if (required_authority != NULL && strcmp(authority, required_authority) != 0) {
+        set_error(error, error_size,
+                  strcmp(required_authority, "legacy") == 0
+                      ? "legacy settings sync is disabled after Bloom cutover"
+                      : "Bloom compatibility commit requires Bloom authority");
         goto failure;
     }
     before = cJSON_PrintUnformatted(current);
@@ -683,6 +689,22 @@ failure:
     cJSON_Delete(current);
     release_settings_lock(lock);
     return -1;
+}
+
+int bloom_settings_sync_onion(const char *onion_system_path, const char *onion_config_root,
+                              const char *settings_path, BloomSettingsSyncResult *result,
+                              char *error, size_t error_size)
+{
+    return reconcile_onion_for_authority(onion_system_path, onion_config_root, settings_path,
+                                         "legacy", result, error, error_size);
+}
+
+int bloom_settings_reconcile_onion(const char *onion_system_path, const char *onion_config_root,
+                                   const char *settings_path, BloomSettingsSyncResult *result,
+                                   char *error, size_t error_size)
+{
+    return reconcile_onion_for_authority(onion_system_path, onion_config_root, settings_path, NULL,
+                                         result, error, error_size);
 }
 
 static int required_integer(const cJSON *object, const char *name, int minimum, int maximum,
@@ -1065,6 +1087,350 @@ failure:
     cJSON_free(keymap_text);
     cJSON_Delete(system);
     cJSON_Delete(keymap);
+    cJSON_Delete(root);
+    release_settings_lock(lock);
+    return -1;
+}
+
+static int transition_authority(const char *settings_path, const char *expected_authority,
+                                const char *new_authority, int expected_generation,
+                                int *published_generation, char *error, size_t error_size)
+{
+    int lock = -1;
+    if (acquire_settings_lock(settings_path, &lock, error, error_size) != 0)
+        return -1;
+    cJSON *root = load_settings_root(settings_path, error, error_size);
+    int schema = 0;
+    int generation = 0;
+    char source[32] = {0};
+    char authority[16] = {0};
+    char *published = NULL;
+    if (root == NULL ||
+        validate_settings_root(root, &schema, &generation, source, sizeof(source), authority,
+                               sizeof(authority), error, error_size) != 0 ||
+        strcmp(authority, expected_authority) != 0 ||
+        (expected_generation > 0 && generation != expected_generation)) {
+        set_error(error, error_size, "settings authority transition is no longer valid");
+        goto failure;
+    }
+    cJSON *authority_node = cJSON_GetObjectItemCaseSensitive(root, "authority");
+    cJSON *generation_node = cJSON_GetObjectItemCaseSensitive(root, "generation");
+    if (!cJSON_SetValuestring(authority_node, new_authority)) {
+        set_error(error, error_size, "settings authority transition could not be created");
+        goto failure;
+    }
+    cJSON_SetNumberValue(generation_node, generation + 1);
+    published = cJSON_PrintUnformatted(root);
+    if (published == NULL || write_atomic(settings_path, published, strlen(published)) != 0) {
+        set_error(error, error_size, "settings authority transition could not be published");
+        goto failure;
+    }
+    *published_generation = generation + 1;
+    cJSON_free(published);
+    cJSON_Delete(root);
+    release_settings_lock(lock);
+    return 0;
+
+failure:
+    cJSON_free(published);
+    cJSON_Delete(root);
+    release_settings_lock(lock);
+    return -1;
+}
+
+int bloom_settings_activate(const char *settings_path, const char *onion_system_path,
+                            const char *onion_config_root, BloomSettingsAuthorityResult *result,
+                            char *error, size_t error_size)
+{
+    if (settings_path == NULL || onion_system_path == NULL || onion_config_root == NULL ||
+        result == NULL) {
+        set_error(error, error_size, "invalid settings activation request");
+        return -1;
+    }
+    memset(result, 0, sizeof(*result));
+    int schema = 0;
+    char source[32] = {0};
+    char authority[16] = {0};
+    if (bloom_settings_status(settings_path, &schema, source, sizeof(source), authority,
+                              sizeof(authority), error, error_size) != 0)
+        return -1;
+    if (strcmp(authority, "bloom") == 0) {
+        BloomSettingsValues values;
+        if (bloom_settings_read_values(settings_path, &values, error, error_size) != 0 ||
+            bloom_settings_materialize_onion(settings_path, onion_system_path, onion_config_root,
+                                             error, error_size) != 0)
+            return -1;
+        result->generation = values.generation;
+        return 0;
+    }
+    BloomSettingsSyncResult synchronized;
+    if (bloom_settings_sync_onion(onion_system_path, onion_config_root, settings_path,
+                                  &synchronized, error, error_size) != 0)
+        return -1;
+    int bloom_generation = 0;
+    if (transition_authority(settings_path, "legacy", "bloom", synchronized.generation,
+                             &bloom_generation, error, error_size) != 0)
+        return -1;
+    result->generation = bloom_generation;
+    if (bloom_settings_materialize_onion(settings_path, onion_system_path, onion_config_root, error,
+                                         error_size) != 0) {
+        int rollback_generation = 0;
+        if (transition_authority(settings_path, "bloom", "legacy", bloom_generation,
+                                 &rollback_generation, NULL, 0) == 0) {
+            result->rolled_back = 1;
+            result->generation = rollback_generation;
+        }
+        return -1;
+    }
+    result->changed = 1;
+    return 0;
+}
+
+int bloom_settings_rollback_authority(const char *settings_path,
+                                      BloomSettingsAuthorityResult *result, char *error,
+                                      size_t error_size)
+{
+    if (settings_path == NULL || result == NULL) {
+        set_error(error, error_size, "invalid settings authority rollback request");
+        return -1;
+    }
+    memset(result, 0, sizeof(*result));
+    int schema = 0;
+    char source[32] = {0};
+    char authority[16] = {0};
+    if (bloom_settings_status(settings_path, &schema, source, sizeof(source), authority,
+                              sizeof(authority), error, error_size) != 0)
+        return -1;
+    if (strcmp(authority, "legacy") == 0) {
+        BloomSettingsValues values;
+        if (bloom_settings_read_values(settings_path, &values, error, error_size) != 0)
+            return -1;
+        result->generation = values.generation;
+        return 0;
+    }
+    if (transition_authority(settings_path, "bloom", "legacy", 0, &result->generation, error,
+                             error_size) != 0)
+        return -1;
+    result->changed = 1;
+    return 0;
+}
+
+typedef enum {
+    BLOOM_FIELD_INTEGER,
+    BLOOM_FIELD_BOOLEAN,
+    BLOOM_FIELD_STRING
+} BloomSettingsFieldType;
+
+typedef struct {
+    const char *name;
+    const char *section;
+    const char *group;
+    const char *key;
+    BloomSettingsFieldType type;
+    int minimum;
+    int maximum;
+    size_t text_size;
+    int allow_empty;
+} BloomSettingsFieldPolicy;
+
+#define INTEGER_FIELD(name, section, group, key, minimum, maximum)             \
+    {                                                                          \
+        name, section, group, key, BLOOM_FIELD_INTEGER, minimum, maximum, 0, 0 \
+    }
+#define BOOLEAN_FIELD(name, section, group, key)                   \
+    {                                                              \
+        name, section, group, key, BLOOM_FIELD_BOOLEAN, 0, 1, 0, 0 \
+    }
+#define STRING_FIELD(name, section, group, key, size, allow_empty)             \
+    {                                                                          \
+        name, section, group, key, BLOOM_FIELD_STRING, 0, 0, size, allow_empty \
+    }
+
+static const BloomSettingsFieldPolicy SETTINGS_FIELDS[] = {
+    INTEGER_FIELD("device.volume", "device", NULL, "volume", 0, 20),
+    BOOLEAN_FIELD("device.mute", "device", NULL, "mute"),
+    INTEGER_FIELD("device.background_music_volume", "device", NULL,
+                  "background_music_volume", 0, 20),
+    INTEGER_FIELD("device.brightness", "device", NULL, "brightness", 0, 10),
+    BOOLEAN_FIELD("device.wifi_enabled", "device", NULL, "wifi_enabled"),
+    INTEGER_FIELD("device.sleep_minutes", "device", NULL, "sleep_minutes", 0, 120),
+    INTEGER_FIELD("device.luminance", "device", NULL, "luminance", 0, 20),
+    INTEGER_FIELD("device.hue", "device", NULL, "hue", 0, 20),
+    INTEGER_FIELD("device.saturation", "device", NULL, "saturation", 0, 20),
+    INTEGER_FIELD("device.contrast", "device", NULL, "contrast", 0, 20),
+    INTEGER_FIELD("device.audio_fix", "device", NULL, "audio_fix", 0, 1),
+    INTEGER_FIELD("device.vibration", "device", NULL, "vibration", 0, 3),
+    INTEGER_FIELD("device.pwm_frequency", "device", NULL, "pwm_frequency", 0, 20),
+    STRING_FIELD("interface.language", "interface", NULL, "language", BLOOM_SETTINGS_TEXT_MAX, 0),
+    STRING_FIELD("interface.theme", "interface", NULL, "theme", BLOOM_SETTINGS_TEXT_MAX, 0),
+    INTEGER_FIELD("interface.font_size", "interface", NULL, "font_size", 8, 64),
+    BOOLEAN_FIELD("interface.background_music_muted", "interface", NULL,
+                  "background_music_muted"),
+    BOOLEAN_FIELD("interface.show_recents", "interface", NULL, "show_recents"),
+    BOOLEAN_FIELD("interface.show_expert", "interface", NULL, "show_expert"),
+    BOOLEAN_FIELD("interface.blue_light.enabled", "interface", "blue_light", "enabled"),
+    BOOLEAN_FIELD("interface.blue_light.scheduled", "interface", "blue_light", "scheduled"),
+    INTEGER_FIELD("interface.blue_light.level", "interface", "blue_light", "level", 0, 20),
+    INTEGER_FIELD("interface.blue_light.rgb", "interface", "blue_light", "rgb", 0, 16777215),
+    STRING_FIELD("interface.blue_light.start_time", "interface", "blue_light", "start_time", 16,
+                 0),
+    STRING_FIELD("interface.blue_light.end_time", "interface", "blue_light", "end_time", 16, 0),
+    BOOLEAN_FIELD("interface.recording.indicator", "interface", "recording", "indicator"),
+    BOOLEAN_FIELD("interface.recording.hotkey", "interface", "recording", "hotkey"),
+    INTEGER_FIELD("interface.recording.countdown", "interface", "recording", "countdown", 0, 10),
+    BOOLEAN_FIELD("behavior.startup_auto_resume", "behavior", NULL, "startup_auto_resume"),
+    BOOLEAN_FIELD("behavior.menu_button_haptics", "behavior", NULL, "menu_button_haptics"),
+    BOOLEAN_FIELD("behavior.disable_standby", "behavior", NULL, "disable_standby"),
+    BOOLEAN_FIELD("behavior.logging", "behavior", NULL, "logging"),
+    INTEGER_FIELD("behavior.low_battery_warn_at", "behavior", NULL, "low_battery_warn_at", 0,
+                  100),
+    INTEGER_FIELD("behavior.low_battery_autosave_at", "behavior", NULL,
+                  "low_battery_autosave_at", 0, 100),
+    INTEGER_FIELD("behavior.startup_tab", "behavior", NULL, "startup_tab", 0, 20),
+    INTEGER_FIELD("behavior.startup_application", "behavior", NULL, "startup_application", 0,
+                  20),
+    INTEGER_FIELD("behavior.time_skip_hours", "behavior", NULL, "time_skip_hours", 0, 24),
+    STRING_FIELD("controls.layout", "controls", NULL, "layout", BLOOM_SETTINGS_TEXT_MAX, 0),
+    INTEGER_FIELD("controls.mainui_single_press", "controls", NULL, "mainui_single_press", 0, 20),
+    INTEGER_FIELD("controls.mainui_long_press", "controls", NULL, "mainui_long_press", 0, 20),
+    INTEGER_FIELD("controls.mainui_double_press", "controls", NULL, "mainui_double_press", 0, 20),
+    INTEGER_FIELD("controls.ingame_single_press", "controls", NULL, "ingame_single_press", 0, 20),
+    INTEGER_FIELD("controls.ingame_long_press", "controls", NULL, "ingame_long_press", 0, 20),
+    INTEGER_FIELD("controls.ingame_double_press", "controls", NULL, "ingame_double_press", 0, 20),
+    STRING_FIELD("controls.mainui_button_x", "controls", NULL, "mainui_button_x",
+                 BLOOM_SETTINGS_TEXT_MAX, 1),
+    STRING_FIELD("controls.mainui_button_y", "controls", NULL, "mainui_button_y",
+                 BLOOM_SETTINGS_TEXT_MAX, 1)};
+
+static const BloomSettingsFieldPolicy *find_field_policy(const char *field)
+{
+    for (size_t index = 0; index < sizeof(SETTINGS_FIELDS) / sizeof(SETTINGS_FIELDS[0]); ++index)
+        if (strcmp(SETTINGS_FIELDS[index].name, field) == 0)
+            return &SETTINGS_FIELDS[index];
+    return NULL;
+}
+
+static cJSON *create_field_value(const BloomSettingsFieldPolicy *policy, const char *value,
+                                 char *error, size_t error_size)
+{
+    if (policy->type == BLOOM_FIELD_BOOLEAN) {
+        if (strcmp(value, "true") == 0)
+            return cJSON_CreateTrue();
+        if (strcmp(value, "false") == 0)
+            return cJSON_CreateFalse();
+        set_error(error, error_size, "settings boolean value is invalid");
+        return NULL;
+    }
+    if (policy->type == BLOOM_FIELD_INTEGER) {
+        char *end = NULL;
+        errno = 0;
+        long number = strtol(value, &end, 10);
+        if (errno != 0 || end == value || *end != '\0' || number < policy->minimum ||
+            number > policy->maximum) {
+            set_error(error, error_size, "settings integer value is invalid");
+            return NULL;
+        }
+        return cJSON_CreateNumber((double)number);
+    }
+    size_t length = strlen(value);
+    if ((!policy->allow_empty && length == 0) || length >= policy->text_size) {
+        set_error(error, error_size, "settings text value is invalid");
+        return NULL;
+    }
+    for (size_t index = 0; index < length; ++index)
+        if ((unsigned char)value[index] < 0x20 || (unsigned char)value[index] == 0x7f) {
+            set_error(error, error_size, "settings text value is invalid");
+            return NULL;
+        }
+    return cJSON_CreateString(value);
+}
+
+static int field_values_equal(const cJSON *current, const cJSON *replacement,
+                              BloomSettingsFieldType type)
+{
+    if (type == BLOOM_FIELD_BOOLEAN)
+        return cJSON_IsBool(current) && cJSON_IsTrue(current) == cJSON_IsTrue(replacement);
+    if (type == BLOOM_FIELD_INTEGER)
+        return cJSON_IsNumber(current) && current->valuedouble == replacement->valuedouble;
+    return cJSON_IsString(current) && strcmp(current->valuestring, replacement->valuestring) == 0;
+}
+
+int bloom_settings_set(const char *settings_path, const char *onion_system_path,
+                       const char *onion_config_root, const char *field, const char *value,
+                       BloomSettingsMutationResult *result, char *error, size_t error_size)
+{
+    if (settings_path == NULL || onion_system_path == NULL || onion_config_root == NULL ||
+        field == NULL || value == NULL || result == NULL) {
+        set_error(error, error_size, "invalid settings mutation request");
+        return -1;
+    }
+    memset(result, 0, sizeof(*result));
+    const BloomSettingsFieldPolicy *policy = find_field_policy(field);
+    if (policy == NULL) {
+        set_error(error, error_size, "settings field is unsupported");
+        return -1;
+    }
+    cJSON *replacement = create_field_value(policy, value, error, error_size);
+    if (replacement == NULL)
+        return -1;
+    int lock = -1;
+    if (acquire_settings_lock(settings_path, &lock, error, error_size) != 0) {
+        cJSON_Delete(replacement);
+        return -1;
+    }
+    cJSON *root = load_settings_root(settings_path, error, error_size);
+    BloomSettingsValues current_values;
+    char *published = NULL;
+    if (root == NULL || parse_settings_values(root, &current_values, error, error_size) != 0)
+        goto failure;
+    if (strcmp(current_values.authority, "bloom") != 0) {
+        set_error(error, error_size, "settings mutation requires Bloom authority");
+        goto failure;
+    }
+    cJSON *target = cJSON_GetObjectItemCaseSensitive(root, policy->section);
+    if (policy->group != NULL)
+        target = cJSON_IsObject(target) ? cJSON_GetObjectItemCaseSensitive(target, policy->group)
+                                        : NULL;
+    const cJSON *current =
+        cJSON_IsObject(target) ? cJSON_GetObjectItemCaseSensitive(target, policy->key) : NULL;
+    if (current == NULL) {
+        set_error(error, error_size, "canonical settings field is unavailable");
+        goto failure;
+    }
+    if (field_values_equal(current, replacement, policy->type)) {
+        result->generation = current_values.generation;
+        result->materialized = 1;
+        cJSON_Delete(replacement);
+        cJSON_Delete(root);
+        release_settings_lock(lock);
+        return 0;
+    }
+    if (!cJSON_ReplaceItemInObjectCaseSensitive(target, policy->key, replacement)) {
+        set_error(error, error_size, "canonical settings mutation could not be created");
+        goto failure;
+    }
+    replacement = NULL;
+    cJSON_SetNumberValue(cJSON_GetObjectItemCaseSensitive(root, "generation"),
+                         current_values.generation + 1);
+    published = cJSON_PrintUnformatted(root);
+    if (published == NULL || write_atomic(settings_path, published, strlen(published)) != 0) {
+        set_error(error, error_size, "canonical settings mutation could not be published");
+        goto failure;
+    }
+    result->changed = 1;
+    result->generation = current_values.generation + 1;
+    cJSON_free(published);
+    cJSON_Delete(root);
+    release_settings_lock(lock);
+    if (bloom_settings_materialize_onion(settings_path, onion_system_path, onion_config_root, error,
+                                         error_size) != 0)
+        return -1;
+    result->materialized = 1;
+    return 0;
+
+failure:
+    cJSON_Delete(replacement);
+    cJSON_free(published);
     cJSON_Delete(root);
     release_settings_lock(lock);
     return -1;

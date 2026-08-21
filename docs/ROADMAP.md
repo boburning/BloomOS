@@ -337,11 +337,13 @@ Current frontend progress:
   in #238 and #239; physical display/input claims remain tracked by #228.
 - [ ] Bloom settings authority. Schema-1 durable state, exact legacy snapshot,
   idempotent Onion import, serialized legacy-authority synchronization, and a
-  complete durable keymon/Tweaks settings model are in progress. Boot, MainUI
+  complete durable keymon/Tweaks settings model are implemented. Boot, MainUI
   shared-memory changes, and WPS preference changes now reconcile the inactive
-  canonical copy. Typed canonical reads and fail-closed Onion compatibility
-  materialization are in progress; direct mutations, authority cutover, and
-  sole-writer enforcement remain before this becomes the active authority.
+  canonical copy. Typed canonical reads, fail-closed Onion compatibility
+  materialization, allowlisted direct mutations, and guarded activation/rollback
+  are implemented. Automated and Plus cutover/rollback evidence remain before
+  Bloom authority becomes the shipped default; closed-MainUI writes continue
+  through the service-owned reconciliation bridge until that UI is replaced.
 - [ ] Bloom Shell vertical slice and supervised MainUI fallback.
 
 ## Historical BloomOS foundation

@@ -291,7 +291,7 @@ void value_setSwapTriggers(void)
 int value_getPWMFrequency(void)
 {
     int pwmfrequency = 0;
-    config_get(".pwmfrequency", CONFIG_INT, &pwmfrequency);
+    config_get("pwmfrequency", CONFIG_INT, &pwmfrequency);
     return pwmfrequency;
 }
 
