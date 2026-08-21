@@ -12,9 +12,10 @@ fail() {
     exit 1
 }
 
-[ "$#" -eq 6 ] || [ "$#" -eq 8 ] || fail invalid_arguments
+[ "$#" -eq 6 ] || [ "$#" -eq 8 ] || [ "$#" -eq 10 ] || fail invalid_arguments
 [ "$1" = --system ] && [ "$3" = --rom-base64 ] && [ "$5" = --core ] || fail invalid_arguments
 [ "$#" -eq 6 ] || [ "$7" = --session-seconds ] || fail invalid_arguments
+[ "$#" -ne 10 ] || { [ "$9" = --operator-unlock ] && [ "${10}" = I_ACCEPT_PROFILE_CHANGES ]; } || fail operator_confirmation_required
 [ -f "$SD_ROOT/.bloom-dev" ] || fail developer_mode_required
 case "$6" in ''|*[!a-z0-9_]*) fail invalid_core ;; esac
 case "$2" in
@@ -48,12 +49,22 @@ reported_core="${6}_libretro.so"
 
 session_exit=not_run
 save_flush=not_run
-if [ "$#" -eq 8 ]; then
+rich_presence=not_run
+unlock_test=operator_required
+operator_session=false
+if [ "$#" -ge 8 ]; then
     case "$8" in ''|*[!0-9]*) fail invalid_session_duration ;; esac
     [ "$8" -ge 5 ] && [ "$8" -le 900 ] || fail invalid_session_duration
     [ "$6" = "$default_core" ] || fail session_core_not_default
     [ -x "$BLOOM_GAME_SMOKE" ] || fail session_service_unavailable
-    session=$("$BLOOM_GAME_SMOKE" "$2" "$4" "$8" 2>/dev/null) || fail session_failed
+    if [ "$#" -eq 10 ]; then
+        operator_session=true
+        rich_presence=operator_observation_required
+        unlock_test=operator_observation_required
+        session=$("$BLOOM_GAME_SMOKE" "$2" "$4" "$8" 2>/dev/null) || fail session_failed
+    else
+        session=$(BLOOM_RA_FORCE_DISABLED=1 "$BLOOM_GAME_SMOKE" "$2" "$4" "$8" 2>/dev/null) || fail session_failed
+    fi
     printf '%s' "$session" | "$JQ_BIN" -e '.status == "passed" and .graceful_exit == true and .save_flush == true' >/dev/null 2>&1 || fail session_result_invalid
     reported_core=$(printf '%s' "$session" | "$JQ_BIN" -er '.selected_core') || fail session_result_invalid
     core_sha=$(printf '%s' "$session" | "$JQ_BIN" -er '.selected_core_sha256') || fail session_result_invalid
@@ -67,5 +78,5 @@ if [ "$#" -eq 8 ]; then
     save_flush=pass
 fi
 
-printf '{"schema":1,"service":"bloom-ra-test","device":"host-reported-separately","system":"%s","core":"%s","core_sha256":"%s","bloom_ra_status":"%s","identification":"%s","login":"%s","rich_presence":"not_run","hardcore":"not_run","session_exit":"%s","save_flush":"%s","unlock_test":"operator_required"}\n' \
-    "$2" "$reported_core" "$core_sha" "$core_status" "$identification" "$login" "$session_exit" "$save_flush"
+printf '{"schema":1,"service":"bloom-ra-test","device":"host-reported-separately","system":"%s","core":"%s","core_sha256":"%s","bloom_ra_status":"%s","identification":"%s","login":"%s","operator_session":%s,"rich_presence":"%s","hardcore":"not_run","session_exit":"%s","save_flush":"%s","unlock_test":"%s"}\n' \
+    "$2" "$reported_core" "$core_sha" "$core_status" "$identification" "$login" "$operator_session" "$rich_presence" "$session_exit" "$save_flush" "$unlock_test"

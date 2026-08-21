@@ -519,16 +519,19 @@ account silently.
 The RA-25 command performs a privacy-safe certification preflight:
 `bloomctl test achievements --system SYSTEM --rom-base64 DATA --core CORE`.
 An explicit `--session-seconds N` (5-900) additionally exercises Bloom's
-guarded default-core session lifecycle, graceful exit, and save flush without
-attempting an achievement unlock.
+guarded default-core session lifecycle, graceful exit, and save flush with RA
+forcibly disabled. This prevents ordinary certification automation from
+polluting an RA profile. Only the deliberately verbose
+`--operator-unlock I_ACCEPT_PROFILE_CHANGES` mode permits live RA traffic; its
+Rich Presence and unlock fields remain `operator_observation_required` rather
+than fabricating a pass.
 It validates that the decoded ROM belongs to the selected system, derives the
 canonical Bloom GameID, queries exact local RA identification, hashes the exact
 installed core, reports the matching Bloom policy status, and performs a
 redacted read-only authentication check. It never prints the account, ROM path,
-or title. Rich Presence, Hardcore, lifecycle, save flush, and unlock fields
-remain explicitly `not_run`/`operator_required` until the
-physical vertical-slice runner can execute them truthfully; the command does
-not fabricate a pass from host evidence.
+or title. Rich Presence and unlock observations are recorded separately by the
+operator; the command does not infer them from a successful lifecycle or
+fabricate a pass from host evidence.
 
 No core/device is `verified` from host tests. Update and rollback preserve the
 catalog and proxy award queue. Stable completion requires the Definition of

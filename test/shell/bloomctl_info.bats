@@ -185,6 +185,9 @@ EOF
     run sh /workspace/static/build/.tmp_update/bin/bloomctl test achievements --system GBA --rom-base64 ZGF0YQ== --core gpsp --session-seconds 10
     [ "$status" -eq 0 ]
     [ "$output" = '--system GBA --rom-base64 ZGF0YQ== --core gpsp --session-seconds 10' ]
+    run sh /workspace/static/build/.tmp_update/bin/bloomctl test achievements --system GBA --rom-base64 ZGF0YQ== --core gpsp --session-seconds 10 --operator-unlock I_ACCEPT_PROFILE_CHANGES
+    [ "$status" -eq 0 ]
+    [ "$output" = '--system GBA --rom-base64 ZGF0YQ== --core gpsp --session-seconds 10 --operator-unlock I_ACCEPT_PROFILE_CHANGES' ]
 }
 
 @test "update commands delegate only the explicit offline operations" {

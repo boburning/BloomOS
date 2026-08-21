@@ -114,6 +114,25 @@ teardown() { teardown_bloom_fixture; }
     ! grep -E '^log:.*BloomUser' "$MOCK_LOG"
 }
 
+@test "developer automation can explicitly force an RA-disabled session" {
+    export BLOOM_RA_FORCE_DISABLED=1
+    run "$PREPARE" "$REQUEST"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'"enabled":false'* ]]
+    grep -F 'false disabled false false 0 not_applicable' "$MOCK_LOG"
+    [ ! -e "$BLOOM_SESSION_ROOT/ra.cfg" ]
+    ! grep -F 'config:write-ra-config' "$MOCK_LOG"
+}
+
+@test "developer automation rejects an invalid force-disabled policy" {
+    export BLOOM_RA_FORCE_DISABLED=unexpected
+    run "$PREPARE" "$REQUEST"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *'RA force-disabled policy is invalid'* ]]
+    [ ! -e "$BLOOM_SESSION_ROOT/ra.cfg" ]
+    ! grep -F 'config:write-ra-config' "$MOCK_LOG"
+}
+
 @test "unknown softcore game degrades to RA-disabled launch" {
     export RA_GAME_MISSING=1
     run "$PREPARE" "$REQUEST"
