@@ -1,0 +1,86 @@
+#!/bin/sh
+set -eu
+
+ROOT=${BLOOM_CONTROLS_ROOT:-}
+PLATFORM=${BLOOM_PLATFORM_BIN:-/mnt/SDCARD/.tmp_update/bin/bloom-platform}
+SETTINGS=${BLOOM_SETTINGS_BIN:-/mnt/SDCARD/.tmp_update/bin/bloom-settings}
+AWK=${BLOOM_AWK_BIN:-awk}
+PWM_DUTY=${BLOOM_PWM_DUTY_PATH:-$ROOT/sys/class/pwm/pwmchip0/pwm0/duty_cycle}
+
+json_model() {
+    [ -x "$PLATFORM" ] || return 1
+    model=$($PLATFORM model 2>/dev/null) || return 1
+    case "$model" in mini|mini_plus|mini_flip) printf '%s' "$model" ;; *) return 1 ;; esac
+}
+
+valid_brightness() {
+    case "$1" in 0|1|2|3|4|5|6|7|8|9|10) return 0 ;; *) return 1 ;; esac
+}
+
+raw_brightness() {
+    "$AWK" -v value="$1" 'BEGIN { print int(3 * exp(0.350656 * value) + 0.5) }'
+}
+
+status() {
+    model=$(json_model) || {
+        printf '%s\n' '{"schema":1,"service":"bloom-controls","available":false,"state":"platform_unavailable"}'
+        return 1
+    }
+    if [ ! -r "$PWM_DUTY" ]; then
+        printf '{"schema":1,"service":"bloom-controls","available":true,"model":"%s","brightness":{"available":false,"raw":null}}\n' "$model"
+        return 0
+    fi
+    raw=''
+    IFS= read -r raw <"$PWM_DUTY" || true
+    case "$raw" in ''|*[!0-9]*) raw=null ;; esac
+    printf '{"schema":1,"service":"bloom-controls","available":true,"model":"%s","brightness":{"available":true,"raw":%s}}\n' "$model" "$raw"
+}
+
+apply_brightness() {
+    value=$1
+    persisted=$2
+    valid_brightness "$value" || {
+        printf '%s\n' '{"schema":1,"service":"bloom-controls","control":"brightness","persisted":false,"applied":false,"state":"invalid_value"}'
+        return 2
+    }
+    model=$(json_model) || {
+        printf '%s\n' '{"schema":1,"service":"bloom-controls","control":"brightness","persisted":false,"applied":false,"state":"platform_unavailable"}'
+        return 1
+    }
+    if [ "$persisted" = true ]; then
+        [ -x "$SETTINGS" ] || {
+            printf '%s\n' '{"schema":1,"service":"bloom-controls","control":"brightness","persisted":false,"applied":false,"state":"settings_unavailable"}'
+            return 1
+        }
+        "$SETTINGS" set device.brightness "$value" >/dev/null 2>&1 || {
+            printf '%s\n' '{"schema":1,"service":"bloom-controls","control":"brightness","persisted":false,"applied":false,"state":"settings_rejected"}'
+            return 1
+        }
+    fi
+    [ -w "$PWM_DUTY" ] || {
+        printf '{"schema":1,"service":"bloom-controls","control":"brightness","persisted":%s,"applied":false,"state":"control_unavailable"}\n' "$persisted"
+        return 1
+    }
+    raw=$(raw_brightness "$value") || {
+        printf '{"schema":1,"service":"bloom-controls","control":"brightness","persisted":%s,"applied":false,"state":"calculation_failed"}\n' "$persisted"
+        return 1
+    }
+    case "$raw" in ''|*[!0-9]*)
+        printf '{"schema":1,"service":"bloom-controls","control":"brightness","persisted":%s,"applied":false,"state":"calculation_failed"}\n' "$persisted"
+        return 1
+        ;;
+    esac
+    printf '%s\n' "$raw" >"$PWM_DUTY" || {
+        printf '{"schema":1,"service":"bloom-controls","control":"brightness","persisted":%s,"applied":false,"state":"apply_failed"}\n' "$persisted"
+        return 1
+    }
+    printf '{"schema":1,"service":"bloom-controls","control":"brightness","value":%s,"raw":%s,"persisted":%s,"applied":true,"state":"applied","model":"%s"}\n' \
+        "$value" "$raw" "$persisted" "$model"
+}
+
+case "$#:${1:-}:${2:-}" in
+    1:status:) status ;;
+    3:apply:brightness) apply_brightness "$3" false ;;
+    3:request:brightness) apply_brightness "$3" true ;;
+    *) printf '%s\n' '{"schema":1,"service":"bloom-controls","available":false,"state":"invalid_arguments"}'; exit 2 ;;
+esac

@@ -18,7 +18,7 @@ ownership boundary.
 | Recents and resume | MainUI recent list, GameSwitcher compatibility readers | Bloom activity/library | Direct resume and Bloom-owned consumer cutover; deterministic read-only import is proven on Plus |
 | Game launch handoff | `/tmp` or `.tmp_update/cmd_to_run.sh`, MainUI termination | Bloom launch/session | Direct launch and shell return on hardware |
 | MENU and context actions | `src/keymon/menuButtonAction.h` MainUI actions | Bloom input/shell | Stable control grammar and fallback |
-| Brightness and volume | keymon plus shared settings helpers | `bloom-settings` and platform adapters | One writer and device tests |
+| Brightness and volume | keymon plus shared settings helpers | `bloom-settings` and platform adapters | Brightness persistence/curve and boot apply are Bloom-owned with Plus no-op evidence; volume backend ownership and physical device tests remain |
 | Network settings | Tweaks network menu, firmware setting reader, and inherited service script | `bloom-network` and Bloom network UI | Read-only status, canonical preference mutation, and the fixed reconciliation handoff are proven on Plus; backend replacement and disconnected/disabled behavior still require capability-gated tests |
 | Power, suspend, shutdown | keymon, charging state, and the low-level clean shutdown helper | `bloom-power` | All current shutdown/reboot callers are behind the versioned power adapter; suspend migration plus clean FAT, reboot, lid, and recovery evidence remain |
 | Theme installation | themeSwitcher plus MainUI-specific resources | Bloom theme adapter | malformed-theme fallback and UI parity |

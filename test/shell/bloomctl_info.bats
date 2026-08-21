@@ -597,3 +597,26 @@ SH
         sh /workspace/static/build/.tmp_update/bin/bloomctl network restart
     [ "$status" -eq 2 ]
 }
+
+@test "bloomctl controls delegates only status and bounded brightness" {
+    service="$BATS_TEST_TMPDIR/bloom-controls"
+    cat >"$service" <<'SH'
+#!/bin/sh
+printf '{"schema":1,"arguments":"%s"}\n' "$*"
+SH
+    chmod +x "$service"
+
+    run env BLOOM_CONTROLS_BIN="$service" \
+        sh /workspace/static/build/.tmp_update/bin/bloomctl controls status
+    [ "$status" -eq 0 ]
+    [ "$output" = '{"schema":1,"arguments":"status"}' ]
+
+    run env BLOOM_CONTROLS_BIN="$service" \
+        sh /workspace/static/build/.tmp_update/bin/bloomctl controls brightness 7
+    [ "$status" -eq 0 ]
+    [ "$output" = '{"schema":1,"arguments":"request brightness 7"}' ]
+
+    run env BLOOM_CONTROLS_BIN="$service" \
+        sh /workspace/static/build/.tmp_update/bin/bloomctl controls volume 10
+    [ "$status" -eq 2 ]
+}

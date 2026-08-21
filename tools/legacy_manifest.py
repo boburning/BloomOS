@@ -50,6 +50,7 @@ BLOOM_RUNTIME_SOURCE_IDS = {
     "runtime-tmp-update-bin-bloom-detect-model",
     "runtime-tmp-update-bin-bloom-dev-ssh",
     "runtime-tmp-update-bin-bloom-diagnostics-export",
+    "runtime-tmp-update-bin-bloom-controls",
     "runtime-tmp-update-bin-bloom-game-smoke",
     "runtime-tmp-update-bin-bloom-health-system",
     "runtime-tmp-update-bin-bloom-launch-override",

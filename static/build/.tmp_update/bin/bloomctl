@@ -24,6 +24,7 @@ BLOOM_SETTINGS="${BLOOM_SETTINGS_BIN:-$SCRIPT_DIR/bloom-settings}"
 BLOOM_LIBRARY="${BLOOM_LIBRARY_BIN:-$SCRIPT_DIR/bloom-library}"
 BLOOM_POWER="${BLOOM_POWER_BIN:-$SCRIPT_DIR/bloom-power}"
 BLOOM_NETWORK="${BLOOM_NETWORK_BIN:-$SCRIPT_DIR/bloom-network}"
+BLOOM_CONTROLS="${BLOOM_CONTROLS_BIN:-$SCRIPT_DIR/bloom-controls}"
 
 path() {
     printf '%s%s' "$BLOOM_ROOT" "$1"
@@ -263,6 +264,7 @@ usage() {
     printf '       bloomctl settings {status|import-onion|sync-onion|reconcile-onion|materialize-onion|activate-bloom|rollback-authority|set FIELD VALUE}\n' >&2
     printf '       bloomctl power {status|reboot|poweroff}\n' >&2
     printf '       bloomctl network {status|reconcile|enable|disable}\n' >&2
+    printf '       bloomctl controls {status|brightness VALUE}\n' >&2
     printf '       bloomctl library {status|import-onion|import-legacy|scan --changed|--all|--system SYSTEM|games --limit N [--after GAME_ID]|games --system SYSTEM --limit N [--after GAME_ID]}\n' >&2
     printf '       bloomctl test smoke SYSTEM ROM_PATH [DURATION_SECONDS]\n' >&2
     printf '       bloomctl test achievements --system SYSTEM --rom-base64 DATA --core CORE [--session-seconds N [--operator-unlock I_ACCEPT_PROFILE_CHANGES]]\n' >&2
@@ -482,6 +484,15 @@ network_command() {
     esac
 }
 
+controls_command() {
+    [ -x "$BLOOM_CONTROLS" ] || { printf 'bloomctl: controls service is unavailable\n' >&2; return 1; }
+    case "$#:${1:-}" in
+        1:status) "$BLOOM_CONTROLS" status ;;
+        2:brightness) "$BLOOM_CONTROLS" request brightness "$2" ;;
+        *) usage; return 2 ;;
+    esac
+}
+
 logs_command() {
     case "${1:-}" in
         export)
@@ -602,6 +613,10 @@ case "${1:-}" in
     network)
         shift
         network_command "$@"
+        ;;
+    controls)
+        shift
+        controls_command "$@"
         ;;
     test)
         shift

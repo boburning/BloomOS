@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "date": "2026-08-21",
+  "operator": "Codex remote automation",
+  "device": {"family": "mini_plus", "model_id": 354},
+  "installed_build": {"version": "0.1.0-dev-9b5c3aa8", "update_state": "known_good"},
+  "candidate": {
+    "source_base_commit": "e1ecd1bf",
+    "sha256": "63f7a1e1302a52056fbbf373b64462bb23e1904613efab9bf77ccc3094e9d091"
+  },
+  "operation": {
+    "request": "brightness 7",
+    "logical_value": 7,
+    "raw_before": 35,
+    "raw_after": 35,
+    "persisted": true,
+    "applied": true
+  },
+  "checks": {
+    "upload_hash_matches": "pass",
+    "status_model": "mini_plus",
+    "canonical_settings_hash_before": "8e8ac797b8af90d36ed9e7cfd0ddf5ba95e36d57ddcbe7fc6e2ed4c05d98c006",
+    "canonical_settings_hash_after": "8e8ac797b8af90d36ed9e7cfd0ddf5ba95e36d57ddcbe7fc6e2ed4c05d98c006",
+    "idempotent_preference_write": "pass",
+    "pwm_apply": "pass",
+    "temporary_candidate_cleanup": "pass"
+  },
+  "notes": "The current level was applied intentionally to avoid an unreviewed visible change. Host tests cover the full 0-10 range and the canonical 3-100 raw curve. Physical visual review and signed boot-path validation remain pending."
+}

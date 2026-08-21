@@ -143,10 +143,10 @@ legacy_channels = ["development"]
 [legacy_inventory]
 manifest = "build/legacy-manifest.json"
 schema = 1
-component_count = 314
-file_count = 2112
-byte_count = 314420972
-source_build_components = 210
+component_count = 315
+file_count = 2113
+byte_count = 314425128
+source_build_components = 211
 unresolved_components = 104
 inherited_baseline = "07505ea58c7bba698d6b9220ff43946a43cac76b"
 
