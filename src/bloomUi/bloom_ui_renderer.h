@@ -49,6 +49,8 @@ int bloom_ui_render_shell(SDL_Surface *surface, const BloomUiLayout *layout,
 /* Draws a deterministic confirmation layer over an already-rendered shell. */
 int bloom_ui_render_dialog(SDL_Surface *surface, const BloomUiLayout *layout,
                            const BloomUiDialogFocus *dialog);
+int bloom_ui_render_keyboard(SDL_Surface *surface, const BloomUiLayout *layout,
+                             const BloomUiKeyboardFocus *keyboard);
 
 /* Adapts logical top-left rendering to the Mini-family physical framebuffer. */
 int bloom_ui_rotate_180(SDL_Surface *surface);

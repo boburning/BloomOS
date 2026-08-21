@@ -129,6 +129,11 @@ TEST(BloomUiKeyboard, ProvidesLowerUpperAndPrintableAsciiSymbols)
     EXPECT_EQ('-', bloom_ui_keyboard_character(&keyboard));
     bloom_ui_keyboard_cycle_mode(&keyboard);
     EXPECT_EQ('q', bloom_ui_keyboard_character(&keyboard));
+    EXPECT_EQ(10U, bloom_ui_keyboard_row_length(BLOOM_UI_KEYBOARD_LOWER, 0));
+    EXPECT_EQ(9U, bloom_ui_keyboard_row_length(BLOOM_UI_KEYBOARD_UPPER, 2));
+    EXPECT_EQ(8U, bloom_ui_keyboard_row_length(BLOOM_UI_KEYBOARD_SYMBOLS, 1));
+    EXPECT_EQ(0U, bloom_ui_keyboard_row_length(BLOOM_UI_KEYBOARD_MODE_COUNT, 0));
+    EXPECT_EQ(0U, bloom_ui_keyboard_row_length(BLOOM_UI_KEYBOARD_LOWER, 4));
 }
 
 TEST(BloomUiKeyboard, ClampsMovementToTheCurrentRow)

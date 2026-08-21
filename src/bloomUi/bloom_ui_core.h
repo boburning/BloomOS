@@ -107,6 +107,7 @@ void bloom_ui_keyboard_init(BloomUiKeyboardFocus *keyboard);
 int bloom_ui_keyboard_move(BloomUiKeyboardFocus *keyboard, int horizontal, int vertical);
 void bloom_ui_keyboard_cycle_mode(BloomUiKeyboardFocus *keyboard);
 char bloom_ui_keyboard_character(const BloomUiKeyboardFocus *keyboard);
+size_t bloom_ui_keyboard_row_length(BloomUiKeyboardMode mode, size_t row);
 int bloom_ui_text_append(char *buffer, size_t capacity, char character);
 int bloom_ui_text_backspace(char *buffer, size_t capacity);
 
