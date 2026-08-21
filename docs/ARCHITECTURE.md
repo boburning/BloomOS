@@ -26,6 +26,24 @@ guaranteed. Optional RAOfflineProxy is a replaceable softcore transport behind
 complete contract and ordered delivery plan are in
 [`RETROACHIEVEMENTS.md`](RETROACHIEVEMENTS.md).
 
+## Bloom settings boundary
+
+`bloom-settings` is the versioned durable owner being introduced for global
+and device settings. Its schema-1 state lives outside `.tmp_update`, publishes
+with a restrictive atomic replace, and refuses corrupt or newer schemas rather
+than guessing. The initial Onion importer reads only fixed compatibility paths,
+retains unknown `system.json` and keymap data inside the compatibility record,
+and stores an exact first-import `system.json` snapshot for rollback evidence.
+It is idempotent: a valid Bloom settings file is never replaced by a later
+legacy import. The file explicitly records whether `legacy` compatibility or
+`bloom` is the active writer, preventing a compatibility sync from overwriting
+Bloom-owned state after cutover.
+
+During migration, Onion files remain untouched and existing consumers continue
+to use them. Follow-up integration moves consumers behind this boundary before
+Bloom becomes the sole writer; the presence of an imported schema alone is not
+treated as authority cutover.
+
 ## BloomPlatform foundation
 
 `bloom-platform` is the first device-side capability boundary. Its schema-1,
