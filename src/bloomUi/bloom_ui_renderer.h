@@ -46,6 +46,10 @@ uint32_t bloom_ui_color_rgb(BloomUiColor color);
 int bloom_ui_render_shell(SDL_Surface *surface, const BloomUiLayout *layout,
                           const BloomUiScene *scene);
 
+/* Draws a deterministic confirmation layer over an already-rendered shell. */
+int bloom_ui_render_dialog(SDL_Surface *surface, const BloomUiLayout *layout,
+                           const BloomUiDialogFocus *dialog);
+
 /* Adapts logical top-left rendering to the Mini-family physical framebuffer. */
 int bloom_ui_rotate_180(SDL_Surface *surface);
 
