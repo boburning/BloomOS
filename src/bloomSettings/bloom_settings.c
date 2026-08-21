@@ -1233,12 +1233,18 @@ typedef struct {
     int allow_empty;
 } BloomSettingsFieldPolicy;
 
-#define INTEGER_FIELD(name, section, group, key, minimum, maximum) \
-    {name, section, group, key, BLOOM_FIELD_INTEGER, minimum, maximum, 0, 0}
-#define BOOLEAN_FIELD(name, section, group, key) \
-    {name, section, group, key, BLOOM_FIELD_BOOLEAN, 0, 1, 0, 0}
-#define STRING_FIELD(name, section, group, key, size, allow_empty) \
-    {name, section, group, key, BLOOM_FIELD_STRING, 0, 0, size, allow_empty}
+#define INTEGER_FIELD(name, section, group, key, minimum, maximum)             \
+    {                                                                          \
+        name, section, group, key, BLOOM_FIELD_INTEGER, minimum, maximum, 0, 0 \
+    }
+#define BOOLEAN_FIELD(name, section, group, key)                   \
+    {                                                              \
+        name, section, group, key, BLOOM_FIELD_BOOLEAN, 0, 1, 0, 0 \
+    }
+#define STRING_FIELD(name, section, group, key, size, allow_empty)             \
+    {                                                                          \
+        name, section, group, key, BLOOM_FIELD_STRING, 0, 0, size, allow_empty \
+    }
 
 static const BloomSettingsFieldPolicy SETTINGS_FIELDS[] = {
     INTEGER_FIELD("device.volume", "device", NULL, "volume", 0, 20),
