@@ -16,6 +16,10 @@ typedef struct {
     int volume;
     int mute;
     int wifi_enabled;
+    int battery_available;
+    int battery_capacity_available;
+    int battery_capacity;
+    int battery_charging;
 } BloomShellQuickValues;
 
 int bloom_shell_capabilities_from_model(int model, int developer_mode,
@@ -26,6 +30,8 @@ size_t bloom_shell_quick_settings_count(const BloomShellCapabilities *capabiliti
 const char *bloom_shell_quick_settings_label(const BloomShellCapabilities *capabilities, size_t row);
 int bloom_shell_quick_values_parse(const char *json, BloomShellQuickValues *values);
 int bloom_shell_quick_values_load(const char *settings_path, BloomShellQuickValues *values);
+int bloom_shell_quick_battery_parse(const char *json, BloomShellQuickValues *values);
+int bloom_shell_quick_battery_load(const char *platform_path, BloomShellQuickValues *values);
 int bloom_shell_quick_settings_format(const BloomShellCapabilities *capabilities,
                                       const BloomShellQuickValues *values, size_t row,
                                       char *label, size_t label_size);

@@ -123,9 +123,10 @@ static int wait_child(pid_t child)
     return WIFEXITED(status) && WEXITSTATUS(status) == 0 ? 0 : -1;
 }
 
-int bloom_shell_quick_values_load(const char *settings_path, BloomShellQuickValues *values)
+static int load_output(const char *path, const char *first, const char *second, char *json,
+                       size_t json_size)
 {
-    if (settings_path == NULL || settings_path[0] != '/' || values == NULL)
+    if (path == NULL || path[0] != '/' || first == NULL || json == NULL || json_size < 2)
         return -1;
     int output[2];
     if (pipe(output) != 0)
@@ -141,14 +142,16 @@ int bloom_shell_quick_values_load(const char *settings_path, BloomShellQuickValu
         if (dup2(output[1], STDOUT_FILENO) < 0)
             _exit(127);
         close(output[1]);
-        execl(settings_path, settings_path, "values", (char *)NULL);
+        if (second == NULL)
+            execl(path, path, first, (char *)NULL);
+        else
+            execl(path, path, first, second, (char *)NULL);
         _exit(127);
     }
     close(output[1]);
-    char json[QUICK_OUTPUT_MAX + 1];
     size_t length = 0;
     int failed = 0;
-    while (!failed && length < QUICK_OUTPUT_MAX) {
+    while (!failed && length + 1 < json_size) {
         struct pollfd descriptor = {.fd = output[0], .events = POLLIN | POLLHUP};
         int ready;
         do {
@@ -158,7 +161,7 @@ int bloom_shell_quick_values_load(const char *settings_path, BloomShellQuickValu
             failed = 1;
             break;
         }
-        ssize_t count = read(output[0], json + length, QUICK_OUTPUT_MAX - length);
+        ssize_t count = read(output[0], json + length, json_size - length - 1);
         if (count < 0 && errno == EINTR)
             continue;
         if (count < 0) {
@@ -169,14 +172,58 @@ int bloom_shell_quick_values_load(const char *settings_path, BloomShellQuickValu
             break;
         length += (size_t)count;
     }
-    if (length == QUICK_OUTPUT_MAX)
+    if (length + 1 == json_size)
         failed = 1;
     close(output[0]);
     if (failed)
         kill(child, SIGKILL);
     int child_result = wait_child(child);
     json[length] = '\0';
-    return failed || child_result != 0 ? -1 : bloom_shell_quick_values_parse(json, values);
+    return failed || child_result != 0 ? -1 : 0;
+}
+
+int bloom_shell_quick_values_load(const char *settings_path, BloomShellQuickValues *values)
+{
+    char json[QUICK_OUTPUT_MAX + 1];
+    return load_output(settings_path, "values", NULL, json, sizeof(json)) == 0
+               ? bloom_shell_quick_values_parse(json, values)
+               : -1;
+}
+
+int bloom_shell_quick_battery_parse(const char *json, BloomShellQuickValues *values)
+{
+    if (json == NULL || values == NULL)
+        return -1;
+    cJSON *root = cJSON_Parse(json);
+    const cJSON *schema = root == NULL ? NULL : cJSON_GetObjectItemCaseSensitive(root, "schema");
+    const cJSON *service = root == NULL ? NULL : cJSON_GetObjectItemCaseSensitive(root, "service");
+    const cJSON *battery = root == NULL ? NULL : cJSON_GetObjectItemCaseSensitive(root, "battery");
+    const cJSON *available = battery == NULL ? NULL : cJSON_GetObjectItemCaseSensitive(battery, "available");
+    const cJSON *capacity = battery == NULL ? NULL : cJSON_GetObjectItemCaseSensitive(battery, "capacity");
+    const cJSON *charging = battery == NULL ? NULL : cJSON_GetObjectItemCaseSensitive(battery, "charging");
+    int result = -1;
+    if (cJSON_IsNumber(schema) && schema->valuedouble == 1.0 && cJSON_IsString(service) &&
+        strcmp(service->valuestring, "bloom-platform") == 0 && cJSON_IsObject(battery) &&
+        cJSON_IsBool(available) && cJSON_IsBool(charging) &&
+        (cJSON_IsNull(capacity) ||
+         (cJSON_IsNumber(capacity) && capacity->valuedouble == (double)capacity->valueint &&
+          capacity->valueint >= 0 && capacity->valueint <= 100))) {
+        values->battery_available = cJSON_IsTrue(available);
+        values->battery_capacity_available = cJSON_IsNumber(capacity);
+        values->battery_capacity = values->battery_capacity_available ? capacity->valueint : 0;
+        values->battery_charging = cJSON_IsTrue(charging);
+        result = values->battery_available ? 0 : -1;
+    }
+    cJSON_Delete(root);
+    return result;
+}
+
+int bloom_shell_quick_battery_load(const char *platform_path, BloomShellQuickValues *values)
+{
+    char json[QUICK_OUTPUT_MAX + 1];
+    return load_output(platform_path, "battery", "--json", json, sizeof(json)) == 0
+               ? bloom_shell_quick_battery_parse(json, values)
+               : -1;
 }
 
 int bloom_shell_quick_settings_format(const BloomShellCapabilities *capabilities,
@@ -187,7 +234,16 @@ int bloom_shell_quick_settings_format(const BloomShellCapabilities *capabilities
     if (name == NULL || values == NULL || label == NULL || label_size == 0)
         return -1;
     int length;
-    if (!values->ready)
+    size_t battery_row = capabilities->wifi ? 3 : 2;
+    if (row == battery_row && !values->battery_available)
+        length = snprintf(label, label_size, "Battery: unavailable");
+    else if (row == battery_row && values->battery_charging &&
+             !values->battery_capacity_available)
+        length = snprintf(label, label_size, "Battery: Charging");
+    else if (row == battery_row)
+        length = snprintf(label, label_size, "Battery: %d%%%s", values->battery_capacity,
+                          values->battery_charging ? " / Charging" : "");
+    else if (!values->ready)
         length = snprintf(label, label_size, "%s: unavailable", name);
     else if (row == 0)
         length = snprintf(label, label_size, "Brightness: %d", values->brightness);
@@ -196,7 +252,7 @@ int bloom_shell_quick_settings_format(const BloomShellCapabilities *capabilities
     else if (capabilities->wifi && row == 2)
         length = snprintf(label, label_size, "Wi-Fi: %s", values->wifi_enabled ? "On" : "Off");
     else
-        length = snprintf(label, label_size, "Battery");
+        return -1;
     return length >= 0 && (size_t)length < label_size ? 0 : -1;
 }
 

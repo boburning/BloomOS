@@ -420,8 +420,10 @@ Current frontend progress:
   once before rendering, shows actual brightness/volume/mute/Wi-Fi state, and
   routes left/right changes through fixed Bloom control and network adapters;
   failed reads are explicit and failed requests do not change the displayed
-  value. Full nested pages, battery integration, and physical readability/input
-  and adjustment-latency validation remain pending. The bounded `settings
+  value. Battery now comes from a separate bounded platform adapter that
+  normalizes sysfs, batmon, and AXP paths without moving hardware heuristics
+  into the shell. Full nested pages and physical readability/input and
+  adjustment-latency validation remain pending. The bounded `settings
   values` response exposes only the four high-frequency device controls plus
   generation/authority, without leaking unrelated canonical or legacy state.
 

@@ -22,6 +22,7 @@
 #define BLOOM_SETTINGS_BINARY "/mnt/SDCARD/.tmp_update/bin/bloom-settings"
 #define BLOOM_CONTROLS_BINARY "/mnt/SDCARD/.tmp_update/bin/bloom-controls"
 #define BLOOM_NETWORK_BINARY "/mnt/SDCARD/.tmp_update/bin/bloom-network"
+#define BLOOM_PLATFORM_BINARY "/mnt/SDCARD/.tmp_update/bin/bloom-platform"
 #define DEVICE_MODEL_PATH "/tmp/deviceModel"
 #define GB_CORE "gambatte_libretro.so"
 #define GAME_PAGE_SIZE 100
@@ -235,6 +236,7 @@ int main(int argc, char **argv)
     bloom_shell_status_load(BLOOM_STATUS_BINARY, &status);
     BloomShellQuickValues quick_values = {0};
     bloom_shell_quick_values_load(BLOOM_SETTINGS_BINARY, &quick_values);
+    bloom_shell_quick_battery_load(BLOOM_PLATFORM_BINARY, &quick_values);
     BloomLibraryGame *games = NULL;
     BloomLibraryGame recent = {0};
     BloomLibraryGame favorites[FAVORITES_CAPACITY_MAX] = {0};

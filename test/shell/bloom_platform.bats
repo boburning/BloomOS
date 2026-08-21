@@ -89,3 +89,31 @@ platform() { run sh "$PLATFORM" "$@"; }
     printf '%s' "$output" | grep -F '"width": "unknown", "height": "unknown", "virtual_size": "unknown"'
     ! printf '%s' "$output" | grep -Fq 'oops'
 }
+
+@test "battery status normalizes sysfs and charging-only batmon state" {
+    mkdir -p "$BLOOM_ROOT/sys/class/power_supply/battery"
+    printf '73\n' >"$BLOOM_ROOT/sys/class/power_supply/battery/capacity"
+
+    platform battery --json
+    [ "$status" -eq 0 ]
+    [ "$output" = '{"schema":1,"service":"bloom-platform","battery":{"available":true,"source":"sysfs","capacity":73,"charging":false}}' ]
+
+    rm -rf "$BLOOM_ROOT/sys/class/power_supply"
+    printf '500\n' >"$BLOOM_ROOT/tmp/percBat"
+    platform battery --json
+    [ "$status" -eq 0 ]
+    [ "$output" = '{"schema":1,"service":"bloom-platform","battery":{"available":true,"source":"batmon","capacity":null,"charging":true}}' ]
+}
+
+@test "battery status fails closed for malformed or unavailable readings" {
+    printf '101\n' >"$BLOOM_ROOT/tmp/percBat"
+    platform battery --json
+    [ "$status" -eq 1 ]
+    [ "$output" = '{"schema":1,"service":"bloom-platform","battery":{"available":false,"source":"unavailable","capacity":null,"charging":false}}' ]
+
+    rm "$BLOOM_ROOT/tmp/percBat"
+    platform battery --json
+    [ "$status" -eq 1 ]
+    platform battery
+    [ "$status" -eq 2 ]
+}

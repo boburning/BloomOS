@@ -159,6 +159,13 @@ network adapters; the in-memory value changes only after the adapter succeeds.
 No settings subprocess runs while rendering, and arbitrary fields or commands
 cannot cross this boundary.
 
+Battery state remains outside canonical settings. `bloom-platform battery
+--json` normalizes sysfs, batmon, and AXP cache/live readings into a bounded
+capacity/charging response and rejects malformed or out-of-range values. Bloom
+Shell loads that snapshot before rendering alongside the canonical settings
+snapshot, so the Quick Settings battery row does not duplicate hardware model
+heuristics.
+
 The canonical service exposes `bloomctl settings values` as the bounded,
 read-only bridge for future UI consumers. Its schema-1 response includes only
 generation, authority, brightness, volume, mute, and Wi-Fi state; it does not
