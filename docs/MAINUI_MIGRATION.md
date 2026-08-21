@@ -14,8 +14,8 @@ ownership boundary.
 | Responsibility | Current evidence | Target owner | Removal gate |
 |---|---|---|---|
 | Main menu and tab state | `src/setState`, `write_mainui_state` callers | Bloom Shell navigation | Host navigation tests and Plus/V2/Flip UI evidence |
-| Favorites | `/mnt/SDCARD/Roms/favourite.json`, keymon change detection | `bloom-library` | Idempotent import, canonical IDs, atomic writes |
-| Recents and resume | MainUI recent list, GameSwitcher compatibility readers | Bloom activity/library | Deterministic import and direct resume |
+| Favorites | `/mnt/SDCARD/Roms/favourite.json`, keymon change detection | `bloom-library` | Signed-update persistence and Bloom-owned read/write consumer cutover; read-only deterministic import, canonical IDs, and atomic publication are proven on Plus |
+| Recents and resume | MainUI recent list, GameSwitcher compatibility readers | Bloom activity/library | Direct resume and Bloom-owned consumer cutover; deterministic read-only import is proven on Plus |
 | Game launch handoff | `/tmp` or `.tmp_update/cmd_to_run.sh`, MainUI termination | Bloom launch/session | Direct launch and shell return on hardware |
 | MENU and context actions | `src/keymon/menuButtonAction.h` MainUI actions | Bloom input/shell | Stable control grammar and fallback |
 | Brightness and volume | keymon plus shared settings helpers | `bloom-settings` and platform adapters | One writer and device tests |

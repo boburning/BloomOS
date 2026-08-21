@@ -3,7 +3,7 @@
 
 #include <sqlite3/sqlite3.h>
 
-#define BLOOM_LIBRARY_DATABASE_SCHEMA_VERSION 2
+#define BLOOM_LIBRARY_DATABASE_SCHEMA_VERSION 3
 
 typedef struct {
     int schema_version;
@@ -13,6 +13,7 @@ typedef struct {
     int games;
     int apps;
     int favorites;
+    int recents;
 } BloomLibraryHealth;
 
 int bloom_library_database_open(const char *path, sqlite3 **database);

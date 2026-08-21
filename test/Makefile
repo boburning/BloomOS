@@ -34,6 +34,7 @@ CFILES := $(CFILES) ../src/bloomLibrary/bloom_library_database.c
 CFILES := $(CFILES) ../src/bloomLibrary/bloom_library_import.c
 CFILES := $(CFILES) ../src/bloomLibrary/bloom_library_scan.c
 CFILES := $(CFILES) ../src/bloomLibrary/bloom_library_query.c
+CFILES := $(CFILES) ../src/bloomLibrary/bloom_library_legacy.c
 CFILES := $(CFILES) ../src/common/utils/udp.c
 include ../src/common/config.mk
 CFLAGS += -I. -DBLOOM_TEST=1 -I../third-party/rcheevos/include -I../third-party/rcheevos/src \

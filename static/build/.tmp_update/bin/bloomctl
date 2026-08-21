@@ -259,7 +259,7 @@ usage() {
     printf '       bloomctl logs export\n' >&2
     printf '       bloomctl platform capabilities\n' >&2
     printf '       bloomctl settings {status|import-onion|sync-onion|reconcile-onion|materialize-onion|activate-bloom|rollback-authority|set FIELD VALUE}\n' >&2
-    printf '       bloomctl library {status|import-onion|scan --changed|--all|--system SYSTEM|games --limit N [--after GAME_ID]|games --system SYSTEM --limit N [--after GAME_ID]}\n' >&2
+    printf '       bloomctl library {status|import-onion|import-legacy|scan --changed|--all|--system SYSTEM|games --limit N [--after GAME_ID]|games --system SYSTEM --limit N [--after GAME_ID]}\n' >&2
     printf '       bloomctl test smoke SYSTEM ROM_PATH [DURATION_SECONDS]\n' >&2
     printf '       bloomctl test achievements --system SYSTEM --rom-base64 DATA --core CORE [--session-seconds N [--operator-unlock I_ACCEPT_PROFILE_CHANGES]]\n' >&2
     printf '       bloomctl achievements {status|game BLOOM_GAME_ID|collection|cores|account status|login|set FIELD VALUE|sign-out|proxy status|pending|cache-rom ROM_PATH|cache-system SYSTEM|scan --changed|--all|--system SYSTEM|--status|--cancel}\n' >&2
@@ -415,7 +415,7 @@ settings_command() {
 library_command() {
     [ -x "$BLOOM_LIBRARY" ] || { printf 'bloomctl: library service is unavailable\n' >&2; return 1; }
     case "${1:-}" in
-        status|import-onion)
+        status|import-onion|import-legacy)
             [ "$#" -eq 1 ] || { usage; return 2; }
             run_library "$1"
             ;;

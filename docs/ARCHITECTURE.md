@@ -130,10 +130,20 @@ games, optionally filtered by system. Its GameID cursor resumes the stable
 `sort_title, bloom_game_id` ordering without exposing SQL or allowing a UI
 consumer to initiate filesystem or network work. Schema 2 adds and validates a
 global paging index through an additive transaction while retaining the
-system-specific index. Favorite/recent import and consumer migrations remain
-subsequent work. Until those migrations are
-physically proven, MainUI remains the compatibility authority and the canonical
-catalog does not change launch behavior.
+system-specific index.
+
+`bloomctl library import-legacy` reads the newline-delimited Onion favorites and
+active recent list without modifying either source. Known historical game types
+and colon-packed launcher/ROM entries are normalized to the already indexed ROM
+path, then matched by canonical Bloom GameID. The transaction publishes compact
+canonical `favorites` and `recents` order while retaining every source position
+as `matched`, `unmatched`, `duplicate`, or `invalid` migration evidence. Missing
+lists mean empty state; an unsafe list or database failure preserves the prior
+known-good state. Schema 3 adds canonical recents through an additive migration.
+
+MainUI remains the compatibility authority until Bloom-owned consumers and the
+signed-update/reboot path are physically proven; importing state alone does not
+change launch behavior or create a second writer.
 
 ## BloomPlatform foundation
 
