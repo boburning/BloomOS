@@ -1,0 +1,37 @@
+{
+  "schema": 1,
+  "device": "miyoo-mini-plus",
+  "model_id": 354,
+  "version": "0.1.0-dev-1349de6f",
+  "workflow_run": 32501121541,
+  "archive": {
+    "size": 203031673,
+    "sha256": "27be65d86d9044e6b01c0e1a7257e8d33f041a57492bac8a04e644bf0ee9813c",
+    "signature_verified": true
+  },
+  "shell": {
+    "size": 79816,
+    "sha256": "83eebd22350d8e16661c6f66c2f196d890ccfc6770d5ab0c016e8084dc56e094"
+  },
+  "status_adapter": {
+    "size": 1739,
+    "sha256": "98046f04fea1a112d1ae516f54e9e90f828fc8a0d9dd13b80ae354c359b23515",
+    "elapsed_seconds": 0.65
+  },
+  "probe": {
+    "ready": true,
+    "gb_games": 1,
+    "gb_recent": false,
+    "gb_favorites": 0,
+    "health_ready": true,
+    "healthy": true
+  },
+  "cleanup": {
+    "temporary_files_removed": true,
+    "installed_shell_pid": 1184,
+    "update_phase": "testing",
+    "pending_version": "0.1.0-dev-5e81cfef",
+    "update_confirmed": false
+  },
+  "notes": "Remote evidence proves exact signed binary loading and bounded Settings status, not physical panel readability or input-transition behavior."
+}
