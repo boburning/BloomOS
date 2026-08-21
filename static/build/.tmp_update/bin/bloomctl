@@ -262,7 +262,7 @@ usage() {
     printf '       bloomctl platform capabilities\n' >&2
     printf '       bloomctl settings {status|import-onion|sync-onion|reconcile-onion|materialize-onion|activate-bloom|rollback-authority|set FIELD VALUE}\n' >&2
     printf '       bloomctl power {status|reboot|poweroff}\n' >&2
-    printf '       bloomctl network {status|reconcile}\n' >&2
+    printf '       bloomctl network {status|reconcile|enable|disable}\n' >&2
     printf '       bloomctl library {status|import-onion|import-legacy|scan --changed|--all|--system SYSTEM|games --limit N [--after GAME_ID]|games --system SYSTEM --limit N [--after GAME_ID]}\n' >&2
     printf '       bloomctl test smoke SYSTEM ROM_PATH [DURATION_SECONDS]\n' >&2
     printf '       bloomctl test achievements --system SYSTEM --rom-base64 DATA --core CORE [--session-seconds N [--operator-unlock I_ACCEPT_PROFILE_CHANGES]]\n' >&2
@@ -477,6 +477,7 @@ network_command() {
     case "$1" in
         status) "$BLOOM_NETWORK" status ;;
         reconcile) "$BLOOM_NETWORK" request reconcile ;;
+        enable|disable) "$BLOOM_NETWORK" request "$1" ;;
         *) usage; return 2 ;;
     esac
 }

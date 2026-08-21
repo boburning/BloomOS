@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "date": "2026-08-21",
+  "operator": "Codex remote automation",
+  "device": {"family": "mini_plus", "model_id": 354},
+  "installed_build": {"version": "0.1.0-dev-9b5c3aa8", "update_state": "known_good"},
+  "candidate": {
+    "source_base_commit": "b8568558",
+    "sha256": "d16804dd9aaaa4fe314daf31b12a3d58b534927b22856838c895728992450e91"
+  },
+  "operation": {
+    "request": "enable",
+    "preference_saved": true,
+    "applied": true,
+    "state": "applied",
+    "status_after": "associated"
+  },
+  "checks": {
+    "upload_hash_matches": "pass",
+    "canonical_settings_hash_before": "8e8ac797b8af90d36ed9e7cfd0ddf5ba95e36d57ddcbe7fc6e2ed4c05d98c006",
+    "canonical_settings_hash_after": "8e8ac797b8af90d36ed9e7cfd0ddf5ba95e36d57ddcbe7fc6e2ed4c05d98c006",
+    "idempotent_preference_write": "pass",
+    "backend_apply": "pass",
+    "association_preserved": "pass",
+    "temporary_candidate_cleanup": "pass"
+  },
+  "notes": "The Plus was already enabled, so the safe enable request proved canonical-settings ownership and backend application without changing durable bytes. Disable was covered by host tests but intentionally not invoked over the only active SSH transport."
+}
