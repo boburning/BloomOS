@@ -4,6 +4,7 @@ include ../common/config.mk
 CFILES := $(CFILES) \
 	../common/utils/udp.c \
 	../common/utils/retroarch_cmd.c \
+	../bloomLaunch/bloom_launch.c \
 	../bloomGameId/bloom_game_id.c \
 	../bloomLibrary/bloom_library_query.c \
 	../playActivity/playActivityModel.c \

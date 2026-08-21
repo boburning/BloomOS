@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
 
 #include <filesystem>
+#include <fstream>
+#include <iterator>
 #include <string>
 
 #include <sqlite3/sqlite3.h>
@@ -85,6 +87,7 @@ TEST_F(GameSwitcherLibraryTest, ReadsCanonicalOrderAndRemovesWithoutLegacyState)
     ASSERT_EQ(0, gameswitcher_library_read_recents(database_path_.c_str(), 2, recents, 2, &count));
     ASSERT_EQ(2U, count);
     EXPECT_STREQ("One", recents[0].label);
+    EXPECT_STREQ("gb", recents[0].system_id);
     EXPECT_STREQ("/mnt/SDCARD/Roms/GB/One.gb", recents[0].rom_path);
     EXPECT_STREQ("/mnt/SDCARD/Roms/GB/Imgs/One.png", recents[0].image_path);
     EXPECT_STREQ("/mnt/SDCARD/Emu/GB/launch.sh", recents[0].launcher);
@@ -95,6 +98,35 @@ TEST_F(GameSwitcherLibraryTest, ReadsCanonicalOrderAndRemovesWithoutLegacyState)
     ASSERT_EQ(1U, count);
     EXPECT_STREQ("Two", recents[0].label);
     EXPECT_NE(0, gameswitcher_library_remove_recent(database_path_.c_str(), removed_id.c_str()));
+}
+
+TEST_F(GameSwitcherLibraryTest, StagesCanonicalSelectionAndPromotesIt)
+{
+    GameSwitcherLibraryRecent recents[2] = {};
+    size_t count = 0;
+    ASSERT_EQ(0, gameswitcher_library_read_recents(database_path_.c_str(), 2, recents, 2, &count));
+    ASSERT_EQ(2U, count);
+
+    const auto request = root_ / "request.json";
+    const auto command = root_ / "cmd_to_run.sh";
+    char error[256] = {};
+    const int stage_result = gameswitcher_library_stage_recent(
+        database_path_.c_str(), &recents[1], request.c_str(), command.c_str(), error,
+        sizeof(error));
+    ASSERT_EQ(0, stage_result) << error;
+    EXPECT_FALSE(std::filesystem::exists(request));
+    ASSERT_TRUE(std::filesystem::exists(command));
+    std::ifstream stream(command);
+    const std::string staged((std::istreambuf_iterator<char>(stream)),
+                             std::istreambuf_iterator<char>());
+    EXPECT_EQ("LD_PRELOAD=/mnt/SDCARD/miyoo/lib/libpadsp.so "
+              "\"/mnt/SDCARD/Emu/GB/launch.sh\" \"/mnt/SDCARD/Roms/GB/Two.gb\"\n",
+              staged);
+
+    ASSERT_EQ(0, gameswitcher_library_read_recents(database_path_.c_str(), 2, recents, 2, &count));
+    ASSERT_EQ(2U, count);
+    EXPECT_STREQ("Two", recents[0].label);
+    EXPECT_STREQ("One", recents[1].label);
 }
 
 TEST_F(GameSwitcherLibraryTest, RejectsUnsafeOrUnboundedRequests)
