@@ -339,8 +339,9 @@ Current frontend progress:
   idempotent Onion import, serialized legacy-authority synchronization, and a
   complete durable keymon/Tweaks settings model are in progress. Boot, MainUI
   shared-memory changes, and WPS preference changes now reconcile the inactive
-  canonical copy; direct consumer operations, authority cutover, and sole-writer
-  enforcement remain before this becomes the active authority.
+  canonical copy. Typed canonical reads and fail-closed Onion compatibility
+  materialization are in progress; direct mutations, authority cutover, and
+  sole-writer enforcement remain before this becomes the active authority.
 - [ ] Bloom Shell vertical slice and supervised MainUI fallback.
 
 ## Historical BloomOS foundation

@@ -24,7 +24,8 @@ static int ensure_directory(const char *path)
 
 static int usage(void)
 {
-    fprintf(stderr, "Usage: bloom-settings status|import-onion|sync-onion\n");
+    fprintf(stderr,
+            "Usage: bloom-settings status|import-onion|sync-onion|materialize-onion\n");
     return 2;
 }
 
@@ -57,6 +58,16 @@ int main(int argc, char **argv)
         printf("{\"schema\":1,\"service\":\"bloom-settings\",\"changed\":%s,"
                "\"generation\":%d}\n",
                result.changed ? "true" : "false", result.generation);
+        return 0;
+    }
+    if (strcmp(argv[1], "materialize-onion") == 0) {
+        if (bloom_settings_materialize_onion(SETTINGS_PATH, ONION_SYSTEM_PATH, ONION_CONFIG_ROOT,
+                                             error, sizeof(error)) != 0) {
+            fprintf(stderr,
+                    "{\"schema\":1,\"error\":{\"code\":\"materialization_rejected\"}}\n");
+            return 1;
+        }
+        printf("{\"schema\":1,\"service\":\"bloom-settings\",\"materialized\":true}\n");
         return 0;
     }
     if (strcmp(argv[1], "import-onion") != 0)

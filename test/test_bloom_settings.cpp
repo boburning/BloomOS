@@ -47,6 +47,19 @@ class BloomSettingsTest : public ::testing::Test {
         return cJSON_ParseWithLength(content.c_str(), content.size());
     }
 
+    void set_bloom_authority()
+    {
+        cJSON *canonical = load_settings();
+        ASSERT_TRUE(cJSON_IsObject(canonical));
+        ASSERT_TRUE(cJSON_ReplaceItemInObjectCaseSensitive(
+            canonical, "authority", cJSON_CreateString("bloom")));
+        char *serialized = cJSON_PrintUnformatted(canonical);
+        ASSERT_NE(nullptr, serialized);
+        write(settings, serialized);
+        cJSON_free(serialized);
+        cJSON_Delete(canonical);
+    }
+
     std::filesystem::path root;
     std::filesystem::path config;
     std::filesystem::path settings;
@@ -471,4 +484,153 @@ TEST_F(BloomSettingsTest, SymlinkedWriterLockFailsClosed)
     EXPECT_NE(0, bloom_settings_import_onion(system.c_str(), config.c_str(), settings.c_str(),
                                              snapshot.c_str(), &result, error, sizeof(error)));
     EXPECT_FALSE(std::filesystem::exists(settings));
+}
+
+TEST_F(BloomSettingsTest, BloomAuthorityMaterializesCompleteOnionCompatibilityState)
+{
+    write(system,
+          R"({"vol":13,"bgmvol":9,"brightness":4,"wifi":1,"hibernate":8,"lumination":6,"hue":9,"saturation":11,"contrast":12,"audiofix":0,"keymap":"CUSTOM","language":"fr.lang","theme":"/Themes/Bloom/","fontsize":32,"unknown_future_key":{"kept":true}})");
+    write(config / "keymap.json",
+          R"({"mainui_single_press":2,"mainui_button_x":"Search","unknown_binding":"kept"})");
+    write(config / ".showRecents", "");
+    write(config / ".muteVolume", "");
+    write(config / "battery/warnAt", "17");
+    write(config / "display/blueLightTime", "21:30");
+    BloomSettingsImportResult imported{};
+    char error[160] = {};
+    ASSERT_EQ(0, bloom_settings_import_onion(system.c_str(), config.c_str(), settings.c_str(),
+                                             snapshot.c_str(), &imported, error, sizeof(error)));
+    set_bloom_authority();
+
+    write(system, R"({"vol":1,"stale":true})");
+    write(config / "keymap.json", R"({"mainui_single_press":9})");
+    std::filesystem::remove(config / ".showRecents");
+    std::filesystem::remove(config / ".muteVolume");
+
+    ASSERT_EQ(0, bloom_settings_materialize_onion(settings.c_str(), system.c_str(), config.c_str(),
+                                                  error, sizeof(error)))
+        << error;
+    std::ifstream system_stream(system);
+    std::string system_content((std::istreambuf_iterator<char>(system_stream)),
+                               std::istreambuf_iterator<char>());
+    cJSON *legacy = cJSON_Parse(system_content.c_str());
+    ASSERT_TRUE(cJSON_IsObject(legacy));
+    EXPECT_EQ(13, cJSON_GetObjectItem(legacy, "vol")->valueint);
+    EXPECT_EQ(9, cJSON_GetObjectItem(legacy, "bgmvol")->valueint);
+    EXPECT_EQ(4, cJSON_GetObjectItem(legacy, "brightness")->valueint);
+    EXPECT_TRUE(cJSON_IsObject(cJSON_GetObjectItem(legacy, "unknown_future_key")));
+    EXPECT_FALSE(cJSON_HasObjectItem(legacy, "stale"));
+    cJSON_Delete(legacy);
+
+    std::ifstream keymap_stream(config / "keymap.json");
+    std::string keymap_content((std::istreambuf_iterator<char>(keymap_stream)),
+                               std::istreambuf_iterator<char>());
+    cJSON *materialized_keymap = cJSON_Parse(keymap_content.c_str());
+    ASSERT_TRUE(cJSON_IsObject(materialized_keymap));
+    EXPECT_EQ(2, cJSON_GetObjectItem(materialized_keymap, "mainui_single_press")->valueint);
+    EXPECT_STREQ("Search",
+                 cJSON_GetObjectItem(materialized_keymap, "mainui_button_x")->valuestring);
+    EXPECT_STREQ("kept",
+                 cJSON_GetObjectItem(materialized_keymap, "unknown_binding")->valuestring);
+    cJSON_Delete(materialized_keymap);
+
+    EXPECT_TRUE(std::filesystem::is_regular_file(config / ".showRecents"));
+    EXPECT_FALSE(std::filesystem::exists(config / ".showRecents_"));
+    EXPECT_TRUE(std::filesystem::is_regular_file(config / ".muteVolume"));
+    EXPECT_FALSE(std::filesystem::exists(config / ".muteVolume_"));
+    std::ifstream warning_stream(config / "battery/warnAt");
+    std::string warning((std::istreambuf_iterator<char>(warning_stream)),
+                        std::istreambuf_iterator<char>());
+    EXPECT_EQ("17", warning);
+    std::ifstream time_stream(config / "display/blueLightTime");
+    std::string time((std::istreambuf_iterator<char>(time_stream)),
+                     std::istreambuf_iterator<char>());
+    EXPECT_EQ("21:30", time);
+
+    std::ifstream canonical_before_stream(settings);
+    std::string canonical_before((std::istreambuf_iterator<char>(canonical_before_stream)),
+                                 std::istreambuf_iterator<char>());
+    ASSERT_EQ(0, bloom_settings_materialize_onion(settings.c_str(), system.c_str(), config.c_str(),
+                                                  error, sizeof(error)));
+    std::ifstream canonical_after_stream(settings);
+    std::string canonical_after((std::istreambuf_iterator<char>(canonical_after_stream)),
+                                std::istreambuf_iterator<char>());
+    EXPECT_EQ(canonical_before, canonical_after);
+}
+
+TEST_F(BloomSettingsTest, MaterializationRejectsLegacyAuthorityWithoutMutation)
+{
+    write(system, R"({"vol":5})");
+    BloomSettingsImportResult imported{};
+    char error[160] = {};
+    ASSERT_EQ(0, bloom_settings_import_onion(system.c_str(), config.c_str(), settings.c_str(),
+                                             snapshot.c_str(), &imported, error, sizeof(error)));
+    std::ifstream before_stream(system);
+    std::string before((std::istreambuf_iterator<char>(before_stream)),
+                       std::istreambuf_iterator<char>());
+    EXPECT_NE(0, bloom_settings_materialize_onion(settings.c_str(), system.c_str(), config.c_str(),
+                                                  error, sizeof(error)));
+    std::ifstream after_stream(system);
+    std::string after((std::istreambuf_iterator<char>(after_stream)),
+                      std::istreambuf_iterator<char>());
+    EXPECT_EQ(before, after);
+}
+
+TEST_F(BloomSettingsTest, MaterializationPreflightsDerivedSymlinksBeforePublishing)
+{
+    write(system, R"({"vol":5})");
+    BloomSettingsImportResult imported{};
+    char error[160] = {};
+    ASSERT_EQ(0, bloom_settings_import_onion(system.c_str(), config.c_str(), settings.c_str(),
+                                             snapshot.c_str(), &imported, error, sizeof(error)));
+    set_bloom_authority();
+    write(system, "stale-system");
+    auto outside = root / "outside-keymap";
+    write(outside, "outside");
+    std::filesystem::create_symlink(outside, config / "keymap.json");
+
+    EXPECT_NE(0, bloom_settings_materialize_onion(settings.c_str(), system.c_str(), config.c_str(),
+                                                  error, sizeof(error)));
+    std::ifstream system_stream(system);
+    std::string system_after((std::istreambuf_iterator<char>(system_stream)),
+                             std::istreambuf_iterator<char>());
+    EXPECT_EQ("stale-system", system_after);
+    std::ifstream outside_stream(outside);
+    std::string outside_after((std::istreambuf_iterator<char>(outside_stream)),
+                              std::istreambuf_iterator<char>());
+    EXPECT_EQ("outside", outside_after);
+}
+
+TEST_F(BloomSettingsTest, TypedCanonicalReadRejectsOutOfRangeValuesBeforeMaterialization)
+{
+    write(system, R"({"vol":5,"wifi":1})");
+    BloomSettingsImportResult imported{};
+    char error[160] = {};
+    ASSERT_EQ(0, bloom_settings_import_onion(system.c_str(), config.c_str(), settings.c_str(),
+                                             snapshot.c_str(), &imported, error, sizeof(error)));
+    BloomSettingsValues values{};
+    ASSERT_EQ(0, bloom_settings_read_values(settings.c_str(), &values, error, sizeof(error)));
+    EXPECT_EQ(5, values.volume);
+    EXPECT_EQ(1, values.wifi_enabled);
+    EXPECT_STREQ("legacy", values.authority);
+
+    cJSON *canonical = load_settings();
+    cJSON *device = cJSON_GetObjectItem(canonical, "device");
+    ASSERT_TRUE(cJSON_ReplaceItemInObjectCaseSensitive(device, "volume", cJSON_CreateNumber(99)));
+    ASSERT_TRUE(cJSON_ReplaceItemInObjectCaseSensitive(
+        canonical, "authority", cJSON_CreateString("bloom")));
+    char *serialized = cJSON_PrintUnformatted(canonical);
+    ASSERT_NE(nullptr, serialized);
+    write(settings, serialized);
+    cJSON_free(serialized);
+    cJSON_Delete(canonical);
+    write(system, "stale-system");
+
+    EXPECT_NE(0, bloom_settings_read_values(settings.c_str(), &values, error, sizeof(error)));
+    EXPECT_NE(0, bloom_settings_materialize_onion(settings.c_str(), system.c_str(), config.c_str(),
+                                                  error, sizeof(error)));
+    std::ifstream system_stream(system);
+    std::string system_after((std::istreambuf_iterator<char>(system_stream)),
+                             std::istreambuf_iterator<char>());
+    EXPECT_EQ("stale-system", system_after);
 }

@@ -65,6 +65,14 @@ its explicit Wi-Fi preference update. Each bridge is optional and fail-open for
 legacy behavior; a missing or unhealthy canonical service cannot block boot,
 input handling, networking, or game launch.
 
+After authority cutover, `bloom-settings materialize-onion` derives the closed
+MainUI compatibility files from the typed canonical model. It validates every
+canonical field and preflights every output target before publication, refuses
+to run while Onion remains authoritative, and preserves unknown imported JSON.
+Canonical state commits independently; the legacy `system.json`, keymap, flags,
+and scalar files are recoverable projections that repeated materialization can
+converge after an interrupted fan-out.
+
 ## BloomPlatform foundation
 
 `bloom-platform` is the first device-side capability boundary. Its schema-1,
