@@ -32,6 +32,12 @@ disable_ra() {
     printf '%s\n' '{"schema":1,"enabled":false,"transport":"unavailable"}'
 }
 
+case "${BLOOM_RA_FORCE_DISABLED:-0}" in
+    0) ;;
+    1) disable_ra; exit 0 ;;
+    *) fail_category request_invalid "RA force-disabled policy is invalid" ;;
+esac
+
 account=$("$RA_BIN" account launch 2>/dev/null) || { disable_ra; exit 0; }
 enabled=$(json_boolean "$account" '.enabled') || fail_category account_invalid "account state is invalid"
 authenticated=$(json_boolean "$account" '.authenticated') || fail_category account_invalid "account state is invalid"

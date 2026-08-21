@@ -31,6 +31,7 @@ SH
     smoke="$BATS_TEST_TMPDIR/smoke"
     cat >"$smoke" <<SH
 #!/bin/sh
+printf '%s\n' "\${BLOOM_RA_FORCE_DISABLED:-0}" >"$BATS_TEST_TMPDIR/smoke-ra-disabled"
 printf '%s\n' '{"schema":1,"status":"passed","selected_core":"mgba_libretro.so","selected_core_sha256":"$fallback_sha","graceful_exit":true,"save_flush":true}'
 SH
     chmod +x "$smoke"
@@ -61,6 +62,23 @@ SH
     [[ "$output" == *'"core":"mgba_libretro.so"'* ]]
     [[ "$output" == *"\"core_sha256\":\"$fallback_sha\""* ]]
     [[ "$output" == *'"unlock_test":"operator_required"'* ]]
+    [ "$(cat "$BATS_TEST_TMPDIR/smoke-ra-disabled")" = 1 ]
+}
+
+@test "explicit operator mode is the only session allowed to contact RA" {
+    encoded=$(printf '%s' "$SDCARD/Roms/GBA/test.gba" | base64 | tr -d '\r\n')
+    run sh "$TOOL" --system GBA --rom-base64 "$encoded" --core gpsp \
+        --session-seconds 5 --operator-unlock I_ACCEPT_PROFILE_CHANGES
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'"operator_session":true'* ]]
+    [[ "$output" == *'"rich_presence":"operator_observation_required"'* ]]
+    [[ "$output" == *'"unlock_test":"operator_observation_required"'* ]]
+    [ "$(cat "$BATS_TEST_TMPDIR/smoke-ra-disabled")" = 0 ]
+
+    run sh "$TOOL" --system GBA --rom-base64 "$encoded" --core gpsp \
+        --session-seconds 5 --operator-unlock YES
+    [ "$status" -eq 1 ]
+    [[ "$output" == *'operator_confirmation_required'* ]]
 }
 
 @test "certification session mode rejects unbounded duration and a non-default core" {
