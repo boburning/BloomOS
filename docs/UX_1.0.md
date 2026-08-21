@@ -31,6 +31,19 @@ setting and contains System, Health, Updates, and About.
 
 Common actions must not depend only on long presses or undocumented chords.
 
+The platform-independent authority for these actions, top-level destination
+order, list focus, and supported 640x480/752x560 layout regions is
+`src/bloomUi/bloom_ui_core`. Device/SDL adapters translate physical keys into
+this semantic input contract; renderers do not own navigation state. Lists
+clamp at their ends and keep selection visible without implicit wrap, while
+`L1`/`R1` wrap only across the five top-level destinations.
+
+Shared dialogs support one to three explicitly ordered actions, identify any
+destructive action separately, and begin on a caller-selected safe default.
+The shared text-entry model exposes lowercase, uppercase, digits, and printable
+ASCII symbols with bounded append/backspace operations; a feature may mask the
+rendered value, but it must not remove access to uppercase or symbols.
+
 ## Performance behavior
 
 The renderer never waits for network, hashing, scanning, scraping, or update
