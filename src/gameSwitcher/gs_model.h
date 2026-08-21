@@ -13,6 +13,7 @@
 #include "utils/str.h"
 
 #define MAX_HISTORY 100
+#define BLOOM_LIBRARY_DATABASE_PATH "/mnt/SDCARD/.bloom/library/catalog.sqlite3"
 
 #define ROM_SCREENS_DIR "/mnt/SDCARD/Saves/CurrentProfile/romScreens"
 #define HISTORY_PATH "/mnt/SDCARD/Saves/CurrentProfile/lists/content_history.lpl"
@@ -29,6 +30,7 @@ typedef struct {
     char launch[STR_MAX * 2];
     int type;
     int lineNo;
+    bool bloom_owned;
 } RecentItem;
 
 // Game history list
