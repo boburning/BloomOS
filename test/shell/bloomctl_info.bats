@@ -423,29 +423,53 @@ EOF
     service="$BATS_TEST_TMPDIR/bloom-settings"
     cat >"$service" <<'SH'
 #!/bin/sh
-printf '{"schema":1,"operation":"%s"}\n' "$1"
+printf '{"schema":1,"arguments":"%s"}\n' "$*"
 SH
     chmod +x "$service"
 
     run env BLOOM_SETTINGS_BIN="$service" \
         sh /workspace/static/build/.tmp_update/bin/bloomctl settings status
     [ "$status" -eq 0 ]
-    [ "$output" = '{"schema":1,"operation":"status"}' ]
+    [ "$output" = '{"schema":1,"arguments":"status"}' ]
 
     run env BLOOM_SETTINGS_BIN="$service" \
         sh /workspace/static/build/.tmp_update/bin/bloomctl settings import-onion
     [ "$status" -eq 0 ]
-    [ "$output" = '{"schema":1,"operation":"import-onion"}' ]
+    [ "$output" = '{"schema":1,"arguments":"import-onion"}' ]
 
     run env BLOOM_SETTINGS_BIN="$service" \
         sh /workspace/static/build/.tmp_update/bin/bloomctl settings sync-onion
     [ "$status" -eq 0 ]
-    [ "$output" = '{"schema":1,"operation":"sync-onion"}' ]
+    [ "$output" = '{"schema":1,"arguments":"sync-onion"}' ]
+
+    run env BLOOM_SETTINGS_BIN="$service" \
+        sh /workspace/static/build/.tmp_update/bin/bloomctl settings reconcile-onion
+    [ "$status" -eq 0 ]
+    [ "$output" = '{"schema":1,"arguments":"reconcile-onion"}' ]
 
     run env BLOOM_SETTINGS_BIN="$service" \
         sh /workspace/static/build/.tmp_update/bin/bloomctl settings materialize-onion
     [ "$status" -eq 0 ]
-    [ "$output" = '{"schema":1,"operation":"materialize-onion"}' ]
+    [ "$output" = '{"schema":1,"arguments":"materialize-onion"}' ]
+
+    run env BLOOM_SETTINGS_BIN="$service" \
+        sh /workspace/static/build/.tmp_update/bin/bloomctl settings activate-bloom
+    [ "$status" -eq 0 ]
+    [ "$output" = '{"schema":1,"arguments":"activate-bloom"}' ]
+
+    run env BLOOM_SETTINGS_BIN="$service" \
+        sh /workspace/static/build/.tmp_update/bin/bloomctl settings rollback-authority
+    [ "$status" -eq 0 ]
+    [ "$output" = '{"schema":1,"arguments":"rollback-authority"}' ]
+
+    run env BLOOM_SETTINGS_BIN="$service" \
+        sh /workspace/static/build/.tmp_update/bin/bloomctl settings set interface.theme '/Themes/Bloom OS/'
+    [ "$status" -eq 0 ]
+    [ "$output" = '{"schema":1,"arguments":"set interface.theme /Themes/Bloom OS/"}' ]
+
+    run env BLOOM_SETTINGS_BIN="$service" \
+        sh /workspace/static/build/.tmp_update/bin/bloomctl settings set device.volume
+    [ "$status" -eq 2 ]
 
     run env BLOOM_SETTINGS_BIN="$service" \
         sh /workspace/static/build/.tmp_update/bin/bloomctl settings unknown

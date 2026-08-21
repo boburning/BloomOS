@@ -372,7 +372,8 @@ void action_advancedSetPWMFreqency(void *pt)
     int pwmfrequency = atoi(((ListItem *)pt)->value_labels[item_value]);
     char *filename = "/sys/class/pwm/pwmchip0/pwm0/period";
     file_put(fp, filename, "%d", pwmfrequency);
-    config_setNumber(".pwmfrequency", item_value);
+    settings.pwmfrequency = item_value;
+    config_setNumber("pwmfrequency", item_value);
 }
 
 void action_advancedSetSwapTriggers(void *pt)

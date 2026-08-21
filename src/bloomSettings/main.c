@@ -25,13 +25,32 @@ static int ensure_directory(const char *path)
 static int usage(void)
 {
     fprintf(stderr,
-            "Usage: bloom-settings status|import-onion|sync-onion|materialize-onion\n");
+            "Usage: bloom-settings status|import-onion|sync-onion|reconcile-onion|"
+            "materialize-onion|activate-bloom|rollback-authority\n"
+            "       bloom-settings set FIELD VALUE\n");
     return 2;
 }
 
 int main(int argc, char **argv)
 {
     char error[160] = {0};
+    if (argc == 4 && strcmp(argv[1], "set") == 0) {
+        BloomSettingsMutationResult result;
+        if (bloom_settings_set(SETTINGS_PATH, ONION_SYSTEM_PATH, ONION_CONFIG_ROOT, argv[2],
+                               argv[3], &result, error, sizeof(error)) != 0) {
+            fprintf(stderr,
+                    "{\"schema\":1,\"error\":{\"code\":\"mutation_rejected\"},"
+                    "\"changed\":%s,\"generation\":%d,\"materialized\":%s}\n",
+                    result.changed ? "true" : "false", result.generation,
+                    result.materialized ? "true" : "false");
+            return 1;
+        }
+        printf("{\"schema\":1,\"service\":\"bloom-settings\",\"changed\":%s,"
+               "\"generation\":%d,\"materialized\":%s}\n",
+               result.changed ? "true" : "false", result.generation,
+               result.materialized ? "true" : "false");
+        return 0;
+    }
     if (argc != 2)
         return usage();
     if (strcmp(argv[1], "status") == 0) {
@@ -60,6 +79,18 @@ int main(int argc, char **argv)
                result.changed ? "true" : "false", result.generation);
         return 0;
     }
+    if (strcmp(argv[1], "reconcile-onion") == 0) {
+        BloomSettingsSyncResult result;
+        if (bloom_settings_reconcile_onion(ONION_SYSTEM_PATH, ONION_CONFIG_ROOT, SETTINGS_PATH,
+                                           &result, error, sizeof(error)) != 0) {
+            fprintf(stderr, "{\"schema\":1,\"error\":{\"code\":\"reconcile_rejected\"}}\n");
+            return 1;
+        }
+        printf("{\"schema\":1,\"service\":\"bloom-settings\",\"changed\":%s,"
+               "\"generation\":%d}\n",
+               result.changed ? "true" : "false", result.generation);
+        return 0;
+    }
     if (strcmp(argv[1], "materialize-onion") == 0) {
         if (bloom_settings_materialize_onion(SETTINGS_PATH, ONION_SYSTEM_PATH, ONION_CONFIG_ROOT,
                                              error, sizeof(error)) != 0) {
@@ -68,6 +99,33 @@ int main(int argc, char **argv)
             return 1;
         }
         printf("{\"schema\":1,\"service\":\"bloom-settings\",\"materialized\":true}\n");
+        return 0;
+    }
+    if (strcmp(argv[1], "activate-bloom") == 0) {
+        BloomSettingsAuthorityResult result;
+        if (bloom_settings_activate(SETTINGS_PATH, ONION_SYSTEM_PATH, ONION_CONFIG_ROOT, &result,
+                                    error, sizeof(error)) != 0) {
+            fprintf(stderr,
+                    "{\"schema\":1,\"error\":{\"code\":\"activation_rejected\"},"
+                    "\"rolled_back\":%s}\n",
+                    result.rolled_back ? "true" : "false");
+            return 1;
+        }
+        printf("{\"schema\":1,\"service\":\"bloom-settings\",\"activated\":%s,"
+               "\"generation\":%d}\n",
+               result.changed ? "true" : "false", result.generation);
+        return 0;
+    }
+    if (strcmp(argv[1], "rollback-authority") == 0) {
+        BloomSettingsAuthorityResult result;
+        if (bloom_settings_rollback_authority(SETTINGS_PATH, &result, error, sizeof(error)) != 0) {
+            fprintf(stderr,
+                    "{\"schema\":1,\"error\":{\"code\":\"rollback_rejected\"}}\n");
+            return 1;
+        }
+        printf("{\"schema\":1,\"service\":\"bloom-settings\",\"rolled_back\":%s,"
+               "\"generation\":%d}\n",
+               result.changed ? "true" : "false", result.generation);
         return 0;
     }
     if (strcmp(argv[1], "import-onion") != 0)

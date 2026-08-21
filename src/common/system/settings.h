@@ -355,7 +355,7 @@ static void _settings_sync_bloom_compatibility(void)
             if (null_output > STDERR_FILENO)
                 close(null_output);
         }
-        execl(BLOOM_SETTINGS_SERVICE, BLOOM_SETTINGS_SERVICE, "sync-onion", (char *)NULL);
+        execl(BLOOM_SETTINGS_SERVICE, BLOOM_SETTINGS_SERVICE, "reconcile-onion", (char *)NULL);
         _exit(127);
     }
     if (child < 0)

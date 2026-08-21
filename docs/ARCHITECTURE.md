@@ -40,15 +40,16 @@ legacy import. The file explicitly records whether `legacy` compatibility or
 Bloom-owned state after cutover.
 
 During migration, Onion files remain untouched and existing consumers continue
-to use them. A serialized compatibility sync may refresh known canonical values
-only while authority remains `legacy`; it preserves unknown canonical fields,
+to use them. A serialized direct sync may refresh known canonical values only
+while authority remains `legacy`; it preserves unknown canonical fields,
 increments generation only for a real change, and is rejected after Bloom
-cutover. Existing Onion save paths invoke the compatibility sync through a fixed
-`fork`/`execl` boundary; they never construct a shell command, and a missing or
-inactive Bloom service cannot prevent the legacy save from completing. Follow-up
-integration moves consumers behind this boundary before authority changes and
-Bloom becomes the sole writer; the presence of an imported schema alone is not
-treated as authority cutover.
+cutover. Existing Onion save paths invoke the service-owned compatibility
+reconciler through a fixed `fork`/`execl` boundary; they never construct a shell
+command, and a missing or inactive Bloom service cannot prevent the legacy save
+from completing. That reconciler remains available after cutover so unavoidable
+closed-MainUI writes can be committed back into canonical state during the
+transition. The presence of an imported schema alone is never treated as
+authority cutover.
 
 Schema 1 separates durable settings into `device`, `interface`, `behavior`, and
 `controls` objects. The imported model covers every durable value currently
@@ -72,6 +73,21 @@ to run while Onion remains authoritative, and preserves unknown imported JSON.
 Canonical state commits independently; the legacy `system.json`, keymap, flags,
 and scalar files are recoverable projections that repeated materialization can
 converge after an interrupted fan-out.
+
+Cutover uses `activate-bloom`, which first reconciles the latest legacy values,
+atomically increments the canonical generation while changing authority, and
+then materializes the compatibility projection. A failed first materialization
+performs a generation-guarded rollback to `legacy`; it cannot overwrite an
+intervening canonical commit. `rollback-authority` provides the explicit reverse
+transition. Repeating either operation is idempotent.
+
+Bloom-owned consumers mutate settings only through `set FIELD VALUE`. Its
+checked-in allowlist assigns each supported field an exact type and range,
+requires active Bloom authority, publishes the canonical mutation atomically,
+and then materializes Onion compatibility state. If projection fails, the
+canonical commit remains authoritative and diagnostics report that it still
+needs materialization. Arbitrary JSON paths and unbounded values are never
+accepted through the public CLI.
 
 ## BloomPlatform foundation
 

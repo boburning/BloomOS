@@ -21,6 +21,18 @@ typedef struct {
     int generation;
 } BloomSettingsSyncResult;
 
+typedef struct {
+    int changed;
+    int rolled_back;
+    int generation;
+} BloomSettingsAuthorityResult;
+
+typedef struct {
+    int changed;
+    int generation;
+    int materialized;
+} BloomSettingsMutationResult;
+
 #define BLOOM_SETTINGS_TEXT_MAX 256
 
 typedef struct {
@@ -82,6 +94,9 @@ int bloom_settings_import_onion(const char *onion_system_path, const char *onion
 int bloom_settings_sync_onion(const char *onion_system_path, const char *onion_config_root,
                               const char *settings_path, BloomSettingsSyncResult *result,
                               char *error, size_t error_size);
+int bloom_settings_reconcile_onion(const char *onion_system_path, const char *onion_config_root,
+                                   const char *settings_path, BloomSettingsSyncResult *result,
+                                   char *error, size_t error_size);
 
 int bloom_settings_read_values(const char *settings_path, BloomSettingsValues *values, char *error,
                                size_t error_size);
@@ -89,6 +104,16 @@ int bloom_settings_read_values(const char *settings_path, BloomSettingsValues *v
 int bloom_settings_materialize_onion(const char *settings_path, const char *onion_system_path,
                                      const char *onion_config_root, char *error,
                                      size_t error_size);
+
+int bloom_settings_activate(const char *settings_path, const char *onion_system_path,
+                            const char *onion_config_root, BloomSettingsAuthorityResult *result,
+                            char *error, size_t error_size);
+int bloom_settings_rollback_authority(const char *settings_path,
+                                      BloomSettingsAuthorityResult *result, char *error,
+                                      size_t error_size);
+int bloom_settings_set(const char *settings_path, const char *onion_system_path,
+                       const char *onion_config_root, const char *field, const char *value,
+                       BloomSettingsMutationResult *result, char *error, size_t error_size);
 
 #ifdef __cplusplus
 }

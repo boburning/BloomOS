@@ -26,7 +26,7 @@ main() {
         sleep 2
         killall -9 imgpop
         sed -i 's/"wifi":\s*0/"wifi": 1/' /mnt/SDCARD/system.json # tell mainui that wifi needs to be kept up once started
-        "$sysdir/bin/bloomctl" settings sync-onion > /dev/null 2>&1 || true
+        "$sysdir/bin/bloomctl" settings reconcile-onion > /dev/null 2>&1 || true
 
         if is_running wpa_supplicant; then
             wifiup
