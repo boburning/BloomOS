@@ -557,7 +557,7 @@ int bloom_settings_import_onion(const char *onion_system_path, const char *onion
     return outcome;
 }
 
-static int replace_section(cJSON *destination, cJSON *source, const char *name)
+static int replace_section(cJSON *destination, const cJSON *source, const char *name)
 {
     cJSON *replacement = cJSON_Duplicate(cJSON_GetObjectItemCaseSensitive(source, name), 1);
     if (replacement == NULL)
@@ -681,6 +681,391 @@ failure:
     cJSON_free(normalized_after);
     cJSON_free(published);
     cJSON_Delete(current);
+    release_settings_lock(lock);
+    return -1;
+}
+
+static int required_integer(const cJSON *object, const char *name, int minimum, int maximum,
+                            int *output)
+{
+    const cJSON *value = cJSON_GetObjectItemCaseSensitive(object, name);
+    if (!cJSON_IsNumber(value) || value->valuedouble != value->valueint ||
+        value->valueint < minimum || value->valueint > maximum)
+        return 0;
+    *output = value->valueint;
+    return 1;
+}
+
+static int required_boolean(const cJSON *object, const char *name, int *output)
+{
+    const cJSON *value = cJSON_GetObjectItemCaseSensitive(object, name);
+    if (!cJSON_IsBool(value))
+        return 0;
+    *output = cJSON_IsTrue(value);
+    return 1;
+}
+
+static int required_string(const cJSON *object, const char *name, char *output, size_t size,
+                           int allow_empty)
+{
+    const cJSON *value = cJSON_GetObjectItemCaseSensitive(object, name);
+    if (!cJSON_IsString(value) || (!allow_empty && value->valuestring[0] == '\0') ||
+        strlen(value->valuestring) >= size)
+        return 0;
+    snprintf(output, size, "%s", value->valuestring);
+    return 1;
+}
+
+static int parse_settings_values(const cJSON *root, BloomSettingsValues *values, char *error,
+                                 size_t error_size)
+{
+    int schema = 0;
+    char source[32] = {0};
+    const cJSON *device = cJSON_GetObjectItemCaseSensitive(root, "device");
+    const cJSON *interface = cJSON_GetObjectItemCaseSensitive(root, "interface");
+    const cJSON *behavior = cJSON_GetObjectItemCaseSensitive(root, "behavior");
+    const cJSON *controls = cJSON_GetObjectItemCaseSensitive(root, "controls");
+    const cJSON *blue_light = cJSON_IsObject(interface)
+                                  ? cJSON_GetObjectItemCaseSensitive(interface, "blue_light")
+                                  : NULL;
+    const cJSON *recording = cJSON_IsObject(interface)
+                                 ? cJSON_GetObjectItemCaseSensitive(interface, "recording")
+                                 : NULL;
+    memset(values, 0, sizeof(*values));
+    if (validate_settings_root(root, &schema, &values->generation, source, sizeof(source),
+                               values->authority, sizeof(values->authority), error, error_size) !=
+            0 ||
+        !cJSON_IsObject(controls) || !cJSON_IsObject(blue_light) || !cJSON_IsObject(recording) ||
+        !required_integer(device, "volume", 0, 20, &values->volume) ||
+        !required_boolean(device, "mute", &values->mute) ||
+        !required_integer(device, "background_music_volume", 0, 20,
+                          &values->background_music_volume) ||
+        !required_integer(device, "brightness", 0, 10, &values->brightness) ||
+        !required_boolean(device, "wifi_enabled", &values->wifi_enabled) ||
+        !required_integer(device, "sleep_minutes", 0, 120, &values->sleep_minutes) ||
+        !required_integer(device, "luminance", 0, 20, &values->luminance) ||
+        !required_integer(device, "hue", 0, 20, &values->hue) ||
+        !required_integer(device, "saturation", 0, 20, &values->saturation) ||
+        !required_integer(device, "contrast", 0, 20, &values->contrast) ||
+        !required_integer(device, "audio_fix", 0, 1, &values->audio_fix) ||
+        !required_integer(device, "vibration", 0, 3, &values->vibration) ||
+        !required_integer(device, "pwm_frequency", 0, 20, &values->pwm_frequency) ||
+        !required_string(interface, "language", values->language, sizeof(values->language), 0) ||
+        !required_string(interface, "theme", values->theme, sizeof(values->theme), 0) ||
+        !required_integer(interface, "font_size", 8, 64, &values->font_size) ||
+        !required_boolean(interface, "background_music_muted",
+                          &values->background_music_muted) ||
+        !required_boolean(interface, "show_recents", &values->show_recents) ||
+        !required_boolean(interface, "show_expert", &values->show_expert) ||
+        !required_boolean(blue_light, "enabled", &values->blue_light_enabled) ||
+        !required_boolean(blue_light, "scheduled", &values->blue_light_scheduled) ||
+        !required_integer(blue_light, "level", 0, 20, &values->blue_light_level) ||
+        !required_integer(blue_light, "rgb", 0, 16777215, &values->blue_light_rgb) ||
+        !required_string(blue_light, "start_time", values->blue_light_start,
+                         sizeof(values->blue_light_start), 0) ||
+        !required_string(blue_light, "end_time", values->blue_light_end,
+                         sizeof(values->blue_light_end), 0) ||
+        !required_boolean(recording, "indicator", &values->recording_indicator) ||
+        !required_boolean(recording, "hotkey", &values->recording_hotkey) ||
+        !required_integer(recording, "countdown", 0, 10, &values->recording_countdown) ||
+        !required_boolean(behavior, "startup_auto_resume", &values->startup_auto_resume) ||
+        !required_boolean(behavior, "menu_button_haptics", &values->menu_button_haptics) ||
+        !required_boolean(behavior, "disable_standby", &values->disable_standby) ||
+        !required_boolean(behavior, "logging", &values->logging) ||
+        !required_integer(behavior, "low_battery_warn_at", 0, 100,
+                          &values->low_battery_warn_at) ||
+        !required_integer(behavior, "low_battery_autosave_at", 0, 100,
+                          &values->low_battery_autosave_at) ||
+        !required_integer(behavior, "startup_tab", 0, 20, &values->startup_tab) ||
+        !required_integer(behavior, "startup_application", 0, 20,
+                          &values->startup_application) ||
+        !required_integer(behavior, "time_skip_hours", 0, 24, &values->time_skip_hours) ||
+        !required_string(controls, "layout", values->layout, sizeof(values->layout), 0) ||
+        !required_integer(controls, "mainui_single_press", 0, 20,
+                          &values->mainui_single_press) ||
+        !required_integer(controls, "mainui_long_press", 0, 20,
+                          &values->mainui_long_press) ||
+        !required_integer(controls, "mainui_double_press", 0, 20,
+                          &values->mainui_double_press) ||
+        !required_integer(controls, "ingame_single_press", 0, 20,
+                          &values->ingame_single_press) ||
+        !required_integer(controls, "ingame_long_press", 0, 20,
+                          &values->ingame_long_press) ||
+        !required_integer(controls, "ingame_double_press", 0, 20,
+                          &values->ingame_double_press) ||
+        !required_string(controls, "mainui_button_x", values->mainui_button_x,
+                         sizeof(values->mainui_button_x), 1) ||
+        !required_string(controls, "mainui_button_y", values->mainui_button_y,
+                         sizeof(values->mainui_button_y), 1)) {
+        set_error(error, error_size, "canonical settings values are invalid");
+        return -1;
+    }
+    return 0;
+}
+
+int bloom_settings_read_values(const char *settings_path, BloomSettingsValues *values, char *error,
+                               size_t error_size)
+{
+    if (settings_path == NULL || values == NULL) {
+        set_error(error, error_size, "invalid settings read request");
+        return -1;
+    }
+    cJSON *root = load_settings_root(settings_path, error, error_size);
+    int result = root == NULL ? -1 : parse_settings_values(root, values, error, error_size);
+    cJSON_Delete(root);
+    return result;
+}
+
+static int replace_number(cJSON *object, const char *name, int value)
+{
+    cJSON *replacement = cJSON_CreateNumber(value);
+    if (replacement == NULL)
+        return 0;
+    if (cJSON_GetObjectItemCaseSensitive(object, name) == NULL) {
+        if (cJSON_AddItemToObject(object, name, replacement))
+            return 1;
+    }
+    else if (cJSON_ReplaceItemInObjectCaseSensitive(object, name, replacement))
+        return 1;
+    cJSON_Delete(replacement);
+    return 0;
+}
+
+static int replace_string(cJSON *object, const char *name, const char *value)
+{
+    cJSON *replacement = cJSON_CreateString(value);
+    if (replacement == NULL)
+        return 0;
+    if (cJSON_GetObjectItemCaseSensitive(object, name) == NULL) {
+        if (cJSON_AddItemToObject(object, name, replacement))
+            return 1;
+    }
+    else if (cJSON_ReplaceItemInObjectCaseSensitive(object, name, replacement))
+        return 1;
+    cJSON_Delete(replacement);
+    return 0;
+}
+
+static int regular_or_missing(const char *path)
+{
+    struct stat metadata;
+    if (lstat(path, &metadata) != 0)
+        return errno == ENOENT;
+    return S_ISREG(metadata.st_mode) && !S_ISLNK(metadata.st_mode);
+}
+
+static int write_derived(const char *path, const char *content)
+{
+    return regular_or_missing(path) && write_atomic(path, content, strlen(content)) == 0 ? 0 : -1;
+}
+
+static int remove_derived(const char *path)
+{
+    struct stat metadata;
+    if (lstat(path, &metadata) != 0)
+        return errno == ENOENT ? 0 : -1;
+    return S_ISREG(metadata.st_mode) && !S_ISLNK(metadata.st_mode) && unlink(path) == 0 ? 0 : -1;
+}
+
+static int materialize_flag(const char *root, const char *name, int enabled)
+{
+    char positive[PATH_MAX];
+    char inverse_name[128];
+    char inverse[PATH_MAX];
+    if (snprintf(inverse_name, sizeof(inverse_name), "%s_", name) >= (int)sizeof(inverse_name) ||
+        path_join(positive, sizeof(positive), root, name) != 0 ||
+        path_join(inverse, sizeof(inverse), root, inverse_name) != 0)
+        return -1;
+    return enabled ? (write_derived(positive, "") == 0 && remove_derived(inverse) == 0 ? 0 : -1)
+                   : (write_derived(inverse, "") == 0 && remove_derived(positive) == 0 ? 0 : -1);
+}
+
+static int remove_flag_pair(const char *root, const char *name)
+{
+    char positive[PATH_MAX];
+    char inverse_name[128];
+    char inverse[PATH_MAX];
+    if (snprintf(inverse_name, sizeof(inverse_name), "%s_", name) >= (int)sizeof(inverse_name) ||
+        path_join(positive, sizeof(positive), root, name) != 0 ||
+        path_join(inverse, sizeof(inverse), root, inverse_name) != 0)
+        return -1;
+    return remove_derived(positive) == 0 && remove_derived(inverse) == 0 ? 0 : -1;
+}
+
+static int ensure_derived_directory(const char *root, const char *name)
+{
+    char path[PATH_MAX];
+    struct stat metadata;
+    if (path_join(path, sizeof(path), root, name) != 0)
+        return -1;
+    if (lstat(path, &metadata) == 0)
+        return S_ISDIR(metadata.st_mode) && !S_ISLNK(metadata.st_mode) ? 0 : -1;
+    return errno == ENOENT && mkdir(path, 0700) == 0 ? 0 : -1;
+}
+
+static int write_derived_integer(const char *root, const char *name, int value)
+{
+    char path[PATH_MAX];
+    char text[32];
+    if (path_join(path, sizeof(path), root, name) != 0 ||
+        snprintf(text, sizeof(text), "%d", value) >= (int)sizeof(text))
+        return -1;
+    return write_derived(path, text);
+}
+
+static int write_derived_string(const char *root, const char *name, const char *value)
+{
+    char path[PATH_MAX];
+    return path_join(path, sizeof(path), root, name) == 0 ? write_derived(path, value) : -1;
+}
+
+static int preflight_derived_paths(const char *root, const char *const *names, size_t count)
+{
+    struct stat metadata;
+    if (lstat(root, &metadata) != 0 || !S_ISDIR(metadata.st_mode) || S_ISLNK(metadata.st_mode))
+        return -1;
+    for (size_t index = 0; index < count; ++index) {
+        char path[PATH_MAX];
+        if (path_join(path, sizeof(path), root, names[index]) != 0 || !regular_or_missing(path))
+            return -1;
+    }
+    return 0;
+}
+
+int bloom_settings_materialize_onion(const char *settings_path, const char *onion_system_path,
+                                     const char *onion_config_root, char *error,
+                                     size_t error_size)
+{
+    if (settings_path == NULL || onion_system_path == NULL || onion_config_root == NULL) {
+        set_error(error, error_size, "invalid settings materialization request");
+        return -1;
+    }
+    int lock = -1;
+    if (acquire_settings_lock(settings_path, &lock, error, error_size) != 0)
+        return -1;
+    cJSON *root = load_settings_root(settings_path, error, error_size);
+    BloomSettingsValues values;
+    cJSON *system = NULL;
+    cJSON *keymap = NULL;
+    char *system_text = NULL;
+    char *keymap_text = NULL;
+    if (root == NULL || parse_settings_values(root, &values, error, error_size) != 0)
+        goto failure;
+    if (strcmp(values.authority, "bloom") != 0) {
+        set_error(error, error_size, "materialization requires Bloom settings authority");
+        goto failure;
+    }
+    const cJSON *compatibility = cJSON_GetObjectItemCaseSensitive(root, "compatibility");
+    system = cJSON_Duplicate(cJSON_GetObjectItemCaseSensitive(compatibility, "onion_system"), 1);
+    keymap = cJSON_Duplicate(cJSON_GetObjectItemCaseSensitive(compatibility, "onion_keymap"), 1);
+    if (!cJSON_IsObject(system) || !cJSON_IsObject(keymap) ||
+        !replace_number(system, "vol", values.volume) ||
+        !replace_number(system, "mute", values.mute) ||
+        !replace_number(system, "bgmvol", values.background_music_volume) ||
+        !replace_number(system, "brightness", values.brightness) ||
+        !replace_number(system, "wifi", values.wifi_enabled) ||
+        !replace_number(system, "hibernate", values.sleep_minutes) ||
+        !replace_number(system, "lumination", values.luminance) ||
+        !replace_number(system, "hue", values.hue) ||
+        !replace_number(system, "saturation", values.saturation) ||
+        !replace_number(system, "contrast", values.contrast) ||
+        !replace_number(system, "audiofix", values.audio_fix) ||
+        !replace_string(system, "language", values.language) ||
+        !replace_string(system, "theme", values.theme) ||
+        !replace_number(system, "fontsize", values.font_size) ||
+        !replace_string(system, "keymap", values.layout) ||
+        !replace_number(keymap, "mainui_single_press", values.mainui_single_press) ||
+        !replace_number(keymap, "mainui_long_press", values.mainui_long_press) ||
+        !replace_number(keymap, "mainui_double_press", values.mainui_double_press) ||
+        !replace_number(keymap, "ingame_single_press", values.ingame_single_press) ||
+        !replace_number(keymap, "ingame_long_press", values.ingame_long_press) ||
+        !replace_number(keymap, "ingame_double_press", values.ingame_double_press) ||
+        !replace_string(keymap, "mainui_button_x", values.mainui_button_x) ||
+        !replace_string(keymap, "mainui_button_y", values.mainui_button_y)) {
+        set_error(error, error_size, "derived Onion settings could not be created");
+        goto failure;
+    }
+    system_text = cJSON_PrintUnformatted(system);
+    keymap_text = cJSON_PrintUnformatted(keymap);
+    char keymap_path[PATH_MAX];
+    static const char *const derived_paths[] = {
+        "keymap.json",
+        ".muteVolume", ".muteVolume_", ".bgmMute", ".bgmMute_",
+        ".showRecents", ".showRecents_", ".showExpert", ".showExpert_",
+        ".noAutoStart", ".noAutoStart_", ".noMenuHaptics", ".noMenuHaptics_",
+        ".disableStandby", ".disableStandby_", ".logging", ".logging_",
+        ".blfOn", ".blfOn_", ".blf", ".blf_",
+        ".recIndicator", ".recIndicator_", ".recHotkey", ".recHotkey_",
+        ".noBatteryWarning", ".noBatteryWarning_",
+        ".noLowBatteryAutoSave", ".noLowBatteryAutoSave_",
+        ".noVibration", ".noVibration_", ".menuInverted", ".menuInverted_",
+        ".noGameSwitcher", ".noGameSwitcher_",
+        "battery/warnAt", "battery/exitAt", "startup/tab", "startup/app",
+        "startup/addHours", "vibration", "pwmfrequency", "display/blueLightLevel",
+        "display/blueLightRGB", "display/blueLightTime", "display/blueLightTimeOff",
+        "recCountdown"};
+    if (system_text == NULL || keymap_text == NULL ||
+        path_join(keymap_path, sizeof(keymap_path), onion_config_root, "keymap.json") != 0 ||
+        ensure_derived_directory(onion_config_root, "battery") != 0 ||
+        ensure_derived_directory(onion_config_root, "startup") != 0 ||
+        ensure_derived_directory(onion_config_root, "display") != 0 ||
+        !regular_or_missing(onion_system_path) ||
+        preflight_derived_paths(onion_config_root, derived_paths,
+                                sizeof(derived_paths) / sizeof(derived_paths[0])) != 0 ||
+        write_derived(onion_system_path, system_text) != 0 ||
+        write_derived(keymap_path, keymap_text) != 0 ||
+        materialize_flag(onion_config_root, ".muteVolume", values.mute) != 0 ||
+        materialize_flag(onion_config_root, ".bgmMute", values.background_music_muted) != 0 ||
+        materialize_flag(onion_config_root, ".showRecents", values.show_recents) != 0 ||
+        materialize_flag(onion_config_root, ".showExpert", values.show_expert) != 0 ||
+        materialize_flag(onion_config_root, ".noAutoStart", !values.startup_auto_resume) != 0 ||
+        materialize_flag(onion_config_root, ".noMenuHaptics", !values.menu_button_haptics) != 0 ||
+        materialize_flag(onion_config_root, ".disableStandby", values.disable_standby) != 0 ||
+        materialize_flag(onion_config_root, ".logging", values.logging) != 0 ||
+        materialize_flag(onion_config_root, ".blfOn", values.blue_light_enabled) != 0 ||
+        materialize_flag(onion_config_root, ".blf", values.blue_light_scheduled) != 0 ||
+        materialize_flag(onion_config_root, ".recIndicator", values.recording_indicator) != 0 ||
+        materialize_flag(onion_config_root, ".recHotkey", values.recording_hotkey) != 0 ||
+        write_derived_integer(onion_config_root, "battery/warnAt",
+                              values.low_battery_warn_at) != 0 ||
+        write_derived_integer(onion_config_root, "battery/exitAt",
+                              values.low_battery_autosave_at) != 0 ||
+        write_derived_integer(onion_config_root, "startup/tab", values.startup_tab) != 0 ||
+        write_derived_integer(onion_config_root, "startup/app", values.startup_application) != 0 ||
+        write_derived_integer(onion_config_root, "startup/addHours", values.time_skip_hours) != 0 ||
+        write_derived_integer(onion_config_root, "vibration", values.vibration) != 0 ||
+        write_derived_integer(onion_config_root, "pwmfrequency", values.pwm_frequency) != 0 ||
+        write_derived_integer(onion_config_root, "display/blueLightLevel",
+                              values.blue_light_level) != 0 ||
+        write_derived_integer(onion_config_root, "display/blueLightRGB", values.blue_light_rgb) !=
+            0 ||
+        write_derived_string(onion_config_root, "display/blueLightTime",
+                             values.blue_light_start) != 0 ||
+        write_derived_string(onion_config_root, "display/blueLightTimeOff",
+                             values.blue_light_end) != 0 ||
+        write_derived_integer(onion_config_root, "recCountdown", values.recording_countdown) != 0 ||
+        remove_flag_pair(onion_config_root, ".noBatteryWarning") != 0 ||
+        remove_flag_pair(onion_config_root, ".noLowBatteryAutoSave") != 0 ||
+        remove_flag_pair(onion_config_root, ".noVibration") != 0 ||
+        remove_flag_pair(onion_config_root, ".menuInverted") != 0 ||
+        remove_flag_pair(onion_config_root, ".noGameSwitcher") != 0) {
+        set_error(error, error_size, "derived Onion settings could not be published");
+        goto failure;
+    }
+    cJSON_free(system_text);
+    cJSON_free(keymap_text);
+    cJSON_Delete(system);
+    cJSON_Delete(keymap);
+    cJSON_Delete(root);
+    release_settings_lock(lock);
+    return 0;
+
+failure:
+    cJSON_free(system_text);
+    cJSON_free(keymap_text);
+    cJSON_Delete(system);
+    cJSON_Delete(keymap);
+    cJSON_Delete(root);
     release_settings_lock(lock);
     return -1;
 }
