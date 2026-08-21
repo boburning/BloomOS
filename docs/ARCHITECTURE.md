@@ -196,17 +196,20 @@ keeps generic hardware/association facts independent from RA transport policy.
 
 Normal runtime reconciliation also enters through the fixed
 `bloom-network request reconcile` operation. Network-capable hardware delegates
-only the inherited backend's `check` action; hardware without networking is a
-successful no-op. The inherited script remains a compatibility backend rather
-than a public Bloom interface.
+Plus radio, association, and DHCP lifecycle to the fixed `bloom-wifi` backend.
+An already-associated connection is preserved without restarting either
+network client. The inherited script is restricted to auxiliary compatibility
+services; unsupported Wi-Fi hardware can still fall back to its complete
+`check` action until a Bloom backend is physically proven for that device.
+Hardware without networking is a successful no-op.
 
 Bounded `request enable` and `request disable` operations persist only
 `device.wifi_enabled` through the active `bloom-settings` authority before
-applying the same fixed backend action. Settings rejection is distinct from an
+applying the same fixed Bloom backend action. Settings rejection is distinct from an
 apply failure, and a successfully saved preference remains durable for later
 reconciliation if immediate application fails. Hardware without Wi-Fi rejects
-the mutation before touching settings. Replacement of the inherited backend
-remains follow-up work.
+the mutation before touching settings. Flip lifecycle ownership and replacement
+of the remaining inherited auxiliary services remain follow-up work.
 
 ## Bloom controls boundary
 
