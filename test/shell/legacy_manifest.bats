@@ -93,7 +93,7 @@ import sys
 components = json.load(open(sys.argv[1], encoding="utf-8"))["components"]
 runtime = [item for item in components if item["id"].startswith("runtime-")]
 bloom = [item for item in runtime if item["source"] == "https://github.com/boburning/BloomOS"]
-assert len(bloom) == 35
+assert len(bloom) == 36
 assert all(item["resolution"] == "source-build" for item in bloom)
 assert all(item["source_revision"] == "release-commit" for item in bloom)
 PY
