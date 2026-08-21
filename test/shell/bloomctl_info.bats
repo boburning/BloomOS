@@ -476,7 +476,7 @@ SH
     [ "$status" -eq 2 ]
 }
 
-@test "bloomctl library exposes bounded status and Onion import operations" {
+@test "bloomctl library exposes bounded import and scan operations" {
     service="$BATS_TEST_TMPDIR/bloom-library"
     cat >"$service" <<'SH'
 #!/bin/sh
@@ -493,6 +493,35 @@ SH
         sh /workspace/static/build/.tmp_update/bin/bloomctl library import-onion
     [ "$status" -eq 0 ]
     [ "$output" = "{\"schema\":1,\"arguments\":\"import-onion\",\"library_path\":\"$BLOOM_ROOT/mnt/SDCARD/.tmp_update/lib\"}" ]
+
+    run env -u LD_LIBRARY_PATH BLOOM_LIBRARY_BIN="$service" \
+        sh /workspace/static/build/.tmp_update/bin/bloomctl library scan --changed
+    [ "$status" -eq 0 ]
+    [ "$output" = "{\"schema\":1,\"arguments\":\"scan --changed\",\"library_path\":\"$BLOOM_ROOT/mnt/SDCARD/.tmp_update/lib\"}" ]
+
+    run env -u LD_LIBRARY_PATH BLOOM_LIBRARY_BIN="$service" \
+        sh /workspace/static/build/.tmp_update/bin/bloomctl library scan --system gba
+    [ "$status" -eq 0 ]
+    [ "$output" = "{\"schema\":1,\"arguments\":\"scan --system gba\",\"library_path\":\"$BLOOM_ROOT/mnt/SDCARD/.tmp_update/lib\"}" ]
+
+    run env BLOOM_LIBRARY_BIN="$service" \
+        sh /workspace/static/build/.tmp_update/bin/bloomctl library scan --system '../gba'
+    [ "$status" -eq 2 ]
+
+    run env -u LD_LIBRARY_PATH BLOOM_LIBRARY_BIN="$service" \
+        sh /workspace/static/build/.tmp_update/bin/bloomctl library games --limit 25
+    [ "$status" -eq 0 ]
+    [ "$output" = "{\"schema\":1,\"arguments\":\"games --limit 25\",\"library_path\":\"$BLOOM_ROOT/mnt/SDCARD/.tmp_update/lib\"}" ]
+
+    cursor='bloom-game-v1:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
+    run env -u LD_LIBRARY_PATH BLOOM_LIBRARY_BIN="$service" \
+        sh /workspace/static/build/.tmp_update/bin/bloomctl library games --system gba --limit 10 --after "$cursor"
+    [ "$status" -eq 0 ]
+    [ "$output" = "{\"schema\":1,\"arguments\":\"games --system gba --limit 10 --after $cursor\",\"library_path\":\"$BLOOM_ROOT/mnt/SDCARD/.tmp_update/lib\"}" ]
+
+    run env BLOOM_LIBRARY_BIN="$service" \
+        sh /workspace/static/build/.tmp_update/bin/bloomctl library games --system '../gba' --limit 10
+    [ "$status" -eq 2 ]
 
     run env BLOOM_LIBRARY_BIN="$service" \
         sh /workspace/static/build/.tmp_update/bin/bloomctl library status extra

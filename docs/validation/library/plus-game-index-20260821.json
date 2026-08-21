@@ -1,0 +1,41 @@
+{
+  "schema": 1,
+  "date": "2026-08-21",
+  "operator": "Codex remote automation",
+  "device": {
+    "family": "mini_plus",
+    "model_id": 354
+  },
+  "installed_build": {
+    "version": "0.1.0-dev-9b5c3aa8",
+    "update_state": "known_good"
+  },
+  "candidate": {
+    "source_base_commit": "31e77216f60ba9093dc1e984ac9f7b325b3ed965",
+    "binary_sha256": "bddab00b4a57e9c9b66afbf590f391708780cdbfd30db0145653e72cbef3c3b8"
+  },
+  "catalog": {
+    "baseline_generation": 1,
+    "published_generation": 2,
+    "database_schema": 2,
+    "scanned_systems": 53,
+    "indexed_games": 22,
+    "scan_errors": 0,
+    "repeat_changed": false,
+    "repeat_generation": 2
+  },
+  "checks": {
+    "upload_hash_matches": "pass",
+    "arm_binary_executes": "pass",
+    "schema_1_to_2_migration": "pass",
+    "transactional_scan": "pass",
+    "repeat_scan_noop": "pass",
+    "bounded_status": "pass",
+    "global_cursor_page": "pass",
+    "global_cursor_resume": "pass",
+    "system_filtered_page": "pass",
+    "temporary_candidate_cleanup": "pass",
+    "post_test_aggregate_health": "pass"
+  },
+  "notes": "Candidate-only validation read file metadata but not ROM content. It did not activate an unsigned Bloom update or change MainUI authority. Public evidence intentionally records only aggregate counts, not ROM paths or titles."
+}

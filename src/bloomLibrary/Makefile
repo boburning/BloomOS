@@ -1,6 +1,6 @@
 INCLUDE_UTILS = 0
 TARGET = bloom-library
-CFILES := ../../include/cjson/cJSON.c
+CFILES := ../../include/cjson/cJSON.c ../bloomGameId/bloom_game_id.c
 
 include ../common/config.mk
 LDFLAGS += -lsqlite3
