@@ -427,8 +427,9 @@ Current frontend progress:
   pages exposing stable policy or status summaries without render-time work.
   Audio mute is actionable through the canonical control adapter and restores
   the persisted volume when unmuted.
-  System Health now offers a fixed, timeout-bounded support export with explicit
-  completion or failure feedback. Guarded update actions, RetroAchievements account interaction,
+  System shows bounded free storage from the existing health probe, and System
+  Health offers a fixed, timeout-bounded support export with explicit completion
+  or failure feedback. Guarded update actions, RetroAchievements account interaction,
   reusable keyboard flows, and physical readability/input and
   adjustment-latency validation remain pending. The bounded `settings
   values` response exposes only the four high-frequency device controls plus

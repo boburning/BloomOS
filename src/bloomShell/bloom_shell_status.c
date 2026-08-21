@@ -51,10 +51,14 @@ int bloom_shell_status_parse(const char *json, BloomShellStatus *status)
     cJSON *update = checks == NULL ? NULL : object(checks, "update_state");
     cJSON *ra = checks == NULL ? NULL : object(checks, "retroachievements");
     cJSON *phase = update == NULL ? NULL : cJSON_GetObjectItemCaseSensitive(update, "phase");
+    cJSON *free_kb = system == NULL ? NULL : cJSON_GetObjectItemCaseSensitive(system, "free_kb");
     cJSON *ra_state = ra == NULL ? NULL : cJSON_GetObjectItemCaseSensitive(ra, "state");
     int result = -1;
     if (cJSON_IsNumber(schema) && schema->valueint == 1 && schema->valuedouble == 1.0 &&
         system != NULL && update != NULL && ra != NULL && cJSON_IsString(phase) &&
+        cJSON_IsNumber(free_kb) && free_kb->valuedouble >= 0.0 &&
+        free_kb->valuedouble <= 4294967295.0 &&
+        free_kb->valuedouble == (double)(uint64_t)free_kb->valuedouble &&
         bounded_word(phase->valuestring) && cJSON_IsString(ra_state) &&
         bounded_word(ra_state->valuestring) && boolean(root, "healthy", &status->healthy) == 0 &&
         boolean(system, "healthy", &status->system_healthy) == 0 &&
@@ -63,11 +67,28 @@ int bloom_shell_status_parse(const char *json, BloomShellStatus *status)
         boolean(ra, "enabled", &status->ra_enabled) == 0) {
         snprintf(status->update_phase, sizeof(status->update_phase), "%s", phase->valuestring);
         snprintf(status->ra_state, sizeof(status->ra_state), "%s", ra_state->valuestring);
+        status->storage_free_kb = (uint64_t)free_kb->valuedouble;
         status->ready = 1;
         result = 0;
     }
     cJSON_Delete(root);
     return result;
+}
+
+int bloom_shell_storage_label(const BloomShellStatus *status, char *label, size_t label_size)
+{
+    if (status == NULL || label == NULL || label_size == 0)
+        return -1;
+    int length;
+    if (!status->ready)
+        length = snprintf(label, label_size, "Storage: unavailable");
+    else {
+        uint64_t tenths = status->storage_free_kb * 10 / 1048576;
+        length = snprintf(label, label_size, "Storage: %llu.%llu GB free",
+                          (unsigned long long)(tenths / 10),
+                          (unsigned long long)(tenths % 10));
+    }
+    return length >= 0 && (size_t)length < label_size ? 0 : -1;
 }
 
 int bloom_shell_status_load(const char *bloomctl_path, BloomShellStatus *status)

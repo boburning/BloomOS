@@ -15,6 +15,11 @@ ra_output="$(LD_LIBRARY_PATH="$LIB_DIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" "$R
 ra_status=$?
 
 case "$system_output" in *'"healthy":true'*) system_healthy=true ;; *) system_healthy=false ;; esac
+free_kb="$(printf '%s\n' "$system_output" | sed -n 's/.*"free_kb":\([0-9][0-9]*\).*/\1/p')"
+case "$free_kb" in
+    ''|*[!0-9]*|???????????*) free_kb=0; system_healthy=false ;;
+esac
+if [ "$free_kb" -gt 4294967295 ] 2>/dev/null; then free_kb=0; system_healthy=false; fi
 phase="$(printf '%s\n' "$update_output" | sed -n 's/.*"phase":"\([a-z_]*\)".*/\1/p')"
 case "$phase" in
     idle|armed|activation_pending|testing|known_good|rollback_pending) update_healthy=true ;;
@@ -31,5 +36,5 @@ else
     healthy=false
 fi
 
-printf '{"schema":1,"healthy":%s,"checks":{"system":{"healthy":%s},"update_state":{"healthy":%s,"phase":"%s"},"retroachievements":{"healthy":%s,"enabled":%s,"state":"%s"}}}\n' \
-    "$healthy" "$system_healthy" "$update_healthy" "$phase" "$ra_healthy" "$ra_enabled" "$ra_state"
+printf '{"schema":1,"healthy":%s,"checks":{"system":{"healthy":%s,"free_kb":%s},"update_state":{"healthy":%s,"phase":"%s"},"retroachievements":{"healthy":%s,"enabled":%s,"state":"%s"}}}\n' \
+    "$healthy" "$system_healthy" "$free_kb" "$update_healthy" "$phase" "$ra_healthy" "$ra_enabled" "$ra_state"
