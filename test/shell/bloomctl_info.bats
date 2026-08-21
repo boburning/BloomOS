@@ -418,3 +418,26 @@ EOF
     printf '%s' "$output" | grep -F '"error":"execution_failed"'
     ! printf '%s' "$output" | grep -F 'Invalid argument'
 }
+
+@test "bloomctl settings delegates only supported settings operations" {
+    service="$BATS_TEST_TMPDIR/bloom-settings"
+    cat >"$service" <<'SH'
+#!/bin/sh
+printf '{"schema":1,"operation":"%s"}\n' "$1"
+SH
+    chmod +x "$service"
+
+    run env BLOOM_SETTINGS_BIN="$service" \
+        sh /workspace/static/build/.tmp_update/bin/bloomctl settings status
+    [ "$status" -eq 0 ]
+    [ "$output" = '{"schema":1,"operation":"status"}' ]
+
+    run env BLOOM_SETTINGS_BIN="$service" \
+        sh /workspace/static/build/.tmp_update/bin/bloomctl settings import-onion
+    [ "$status" -eq 0 ]
+    [ "$output" = '{"schema":1,"operation":"import-onion"}' ]
+
+    run env BLOOM_SETTINGS_BIN="$service" \
+        sh /workspace/static/build/.tmp_update/bin/bloomctl settings unknown
+    [ "$status" -eq 2 ]
+}
