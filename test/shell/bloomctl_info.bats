@@ -565,7 +565,7 @@ SH
     [ "$status" -eq 2 ]
 }
 
-@test "bloomctl network delegates only the read-only status operation" {
+@test "bloomctl network delegates only status and fixed reconciliation" {
     service="$BATS_TEST_TMPDIR/bloom-network"
     cat >"$service" <<'SH'
 #!/bin/sh
@@ -577,6 +577,11 @@ SH
         sh /workspace/static/build/.tmp_update/bin/bloomctl network status
     [ "$status" -eq 0 ]
     [ "$output" = '{"schema":1,"arguments":"status"}' ]
+
+    run env BLOOM_NETWORK_BIN="$service" \
+        sh /workspace/static/build/.tmp_update/bin/bloomctl network reconcile
+    [ "$status" -eq 0 ]
+    [ "$output" = '{"schema":1,"arguments":"request reconcile"}' ]
 
     run env BLOOM_NETWORK_BIN="$service" \
         sh /workspace/static/build/.tmp_update/bin/bloomctl network enable

@@ -368,9 +368,12 @@ Current frontend progress:
   `bloom-network` boundary now separates capability, enabled state, and local
   association without exposing network identity; the RA readiness probe
   consumes it before its bounded internet/TLS check. Exact-hash Plus evidence
-  confirms the real firmware setting reader and sysfs association path.
+  confirms the real firmware setting reader and sysfs association path. Normal
+  runtime reconciliation now uses a single fixed Bloom operation; an exact-hash
+  Plus candidate preserved association, the Wi-Fi/DHCP processes, and SSH while
+  original Mini is an explicit no-network no-op.
   Suspend/lid, brightness, volume, clock, Wi-Fi mutation, and inherited
-  network-service ownership remain pending.
+  network-backend replacement remain pending.
 - [ ] Bloom Shell vertical slice and supervised MainUI fallback.
 
 ## Historical BloomOS foundation

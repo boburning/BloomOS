@@ -193,7 +193,13 @@ The service intentionally does not claim internet reachability and performs no
 network I/O. `bloom-ra-network` consumes its local state and then adds the
 separate bounded clock, DNS, TLS, and RetroAchievements service probe. This
 keeps generic hardware/association facts independent from RA transport policy.
-Wi-Fi mutations and inherited network-service lifecycle remain follow-up work.
+
+Normal runtime reconciliation also enters through the fixed
+`bloom-network request reconcile` operation. Network-capable hardware delegates
+only the inherited backend's `check` action; hardware without networking is a
+successful no-op. The inherited script remains a compatibility backend rather
+than a public Bloom interface. User-facing Wi-Fi mutation and replacement of
+that backend remain follow-up work.
 
 ## Structured launch boundary
 

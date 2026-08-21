@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "date": "2026-08-21",
+  "operator": "Codex remote automation",
+  "device": {"family": "mini_plus", "model_id": 354},
+  "installed_build": {"version": "0.1.0-dev-9b5c3aa8", "update_state": "known_good"},
+  "candidate": {
+    "source_base_commit": "822f624b",
+    "sha256": "29cab53da30209c26fff67edc40755a1e435de621300c14840f45dcd6dc0a0cf"
+  },
+  "result": {
+    "status_before": "associated",
+    "operation": "reconcile",
+    "applied": true,
+    "wifi_preference_after": true,
+    "operstate_after": "up",
+    "carrier_after": 1,
+    "wpa_supplicant_after": "running",
+    "dhcp_client_after": "running",
+    "ssh_reachable_after": true
+  },
+  "checks": {
+    "upload_hash_matches": "pass",
+    "fixed_backend_action": "pass",
+    "association_preserved": "pass",
+    "network_processes_preserved": "pass",
+    "ssh_reconnect": "pass",
+    "temporary_candidate_cleanup": "pass"
+  },
+  "notes": "The exact-hash candidate delegated only update_networking.sh check. This validates the Plus compatibility backend handoff, not user-facing Wi-Fi mutation or replacement of the inherited backend."
+}
