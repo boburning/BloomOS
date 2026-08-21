@@ -5,7 +5,7 @@
 
 #include <stddef.h>
 
-#define GAMESWITCHER_LIBRARY_TEXT_SIZE 1024
+#define GAMESWITCHER_LIBRARY_TEXT_SIZE 512
 
 typedef struct {
     char game_id[BLOOM_GAME_ID_LENGTH + 1];
