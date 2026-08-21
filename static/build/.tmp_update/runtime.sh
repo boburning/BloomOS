@@ -986,7 +986,9 @@ check_networking() {
         log "update_networking already running"
     else
         rm /tmp/network_changed
-        $sysdir/script/network/update_networking.sh check
+        if ! $sysdir/bin/bloom-network request reconcile >/dev/null; then
+            log "Bloom network reconciliation failed"
+        fi
     fi
 }
 

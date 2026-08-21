@@ -6,12 +6,18 @@ setup() {
     export BLOOM_PLATFORM_BIN="$BATS_TEST_TMPDIR/bloom-platform"
     export BLOOM_NETWORK_JSONVAL_BIN="$BATS_TEST_TMPDIR/jsonval"
     export BLOOM_NETWORK_LIB_DIR="$BATS_TEST_TMPDIR/runtime-lib"
+    export BLOOM_NETWORK_BACKEND_BIN="$BATS_TEST_TMPDIR/update-networking"
+    export BACKEND_LOG="$BATS_TEST_TMPDIR/backend.log"
     mkdir -p "$BLOOM_NETWORK_ROOT/sys/class/net/wlan0"
     printf up >"$BLOOM_NETWORK_ROOT/sys/class/net/wlan0/operstate"
     printf 1 >"$BLOOM_NETWORK_ROOT/sys/class/net/wlan0/carrier"
     printf '#!/bin/sh\nprintf true\n' >"$BLOOM_PLATFORM_BIN"
     printf '#!/bin/sh\n[ "$1" = wifi ] || exit 2\nprintf 1\n' >"$BLOOM_NETWORK_JSONVAL_BIN"
-    chmod +x "$BLOOM_PLATFORM_BIN" "$BLOOM_NETWORK_JSONVAL_BIN"
+    cat >"$BLOOM_NETWORK_BACKEND_BIN" <<'SH'
+#!/bin/sh
+printf '%s\n' "$*" >"$BACKEND_LOG"
+SH
+    chmod +x "$BLOOM_PLATFORM_BIN" "$BLOOM_NETWORK_JSONVAL_BIN" "$BLOOM_NETWORK_BACKEND_BIN"
 }
 
 @test "status reports associated Wi-Fi without exposing network identity" {
@@ -71,4 +77,31 @@ SH
     run "$SERVICE" status extra
     [ "$status" -eq 2 ]
     [[ "$output" == *'"state":"invalid_arguments"'* ]]
+}
+
+@test "reconcile delegates only the fixed inherited backend action" {
+    run "$SERVICE" request reconcile
+    [ "$status" -eq 0 ]
+    [ "$output" = '{"schema":1,"service":"bloom-network","operation":"reconcile","applied":true,"state":"applied"}' ]
+    [ "$(cat "$BACKEND_LOG")" = check ]
+
+    run "$SERVICE" request restart
+    [ "$status" -eq 2 ]
+    [ "$(cat "$BACKEND_LOG")" = check ]
+}
+
+@test "reconcile is a successful no-op without network hardware" {
+    printf '#!/bin/sh\nprintf false\n' >"$BLOOM_PLATFORM_BIN"
+    chmod +x "$BLOOM_PLATFORM_BIN"
+    run "$SERVICE" request reconcile
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'"applied":false'* ]]
+    [[ "$output" == *'"state":"no_network_hardware"'* ]]
+    [ ! -e "$BACKEND_LOG" ]
+}
+
+@test "runtime networking reaches the inherited backend only through Bloom" {
+    runtime=/workspace/static/build/.tmp_update/runtime.sh
+    grep -F '$sysdir/bin/bloom-network request reconcile' "$runtime"
+    ! grep -F '$sysdir/script/network/update_networking.sh check' "$runtime"
 }

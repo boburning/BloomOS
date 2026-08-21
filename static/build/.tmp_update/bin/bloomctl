@@ -262,7 +262,7 @@ usage() {
     printf '       bloomctl platform capabilities\n' >&2
     printf '       bloomctl settings {status|import-onion|sync-onion|reconcile-onion|materialize-onion|activate-bloom|rollback-authority|set FIELD VALUE}\n' >&2
     printf '       bloomctl power {status|reboot|poweroff}\n' >&2
-    printf '       bloomctl network status\n' >&2
+    printf '       bloomctl network {status|reconcile}\n' >&2
     printf '       bloomctl library {status|import-onion|import-legacy|scan --changed|--all|--system SYSTEM|games --limit N [--after GAME_ID]|games --system SYSTEM --limit N [--after GAME_ID]}\n' >&2
     printf '       bloomctl test smoke SYSTEM ROM_PATH [DURATION_SECONDS]\n' >&2
     printf '       bloomctl test achievements --system SYSTEM --rom-base64 DATA --core CORE [--session-seconds N [--operator-unlock I_ACCEPT_PROFILE_CHANGES]]\n' >&2
@@ -473,8 +473,12 @@ power_command() {
 
 network_command() {
     [ -x "$BLOOM_NETWORK" ] || { printf 'bloomctl: network service is unavailable\n' >&2; return 1; }
-    [ "$#" -eq 1 ] && [ "$1" = status ] || { usage; return 2; }
-    "$BLOOM_NETWORK" status
+    [ "$#" -eq 1 ] || { usage; return 2; }
+    case "$1" in
+        status) "$BLOOM_NETWORK" status ;;
+        reconcile) "$BLOOM_NETWORK" request reconcile ;;
+        *) usage; return 2 ;;
+    esac
 }
 
 logs_command() {
