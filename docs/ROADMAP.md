@@ -424,7 +424,7 @@ Planned work includes safe updates and rollback, optional synchronization and of
   endpoint, immutable proxy session state, mode-`0600` append config, unchanged
   permanent RetroArch config, and clean account/proxy restoration. A real cached
   offline award remains part of RA-21/RA-23 validation.
-- [ ] RA-21: add offline-cache UX. The adapter now safely supports resumable,
+- [x] RA-21: offline-cache UX. The adapter safely supports resumable,
   foreground per-ROM and per-system caching with ROM-root confinement. The
   public CLI now exposes both operations. A private credential bridge imports
   Bloom's canonical token without command-line/log output or permanent
@@ -432,7 +432,11 @@ Planned work includes safe updates and rollback, optional synchronization and of
   Mini Plus physically cached RA Game ID 8038 over verified TLS and reported it
   through the adapter. Favorites, Recent, and all supported-system selectors
   now run serially with resumable upstream state and privacy-bounded aggregate
-  results. Graphical progress/cancel presentation remains.
+  results. Tweaks presents bounded progress, supports `B` cancellation of only
+  the cache process group, and reports aggregate completion/error counts.
+  Mini Plus physical cancellation confirmed that no cache worker or temporary
+  credential remained, the proxy stayed stopped, the account stayed
+  authenticated, and permanent RetroArch configuration stayed unchanged.
 - [ ] RA-22: add pending-award UX. The public aggregate command now separates
   clear, pending, waiting-for-network, and authentication-required states while
   exposing only pending count and bounded transport booleans. Bloom does not

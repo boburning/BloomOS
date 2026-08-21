@@ -20,9 +20,10 @@
     grep -F 'account set offline-casual disabled' "$file"
     grep -F 'account sign-out' "$file"
     grep -F 'scan --changed' "$file"
-    grep -F 'proxy cache-favorites' "$file"
-    grep -F 'proxy cache-recent' "$file"
-    grep -F 'proxy cache-all' "$file"
+    grep -F '"achievements", "proxy", operation' "$file"
+    grep -F '"cache-favorites"' "$file"
+    grep -F '"cache-recent"' "$file"
+    grep -F '"cache-all"' "$file"
 }
 
 @test "Tweaks consumes only redacted account and aggregate proxy fields" {
@@ -53,6 +54,19 @@
     grep -F 'NAMED_KEY("Space", TEXT_KEY_SPACE)' "$keyboard"
     grep -F 'NAMED_KEY("Done", TEXT_KEY_DONE)' "$keyboard"
     grep -F 'SDL_FillRect(screen, &key_rect, selected ? selected_color : key_color);' "$keyboard"
+}
+
+@test "Tweaks cache batches expose bounded progress and process-group cancellation" {
+    file=/workspace/src/tweaks/retroachievements.h
+    grep -F 'ra_run_cache_popup("Caching Favorites...", "cache-favorites")' "$file"
+    grep -F 'ra_run_cache_popup("Caching Recent Games...", "cache-recent")' "$file"
+    grep -F 'ra_run_cache_popup("Caching all RA systems...", "cache-all")' "$file"
+    grep -F 'setpgid(0, 0);' "$file"
+    grep -F 'kill(-child, SIGTERM);' "$file"
+    grep -F 'kill(-child, SIGKILL);' "$file"
+    grep -F 'Completed entries remain cached' "$file"
+    grep -F '"Cached: %d of %d\nErrors: %d"' "$file"
+    ! grep -E 'cache-(favorites|recent|all).*(system|popen)' "$file"
 }
 
 @test "Tweaks resets the framebuffer page before SDL rendering" {

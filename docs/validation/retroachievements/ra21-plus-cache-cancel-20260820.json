@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "base_commit": "488ee660",
+  "device_family": "miyoo-mini-plus",
+  "tested_at": "2026-08-21T00:15:00Z",
+  "operator": "boburning",
+  "test_scope": "offline-cache-progress-and-cancellation",
+  "tweaks_sha256": "a2fdf476900a9ce7f526188910a33ea7e72e8d991e7e3af081cf9820fba323c2",
+  "results": {
+    "cache_all_progress_surface": "pass",
+    "button_b_cancellation": "pass",
+    "cache_process_group_stopped": "pass",
+    "temporary_credential_removed": "pass",
+    "proxy_remained_stopped": "pass",
+    "account_remained_authenticated": "pass",
+    "permanent_retroarch_config_unchanged": "pass"
+  },
+  "privacy": {
+    "rom_paths_or_titles_recorded": false,
+    "username_recorded": false,
+    "credential_recorded": false,
+    "individual_awards_recorded": false
+  },
+  "notes": "The operator canceled Cache all RA systems from the physical Tweaks progress surface. SSH verification found no remaining cache worker, no runtime credential bridge, a stopped proxy, and an authenticated account. The permanent RetroArch config retained SHA-256 336ee748ca06bba32582087efc867f811f465558df158056b9a25689bf36672e."
+}
