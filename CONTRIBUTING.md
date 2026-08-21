@@ -10,11 +10,19 @@ BloomOS evolves through small, reviewable changes while keeping the main branch 
 4. Record physical-device testing for hardware-sensitive changes.
 5. Document migration, compatibility, and rollback implications.
 6. Preserve copyright, license, and third-party attribution notices.
+7. For roadmap or epic work, reference both the specific child issue and its
+   parent epic. After merge, comment on each with the merged evidence and the
+   concrete work that remains; close an issue only when its acceptance criteria
+   are satisfied.
 
 Do not commit ROMs, BIOS files, credentials, private keys, device addresses, or other user data.
 
 ## Pull request description
 
 Substantial changes should describe the problem, root cause, approach, alternatives considered, compatibility impact, tests, devices tested, migration impact, and rollback plan.
+
+Issue tracking is part of completion, not a substitute for repository evidence.
+Keep broad milestones open while physical, migration, recovery, or release gates
+remain pending, even when an individual implementation increment is complete.
 
 By participating, you agree to follow the [Code of Conduct](CODE_OF_CONDUCT.md).
