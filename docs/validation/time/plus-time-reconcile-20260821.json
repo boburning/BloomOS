@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "date": "2026-08-21",
+  "operator": "Codex remote automation",
+  "device": {"family": "mini_plus", "model_id": 354},
+  "installed_build": {"version": "0.1.0-dev-9b5c3aa8", "update_state": "known_good"},
+  "candidate": {
+    "source_base_commit": "720ad052",
+    "sha256": "4eef499abb81f36ae2809f7391bba505351487fde42288f93c8ebef6e481af23"
+  },
+  "status": {"rtc": true, "clock_usable": true, "state": "ready"},
+  "reconcile": {"rtc": true, "applied": false, "state": "rtc_preserved"},
+  "checks": {
+    "upload_hash_matches": "pass",
+    "epoch_before": 1787302829,
+    "epoch_after": 1787302829,
+    "wall_clock_unchanged_during_probe": "pass",
+    "rtc_flag": "present",
+    "temporary_candidate_cleanup": "pass"
+  },
+  "notes": "The exact candidate selected the model-capability RTC fast path and did not call the saved-time fallback. Original Mini fallback behavior remains host-tested pending physical validation."
+}

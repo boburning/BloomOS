@@ -906,40 +906,11 @@ save_settings() {
 }
 
 update_time() {
-    # Detect RTC, if available, do not restore time
-    rtc_treshold=15 # usually around 3-5 at this point
-    current_time=$(date +%s)
-
-    if [ "$current_time" -gt "$rtc_treshold" ]; then
-        log "RTC available, not restoring time. Current time: $current_time"
-        touch /tmp/rtc_available
-        return
+    if time_result=$($sysdir/bin/bloom-time reconcile); then
+        log "$time_result"
     else
-        log "RTC not available, restoring time. Current time: $current_time"
+        log "Bloom time reconciliation failed: $time_result"
     fi
-
-    timepath=/mnt/SDCARD/Saves/CurrentProfile/saves/currentTime.txt
-    currentTime=0
-    # Load current time
-    if [ -f $timepath ]; then
-        log "Restoring time"
-        currentTime=$(cat $timepath)
-    fi
-    date +%s -s @$currentTime
-
-    # Ensure that all play activities are closed
-    playActivity stop_all
-
-    #Add 4 hours to the current time
-    hours=4
-    if [ -f $sysdir/config/startup/addHours ]; then
-        hours=$(cat $sysdir/config/startup/addHours)
-    fi
-    addTime=$(($hours * 3600))
-    if [ ! -f $sysdir/config/.ntpState ]; then
-        currentTime=$(($currentTime + $addTime))
-    fi
-    date +%s -s @$currentTime
 }
 
 set_startup_tab() {

@@ -378,7 +378,10 @@ Current frontend progress:
   `bloom-controls` now owns bounded canonical brightness persistence and the
   shared logical-to-PWM apply curve; boot uses the non-persisting adapter path,
   and an exact-hash Plus no-op retained both raw PWM and settings bytes.
-  Suspend/lid, volume, clock, and inherited
+  `bloom-time` now owns RTC/clock status and validated boot reconciliation;
+  exact-hash Plus evidence took the no-mutation RTC path while no-RTC fallback
+  and failure semantics are host-tested.
+  Suspend/lid, volume, and inherited
   network-backend replacement remain pending.
 - [ ] Bloom Shell vertical slice and supervised MainUI fallback.
 
