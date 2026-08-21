@@ -2,5 +2,6 @@
 "label":"Terminal",
 "icon":"../../Icons/Default/app/terminal.png",
 "launch":"launch.sh",
+"bloom_compatibility":"development-only",
 "description":"st - Simple Terminal"
 }
