@@ -86,7 +86,7 @@ size_t bloom_shell_settings_page_count(BloomShellSettingsPage page)
     case BLOOM_SHELL_SETTINGS_CONTROLS:
         return 6;
     case BLOOM_SHELL_SETTINGS_SYSTEM:
-        return 4;
+        return 5;
     default:
         return 0;
     }

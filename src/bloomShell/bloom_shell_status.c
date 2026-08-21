@@ -186,6 +186,37 @@ int bloom_shell_support_export(const char *bloomctl_path)
     return -1;
 }
 
+int bloom_shell_update_confirm(const char *bloomctl_path)
+{
+    if (bloomctl_path == NULL || bloomctl_path[0] != '/')
+        return -1;
+    pid_t child = fork();
+    if (child < 0)
+        return -1;
+    if (child == 0) {
+        int null_output = open("/dev/null", O_WRONLY);
+        if (null_output < 0 || dup2(null_output, STDOUT_FILENO) < 0 ||
+            dup2(null_output, STDERR_FILENO) < 0)
+            _exit(127);
+        close(null_output);
+        execl(bloomctl_path, bloomctl_path, "update", "confirm", (char *)NULL);
+        _exit(127);
+    }
+    int status = 0;
+    for (int attempt = 0; attempt < 100; ++attempt) {
+        pid_t result = waitpid(child, &status, WNOHANG);
+        if (result == child)
+            return WIFEXITED(status) && WEXITSTATUS(status) == 0 ? 0 : -1;
+        if (result < 0 && errno != EINTR)
+            return -1;
+        usleep(100000);
+    }
+    kill(child, SIGKILL);
+    while (waitpid(child, &status, 0) < 0 && errno == EINTR) {
+    }
+    return -1;
+}
+
 static const char *update_label(const BloomShellStatus *status)
 {
     if (!status->ready || !status->update_healthy)
