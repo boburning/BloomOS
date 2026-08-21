@@ -120,6 +120,7 @@ TEST_F(BloomLibraryQueryTest, SystemFilterAndMetadataAreBounded)
     EXPECT_EQ(first, games[0].bloom_game_id);
     EXPECT_STREQ("GBA/Alpha.gba", games[0].normalized_rom_path);
     EXPECT_STREQ("GBA/Imgs/Alpha.png", games[0].image_path);
+    EXPECT_STREQ("launch", games[0].launch_path);
     EXPECT_EQ(7, games[0].file_size);
     EXPECT_EQ(8, games[0].file_mtime);
 }

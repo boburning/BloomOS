@@ -110,6 +110,20 @@ EOF
     grep -Fx 7 "$BLOOM_SESSION_ROOT/duration_seconds"
 }
 
+@test "a natural emulator exit enters flushing without sending a signal" {
+    start_running_session
+    rm -rf "$BLOOM_PROC_ROOT/123"
+    printf '109.00 50.00\n' >"$BLOOM_UPTIME_FILE"
+
+    run "$SESSION" observe-exit
+
+    [ "$status" -eq 0 ]
+    printf '%s' "$output" | grep -F '"shutdown_method":"natural_exit"'
+    printf '%s' "$output" | grep -F '"duration_seconds":9'
+    grep -Fx FLUSHING "$BLOOM_SESSION_ROOT/state"
+    [ ! -s "$MOCK_LOG" ]
+}
+
 @test "a regressed monotonic clock fails the session without inventing play time" {
     start_running_session
     printf '99.00 50.00\n' >"$BLOOM_UPTIME_FILE"

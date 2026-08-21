@@ -650,8 +650,8 @@ int bloom_launch_write_legacy(const char *request_path, const char *command_path
     }
     FILE *file = fdopen(fd, "w");
     int failed = file == NULL || fputs("LD_PRELOAD=/mnt/SDCARD/miyoo/lib/libpadsp.so ", file) == EOF;
-    if (!failed && cJSON_GetArraySize(configs) > 0) {
-        if (!path_under(request_path, "/tmp/bloom-session/") || !legacy_representable(request_path)) {
+    if (!failed && path_under(request_path, "/tmp/bloom-session/")) {
+        if (!legacy_representable(request_path)) {
             failed = 1;
             set_error(error, error_size, "session request cannot cross the legacy MainUI boundary");
         }
@@ -659,6 +659,10 @@ int bloom_launch_write_legacy(const char *request_path, const char *command_path
             failed = fputs("\"/mnt/SDCARD/.tmp_update/bin/bloom-launch-run\" ", file) == EOF ||
                      write_legacy_quoted(file, request_path) != 0 || fputc('\n', file) == EOF;
         }
+    }
+    else if (!failed && cJSON_GetArraySize(configs) > 0) {
+        failed = 1;
+        set_error(error, error_size, "append config requires a session request");
     }
     else if (!failed) {
         failed = write_legacy_quoted(file, launcher->valuestring) != 0 || fputc(' ', file) == EOF ||

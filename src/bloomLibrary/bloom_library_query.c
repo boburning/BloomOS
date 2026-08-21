@@ -75,12 +75,14 @@ int bloom_library_query_games(sqlite3 *database, const char *system_id, const ch
     sqlite3_stmt *statement = NULL;
     const char *global_sql =
         "SELECT bloom_game_id,system_id,normalized_rom_path,display_title,image_path,file_size,"
-        "file_mtime FROM games WHERE present=1 AND (?1 IS NULL OR "
+        "file_mtime,systems.launch_path FROM games JOIN systems USING(system_id) WHERE games.present=1 "
+        "AND systems.present=1 AND (?1 IS NULL OR "
         "(sort_title,bloom_game_id)>(SELECT sort_title,bloom_game_id FROM games WHERE "
         "bloom_game_id=?1)) ORDER BY sort_title,bloom_game_id LIMIT ?2";
     const char *system_sql =
         "SELECT bloom_game_id,system_id,normalized_rom_path,display_title,image_path,file_size,"
-        "file_mtime FROM games WHERE system_id=?1 AND present=1 AND (?2 IS NULL OR "
+        "file_mtime,systems.launch_path FROM games JOIN systems USING(system_id) WHERE system_id=?1 "
+        "AND games.present=1 AND systems.present=1 AND (?2 IS NULL OR "
         "(sort_title,bloom_game_id)>(SELECT sort_title,bloom_game_id FROM games WHERE "
         "bloom_game_id=?2)) ORDER BY sort_title,bloom_game_id LIMIT ?3";
     sql = sqlite3_prepare_v2(database, system_id == NULL ? global_sql : system_sql, -1, &statement,
@@ -116,6 +118,9 @@ int bloom_library_query_games(sqlite3 *database, const char *system_id, const ch
             break;
         game->file_size = sqlite3_column_int64(statement, 5);
         game->file_mtime = sqlite3_column_int64(statement, 6);
+        if ((sql = copy_column(statement, 7, game->launch_path, sizeof(game->launch_path), 0)) !=
+            SQLITE_OK)
+            break;
         ++page->count;
     }
     if (sql == SQLITE_OK && step != SQLITE_DONE && !page->has_more)

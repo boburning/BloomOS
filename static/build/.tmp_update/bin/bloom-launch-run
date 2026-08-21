@@ -5,25 +5,79 @@ umask 077
 SESSION_ROOT=${BLOOM_SESSION_ROOT:-/tmp/bloom-session}
 BLOOM_LAUNCH=${BLOOM_LAUNCH_BIN:-/mnt/SDCARD/.tmp_update/bin/bloom-launch}
 BLOOM_OVERRIDE=${BLOOM_LAUNCH_OVERRIDE_BIN:-/mnt/SDCARD/.tmp_update/bin/bloom-launch-override}
+BLOOM_SESSION=${BLOOM_SESSION_BIN:-/mnt/SDCARD/.tmp_update/bin/bloom-session}
 JQ_BIN=${BLOOM_JQ_BIN:-/mnt/SDCARD/.tmp_update/bin/jq}
+PROC_ROOT=${BLOOM_PROC_ROOT:-/proc}
 
 fail() { printf 'bloom-launch-run: %s\n' "$*" >&2; exit 1; }
 [ "$#" -eq 1 ] || fail "expected one session request"
 request=$1
 [ "$request" = "$SESSION_ROOT/request.json" ] || fail "request is outside the active session"
-[ -x "$BLOOM_LAUNCH" ] && [ -x "$BLOOM_OVERRIDE" ] && [ -x "$JQ_BIN" ] || fail "launch services are unavailable"
+[ -x "$BLOOM_LAUNCH" ] && [ -x "$BLOOM_OVERRIDE" ] && [ -x "$BLOOM_SESSION" ] && [ -x "$JQ_BIN" ] || fail "launch services are unavailable"
 "$BLOOM_LAUNCH" validate "$request" >/dev/null || fail "session request is invalid"
 
 launcher=$("$BLOOM_LAUNCH" get "$request" launcher) || fail "launcher is unavailable"
 rom=$("$BLOOM_LAUNCH" get "$request" rom_path) || fail "ROM is unavailable"
 config_count=$("$JQ_BIN" -er '.append_configs | length' "$request" 2>/dev/null) || fail "append config is invalid"
-[ "$config_count" -eq 1 ] || fail "exactly one append config is required"
-append_config=$("$JQ_BIN" -er '.append_configs[0]' "$request" 2>/dev/null) || fail "append config is invalid"
-[ "$append_config" = "$SESSION_ROOT/ra.cfg" ] || fail "append config is outside the active session"
-[ -f "$append_config" ] && [ ! -L "$append_config" ] || fail "append config is unavailable"
-
-temporary=$(BLOOM_SESSION_ROOT="$SESSION_ROOT" "$BLOOM_OVERRIDE" create "$launcher" "$append_config") ||
-    fail "temporary launcher could not be created"
-cleanup() { "$BLOOM_OVERRIDE" remove "$temporary" >/dev/null 2>&1 || true; }
+case "$config_count" in 0|1) ;; *) fail "append config count is invalid" ;; esac
+temporary=''
+if [ "$config_count" -eq 1 ]; then
+    append_config=$("$JQ_BIN" -er '.append_configs[0]' "$request" 2>/dev/null) || fail "append config is invalid"
+    [ "$append_config" = "$SESSION_ROOT/ra.cfg" ] || fail "append config is outside the active session"
+    [ -f "$append_config" ] && [ ! -L "$append_config" ] || fail "append config is unavailable"
+    temporary=$(BLOOM_SESSION_ROOT="$SESSION_ROOT" "$BLOOM_OVERRIDE" create "$launcher" "$append_config") ||
+        fail "temporary launcher could not be created"
+    launcher="$temporary"
+fi
+cleanup() {
+    if [ -n "$temporary" ]; then
+        "$BLOOM_OVERRIDE" remove "$temporary" >/dev/null 2>&1 || true
+    fi
+}
 trap cleanup EXIT HUP INT TERM
-"$temporary" "$rom"
+
+retroarch_pid() {
+    for process in "$PROC_ROOT"/[0-9]*; do
+        [ "$(cat "$process/comm" 2>/dev/null)" = retroarch ] || continue
+        printf '%s\n' "${process##*/}"
+        return 0
+    done
+    return 1
+}
+
+[ -z "$(retroarch_pid 2>/dev/null || true)" ] || fail "RetroArch is already running"
+"$launcher" "$rom" &
+launcher_pid=$!
+attempt=0
+emulator_pid=''
+while [ "$attempt" -lt 15 ]; do
+    emulator_pid=$(retroarch_pid 2>/dev/null || true)
+    [ -n "$emulator_pid" ] && break
+    kill -0 "$launcher_pid" 2>/dev/null || break
+    sleep 1
+    attempt=$((attempt + 1))
+done
+if [ -z "$emulator_pid" ]; then
+    wait "$launcher_pid" 2>/dev/null || true
+    "$BLOOM_SESSION" fail emulator_start_failed >/dev/null 2>&1 || true
+    fail "RetroArch did not start"
+fi
+if ! "$BLOOM_SESSION" attach "$emulator_pid" >/dev/null; then
+    kill -TERM "$emulator_pid" 2>/dev/null || true
+    wait "$launcher_pid" 2>/dev/null || true
+    "$BLOOM_SESSION" fail session_attach_failed >/dev/null 2>&1 || true
+    fail "session attach failed"
+fi
+if ! wait "$launcher_pid"; then
+    "$BLOOM_SESSION" fail emulator_failed >/dev/null 2>&1 || true
+    fail "launcher failed"
+fi
+if ! "$BLOOM_SESSION" observe-exit >/dev/null; then
+    "$BLOOM_SESSION" fail natural_exit_failed >/dev/null 2>&1 || true
+    fail "natural exit was not recorded"
+fi
+"$BLOOM_SESSION" flush-saves >/dev/null || fail "save flush failed"
+if ! "$BLOOM_SESSION" complete >/dev/null; then
+    "$BLOOM_SESSION" fail session_complete_failed >/dev/null 2>&1 || true
+    fail "session completion failed"
+fi

@@ -13,10 +13,10 @@ ownership boundary.
 
 | Responsibility | Current evidence | Target owner | Removal gate |
 |---|---|---|---|
-| Main menu and tab state | `src/setState`, `write_mainui_state` callers | Bloom Shell navigation | Host navigation tests and Plus/V2/Flip UI evidence |
+| Main menu and tab state | `src/setState`, `write_mainui_state` callers | Bloom Shell navigation | Native Home/GB navigation and supervised development fallback are implemented; interactive Plus/V2/Flip UI evidence remains |
 | Favorites | `/mnt/SDCARD/Roms/favourite.json`, keymon change detection | `bloom-library` | Signed-update persistence and Bloom-owned read/write consumer cutover; read-only deterministic import, canonical IDs, and atomic publication are proven on Plus |
 | Recents and resume | MainUI recent list, GameSwitcher compatibility readers | Bloom activity/library | Direct resume and Bloom-owned consumer cutover; deterministic read-only import is proven on Plus |
-| Game launch handoff | `/tmp` or `.tmp_update/cmd_to_run.sh`, MainUI termination | Bloom launch/session | Direct launch and shell return on hardware |
+| Game launch handoff | `/tmp` or `.tmp_update/cmd_to_run.sh`, MainUI termination | Bloom launch/session | Bloom Shell stages only structured session-owned GB launches; direct launch and shell return still require hardware evidence |
 | MENU and context actions | `src/keymon/menuButtonAction.h` MainUI actions | Bloom input/shell | Stable control grammar and fallback |
 | Brightness and volume | keymon plus shared settings helpers | `bloom-settings` and platform adapters | Brightness persistence/curve and boot apply are Bloom-owned with Plus no-op evidence; volume backend ownership and physical device tests remain |
 | Network settings | Tweaks network menu, firmware setting reader, and inherited service script | `bloom-network` and Bloom network UI | Read-only status, canonical preference mutation, and Bloom-owned Wi-Fi lifecycle are proven on an already-associated Plus; disconnected/disabled, Flip, and inherited auxiliary-service replacement still require capability-gated tests |
