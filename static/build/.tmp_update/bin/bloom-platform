@@ -110,6 +110,53 @@ platform_battery_backend() {
     fi
 }
 
+platform_battery_status() {
+    backend="$(platform_battery_backend)"
+    raw=''
+    charging=false
+    case "$backend" in
+        sysfs)
+            raw="$(platform_read /sys/class/power_supply/battery/capacity)"
+            ;;
+        batmon)
+            raw="$(platform_read /tmp/percBat)"
+            if [ "$raw" = 500 ]; then
+                charging=true
+                raw=''
+            fi
+            ;;
+        axp_cache)
+            axp="$(platform_read /tmp/.axp_result)"
+            raw="$(printf '%s' "$axp" | sed -n 's/.*"battery"[[:space:]]*:[[:space:]]*\([0-9][0-9]*\).*/\1/p')"
+            charge="$(printf '%s' "$axp" | sed -n 's/.*"charging"[[:space:]]*:[[:space:]]*\([0-9][0-9]*\).*/\1/p')"
+            [ "$charge" != 3 ] || charging=true
+            ;;
+        axp_live)
+            axp="$("$(platform_path /customer/app/axp_test)" 2>/dev/null || true)"
+            raw="$(printf '%s' "$axp" | sed -n 's/.*"battery"[[:space:]]*:[[:space:]]*\([0-9][0-9]*\).*/\1/p')"
+            charge="$(printf '%s' "$axp" | sed -n 's/.*"charging"[[:space:]]*:[[:space:]]*\([0-9][0-9]*\).*/\1/p')"
+            [ "$charge" != 3 ] || charging=true
+            ;;
+    esac
+    case "$raw" in
+        ''|*[!0-9]*) available=false; capacity=null ;;
+        *)
+            if [ "$raw" -le 100 ] 2>/dev/null; then
+                available=true
+                capacity="$raw"
+            else
+                available=false
+                capacity=null
+            fi
+            ;;
+    esac
+    [ "$charging" = false ] || available=true
+    [ "$available" = true ] || backend=unavailable
+    printf '{"schema":1,"service":"bloom-platform","battery":{"available":%s,"source":"%s","capacity":%s,"charging":%s}}\n' \
+        "$available" "$backend" "$capacity" "$charging"
+    [ "$available" = true ]
+}
+
 platform_bool() { platform_capability "$1" && printf true || printf false; }
 
 platform_inspect() {
@@ -131,7 +178,7 @@ platform_inspect() {
 }
 
 usage() {
-    printf 'Usage: bloom-platform <inspect --json|model|display-width|display-height|capability NAME|input-count|battery-backend>\n' >&2
+    printf 'Usage: bloom-platform <inspect --json|model|display-width|display-height|capability NAME|input-count|battery-backend|battery --json>\n' >&2
 }
 
 case "${1:-}" in
@@ -147,5 +194,6 @@ case "${1:-}" in
         ;;
     input-count) [ "$#" -eq 1 ] || { usage; exit 2; }; platform_input_count; printf '\n' ;;
     battery-backend) [ "$#" -eq 1 ] || { usage; exit 2; }; platform_battery_backend; printf '\n' ;;
+    battery) [ "${2:-}" = --json ] && [ "$#" -eq 2 ] || { usage; exit 2; }; platform_battery_status ;;
     *) usage; exit 2 ;;
 esac

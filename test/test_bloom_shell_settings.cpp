@@ -165,3 +165,21 @@ TEST(BloomShellSettings, SuccessfulFixedRequestUpdatesValueAndFailureDoesNot)
     std::filesystem::remove(script);
     std::filesystem::remove(arguments);
 }
+
+TEST(BloomShellSettings, ParsesAndFormatsBoundedBatteryState)
+{
+    BloomShellCapabilities capabilities{};
+    BloomShellQuickValues values{};
+    ASSERT_EQ(0, bloom_shell_capabilities_from_model(354, 0, &capabilities));
+    ASSERT_EQ(0, bloom_shell_quick_battery_parse(
+                     R"({"schema":1,"service":"bloom-platform","battery":{"available":true,"source":"axp_live","capacity":81,"charging":true}})",
+                     &values));
+    char label[64];
+    ASSERT_EQ(0, bloom_shell_quick_settings_format(&capabilities, &values, 3, label,
+                                                   sizeof(label)));
+    EXPECT_STREQ("Battery: 81% / Charging", label);
+
+    EXPECT_NE(0, bloom_shell_quick_battery_parse(
+                     R"({"schema":1,"service":"bloom-platform","battery":{"available":true,"source":"axp_live","capacity":101,"charging":false}})",
+                     &values));
+}
