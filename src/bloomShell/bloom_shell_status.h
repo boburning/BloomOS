@@ -16,6 +16,7 @@ typedef struct {
 
 int bloom_shell_status_parse(const char *json, BloomShellStatus *status);
 int bloom_shell_status_load(const char *bloomctl_path, BloomShellStatus *status);
+int bloom_shell_support_export(const char *bloomctl_path);
 int bloom_shell_status_label(const BloomShellStatus *status, size_t row, char *label,
                              size_t label_size);
 
