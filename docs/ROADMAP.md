@@ -422,7 +422,11 @@ Current frontend progress:
   failed reads are explicit and failed requests do not change the displayed
   value. Battery now comes from a separate bounded platform adapter that
   normalizes sysfs, batmon, and AXP paths without moving hardware heuristics
-  into the shell. Full nested pages and physical readability/input and
+  into the shell. Every category now opens a bounded detail page, with
+  Display, Audio, and Network reusing the fixed adapters and the remaining
+  pages exposing stable policy or status summaries without render-time work.
+  Guarded update/support actions, RetroAchievements account interaction,
+  reusable keyboard flows, and physical readability/input and
   adjustment-latency validation remain pending. The bounded `settings
   values` response exposes only the four high-frequency device controls plus
   generation/authority, without leaking unrelated canonical or legacy state.

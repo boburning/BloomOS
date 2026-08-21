@@ -102,6 +102,39 @@ static void render_label(SDL_Surface *screen, TTF_Font *font, const char *label,
     }
 }
 
+static int settings_detail_label(BloomShellSettingsPage page, const BloomShellQuickValues *values,
+                                 const BloomShellStatus *status, size_t row, char *label,
+                                 size_t label_size)
+{
+    if (page == BLOOM_SHELL_SETTINGS_SYSTEM) {
+        if (row == 0)
+            return bloom_shell_status_label(status, 1, label, label_size);
+        if (row == 1) {
+            int length = snprintf(label, label_size, "Storage: See System Health");
+            return length >= 0 && (size_t)length < label_size ? 0 : -1;
+        }
+        if (row == 2)
+            return bloom_shell_status_label(status, 0, label, label_size);
+        if (row == 3) {
+            int length = snprintf(label, label_size, "About: BloomOS %s", BLOOM_VERSION);
+            return length >= 0 && (size_t)length < label_size ? 0 : -1;
+        }
+        return -1;
+    }
+    if (page == BLOOM_SHELL_SETTINGS_RETROACHIEVEMENTS) {
+        if (row == 0)
+            return bloom_shell_status_label(status, 2, label, label_size);
+        if (row == 1) {
+            int length = snprintf(label, label_size, "Connection: %s",
+                                  status->ready && status->ra_healthy ? "Ready"
+                                                                      : "Needs attention");
+            return length >= 0 && (size_t)length < label_size ? 0 : -1;
+        }
+        return -1;
+    }
+    return bloom_shell_settings_page_format(page, values, row, label, label_size);
+}
+
 static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *layout, TTF_Font *font,
                  BloomUiDestination destination, const BloomUiFocus *library_focus,
                  const BloomUiFocus *collections_focus, const BloomLibraryGame *games,
@@ -110,7 +143,7 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
                  const BloomUiFocus *apps_focus, const BloomLibraryApp *apps,
                  const BloomShellStatus *status, const BloomShellCapabilities *capabilities,
                  const BloomShellQuickValues *quick_values,
-                 int settings_system, int quick_settings,
+                 BloomShellSettingsPage settings_page, int quick_settings,
                  const BloomUiFocus *quick_settings_focus)
 {
     const BloomUiFocus *focus = destination == BLOOM_UI_DESTINATION_COLLECTIONS
@@ -187,12 +220,18 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
                          layout->content.y + (int)row * layout->row_height + layout->row_height / 3,
                          layout->content.width - 40, cream);
     else if (destination == BLOOM_UI_DESTINATION_SETTINGS) {
-        for (size_t row = 0; row < settings_focus->item_count; ++row) {
+        for (size_t row = 0;
+             row < layout->visible_rows &&
+             settings_focus->window_start + row < settings_focus->item_count;
+             ++row) {
+            size_t item = settings_focus->window_start + row;
             char status_label[96];
-            const char *label = settings_system ? status_label
-                                                : bloom_shell_settings_label(capabilities, row);
-            if (settings_system &&
-                bloom_shell_status_label(status, row, status_label, sizeof(status_label)) != 0)
+            const char *label = settings_page == BLOOM_SHELL_SETTINGS_TOP
+                                    ? bloom_shell_settings_label(capabilities, item)
+                                    : status_label;
+            if (settings_page != BLOOM_SHELL_SETTINGS_TOP &&
+                settings_detail_label(settings_page, quick_values, status, item, status_label,
+                                      sizeof(status_label)) != 0)
                 label = NULL;
             if (label != NULL)
                 render_label(screen, font, label, layout->content.x + 20,
@@ -300,10 +339,11 @@ int main(int argc, char **argv)
     bloom_ui_focus_init(&quick_settings_focus,
                         bloom_shell_quick_settings_count(&capabilities));
     int quick_settings = 0;
-    int settings_system = 0;
+    BloomShellSettingsPage settings_page = BLOOM_SHELL_SETTINGS_TOP;
+    size_t settings_top_selected = 0;
     draw(screen, video, &layout, font, destination, &library_focus, &collections_focus, games,
          favorites, &recent, has_recent, home_selected, &settings_focus, &apps_focus, apps, &status,
-         &capabilities, &quick_values, settings_system, quick_settings, &quick_settings_focus);
+         &capabilities, &quick_values, settings_page, quick_settings, &quick_settings_focus);
     int running = 1;
     int exit_code = 0;
     while (running) {
@@ -340,9 +380,12 @@ int main(int argc, char **argv)
             continue;
         }
         else if (action == BLOOM_UI_ACTION_BACK && destination == BLOOM_UI_DESTINATION_SETTINGS &&
-                 settings_system) {
-            settings_system = 0;
+                 settings_page != BLOOM_SHELL_SETTINGS_TOP) {
+            settings_page = BLOOM_SHELL_SETTINGS_TOP;
             bloom_ui_focus_init(&settings_focus, bloom_shell_settings_count(&capabilities));
+            settings_focus.selected = settings_top_selected;
+            if (settings_focus.selected >= layout.visible_rows)
+                settings_focus.window_start = settings_focus.selected - layout.visible_rows + 1;
         }
         else if (action == BLOOM_UI_ACTION_BACK) {
             if (destination != BLOOM_UI_DESTINATION_HOME)
@@ -391,12 +434,26 @@ int main(int argc, char **argv)
         else if (action == BLOOM_UI_ACTION_FOCUS_DOWN && destination == BLOOM_UI_DESTINATION_APPS)
             bloom_ui_focus_step(&apps_focus, 1, layout.visible_rows);
         else if (action == BLOOM_UI_ACTION_CONFIRM && destination == BLOOM_UI_DESTINATION_SETTINGS &&
-                 !settings_system) {
-            const char *selected = bloom_shell_settings_label(&capabilities, settings_focus.selected);
-            if (selected != NULL && strcmp(selected, "System") == 0) {
-                settings_system = 1;
-                bloom_ui_focus_init(&settings_focus, 3);
-            }
+                 settings_page == BLOOM_SHELL_SETTINGS_TOP) {
+            settings_top_selected = settings_focus.selected;
+            settings_page = bloom_shell_settings_page(&capabilities, settings_focus.selected);
+            bloom_ui_focus_init(&settings_focus, bloom_shell_settings_page_count(settings_page));
+        }
+        else if (destination == BLOOM_UI_DESTINATION_SETTINGS &&
+                 settings_page != BLOOM_SHELL_SETTINGS_TOP &&
+                 (action == BLOOM_UI_ACTION_FOCUS_LEFT || action == BLOOM_UI_ACTION_FOCUS_RIGHT)) {
+            size_t quick_row = (size_t)-1;
+            if (settings_page == BLOOM_SHELL_SETTINGS_DISPLAY)
+                quick_row = 0;
+            else if (settings_page == BLOOM_SHELL_SETTINGS_AUDIO && settings_focus.selected == 0)
+                quick_row = 1;
+            else if (settings_page == BLOOM_SHELL_SETTINGS_NETWORK)
+                quick_row = 2;
+            if (quick_row != (size_t)-1)
+                bloom_shell_quick_settings_adjust(
+                    &capabilities, &quick_values, quick_row,
+                    action == BLOOM_UI_ACTION_FOCUS_RIGHT ? 1 : -1, BLOOM_CONTROLS_BINARY,
+                    BLOOM_NETWORK_BINARY);
         }
         else if (action == BLOOM_UI_ACTION_CONFIRM && destination == BLOOM_UI_DESTINATION_LIBRARY &&
                  library_focus.item_count > 0) {
@@ -431,7 +488,7 @@ int main(int argc, char **argv)
         if (running)
             draw(screen, video, &layout, font, destination, &library_focus, &collections_focus,
                  games, favorites, &recent, has_recent, home_selected, &settings_focus, &apps_focus,
-                 apps, &status, &capabilities, &quick_values, settings_system, quick_settings,
+                 apps, &status, &capabilities, &quick_values, settings_page, quick_settings,
                  &quick_settings_focus);
     }
     TTF_CloseFont(font);

@@ -22,10 +22,29 @@ typedef struct {
     int battery_charging;
 } BloomShellQuickValues;
 
+typedef enum {
+    BLOOM_SHELL_SETTINGS_TOP = -1,
+    BLOOM_SHELL_SETTINGS_DISPLAY = 0,
+    BLOOM_SHELL_SETTINGS_AUDIO,
+    BLOOM_SHELL_SETTINGS_CONTROLS,
+    BLOOM_SHELL_SETTINGS_GAMEPLAY,
+    BLOOM_SHELL_SETTINGS_NETWORK,
+    BLOOM_SHELL_SETTINGS_RETROACHIEVEMENTS,
+    BLOOM_SHELL_SETTINGS_APPEARANCE,
+    BLOOM_SHELL_SETTINGS_SYSTEM,
+    BLOOM_SHELL_SETTINGS_ADVANCED,
+} BloomShellSettingsPage;
+
 int bloom_shell_capabilities_from_model(int model, int developer_mode,
                                         BloomShellCapabilities *capabilities);
 size_t bloom_shell_settings_count(const BloomShellCapabilities *capabilities);
 const char *bloom_shell_settings_label(const BloomShellCapabilities *capabilities, size_t row);
+BloomShellSettingsPage bloom_shell_settings_page(const BloomShellCapabilities *capabilities,
+                                                 size_t row);
+size_t bloom_shell_settings_page_count(BloomShellSettingsPage page);
+int bloom_shell_settings_page_format(BloomShellSettingsPage page,
+                                     const BloomShellQuickValues *values, size_t row,
+                                     char *label, size_t label_size);
 size_t bloom_shell_quick_settings_count(const BloomShellCapabilities *capabilities);
 const char *bloom_shell_quick_settings_label(const BloomShellCapabilities *capabilities, size_t row);
 int bloom_shell_quick_values_parse(const char *json, BloomShellQuickValues *values);

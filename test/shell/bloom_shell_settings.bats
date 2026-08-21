@@ -8,6 +8,27 @@
     ! grep -F 'Tweaks' "$model"
 }
 
+@test "every Settings category opens a bounded detail page with canonical adapters" {
+    shell=/workspace/src/bloomShell/main.c
+    model=/workspace/src/bloomShell/bloom_shell_settings.c
+
+    grep -F 'settings_page = bloom_shell_settings_page(&capabilities, settings_focus.selected);' "$shell"
+    grep -F 'bloom_shell_settings_page_count(settings_page)' "$shell"
+    grep -F 'settings_page = BLOOM_SHELL_SETTINGS_TOP;' "$shell"
+    grep -F 'settings_focus->window_start + row' "$shell"
+    grep -F 'bloom_shell_quick_settings_adjust(' "$shell"
+    grep -F 'BLOOM_CONTROLS_BINARY,' "$shell"
+    grep -F 'BLOOM_NETWORK_BINARY);' "$shell"
+    grep -F 'case BLOOM_SHELL_SETTINGS_SYSTEM:' "$model"
+    grep -F 'return 4;' "$model"
+    grep -F '"A: Confirm"' "$model"
+    grep -F '"MENU: GameSwitcher"' "$model"
+
+    render=$(sed -n '/static void draw(/,/^}/p' "$shell")
+    [[ "$render" != *'system('* ]]
+    [[ "$render" != *'popen('* ]]
+}
+
 @test "START owns a bounded quick settings state without render-path subprocesses" {
     shell=/workspace/src/bloomShell/main.c
     grep -F 'action == BLOOM_UI_ACTION_QUICK_SETTINGS' "$shell"

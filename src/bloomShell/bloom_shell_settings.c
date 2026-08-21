@@ -56,6 +56,78 @@ const char *bloom_shell_settings_label(const BloomShellCapabilities *capabilitie
     return capabilities->developer_mode && row == 0 ? "Advanced" : NULL;
 }
 
+BloomShellSettingsPage bloom_shell_settings_page(const BloomShellCapabilities *capabilities,
+                                                 size_t row)
+{
+    const char *label = bloom_shell_settings_label(capabilities, row);
+    if (label == NULL)
+        return BLOOM_SHELL_SETTINGS_TOP;
+    static const char *names[] = {"Display", "Audio", "Controls",
+                                  "Gameplay", "Network", "RetroAchievements",
+                                  "Appearance", "System", "Advanced"};
+    for (size_t index = 0; index < sizeof(names) / sizeof(names[0]); ++index)
+        if (strcmp(label, names[index]) == 0)
+            return (BloomShellSettingsPage)index;
+    return BLOOM_SHELL_SETTINGS_TOP;
+}
+
+size_t bloom_shell_settings_page_count(BloomShellSettingsPage page)
+{
+    switch (page) {
+    case BLOOM_SHELL_SETTINGS_DISPLAY:
+    case BLOOM_SHELL_SETTINGS_NETWORK:
+    case BLOOM_SHELL_SETTINGS_APPEARANCE:
+    case BLOOM_SHELL_SETTINGS_ADVANCED:
+        return 1;
+    case BLOOM_SHELL_SETTINGS_AUDIO:
+    case BLOOM_SHELL_SETTINGS_GAMEPLAY:
+    case BLOOM_SHELL_SETTINGS_RETROACHIEVEMENTS:
+        return 2;
+    case BLOOM_SHELL_SETTINGS_CONTROLS:
+        return 6;
+    case BLOOM_SHELL_SETTINGS_SYSTEM:
+        return 4;
+    default:
+        return 0;
+    }
+}
+
+int bloom_shell_settings_page_format(BloomShellSettingsPage page,
+                                     const BloomShellQuickValues *values, size_t row,
+                                     char *label, size_t label_size)
+{
+    if (values == NULL || label == NULL || label_size == 0 ||
+        row >= bloom_shell_settings_page_count(page))
+        return -1;
+    int length = -1;
+    if (page == BLOOM_SHELL_SETTINGS_DISPLAY)
+        length = values->ready ? snprintf(label, label_size, "Brightness: %d", values->brightness)
+                               : snprintf(label, label_size, "Brightness: unavailable");
+    else if (page == BLOOM_SHELL_SETTINGS_AUDIO && row == 0)
+        length = values->ready ? snprintf(label, label_size, "Volume: %d", values->volume)
+                               : snprintf(label, label_size, "Volume: unavailable");
+    else if (page == BLOOM_SHELL_SETTINGS_AUDIO)
+        length = values->ready ? snprintf(label, label_size, "Mute: %s", values->mute ? "On" : "Off")
+                               : snprintf(label, label_size, "Mute: unavailable");
+    else if (page == BLOOM_SHELL_SETTINGS_NETWORK)
+        length = values->ready
+                     ? snprintf(label, label_size, "Wi-Fi: %s", values->wifi_enabled ? "On" : "Off")
+                     : snprintf(label, label_size, "Wi-Fi: unavailable");
+    else if (page == BLOOM_SHELL_SETTINGS_CONTROLS) {
+        static const char *rows[] = {"A: Confirm", "B: Back", "X: Actions", "Y: Favorite",
+                                     "START: Quick Settings", "MENU: GameSwitcher"};
+        length = snprintf(label, label_size, "%s", rows[row]);
+    }
+    else if (page == BLOOM_SHELL_SETTINGS_GAMEPLAY)
+        length = snprintf(label, label_size, "%s",
+                          row == 0 ? "Launch: Supervised" : "Return: Bloom Shell");
+    else if (page == BLOOM_SHELL_SETTINGS_APPEARANCE)
+        length = snprintf(label, label_size, "Theme: Bloom");
+    else if (page == BLOOM_SHELL_SETTINGS_ADVANCED)
+        length = snprintf(label, label_size, "Developer Mode: On");
+    return length >= 0 && (size_t)length < label_size ? 0 : -1;
+}
+
 size_t bloom_shell_quick_settings_count(const BloomShellCapabilities *capabilities)
 {
     return capabilities == NULL ? 0 : 3 + (size_t)capabilities->wifi;

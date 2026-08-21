@@ -183,3 +183,40 @@ TEST(BloomShellSettings, ParsesAndFormatsBoundedBatteryState)
                      R"({"schema":1,"service":"bloom-platform","battery":{"available":true,"source":"axp_live","capacity":101,"charging":false}})",
                      &values));
 }
+
+TEST(BloomShellSettings, EveryVisibleCategoryMapsToABoundedDetailPage)
+{
+    BloomShellCapabilities capabilities{};
+    ASSERT_EQ(0, bloom_shell_capabilities_from_model(354, 0, &capabilities));
+    for (size_t row = 0; row < bloom_shell_settings_count(&capabilities); ++row) {
+        BloomShellSettingsPage page = bloom_shell_settings_page(&capabilities, row);
+        EXPECT_NE(BLOOM_SHELL_SETTINGS_TOP, page);
+        EXPECT_GT(bloom_shell_settings_page_count(page), 0U);
+    }
+    EXPECT_EQ(BLOOM_SHELL_SETTINGS_TOP, bloom_shell_settings_page(&capabilities, 99));
+}
+
+TEST(BloomShellSettings, DetailPagesUseCanonicalValuesAndStableControlGrammar)
+{
+    BloomShellQuickValues values{};
+    values.ready = 1;
+    values.brightness = 6;
+    values.volume = 11;
+    values.mute = 1;
+    values.wifi_enabled = 1;
+    char label[64];
+    ASSERT_EQ(0, bloom_shell_settings_page_format(BLOOM_SHELL_SETTINGS_DISPLAY, &values, 0,
+                                                  label, sizeof(label)));
+    EXPECT_STREQ("Brightness: 6", label);
+    ASSERT_EQ(0, bloom_shell_settings_page_format(BLOOM_SHELL_SETTINGS_AUDIO, &values, 1, label,
+                                                  sizeof(label)));
+    EXPECT_STREQ("Mute: On", label);
+    ASSERT_EQ(0, bloom_shell_settings_page_format(BLOOM_SHELL_SETTINGS_NETWORK, &values, 0, label,
+                                                  sizeof(label)));
+    EXPECT_STREQ("Wi-Fi: On", label);
+    ASSERT_EQ(0, bloom_shell_settings_page_format(BLOOM_SHELL_SETTINGS_CONTROLS, &values, 5, label,
+                                                  sizeof(label)));
+    EXPECT_STREQ("MENU: GameSwitcher", label);
+    EXPECT_NE(0, bloom_shell_settings_page_format(BLOOM_SHELL_SETTINGS_CONTROLS, &values, 6,
+                                                  label, sizeof(label)));
+}

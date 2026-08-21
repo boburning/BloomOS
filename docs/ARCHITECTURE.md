@@ -148,8 +148,12 @@ Bloom Shell owns a capability-filtered settings presentation rather than
 reusing the legacy Tweaks menu. The top-level model exposes Display, Audio,
 Controls, Gameplay, RetroAchievements, Appearance, and System on every
 supported device; Network appears only on Plus and Flip, and Advanced appears
-only while Developer Mode is active. System retains the bounded health,
-update, and RetroAchievements summary loaded before the render loop. START
+only while Developer Mode is active. Every category opens a bounded detail
+page and Back restores the prior top-level selection. Display, Audio, and
+Network reuse the same event-driven fixed adapters as Quick Settings; Controls,
+Gameplay, Appearance, and Advanced expose stable plain-language policy values.
+System and RetroAchievements retain bounded status summaries loaded before the
+render loop, while System also identifies the installed BloomOS version. START
 opens a compact Quick Settings model from any normal shell destination;
 Original Mini omits Wi-Fi while Plus and Flip include it. The shell loads one
 bounded canonical value snapshot before entering the render loop and displays
