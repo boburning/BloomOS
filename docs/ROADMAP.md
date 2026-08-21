@@ -413,7 +413,10 @@ Current frontend progress:
   ready for guarded update actions without exposing those mutations yet. The
   same shared layer now renders the bounded on-screen keyboard modes needed by
   account entry while keeping credential text and glyph drawing outside the
-  renderer. Any
+  renderer. RetroAchievements Settings now opens that keyboard for bounded
+  username and token entry, masks the token, submits it through fixed arguments
+  and standard input, clears it immediately, and reports success or failure.
+  Any
   non-launch exit or crash removes incomplete handoff state
   and falls back to MainUI. An exact-hash Plus probe loaded the live read-only
   catalog and found one GB game without opening the display. Interactive
