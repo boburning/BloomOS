@@ -437,8 +437,10 @@ the caller can cancel them normally; upstream persists each completed cache
 entry, making a later retry resumable without a Bloom-owned queue. Favorites,
 Recent, and all supported-system selectors use the same foreground contract.
 They report bounded aggregate processed/cached/error counts without exposing ROM
-paths or titles. Graphical progress/cancel controls and rate-limit presentation remain
-consumer work on this backend.
+paths or titles. Tweaks runs those batches in an isolated foreground process
+group, displays bounded progress, allows `B` to cancel, and reports only final
+aggregate cached/error counts. Cancellation preserves upstream-completed cache
+entries, so rerunning the selector resumes safely without a second Bloom queue.
 
 Before proxy startup or caching, the adapter imports Bloom's canonical account
 through a mode-`0600` temporary RetroArch-format file. The credential never

@@ -2,8 +2,9 @@
 #define TWEAKS_RETROACHIEVEMENTS_H__
 
 #include <cjson/cJSON.h>
-#include <stdbool.h>
 #include <fcntl.h>
+#include <signal.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/wait.h>
@@ -234,22 +235,146 @@ static void action_ra_scan(void *_)
     _runCommandPopup("RetroAchievements", BLOOMCTL_RA " scan --changed >/dev/null 2>&1");
 }
 
+static void ra_cache_result_message(const char *output, bool success,
+                                    bool canceled, char *message,
+                                    size_t message_size)
+{
+    if (canceled) {
+        snprintf(message, message_size, "Canceled\nCompleted entries remain cached");
+        return;
+    }
+    cJSON *result = cJSON_Parse(output);
+    if (result == NULL) {
+        snprintf(message, message_size, success ? "Cache complete" : "Cache failed");
+        return;
+    }
+    cJSON *processed = cJSON_GetObjectItemCaseSensitive(result, "processed");
+    cJSON *cached = cJSON_GetObjectItemCaseSensitive(result, "cached");
+    if (!cJSON_IsNumber(processed))
+        processed = cJSON_GetObjectItemCaseSensitive(result, "processed_systems");
+    if (!cJSON_IsNumber(cached))
+        cached = cJSON_GetObjectItemCaseSensitive(result, "cached_systems");
+    cJSON *errors = cJSON_GetObjectItemCaseSensitive(result, "errors");
+    if (cJSON_IsNumber(processed) && cJSON_IsNumber(cached) &&
+        cJSON_IsNumber(errors) && processed->valueint >= 0 &&
+        cached->valueint >= 0 && errors->valueint >= 0) {
+        snprintf(message, message_size, "Cached: %d of %d\nErrors: %d",
+                 cached->valueint, processed->valueint, errors->valueint);
+    }
+    else {
+        snprintf(message, message_size, success ? "Cache complete" : "Cache failed");
+    }
+    cJSON_Delete(result);
+}
+
+static void ra_run_cache_popup(const char *label, const char *operation)
+{
+    int output_pipe[2];
+    if (pipe(output_pipe) != 0) {
+        _toolDialog("RA offline cache", "Unable to start cache", false);
+        return;
+    }
+    pid_t child = fork();
+    if (child == 0) {
+        setpgid(0, 0);
+        dup2(output_pipe[1], STDOUT_FILENO);
+        dup2(output_pipe[1], STDERR_FILENO);
+        close(output_pipe[0]);
+        close(output_pipe[1]);
+        execl("/mnt/SDCARD/.tmp_update/bin/bloomctl", "bloomctl",
+              "achievements", "proxy", operation, (char *)NULL);
+        _exit(127);
+    }
+    close(output_pipe[1]);
+    if (child < 0) {
+        close(output_pipe[0]);
+        _toolDialog("RA offline cache", "Unable to start cache", false);
+        return;
+    }
+    setpgid(child, child);
+    fcntl(output_pipe[0], F_SETFL, fcntl(output_pipe[0], F_GETFL) | O_NONBLOCK);
+
+    keys_enabled = false;
+    theme_clearDialogProgress();
+    char output[1024] = {0};
+    size_t output_length = 0;
+    int status = 0;
+    bool canceled = false;
+    bool child_done = false;
+    SDLKey changed_key = SDLK_UNKNOWN;
+    char progress[STR_MAX];
+    snprintf(progress, sizeof(progress), "%s\n\nB  Cancel", label);
+
+    while (!child_done) {
+        ssize_t amount = read(output_pipe[0], output + output_length,
+                              sizeof(output) - output_length - 1);
+        if (amount > 0)
+            output_length += (size_t)amount;
+        pid_t result = waitpid(child, &status, WNOHANG);
+        child_done = result == child;
+        if (result < 0)
+            child_done = true;
+        bool input_quit = false;
+        if (!child_done && updateKeystate(keystate, &input_quit, true, &changed_key) &&
+            changed_key == SW_BTN_B && keystate[changed_key] == PRESSED) {
+            canceled = true;
+            kill(-child, SIGTERM);
+        }
+        if (canceled && !child_done) {
+            for (int attempt = 0; attempt < 20 && !child_done; attempt++) {
+                msleep(50);
+                child_done = waitpid(child, &status, WNOHANG) == child;
+            }
+            if (!child_done) {
+                kill(-child, SIGKILL);
+                child_done = waitpid(child, &status, 0) == child;
+            }
+        }
+        if (!child_done) {
+            _toolDialog("RA offline cache", progress, true);
+            msleep(150);
+        }
+    }
+    while (output_length + 1 < sizeof(output)) {
+        ssize_t amount = read(output_pipe[0], output + output_length,
+                              sizeof(output) - output_length - 1);
+        if (amount <= 0)
+            break;
+        output_length += (size_t)amount;
+    }
+    close(output_pipe[0]);
+    output[output_length] = '\0';
+
+    bool success = WIFEXITED(status) && WEXITSTATUS(status) == 0;
+    char message[STR_MAX];
+    ra_cache_result_message(output, success, canceled, message, sizeof(message));
+    _toolDialog("RA offline cache", message, false);
+    if (video != NULL)
+        msleep(1200);
+    if (_tool_bg_cache != NULL) {
+        SDL_FreeSurface(_tool_bg_cache);
+        _tool_bg_cache = NULL;
+    }
+    keys_enabled = true;
+    all_changed = true;
+}
+
 static void action_ra_cache_favorites(void *_)
 {
     (void)_;
-    _runCommandPopup("RetroAchievements", BLOOMCTL_RA " proxy cache-favorites >/dev/null 2>&1");
+    ra_run_cache_popup("Caching Favorites...", "cache-favorites");
 }
 
 static void action_ra_cache_recent(void *_)
 {
     (void)_;
-    _runCommandPopup("RetroAchievements", BLOOMCTL_RA " proxy cache-recent >/dev/null 2>&1");
+    ra_run_cache_popup("Caching Recent Games...", "cache-recent");
 }
 
 static void action_ra_cache_all(void *_)
 {
     (void)_;
-    _runCommandPopup("RetroAchievements", BLOOMCTL_RA " proxy cache-all >/dev/null 2>&1");
+    ra_run_cache_popup("Caching all RA systems...", "cache-all");
 }
 
 static void action_ra_sign_out(void *_)
