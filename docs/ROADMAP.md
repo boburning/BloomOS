@@ -486,15 +486,20 @@ Planned work includes safe updates and rollback, optional synchronization and of
   Support export now reconstructs only valid schema-1 RA log events, drops
   malformed lines and finish details, and physically passed a forbidden-data
   archive scan.
-- [ ] RA-25: add guarded RA certification tooling. Developer-mode preflight now
+- [x] RA-25: add guarded RA certification tooling. Developer-mode preflight now
   verifies exact ROM identity and installed core SHA/policy without exposing
   ROM or account data and reports the current redacted authentication state;
   bounded default-core sessions now automate graceful lifecycle and save-flush
   validation. Certification results now report the exact post-policy core and
   SHA used by the session, so a GBA Hardcore request records mGBA rather than
   the requested gpSP default. Mini Plus preflight and a 10-second gpSP session
-  pass. A physical gpSP Softcore unlock and post-session server verification
-  also pass. Physical Rich Presence remains pending.
+  pass. Ordinary automated sessions now force RA off and physically add no RA
+  log events. Live RA is available only behind the explicit
+  `I_ACCEPT_PROFILE_CHANGES` operator mode; a physical Plus run produced the
+  expected direct launch/finish pair, exited cleanly, flushed saves, restored
+  MainUI, and removed its temporary config. A prior physical gpSP Softcore
+  unlock and post-session server verification also pass. Rich Presence remains
+  an explicit operator observation for the remaining vertical-slice matrix.
 - [x] RA-26: enforce release-sensitive regression contracts inside the complete
   shell gate for exact core/source policy, required RA fixtures, service-only
   proxy integration, immutable transport, Hardcore routing, redaction-sensitive
