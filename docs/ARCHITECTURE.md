@@ -50,6 +50,14 @@ integration moves consumers behind this boundary before authority changes and
 Bloom becomes the sole writer; the presence of an imported schema alone is not
 treated as authority cutover.
 
+Schema 1 separates durable settings into `device`, `interface`, `behavior`, and
+`controls` objects. The imported model covers every durable value currently
+consumed by keymon and Tweaks, while the `compatibility` object retains unknown
+Onion JSON for lossless transition. Runtime observations such as RTC presence,
+network association, and battery state are deliberately excluded; consumers
+obtain those capabilities from `bloom-platform` instead of persisting them as
+user settings.
+
 ## BloomPlatform foundation
 
 `bloom-platform` is the first device-side capability boundary. Its schema-1,

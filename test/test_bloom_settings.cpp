@@ -23,6 +23,7 @@ class BloomSettingsTest : public ::testing::Test {
         config = root / "config";
         std::filesystem::create_directories(config / "battery");
         std::filesystem::create_directories(config / "startup");
+        std::filesystem::create_directories(config / "display");
         settings = root / "settings.json";
         snapshot = root / "onion-system.snapshot.json";
         system = root / "system.json";
@@ -56,13 +57,30 @@ class BloomSettingsTest : public ::testing::Test {
 TEST_F(BloomSettingsTest, ImportsKnownValuesAndRetainsUnknownLegacyData)
 {
     const std::string legacy =
-        R"({"vol":11,"mute":0,"brightness":4,"wifi":1,"language":"fr.lang","theme":"/Themes/Bloom/","fontsize":32,"unknown_future_key":{"kept":true}})";
+        R"({"vol":11,"mute":0,"bgmvol":9,"brightness":4,"wifi":1,"hibernate":8,"lumination":6,"hue":9,"saturation":11,"contrast":12,"audiofix":0,"keymap":"CUSTOM","language":"fr.lang","theme":"/Themes/Bloom/","fontsize":32,"unknown_future_key":{"kept":true}})";
     write(system, legacy);
-    write(config / "keymap.json", R"({"mainui_single_press":2,"unknown_binding":"kept"})");
+    write(config / "keymap.json",
+          R"({"mainui_single_press":2,"mainui_long_press":4,"mainui_double_press":5,"ingame_single_press":6,"ingame_long_press":7,"ingame_double_press":8,"mainui_button_x":"Search","mainui_button_y":"Activity","unknown_binding":"kept"})");
     write(config / ".showRecents", "");
+    write(config / ".showExpert", "");
     write(config / ".muteVolume", "");
+    write(config / ".bgmMute", "");
+    write(config / ".blfOn", "");
+    write(config / ".blf", "");
+    write(config / ".recIndicator", "");
+    write(config / ".recHotkey", "");
     write(config / "battery/warnAt", "17\n");
+    write(config / "battery/exitAt", "6");
     write(config / "startup/tab", "3");
+    write(config / "startup/app", "2");
+    write(config / "startup/addHours", "7");
+    write(config / "vibration", "3");
+    write(config / "pwmfrequency", "5");
+    write(config / "display/blueLightLevel", "4");
+    write(config / "display/blueLightRGB", "1122867");
+    write(config / "display/blueLightTime", "21:30\n");
+    write(config / "display/blueLightTimeOff", "07:15\n");
+    write(config / "recCountdown", "4");
 
     BloomSettingsImportResult result{};
     char error[160] = {};
@@ -90,14 +108,51 @@ TEST_F(BloomSettingsTest, ImportsKnownValuesAndRetainsUnknownLegacyData)
     cJSON *device = cJSON_GetObjectItem(root_json, "device");
     EXPECT_EQ(11, cJSON_GetObjectItem(device, "volume")->valueint);
     EXPECT_TRUE(cJSON_IsTrue(cJSON_GetObjectItem(device, "mute")));
+    EXPECT_EQ(9, cJSON_GetObjectItem(device, "background_music_volume")->valueint);
     EXPECT_EQ(4, cJSON_GetObjectItem(device, "brightness")->valueint);
     EXPECT_TRUE(cJSON_IsTrue(cJSON_GetObjectItem(device, "wifi_enabled")));
+    EXPECT_EQ(8, cJSON_GetObjectItem(device, "sleep_minutes")->valueint);
+    EXPECT_EQ(6, cJSON_GetObjectItem(device, "luminance")->valueint);
+    EXPECT_EQ(9, cJSON_GetObjectItem(device, "hue")->valueint);
+    EXPECT_EQ(11, cJSON_GetObjectItem(device, "saturation")->valueint);
+    EXPECT_EQ(12, cJSON_GetObjectItem(device, "contrast")->valueint);
+    EXPECT_EQ(0, cJSON_GetObjectItem(device, "audio_fix")->valueint);
+    EXPECT_EQ(3, cJSON_GetObjectItem(device, "vibration")->valueint);
+    EXPECT_EQ(5, cJSON_GetObjectItem(device, "pwm_frequency")->valueint);
     cJSON *interface = cJSON_GetObjectItem(root_json, "interface");
     EXPECT_STREQ("fr.lang", cJSON_GetObjectItem(interface, "language")->valuestring);
+    EXPECT_STREQ("/Themes/Bloom/", cJSON_GetObjectItem(interface, "theme")->valuestring);
+    EXPECT_EQ(32, cJSON_GetObjectItem(interface, "font_size")->valueint);
+    EXPECT_TRUE(cJSON_IsTrue(cJSON_GetObjectItem(interface, "background_music_muted")));
     EXPECT_TRUE(cJSON_IsTrue(cJSON_GetObjectItem(interface, "show_recents")));
+    EXPECT_TRUE(cJSON_IsTrue(cJSON_GetObjectItem(interface, "show_expert")));
+    cJSON *blue_light = cJSON_GetObjectItem(interface, "blue_light");
+    EXPECT_TRUE(cJSON_IsTrue(cJSON_GetObjectItem(blue_light, "enabled")));
+    EXPECT_TRUE(cJSON_IsTrue(cJSON_GetObjectItem(blue_light, "scheduled")));
+    EXPECT_EQ(4, cJSON_GetObjectItem(blue_light, "level")->valueint);
+    EXPECT_EQ(1122867, cJSON_GetObjectItem(blue_light, "rgb")->valueint);
+    EXPECT_STREQ("21:30", cJSON_GetObjectItem(blue_light, "start_time")->valuestring);
+    EXPECT_STREQ("07:15", cJSON_GetObjectItem(blue_light, "end_time")->valuestring);
+    cJSON *recording = cJSON_GetObjectItem(interface, "recording");
+    EXPECT_TRUE(cJSON_IsTrue(cJSON_GetObjectItem(recording, "indicator")));
+    EXPECT_TRUE(cJSON_IsTrue(cJSON_GetObjectItem(recording, "hotkey")));
+    EXPECT_EQ(4, cJSON_GetObjectItem(recording, "countdown")->valueint);
     cJSON *behavior = cJSON_GetObjectItem(root_json, "behavior");
     EXPECT_EQ(17, cJSON_GetObjectItem(behavior, "low_battery_warn_at")->valueint);
+    EXPECT_EQ(6, cJSON_GetObjectItem(behavior, "low_battery_autosave_at")->valueint);
     EXPECT_EQ(3, cJSON_GetObjectItem(behavior, "startup_tab")->valueint);
+    EXPECT_EQ(2, cJSON_GetObjectItem(behavior, "startup_application")->valueint);
+    EXPECT_EQ(7, cJSON_GetObjectItem(behavior, "time_skip_hours")->valueint);
+    cJSON *controls = cJSON_GetObjectItem(root_json, "controls");
+    EXPECT_STREQ("CUSTOM", cJSON_GetObjectItem(controls, "layout")->valuestring);
+    EXPECT_EQ(2, cJSON_GetObjectItem(controls, "mainui_single_press")->valueint);
+    EXPECT_EQ(4, cJSON_GetObjectItem(controls, "mainui_long_press")->valueint);
+    EXPECT_EQ(5, cJSON_GetObjectItem(controls, "mainui_double_press")->valueint);
+    EXPECT_EQ(6, cJSON_GetObjectItem(controls, "ingame_single_press")->valueint);
+    EXPECT_EQ(7, cJSON_GetObjectItem(controls, "ingame_long_press")->valueint);
+    EXPECT_EQ(8, cJSON_GetObjectItem(controls, "ingame_double_press")->valueint);
+    EXPECT_STREQ("Search", cJSON_GetObjectItem(controls, "mainui_button_x")->valuestring);
+    EXPECT_STREQ("Activity", cJSON_GetObjectItem(controls, "mainui_button_y")->valuestring);
     cJSON *compatibility = cJSON_GetObjectItem(root_json, "compatibility");
     cJSON *legacy_json = cJSON_GetObjectItem(compatibility, "onion_system");
     EXPECT_TRUE(cJSON_IsObject(cJSON_GetObjectItem(legacy_json, "unknown_future_key")));
@@ -155,7 +210,49 @@ TEST_F(BloomSettingsTest, MissingLegacyFilesProduceExplicitDefaults)
     cJSON *device = cJSON_GetObjectItem(root_json, "device");
     EXPECT_EQ(20, cJSON_GetObjectItem(device, "volume")->valueint);
     EXPECT_EQ(7, cJSON_GetObjectItem(device, "brightness")->valueint);
+    EXPECT_EQ(20, cJSON_GetObjectItem(device, "background_music_volume")->valueint);
+    EXPECT_FALSE(cJSON_IsTrue(cJSON_GetObjectItem(device, "mute")));
+    cJSON *interface = cJSON_GetObjectItem(root_json, "interface");
+    EXPECT_STREQ("/mnt/SDCARD/Themes/Silky by DiMo/",
+                 cJSON_GetObjectItem(interface, "theme")->valuestring);
+    EXPECT_TRUE(cJSON_IsObject(cJSON_GetObjectItem(interface, "blue_light")));
+    EXPECT_TRUE(cJSON_IsObject(cJSON_GetObjectItem(interface, "recording")));
+    cJSON *controls = cJSON_GetObjectItem(root_json, "controls");
+    EXPECT_STREQ("L2,L,R2,R,X,A,B,Y", cJSON_GetObjectItem(controls, "layout")->valuestring);
+    EXPECT_EQ(1, cJSON_GetObjectItem(controls, "mainui_single_press")->valueint);
+    EXPECT_EQ(1, cJSON_GetObjectItem(controls, "ingame_single_press")->valueint);
+    EXPECT_EQ(2, cJSON_GetObjectItem(controls, "ingame_long_press")->valueint);
     cJSON_Delete(root_json);
+}
+
+TEST_F(BloomSettingsTest, ImportUsesEffectiveLegacyFlagsInsteadOfDormantSystemFields)
+{
+    write(system, R"({"mute":1,"theme":"./"})");
+    write(config / ".noBatteryWarning", "");
+    write(config / ".noLowBatteryAutoSave", "");
+    write(config / ".noVibration", "");
+    write(config / ".menuInverted", "");
+    write(config / ".noGameSwitcher", "");
+    BloomSettingsImportResult result{};
+    char error[160] = {};
+    ASSERT_EQ(0, bloom_settings_import_onion(system.c_str(), config.c_str(), settings.c_str(),
+                                             snapshot.c_str(), &result, error, sizeof(error)))
+        << error;
+    cJSON *canonical = load_settings();
+    cJSON *device = cJSON_GetObjectItem(canonical, "device");
+    EXPECT_FALSE(cJSON_IsTrue(cJSON_GetObjectItem(device, "mute")));
+    EXPECT_EQ(0, cJSON_GetObjectItem(device, "vibration")->valueint);
+    cJSON *interface = cJSON_GetObjectItem(canonical, "interface");
+    EXPECT_STREQ("/mnt/SDCARD/Themes/Silky by DiMo/",
+                 cJSON_GetObjectItem(interface, "theme")->valuestring);
+    cJSON *behavior = cJSON_GetObjectItem(canonical, "behavior");
+    EXPECT_EQ(0, cJSON_GetObjectItem(behavior, "low_battery_warn_at")->valueint);
+    EXPECT_EQ(0, cJSON_GetObjectItem(behavior, "low_battery_autosave_at")->valueint);
+    cJSON *controls = cJSON_GetObjectItem(canonical, "controls");
+    EXPECT_EQ(0, cJSON_GetObjectItem(controls, "mainui_single_press")->valueint);
+    EXPECT_EQ(2, cJSON_GetObjectItem(controls, "ingame_single_press")->valueint);
+    EXPECT_EQ(0, cJSON_GetObjectItem(controls, "ingame_long_press")->valueint);
+    cJSON_Delete(canonical);
 }
 
 TEST_F(BloomSettingsTest, InvalidOrNewerCanonicalSchemaFailsClosed)
@@ -272,6 +369,32 @@ TEST_F(BloomSettingsTest, LegacySyncChangesOnlyWhenEffectiveInputChanges)
                                            &repeated, error, sizeof(error)));
     EXPECT_EQ(0, repeated.changed);
     EXPECT_EQ(2, repeated.generation);
+}
+
+TEST_F(BloomSettingsTest, LegacySyncAddsCompleteControlsToEarlierSchemaOneState)
+{
+    write(system, R"({"vol":5})");
+    BloomSettingsImportResult imported{};
+    char error[160] = {};
+    ASSERT_EQ(0, bloom_settings_import_onion(system.c_str(), config.c_str(), settings.c_str(),
+                                             snapshot.c_str(), &imported, error, sizeof(error)));
+    cJSON *canonical = load_settings();
+    cJSON_DeleteItemFromObjectCaseSensitive(canonical, "controls");
+    char *serialized = cJSON_PrintUnformatted(canonical);
+    ASSERT_NE(nullptr, serialized);
+    write(settings, serialized);
+    cJSON_free(serialized);
+    cJSON_Delete(canonical);
+
+    BloomSettingsSyncResult result{};
+    ASSERT_EQ(0, bloom_settings_sync_onion(system.c_str(), config.c_str(), settings.c_str(),
+                                           &result, error, sizeof(error)))
+        << error;
+    EXPECT_EQ(1, result.changed);
+    EXPECT_EQ(2, result.generation);
+    canonical = load_settings();
+    EXPECT_TRUE(cJSON_IsObject(cJSON_GetObjectItem(canonical, "controls")));
+    cJSON_Delete(canonical);
 }
 
 TEST_F(BloomSettingsTest, LegacySyncIsRejectedAfterBloomAuthorityCutover)

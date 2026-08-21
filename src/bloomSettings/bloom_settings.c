@@ -205,6 +205,26 @@ static int read_config_integer(const char *root, const char *name, int fallback,
     return valid ? (int)value : fallback;
 }
 
+static void add_config_string(cJSON *object, const char *field, const char *root, const char *name,
+                              const char *fallback, size_t maximum)
+{
+    char path[PATH_MAX];
+    char *content = NULL;
+    size_t length = 0;
+    if (path_join(path, sizeof(path), root, name) != 0 ||
+        read_regular_file(path, &content, &length, 1) != 0) {
+        cJSON_AddStringToObject(object, field, fallback);
+        return;
+    }
+    while (length > 0 && (content[length - 1] == '\n' || content[length - 1] == '\r'))
+        content[--length] = '\0';
+    int valid = length > 0 && length < maximum;
+    for (size_t index = 0; valid && index < length; ++index)
+        valid = (unsigned char)content[index] >= 0x20 && (unsigned char)content[index] < 0x7f;
+    cJSON_AddStringToObject(object, field, valid ? content : fallback);
+    free(content);
+}
+
 static void add_integer(cJSON *object, const char *name, int value)
 {
     cJSON_AddNumberToObject(object, name, value);
@@ -223,9 +243,12 @@ static cJSON *build_settings(const cJSON *system, const cJSON *keymap, const cha
     cJSON *device = cJSON_CreateObject();
     cJSON *interface = cJSON_CreateObject();
     cJSON *behavior = cJSON_CreateObject();
+    cJSON *controls = cJSON_CreateObject();
+    cJSON *blue_light = cJSON_CreateObject();
+    cJSON *recording = cJSON_CreateObject();
     cJSON *compatibility = cJSON_CreateObject();
     if (root == NULL || source == NULL || device == NULL || interface == NULL || behavior == NULL ||
-        compatibility == NULL)
+        controls == NULL || blue_light == NULL || recording == NULL || compatibility == NULL)
         goto failure;
 
     cJSON_AddNumberToObject(root, "schema", BLOOM_SETTINGS_SCHEMA);
@@ -237,20 +260,54 @@ static cJSON *build_settings(const cJSON *system, const cJSON *keymap, const cha
     source = NULL;
 
     add_integer(device, "volume", bounded_integer(system, "vol", 20, 0, 20));
-    add_boolean(device, "mute", flag_exists(config_root, ".muteVolume") || bounded_integer(system, "mute", 0, 0, 1));
+    add_boolean(device, "mute", flag_exists(config_root, ".muteVolume"));
+    add_integer(device, "background_music_volume",
+                bounded_integer(system, "bgmvol", 20, 0, 20));
     add_integer(device, "brightness", bounded_integer(system, "brightness", 7, 0, 10));
     add_boolean(device, "wifi_enabled", bounded_integer(system, "wifi", 0, 0, 1));
     add_integer(device, "sleep_minutes", bounded_integer(system, "hibernate", 5, 0, 120));
-    add_integer(device, "vibration", read_config_integer(config_root, "vibration", 2, 0, 3));
+    add_integer(device, "luminance", bounded_integer(system, "lumination", 7, 0, 20));
+    add_integer(device, "hue", bounded_integer(system, "hue", 10, 0, 20));
+    add_integer(device, "saturation", bounded_integer(system, "saturation", 10, 0, 20));
+    add_integer(device, "contrast", bounded_integer(system, "contrast", 10, 0, 20));
+    add_integer(device, "audio_fix", bounded_integer(system, "audiofix", 1, 0, 1));
+    add_integer(device, "vibration",
+                read_config_integer(config_root, "vibration",
+                                    flag_exists(config_root, ".noVibration") ? 0 : 2, 0, 3));
+    add_integer(device, "pwm_frequency",
+                read_config_integer(config_root, "pwmfrequency", 7, 0, 20));
     cJSON_AddItemToObject(root, "device", device);
     device = NULL;
 
     cJSON_AddStringToObject(interface, "language",
                             bounded_string(system, "language", "en.lang"));
-    cJSON_AddStringToObject(interface, "theme", bounded_string(system, "theme", "./"));
+    const char *theme = bounded_string(system, "theme", "./");
+    cJSON_AddStringToObject(interface, "theme",
+                            strcmp(theme, "./") == 0
+                                ? "/mnt/SDCARD/Themes/Silky by DiMo/"
+                                : theme);
     add_integer(interface, "font_size", bounded_integer(system, "fontsize", 24, 8, 64));
+    add_boolean(interface, "background_music_muted", flag_exists(config_root, ".bgmMute"));
     add_boolean(interface, "show_recents", flag_exists(config_root, ".showRecents"));
     add_boolean(interface, "show_expert", flag_exists(config_root, ".showExpert"));
+    add_boolean(blue_light, "enabled", flag_exists(config_root, ".blfOn"));
+    add_boolean(blue_light, "scheduled", flag_exists(config_root, ".blf"));
+    add_integer(blue_light, "level",
+                read_config_integer(config_root, "display/blueLightLevel", 0, 0, 20));
+    add_integer(blue_light, "rgb",
+                read_config_integer(config_root, "display/blueLightRGB", 8421504, 0, 16777215));
+    add_config_string(blue_light, "start_time", config_root, "display/blueLightTime", "20:00",
+                      16);
+    add_config_string(blue_light, "end_time", config_root, "display/blueLightTimeOff", "08:00",
+                      16);
+    cJSON_AddItemToObject(interface, "blue_light", blue_light);
+    blue_light = NULL;
+    add_boolean(recording, "indicator", flag_exists(config_root, ".recIndicator"));
+    add_boolean(recording, "hotkey", flag_exists(config_root, ".recHotkey"));
+    add_integer(recording, "countdown",
+                read_config_integer(config_root, "recCountdown", 0, 0, 10));
+    cJSON_AddItemToObject(interface, "recording", recording);
+    recording = NULL;
     cJSON_AddItemToObject(root, "interface", interface);
     interface = NULL;
 
@@ -259,14 +316,46 @@ static cJSON *build_settings(const cJSON *system, const cJSON *keymap, const cha
     add_boolean(behavior, "disable_standby", flag_exists(config_root, ".disableStandby"));
     add_boolean(behavior, "logging", flag_exists(config_root, ".logging"));
     add_integer(behavior, "low_battery_warn_at",
-                read_config_integer(config_root, "battery/warnAt", 10, 0, 100));
+                read_config_integer(config_root, "battery/warnAt",
+                                    flag_exists(config_root, ".noBatteryWarning") ? 0 : 10, 0,
+                                    100));
     add_integer(behavior, "low_battery_autosave_at",
-                read_config_integer(config_root, "battery/exitAt", 4, 0, 100));
+                read_config_integer(config_root, "battery/exitAt",
+                                    flag_exists(config_root, ".noLowBatteryAutoSave") ? 0 : 4, 0,
+                                    100));
     add_integer(behavior, "startup_tab", read_config_integer(config_root, "startup/tab", 0, 0, 20));
     add_integer(behavior, "startup_application",
                 read_config_integer(config_root, "startup/app", 0, 0, 20));
+    add_integer(behavior, "time_skip_hours",
+                read_config_integer(config_root, "startup/addHours", 4, 0, 24));
     cJSON_AddItemToObject(root, "behavior", behavior);
     behavior = NULL;
+
+    int mainui_single = flag_exists(config_root, ".noGameSwitcher") ? 0 : 1;
+    int ingame_single = flag_exists(config_root, ".menuInverted") ? 2 : 1;
+    int ingame_long = flag_exists(config_root, ".noGameSwitcher")
+                          ? 0
+                          : (flag_exists(config_root, ".menuInverted") ? 1 : 2);
+    cJSON_AddStringToObject(controls, "layout",
+                            bounded_string(system, "keymap", "L2,L,R2,R,X,A,B,Y"));
+    add_integer(controls, "mainui_single_press",
+                bounded_integer(keymap, "mainui_single_press", mainui_single, 0, 20));
+    add_integer(controls, "mainui_long_press",
+                bounded_integer(keymap, "mainui_long_press", 0, 0, 20));
+    add_integer(controls, "mainui_double_press",
+                bounded_integer(keymap, "mainui_double_press", 2, 0, 20));
+    add_integer(controls, "ingame_single_press",
+                bounded_integer(keymap, "ingame_single_press", ingame_single, 0, 20));
+    add_integer(controls, "ingame_long_press",
+                bounded_integer(keymap, "ingame_long_press", ingame_long, 0, 20));
+    add_integer(controls, "ingame_double_press",
+                bounded_integer(keymap, "ingame_double_press", 3, 0, 20));
+    cJSON_AddStringToObject(controls, "mainui_button_x",
+                            bounded_string(keymap, "mainui_button_x", ""));
+    cJSON_AddStringToObject(controls, "mainui_button_y",
+                            bounded_string(keymap, "mainui_button_y", ""));
+    cJSON_AddItemToObject(root, "controls", controls);
+    controls = NULL;
 
     cJSON_AddItemToObject(compatibility, "onion_system", cJSON_Duplicate(system, 1));
     cJSON_AddItemToObject(compatibility, "onion_keymap", cJSON_Duplicate(keymap, 1));
@@ -280,6 +369,9 @@ failure:
     cJSON_Delete(device);
     cJSON_Delete(interface);
     cJSON_Delete(behavior);
+    cJSON_Delete(controls);
+    cJSON_Delete(blue_light);
+    cJSON_Delete(recording);
     cJSON_Delete(compatibility);
     return NULL;
 }
@@ -296,6 +388,7 @@ static int validate_settings_root(const cJSON *root, int *schema, int *generatio
     const cJSON *device = root ? cJSON_GetObjectItemCaseSensitive(root, "device") : NULL;
     const cJSON *interface = root ? cJSON_GetObjectItemCaseSensitive(root, "interface") : NULL;
     const cJSON *behavior = root ? cJSON_GetObjectItemCaseSensitive(root, "behavior") : NULL;
+    const cJSON *controls = root ? cJSON_GetObjectItemCaseSensitive(root, "controls") : NULL;
     const cJSON *compatibility = root ? cJSON_GetObjectItemCaseSensitive(root, "compatibility") : NULL;
     if (schema == NULL || generation == NULL || source == NULL || source_size == 0 ||
         authority == NULL || authority_size == 0 || !cJSON_IsObject(root) ||
@@ -308,7 +401,8 @@ static int validate_settings_root(const cJSON *root, int *schema, int *generatio
         strlen(authority_node->valuestring) >= authority_size || !cJSON_IsObject(source_node) ||
         !cJSON_IsString(kind) || !safe_identifier(kind->valuestring, source_size) ||
         !cJSON_IsObject(device) ||
-        !cJSON_IsObject(interface) || !cJSON_IsObject(behavior) || !cJSON_IsObject(compatibility)) {
+        !cJSON_IsObject(interface) || !cJSON_IsObject(behavior) ||
+        (controls != NULL && !cJSON_IsObject(controls)) || !cJSON_IsObject(compatibility)) {
         set_error(error, error_size, "settings schema is invalid or unsupported");
         return -1;
     }
@@ -468,11 +562,16 @@ static int replace_section(cJSON *destination, cJSON *source, const char *name)
     cJSON *replacement = cJSON_Duplicate(cJSON_GetObjectItemCaseSensitive(source, name), 1);
     if (replacement == NULL)
         return 0;
-    if (!cJSON_ReplaceItemInObjectCaseSensitive(destination, name, replacement)) {
+    if (cJSON_GetObjectItemCaseSensitive(destination, name) == NULL) {
+        if (cJSON_AddItemToObject(destination, name, replacement))
+            return 1;
         cJSON_Delete(replacement);
         return 0;
     }
-    return 1;
+    if (cJSON_ReplaceItemInObjectCaseSensitive(destination, name, replacement))
+        return 1;
+    cJSON_Delete(replacement);
+    return 0;
 }
 
 int bloom_settings_sync_onion(const char *onion_system_path, const char *onion_config_root,
@@ -540,6 +639,7 @@ int bloom_settings_sync_onion(const char *onion_system_path, const char *onion_c
     if (fresh == NULL || !replace_section(current, fresh, "source") ||
         !replace_section(current, fresh, "device") || !replace_section(current, fresh, "interface") ||
         !replace_section(current, fresh, "behavior") ||
+        !replace_section(current, fresh, "controls") ||
         !replace_section(current, fresh, "compatibility")) {
         cJSON_Delete(fresh);
         set_error(error, error_size, "legacy settings sync could not be created");
