@@ -886,6 +886,15 @@ load_settings() {
             mv -f temp /mnt/SDCARD/system.json
         fi
     fi
+
+    # Keep Bloom's inactive canonical settings boundary current while Onion
+    # remains authoritative. Failure must never block the compatibility boot.
+    if [ -x "$sysdir/bin/bloom-settings" ] && [ -x "$sysdir/bin/bloomctl" ]; then
+        "$sysdir/bin/bloomctl" settings import-onion > /dev/null 2>&1 ||
+            log "Bloom settings import unavailable; continuing with Onion settings"
+        "$sysdir/bin/bloomctl" settings sync-onion > /dev/null 2>&1 ||
+            log "Bloom settings sync unavailable; continuing with Onion settings"
+    fi
 }
 
 save_settings() {

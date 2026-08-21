@@ -92,8 +92,10 @@ void settings_shm_read(void)
         has_changes = true;
 #endif
 
-    if (has_changes)
+    if (has_changes) {
         _settings_save_mainui();
+        _settings_sync_bloom_compatibility();
+    }
 }
 
 void settings_init(void)
