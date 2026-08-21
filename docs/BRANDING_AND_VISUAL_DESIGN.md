@@ -50,3 +50,10 @@ MainUI branding, or inherited help copy presented as Bloom product identity.
 Matches are classified as user-facing replacement, explicit compatibility or
 migration copy, retained legal attribution, internal identifier, or removal.
 The release gate fails on unclassified user-facing matches.
+
+The first automated scope covers Bloom-owned Tweaks C/C++ source. Four literal
+`onion` values remain classified as legacy network usernames/passwords; they are
+compatibility credentials, not product copy, and require a separate migration
+before they can be renamed. Any other Onion match in that UI scope fails the
+shell gate. Later slices expand the scanner as each stable UI surface and asset
+tree moves under Bloom ownership.
