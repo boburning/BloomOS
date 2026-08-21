@@ -145,3 +145,24 @@ TEST(BloomUiRenderer, RejectsInvalidStateAndSurfaceShape)
     EXPECT_NE(0, bloom_ui_render_shell(nullptr, &layout, &scene));
     SDL_FreeSurface(surface);
 }
+
+TEST(BloomUiRenderer, RotatesPresentationPixelsByOneHundredEightyDegrees)
+{
+    SDL_Surface *surface = make_surface(3, 2);
+    ASSERT_NE(nullptr, surface);
+    auto *pixels = static_cast<Uint32 *>(surface->pixels);
+    for (Uint32 index = 0; index < 6; ++index) {
+        pixels[index] = index + 1;
+    }
+
+    ASSERT_EQ(0, bloom_ui_rotate_180(surface));
+    for (Uint32 index = 0; index < 6; ++index) {
+        EXPECT_EQ(6U - index, pixels[index]);
+    }
+    ASSERT_EQ(0, bloom_ui_rotate_180(surface));
+    for (Uint32 index = 0; index < 6; ++index) {
+        EXPECT_EQ(index + 1, pixels[index]);
+    }
+    EXPECT_NE(0, bloom_ui_rotate_180(nullptr));
+    SDL_FreeSurface(surface);
+}
