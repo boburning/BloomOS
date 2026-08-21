@@ -1,0 +1,39 @@
+{
+  "schema": 1,
+  "device": "miyoo-mini-plus",
+  "model_id": 354,
+  "signed_candidate": {
+    "version": "0.1.0-dev-9a9611ae",
+    "commit": "9a9611aecbc680a0db5deafede8d1a46856a95f7",
+    "workflow_run": 32511360749,
+    "archive_size": 203043396,
+    "archive_sha256": "063354d1d3393cb81ba99884929799913f5dc0ffb5d87ed476aef24b709bf819",
+    "signature_verified": true,
+    "library_size": 87748,
+    "library_sha256": "9095302c90466747c26c234400e6743b71c735b3b4c36daebec3567d1c48c6b8"
+  },
+  "isolated_migration": {
+    "boundary": "chroot_with_sqlite_backup",
+    "source_schema": 3,
+    "result_schema": 4,
+    "state": "ready",
+    "generation": 2,
+    "systems": 53,
+    "games": 22,
+    "apps": 23,
+    "class_counts": {
+      "mainui-dependent": 23
+    },
+    "canonical_database_sha256_before": "9ec33e433a1095d76e912eca8b125e564db65ad819cc478920e4522bb84e741b",
+    "canonical_database_sha256_after": "9ec33e433a1095d76e912eca8b125e564db65ad819cc478920e4522bb84e741b",
+    "canonical_schema_after": 3
+  },
+  "cleanup": {
+    "device_test_root_removed": true,
+    "installed_shell_pid": 1184,
+    "update_phase": "testing",
+    "pending_version": "0.1.0-dev-5e81cfef",
+    "update_confirmed": false
+  },
+  "notes": "The exact signed ARM binary migrated only a SQLite backup inside an isolated chroot. No app was promoted without an explicit reviewed declaration, and no app launch was attempted."
+}
