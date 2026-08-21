@@ -17,6 +17,7 @@
 #include "../playActivity/cacheDB.h"
 
 #include "gameSwitcherIdentity.h"
+#include "gameSwitcherLibrary.h"
 #include "gs_model.h"
 #include "gs_retroarch.h"
 #include "gs_romscreen.h"
@@ -54,6 +55,7 @@ bool parseJsonToRecentItem(const char *jsonStr, RecentItem *recentItem, int line
     }
     recentItem->type = type->valueint;
     recentItem->lineNo = lineNo;
+    recentItem->bloom_owned = false;
 
     // Check if rompath contains a colon (':') and split it into launch and rompath
     char *colonPosition = strchr(recentItem->rompath, ':');
@@ -93,12 +95,46 @@ void setEntryDefaultValues(Game_s *game, int index)
     game->index = index;
 }
 
+static bool readBloomHistory(size_t limit)
+{
+    GameSwitcherLibraryRecent *recents = calloc(limit, sizeof(*recents));
+    if (recents == NULL)
+        return false;
+    size_t count = 0;
+    if (gameswitcher_library_read_recents(BLOOM_LIBRARY_DATABASE_PATH, limit, recents, limit,
+                                          &count) != 0) {
+        free(recents);
+        return false;
+    }
+    for (size_t index = 0; index < count; ++index) {
+        Game_s *game = &game_list[index];
+        memset(game, 0, sizeof(*game));
+        snprintf(game->recentItem.label, sizeof(game->recentItem.label), "%s", recents[index].label);
+        snprintf(game->recentItem.rompath, sizeof(game->recentItem.rompath), "%s",
+                 recents[index].rom_path);
+        snprintf(game->recentItem.imgpath, sizeof(game->recentItem.imgpath), "%s",
+                 recents[index].image_path);
+        snprintf(game->recentItem.launch, sizeof(game->recentItem.launch), "%s",
+                 recents[index].launcher);
+        game->recentItem.type = 5;
+        game->recentItem.lineNo = -1;
+        game->recentItem.bloom_owned = true;
+        setEntryDefaultValues(game, (int)index);
+        snprintf(game->game_id, sizeof(game->game_id), "%s", recents[index].game_id);
+    }
+    free(recents);
+    game_list_len = (int)count;
+    return true;
+}
+
 /**
  * @brief History extraction
  *
  */
 void readHistory()
 {
+    if (readBloomHistory(MAX_HISTORY))
+        return;
     FILE *file;
     char line[STR_MAX * 6];
     int numRecents = 0;
@@ -169,7 +205,9 @@ void processItem(Game_s *game)
 
     game->processed = true;
 
-    gameswitcher_game_id(game->recentItem.launch, game->recentItem.rompath, game->game_id, sizeof(game->game_id));
+    if (!bloom_game_id_valid(game->game_id))
+        gameswitcher_game_id(game->recentItem.launch, game->recentItem.rompath, game->game_id,
+                             sizeof(game->game_id));
 
     GameSwitcherAchievements achievements = {0};
     if (gameswitcher_achievements_lookup(BLOOM_RA_DATABASE_PATH, game->game_id, &achievements, NULL, 0) == 0) {
@@ -203,6 +241,11 @@ void processItem(Game_s *game)
  */
 void readFirstEntry()
 {
+    if (readBloomHistory(1)) {
+        if (game_list_len == 1)
+            processItem(&game_list[0]);
+        return;
+    }
     FILE *file;
     char line[STR_MAX * 6];
 

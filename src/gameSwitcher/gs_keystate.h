@@ -42,12 +42,17 @@ void removeCurrentItem()
     printf_debug("removing: %s\n", game->name);
     printf_debug("linenumber: %i\n", game->recentItem.lineNo);
 
+    if (game->recentItem.bloom_owned &&
+        gameswitcher_library_remove_recent(BLOOM_LIBRARY_DATABASE_PATH, game->game_id) != 0)
+        return;
+
     if (game->romScreen != NULL) {
         SDL_FreeSurface(game->romScreen);
         game->romScreen = NULL;
     }
 
-    file_delete_line(getMiyooRecentFilePath(), game->recentItem.lineNo);
+    if (!game->recentItem.bloom_owned)
+        file_delete_line(getMiyooRecentFilePath(), game->recentItem.lineNo);
 
     if (strlen(game->recentItem.imgpath) > 0 && is_file(game->recentItem.imgpath)) {
         if (strncmp(game->recentItem.imgpath, ROM_SCREENS_DIR, strlen(ROM_SCREENS_DIR)) == 0) {
@@ -58,7 +63,8 @@ void removeCurrentItem()
     // Copy next element value to current element
     for (int i = appState.current_game; i < game_list_len - 1; i++) {
         game_list[i] = game_list[i + 1];
-        game_list[i].recentItem.lineNo -= 1;
+        if (!game_list[i].recentItem.bloom_owned)
+            game_list[i].recentItem.lineNo -= 1;
         game_list[i].index -= 1;
     }
 
