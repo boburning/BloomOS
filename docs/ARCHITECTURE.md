@@ -107,6 +107,25 @@ metadata while enumeration is incomplete. UI consumers page and sort through
 local queries only; drawing a library row must never scan the ROM tree or use
 network I/O.
 
+## Bloom Shell vertical slice
+
+`bloom-shell` is a native SDL consumer of the Bloom UI, library, launch, and
+session boundaries. Its first development slice loads the Game Boy catalog
+through bounded SQLite cursor pages before entering the render loop. Drawing
+and navigation use only in-memory rows; no subprocess, ROM scan, or network
+request occurs on the render path.
+
+Confirming a game creates a schema-1 structured request, asks `bloom-session`
+to own the immutable session, and publishes the existing quoted command adapter
+only after validation. Runtime opt-in is controlled by the development-only
+`.tmp_update/config/.bloomShell` flag. A successful staged launch exits with the
+fixed status 20 so the existing runtime launches the game and returns to Bloom
+Shell on completion. The fixed session runner attaches the observed RetroArch
+PID, records a monotonic natural exit, flushes scoped saves, and completes the
+session before control returns to the runtime. Any other exit or crash removes incomplete shell-owned
+handoff files and immediately starts MainUI as the recovery fallback. This is
+not yet the stable default path.
+
 The public boundary exposes `bloomctl library status` and the explicit
 `bloomctl library import-onion` mutation. The importer reads a signed package
 catalog that maps Onion emulator folders to stable Bloom system IDs, validates

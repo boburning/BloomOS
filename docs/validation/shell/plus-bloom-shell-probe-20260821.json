@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "date": "2026-08-21",
+  "operator": "Codex remote automation",
+  "device": {"family": "mini_plus", "model_id": 354},
+  "installed_build": {"version": "0.1.0-dev-9b5c3aa8", "update_state": "known_good"},
+  "candidate": {
+    "source_base_commit": "7c223cf7",
+    "sha256": "9f22985b1c951ff281de3c3cfbce89b22daf72d8e88c87d523723e1e89e00c2f"
+  },
+  "result": {
+    "operation": "probe",
+    "ready": true,
+    "gb_games": 1,
+    "database_mode": "read_only",
+    "database_sha256_before": "23cd40a5c2036854c9b80007f50c380ebfe9e131bbc00202db982f72820fdc83",
+    "database_sha256_after": "23cd40a5c2036854c9b80007f50c380ebfe9e131bbc00202db982f72820fdc83",
+    "mainui_pid_before": 1146,
+    "mainui_pid_after": 1146,
+    "display_opened": false,
+    "launch_staged": false
+  },
+  "checks": {
+    "upload_hash_matches": "pass",
+    "native_arm_execution": "pass",
+    "catalog_query": "pass",
+    "catalog_unchanged": "pass",
+    "mainui_unchanged": "pass",
+    "temporary_candidate_cleanup": "pass"
+  },
+  "notes": "This remote probe validates binary loading and live catalog consumption only. Visible rendering, input, launch, return, and fallback remain pending physical validation."
+}

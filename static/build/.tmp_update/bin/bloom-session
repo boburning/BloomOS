@@ -82,7 +82,7 @@ current_state() {
 
 valid_transition() {
     case "$1:$2" in
-        PREPARING:STARTING|STARTING:RUNNING|RUNNING:STOP_REQUESTED|STOP_REQUESTED:FLUSHING) return 0 ;;
+        PREPARING:STARTING|STARTING:RUNNING|RUNNING:STOP_REQUESTED|RUNNING:FLUSHING|STOP_REQUESTED:FLUSHING) return 0 ;;
         *) return 1 ;;
     esac
 }
@@ -173,7 +173,9 @@ command_flush_saves() {
 command_complete() {
     lock
     [ "$(current_state)" = FLUSHING ] || fail "session is not FLUSHING"
-    [ -s "$FLUSH_RESULT_FILE" ] && grep -q '"schema":1' "$FLUSH_RESULT_FILE" || fail "save flush is not confirmed"
+    if [ ! -s "$FLUSH_RESULT_FILE" ] || ! grep -q '"schema":1' "$FLUSH_RESULT_FILE"; then
+        fail "save flush is not confirmed"
+    fi
     ra_finish_log stopped "$(read_value "$DURATION_FILE")"
     rm -f "$SESSION_ROOT/ra.cfg"
     atomic_line "$STATE_FILE" STOPPED
@@ -289,6 +291,23 @@ command_stop_retroarch() {
         "$method" "$duration_seconds"
 }
 
+command_observe_exit() {
+    lock
+    [ "$(current_state)" = RUNNING ] || fail "session is not RUNNING"
+    pid="$(read_value "$PID_FILE")"
+    case "$pid" in ''|*[!0-9]*) fail "session emulator PID is invalid" ;; esac
+    ! process_alive "$pid" || fail "tracked emulator is still running"
+    monotonic_start="$(read_value "$MONOTONIC_START_FILE")"
+    monotonic_stop="$(monotonic_seconds)" || fail "monotonic clock is unavailable"
+    case "$monotonic_start:$monotonic_stop" in *[!0-9:]*|:*) fail "monotonic clock is invalid" ;; esac
+    [ "$monotonic_stop" -ge "$monotonic_start" ] || fail "monotonic clock regressed"
+    duration_seconds=$((monotonic_stop - monotonic_start))
+    atomic_line "$DURATION_FILE" "$duration_seconds"
+    transition_locked RUNNING FLUSHING
+    printf '{"schema":1,"state":"FLUSHING","shutdown_method":"natural_exit","duration_seconds":%s}\n' \
+        "$duration_seconds"
+}
+
 command_status() {
     lock
     state="$(current_state)"
@@ -306,6 +325,7 @@ usage() {
     printf '       bloom-session attach PID\n' >&2
     printf '       bloom-session fail REASON\n' >&2
     printf '       bloom-session stop-retroarch\n' >&2
+    printf '       bloom-session observe-exit\n' >&2
     printf '       bloom-session flush-saves\n' >&2
     printf '       bloom-session complete\n' >&2
     printf '       bloom-session status --json\n' >&2
@@ -317,6 +337,7 @@ case "${1:-}" in
     attach) [ "$#" -eq 2 ] || { usage; exit 2; }; command_attach "$2" ;;
     fail) [ "$#" -eq 2 ] || { usage; exit 2; }; command_fail "$2" ;;
     stop-retroarch) [ "$#" -eq 1 ] || { usage; exit 2; }; command_stop_retroarch ;;
+    observe-exit) [ "$#" -eq 1 ] || { usage; exit 2; }; command_observe_exit ;;
     flush-saves) [ "$#" -eq 1 ] || { usage; exit 2; }; command_flush_saves ;;
     complete) [ "$#" -eq 1 ] || { usage; exit 2; }; command_complete ;;
     status) [ "$#" -eq 2 ] && [ "$2" = --json ] || { usage; exit 2; }; command_status ;;

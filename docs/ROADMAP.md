@@ -396,7 +396,15 @@ Current frontend progress:
   process IDs, carrier, and SSH. Suspend mutation, non-Plus public volume
   backends, Flip Wi-Fi lifecycle ownership, and replacement of the remaining
   inherited auxiliary network services remain pending.
-- [ ] Bloom Shell vertical slice and supervised MainUI fallback.
+- [ ] Bloom Shell vertical slice and supervised MainUI fallback. The native
+  development shell now renders Home and a cursor-paged Game Boy library from
+  in-memory Bloom catalog rows, stages selection through the structured launch
+  and session services, and returns through the runtime loop. Render-time
+  subprocesses are prohibited by a shell gate. A fixed development flag enables
+  the path, while any non-launch exit or crash removes incomplete handoff state
+  and falls back to MainUI. An exact-hash Plus probe loaded the live read-only
+  catalog and found one GB game without opening the display. Interactive
+  browse/launch/return and crash-fallback hardware validation remain pending.
 
 ## Historical BloomOS foundation
 

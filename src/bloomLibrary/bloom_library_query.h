@@ -13,6 +13,7 @@ typedef struct {
     char normalized_rom_path[BLOOM_LIBRARY_TEXT_SIZE];
     char display_title[BLOOM_LIBRARY_TEXT_SIZE];
     char image_path[BLOOM_LIBRARY_TEXT_SIZE];
+    char launch_path[BLOOM_LIBRARY_TEXT_SIZE];
     sqlite3_int64 file_size;
     sqlite3_int64 file_mtime;
 } BloomLibraryGame;

@@ -214,12 +214,35 @@ check_main_ui() {
         if [ -f /tmp/run_advmenu ]; then
             rm /tmp/run_advmenu
             $sysdir/bin/adv/run_advmenu.sh
+        elif [ -f "$sysdir/config/.bloomShell" ]; then
+            launch_bloom_shell
         else
             launch_main_ui
         fi
 
         check_off_order "End"
     fi
+}
+
+launch_bloom_shell() {
+    log "\n:: Launch Bloom Shell"
+    start_audioserver
+    cd "$sysdir"
+    if PATH="$sysdir/bin:$PATH" \
+        LD_LIBRARY_PATH="$sysdir/lib:$miyoodir/lib:/config/lib:/lib:/customer/lib" \
+        LD_PRELOAD="$miyoodir/lib/libpadsp.so" \
+        "$sysdir/bin/bloom-shell" >/dev/null 2>&1; then
+        shell_status=0
+    else
+        shell_status=$?
+    fi
+    if [ "$shell_status" -eq 20 ] && [ -f "$sysdir/cmd_to_run.sh" ]; then
+        set_prev_state "bloom-shell"
+        return 0
+    fi
+    log "Bloom Shell exited without a launch (status $shell_status); falling back to MainUI"
+    rm -f "$sysdir/cmd_to_run.sh" "$sysdir/bloom-shell-launch.json"
+    launch_main_ui
 }
 
 launch_main_ui() {
