@@ -226,6 +226,59 @@ TEST(BloomUiRenderer, DialogRejectsMalformedStateAndSurfaceShape)
     SDL_FreeSurface(surface);
 }
 
+TEST(BloomUiRenderer, KeyboardRendersEveryModeWithVisibleFocus)
+{
+    BloomUiLayout layout{};
+    ASSERT_EQ(0, bloom_ui_layout_init(640, 480, 0, &layout));
+    SDL_Surface *surface = make_surface(640, 480);
+    ASSERT_NE(nullptr, surface);
+    BloomUiScene scene = example_scene();
+    BloomUiKeyboardFocus keyboard{};
+    bloom_ui_keyboard_init(&keyboard);
+    for (int mode = BLOOM_UI_KEYBOARD_LOWER; mode < BLOOM_UI_KEYBOARD_MODE_COUNT; ++mode) {
+        ASSERT_EQ(0, bloom_ui_render_shell(surface, &layout, &scene));
+        ASSERT_EQ(0, bloom_ui_render_keyboard(surface, &layout, &keyboard));
+        EXPECT_NE(0U, surface_hash(surface));
+        bloom_ui_keyboard_cycle_mode(&keyboard);
+    }
+
+    int height = layout.content.height * 3 / 4;
+    int y = layout.content.y + layout.content.height - height;
+    int gap = 4;
+    int row_height = height / 4;
+    int key_width = (layout.content.width - gap * 11) / 10;
+    int row_width = key_width * 10 + gap * 9;
+    int x = layout.content.x + (layout.content.width - row_width) / 2;
+    auto *pixels = static_cast<Uint32 *>(surface->pixels);
+    Uint8 red = 0, green = 0, blue = 0;
+    SDL_GetRGB(pixels[(y + gap + row_height / 4) * surface->pitch / 4 + x + 2],
+               surface->format, &red, &green, &blue);
+    EXPECT_EQ(0xF3, red);
+    EXPECT_EQ(0xE2, green);
+    EXPECT_EQ(0xBD, blue);
+    SDL_FreeSurface(surface);
+}
+
+TEST(BloomUiRenderer, KeyboardRejectsMalformedFocusAndSurfaceShape)
+{
+    BloomUiLayout layout{};
+    ASSERT_EQ(0, bloom_ui_layout_init(640, 480, 0, &layout));
+    SDL_Surface *surface = make_surface(640, 480);
+    ASSERT_NE(nullptr, surface);
+    BloomUiKeyboardFocus keyboard{};
+    bloom_ui_keyboard_init(&keyboard);
+    keyboard.row = 4;
+    EXPECT_NE(0, bloom_ui_render_keyboard(surface, &layout, &keyboard));
+    keyboard.row = 0;
+    keyboard.column = 10;
+    EXPECT_NE(0, bloom_ui_render_keyboard(surface, &layout, &keyboard));
+    keyboard.column = 0;
+    keyboard.mode = BLOOM_UI_KEYBOARD_MODE_COUNT;
+    EXPECT_NE(0, bloom_ui_render_keyboard(surface, &layout, &keyboard));
+    EXPECT_NE(0, bloom_ui_render_keyboard(nullptr, &layout, &keyboard));
+    SDL_FreeSurface(surface);
+}
+
 TEST(BloomUiRenderer, PublishesEveryFramebufferPage)
 {
     SDL_Surface *surface = make_surface(3, 2);

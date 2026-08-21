@@ -122,6 +122,10 @@ to the consumer. Dialog focus defaults and movement remain in the UI core, so
 future update actions can require an explicit safe-default confirmation without
 duplicating geometry or input policy.
 
+The shared renderer also presents the four-row lower-case, upper-case, and
+symbol keyboard model with an explicit focus treatment. Font adapters can
+overlay glyphs without changing navigation or credential state.
+
 Confirming a game creates a schema-1 structured request, asks `bloom-session`
 to own the immutable session, and publishes the existing quoted command adapter
 only after validation. Runtime opt-in is controlled by the development-only

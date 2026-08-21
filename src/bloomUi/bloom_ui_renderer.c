@@ -187,6 +187,46 @@ int bloom_ui_render_dialog(SDL_Surface *surface, const BloomUiLayout *layout,
     return 0;
 }
 
+int bloom_ui_render_keyboard(SDL_Surface *surface, const BloomUiLayout *layout,
+                             const BloomUiKeyboardFocus *keyboard)
+{
+    if (surface == NULL || surface->format == NULL || surface->format->BitsPerPixel != 32 ||
+        layout == NULL || keyboard == NULL || surface->w != layout->viewport_width ||
+        surface->h != layout->viewport_height || keyboard->mode < BLOOM_UI_KEYBOARD_LOWER ||
+        keyboard->mode >= BLOOM_UI_KEYBOARD_MODE_COUNT || keyboard->row >= 4 ||
+        bloom_ui_keyboard_character(keyboard) == '\0')
+        return -1;
+
+    int width = layout->content.width;
+    int height = layout->content.height * 3 / 4;
+    int x = layout->content.x;
+    int y = layout->content.y + layout->content.height - height;
+    int gap = layout->viewport_width >= 720 ? 6 : 4;
+    int row_height = height / 4;
+    fill(surface, x, y, width, height, BLOOM_UI_COLOR_SURFACE);
+
+    for (size_t row = 0; row < 4; ++row) {
+        int count = (int)bloom_ui_keyboard_row_length(keyboard->mode, row);
+        int key_width = (width - gap * (count + 1)) / count;
+        int key_height = row_height - gap * 2;
+        int row_width = count * key_width + (count - 1) * gap;
+        int row_x = x + (width - row_width) / 2;
+        for (int column = 0; column < count; ++column) {
+            int key_x = row_x + column * (key_width + gap);
+            int key_y = y + (int)row * row_height + gap;
+            int selected = keyboard->row == row && keyboard->column == (size_t)column;
+            fill(surface, key_x, key_y, key_width, key_height,
+                 selected ? BLOOM_UI_COLOR_CREAM : BLOOM_UI_COLOR_SURFACE_RAISED);
+            fill(surface, key_x + key_width / 3, key_y + key_height / 2 - 2, key_width / 3, 4,
+                 selected ? BLOOM_UI_COLOR_CANVAS : BLOOM_UI_COLOR_SAND);
+            if (selected)
+                fill(surface, key_x, key_y + key_height - 4, key_width, 4,
+                     BLOOM_UI_COLOR_ORANGE);
+        }
+    }
+    return 0;
+}
+
 int bloom_ui_rotate_180(SDL_Surface *surface)
 {
     if (surface == NULL || surface->format == NULL || surface->format->BitsPerPixel != 32 ||

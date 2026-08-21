@@ -173,6 +173,13 @@ static size_t keyboard_row_length(const BloomUiKeyboardFocus *keyboard)
     return strlen(keyboard_rows[keyboard->mode][keyboard->row]);
 }
 
+size_t bloom_ui_keyboard_row_length(BloomUiKeyboardMode mode, size_t row)
+{
+    if (mode < BLOOM_UI_KEYBOARD_LOWER || mode >= BLOOM_UI_KEYBOARD_MODE_COUNT || row >= 4)
+        return 0;
+    return strlen(keyboard_rows[mode][row]);
+}
+
 void bloom_ui_keyboard_init(BloomUiKeyboardFocus *keyboard)
 {
     if (keyboard == NULL) {
