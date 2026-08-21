@@ -208,6 +208,23 @@ reconciliation if immediate application fails. Hardware without Wi-Fi rejects
 the mutation before touching settings. Replacement of the inherited backend
 remains follow-up work.
 
+## Bloom controls boundary
+
+`bloom-controls` begins the model-aware runtime-control boundary with
+brightness. `status` reports only the known model and bounded raw PWM state.
+The public brightness request accepts exactly 0 through 10, persists only
+`device.brightness` through `bloom-settings`, and applies Bloom's single
+canonical logical-to-PWM curve. Settings rejection remains distinct from a
+later hardware-apply failure.
+
+The separate internal `apply brightness` operation never persists state. Boot
+uses it after preparing the PWM period, removing the duplicated curve and raw
+duty-cycle write from `runtime.sh`. Unknown hardware and unavailable controls
+fail closed. Volume and clock controls will extend this boundary only after
+their real device backends are characterized; the Plus, for example, exposes
+the firmware audio server but not the historical `/dev/mi_ao` node while
+MainUI is idle.
+
 ## Structured launch boundary
 
 `bloom-launch` owns schema-1 `BloomLaunchRequest` validation and atomic request

@@ -818,8 +818,6 @@ init_system() {
     start_audioserver
 
     brightness=$(/customer/app/jsonval brightness)
-    brightness_raw=$(awk "BEGIN { print int(3 * exp(0.350656 * $brightness) + 0.5) }")
-    log "brightness: $brightness -> $brightness_raw"
 
     # init backlight
     echo 0 > /sys/class/pwm/pwmchip0/export
@@ -831,7 +829,11 @@ init_system() {
         frequency=800
     fi
     echo $frequency > /sys/class/pwm/pwmchip0/pwm0/period
-    echo $brightness_raw > /sys/class/pwm/pwmchip0/pwm0/duty_cycle
+    if brightness_result=$($sysdir/bin/bloom-controls apply brightness "$brightness"); then
+        log "$brightness_result"
+    else
+        log "Bloom brightness application failed"
+    fi
     echo 1 > /sys/class/pwm/pwmchip0/pwm0/enable
 
     get_screen_resolution

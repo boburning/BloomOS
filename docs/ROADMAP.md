@@ -375,7 +375,10 @@ Current frontend progress:
   persists only the canonical Bloom Wi-Fi preference before applying that
   fixed backend, with separate settings/apply failures; a no-op Plus enable
   preserved the exact settings hash and association.
-  Suspend/lid, brightness, volume, clock, and inherited
+  `bloom-controls` now owns bounded canonical brightness persistence and the
+  shared logical-to-PWM apply curve; boot uses the non-persisting adapter path,
+  and an exact-hash Plus no-op retained both raw PWM and settings bytes.
+  Suspend/lid, volume, clock, and inherited
   network-backend replacement remain pending.
 - [ ] Bloom Shell vertical slice and supervised MainUI fallback.
 
