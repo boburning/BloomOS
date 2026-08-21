@@ -57,6 +57,7 @@ BLOOM_RUNTIME_SOURCE_IDS = {
     "runtime-tmp-update-bin-bloom-launch-run",
     "runtime-tmp-update-bin-bloom-lid",
     "runtime-tmp-update-bin-bloom-network",
+    "runtime-tmp-update-bin-bloom-wifi",
     "runtime-tmp-update-bin-bloom-platform",
     "runtime-tmp-update-bin-bloom-power",
     "runtime-tmp-update-bin-bloom-ra-login",

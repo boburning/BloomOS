@@ -6,9 +6,11 @@ setup() {
     export BLOOM_PLATFORM_BIN="$BATS_TEST_TMPDIR/bloom-platform"
     export BLOOM_NETWORK_JSONVAL_BIN="$BATS_TEST_TMPDIR/jsonval"
     export BLOOM_NETWORK_LIB_DIR="$BATS_TEST_TMPDIR/runtime-lib"
-    export BLOOM_NETWORK_BACKEND_BIN="$BATS_TEST_TMPDIR/update-networking"
+    export BLOOM_NETWORK_BACKEND_BIN="$BATS_TEST_TMPDIR/bloom-wifi"
+    export BLOOM_NETWORK_COMPAT_BIN="$BATS_TEST_TMPDIR/update-networking"
     export BLOOM_SETTINGS_BIN="$BATS_TEST_TMPDIR/bloom-settings"
     export BACKEND_LOG="$BATS_TEST_TMPDIR/backend.log"
+    export COMPAT_LOG="$BATS_TEST_TMPDIR/compat.log"
     export SETTINGS_LOG="$BATS_TEST_TMPDIR/settings.log"
     mkdir -p "$BLOOM_NETWORK_ROOT/sys/class/net/wlan0"
     printf up >"$BLOOM_NETWORK_ROOT/sys/class/net/wlan0/operstate"
@@ -19,11 +21,15 @@ setup() {
 #!/bin/sh
 printf '%s\n' "$*" >"$BACKEND_LOG"
 SH
+    cat >"$BLOOM_NETWORK_COMPAT_BIN" <<'SH'
+#!/bin/sh
+printf '%s\n' "$*" >"$COMPAT_LOG"
+SH
     cat >"$BLOOM_SETTINGS_BIN" <<'SH'
 #!/bin/sh
 printf '%s\n' "$*" >"$SETTINGS_LOG"
 SH
-    chmod +x "$BLOOM_PLATFORM_BIN" "$BLOOM_NETWORK_JSONVAL_BIN" "$BLOOM_NETWORK_BACKEND_BIN" "$BLOOM_SETTINGS_BIN"
+    chmod +x "$BLOOM_PLATFORM_BIN" "$BLOOM_NETWORK_JSONVAL_BIN" "$BLOOM_NETWORK_BACKEND_BIN" "$BLOOM_NETWORK_COMPAT_BIN" "$BLOOM_SETTINGS_BIN"
 }
 
 @test "status reports associated Wi-Fi without exposing network identity" {
@@ -85,15 +91,25 @@ SH
     [[ "$output" == *'"state":"invalid_arguments"'* ]]
 }
 
-@test "reconcile delegates only the fixed inherited backend action" {
+@test "reconcile delegates Wi-Fi and compatibility services through separate fixed actions" {
     run "$SERVICE" request reconcile
     [ "$status" -eq 0 ]
     [ "$output" = '{"schema":1,"service":"bloom-network","operation":"reconcile","applied":true,"state":"applied"}' ]
-    [ "$(cat "$BACKEND_LOG")" = check ]
+    [ "$(cat "$BACKEND_LOG")" = reconcile ]
+    [ "$(cat "$COMPAT_LOG")" = services ]
 
     run "$SERVICE" request restart
     [ "$status" -eq 2 ]
-    [ "$(cat "$BACKEND_LOG")" = check ]
+    [ "$(cat "$BACKEND_LOG")" = reconcile ]
+}
+
+@test "unsupported Bloom Wi-Fi backend falls back to the complete compatibility check" {
+    printf '#!/bin/sh\nexit 3\n' >"$BLOOM_NETWORK_BACKEND_BIN"
+    chmod +x "$BLOOM_NETWORK_BACKEND_BIN"
+    run "$SERVICE" request reconcile
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'"state":"compatibility_applied"'* ]]
+    [ "$(cat "$COMPAT_LOG")" = check ]
 }
 
 @test "reconcile is a successful no-op without network hardware" {
@@ -117,13 +133,14 @@ SH
     [ "$status" -eq 0 ]
     [ "$output" = '{"schema":1,"service":"bloom-network","operation":"enable","preference_saved":true,"applied":true,"state":"applied"}' ]
     [ "$(cat "$SETTINGS_LOG")" = 'set device.wifi_enabled true' ]
-    [ "$(cat "$BACKEND_LOG")" = check ]
+    [ "$(cat "$BACKEND_LOG")" = reconcile ]
+    [ "$(cat "$COMPAT_LOG")" = services ]
 
     run "$SERVICE" request disable
     [ "$status" -eq 0 ]
     [[ "$output" == *'"operation":"disable"'* ]]
     [ "$(cat "$SETTINGS_LOG")" = 'set device.wifi_enabled false' ]
-    [ "$(cat "$BACKEND_LOG")" = check ]
+    [ "$(cat "$BACKEND_LOG")" = reconcile ]
 }
 
 @test "preference mutation reports settings and apply failures separately" {

@@ -5,7 +5,8 @@ ROOT=${BLOOM_NETWORK_ROOT:-}
 PLATFORM=${BLOOM_PLATFORM_BIN:-/mnt/SDCARD/.tmp_update/bin/bloom-platform}
 JSONVAL=${BLOOM_NETWORK_JSONVAL_BIN:-/customer/app/jsonval}
 LIB_DIR=${BLOOM_NETWORK_LIB_DIR:-$ROOT/mnt/SDCARD/.tmp_update/lib}
-BACKEND=${BLOOM_NETWORK_BACKEND_BIN:-/mnt/SDCARD/.tmp_update/script/network/update_networking.sh}
+BACKEND=${BLOOM_NETWORK_BACKEND_BIN:-/mnt/SDCARD/.tmp_update/bin/bloom-wifi}
+COMPAT=${BLOOM_NETWORK_COMPAT_BIN:-/mnt/SDCARD/.tmp_update/script/network/update_networking.sh}
 SETTINGS=${BLOOM_SETTINGS_BIN:-/mnt/SDCARD/.tmp_update/bin/bloom-settings}
 
 result() {
@@ -62,7 +63,17 @@ reconcile() {
         return 0
     fi
     [ -x "$BACKEND" ] || { operation_result false backend_unavailable; return 1; }
-    "$BACKEND" check >/dev/null 2>&1 || { operation_result false backend_failed; return 1; }
+    if "$BACKEND" reconcile >/dev/null 2>&1; then
+        [ ! -x "$COMPAT" ] || "$COMPAT" services >/dev/null 2>&1 || { operation_result false compatibility_failed; return 1; }
+    else
+        status=$?
+        if [ "$status" -eq 3 ] && [ -x "$COMPAT" ] && "$COMPAT" check >/dev/null 2>&1; then
+            operation_result true compatibility_applied
+            return 0
+        fi
+        operation_result false backend_failed
+        return 1
+    fi
     operation_result true applied
 }
 
@@ -81,7 +92,20 @@ set_preference() {
         return 1
     }
     [ -x "$BACKEND" ] || { preference_result "$operation" true false backend_unavailable; return 1; }
-    "$BACKEND" check >/dev/null 2>&1 || { preference_result "$operation" true false backend_failed; return 1; }
+    if "$BACKEND" reconcile >/dev/null 2>&1; then
+        if [ -x "$COMPAT" ]; then
+            "$COMPAT" services >/dev/null 2>&1 || {
+                preference_result "$operation" true false compatibility_failed
+                return 1
+            }
+        fi
+    else
+        status=$?
+        if [ "$status" -ne 3 ] || [ ! -x "$COMPAT" ] || ! "$COMPAT" check >/dev/null 2>&1; then
+            preference_result "$operation" true false backend_failed
+            return 1
+        fi
+    fi
     preference_result "$operation" true true applied
 }
 

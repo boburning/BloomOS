@@ -1,0 +1,84 @@
+#!/bin/sh
+set -eu
+
+ROOT=${BLOOM_WIFI_ROOT:-}
+PLATFORM=${BLOOM_PLATFORM_BIN:-/mnt/SDCARD/.tmp_update/bin/bloom-platform}
+JSONVAL=${BLOOM_WIFI_JSONVAL_BIN:-/customer/app/jsonval}
+LIB_DIR=${BLOOM_WIFI_LIB_DIR:-$ROOT/mnt/SDCARD/.tmp_update/lib}
+RADIO=${BLOOM_WIFI_RADIO_BIN:-/customer/app/axp_test}
+IFCONFIG=${BLOOM_WIFI_IFCONFIG_BIN:-/sbin/ifconfig}
+WPA=${BLOOM_WIFI_WPA_BIN:-/mnt/SDCARD/miyoo/app/wpa_supplicant}
+WPA_CONFIG=${BLOOM_WIFI_CONFIG:-/appconfigs/wpa_supplicant.conf}
+UDHCPC=${BLOOM_WIFI_UDHCPC_BIN:-/sbin/udhcpc}
+UDHCPC_SCRIPT=${BLOOM_WIFI_UDHCPC_SCRIPT:-/etc/init.d/udhcpc.script}
+IW=${BLOOM_WIFI_IW_BIN:-/mnt/SDCARD/.tmp_update/bin/iw}
+PKILL=${BLOOM_WIFI_PKILL_BIN:-/usr/bin/pkill}
+SLEEP=${BLOOM_WIFI_SLEEP_BIN:-sleep}
+INTERFACE=${BLOOM_WIFI_INTERFACE:-wlan0}
+
+result() {
+    printf '{"schema":1,"service":"bloom-wifi","supported":%s,"applied":%s,"state":"%s"}\n' "$1" "$2" "$3"
+}
+
+enabled() {
+    [ -x "$JSONVAL" ] || return 1
+    value=$(LD_LIBRARY_PATH="/lib:/config/lib:/customer/lib:$LIB_DIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" \
+        "$JSONVAL" wifi 2>/dev/null) || return 1
+    case "$value" in 0|1) printf '%s' "$value" ;; *) return 1 ;; esac
+}
+
+associated() {
+    interface="$ROOT/sys/class/net/$INTERFACE"
+    [ -r "$interface/operstate" ] && [ -r "$interface/carrier" ] || return 1
+    state=''
+    carrier=''
+    IFS= read -r state <"$interface/operstate" || true
+    IFS= read -r carrier <"$interface/carrier" || true
+    [ "$state" = up ] && [ "$carrier" = 1 ]
+}
+
+require_executable() { [ -x "$1" ]; }
+
+start_wifi() {
+    for dependency in "$RADIO" "$IFCONFIG" "$WPA" "$UDHCPC" "$IW"; do
+        require_executable "$dependency" || return 1
+    done
+    [ -r "$WPA_CONFIG" ] && [ ! -L "$WPA_CONFIG" ] || return 1
+    [ -r "$UDHCPC_SCRIPT" ] && [ ! -L "$UDHCPC_SCRIPT" ] || return 1
+    "$RADIO" wifion >/dev/null 2>&1 || return 1
+    "$SLEEP" 2 || return 1
+    "$IFCONFIG" "$INTERFACE" up >/dev/null 2>&1 || return 1
+    "$WPA" -B -D nl80211 "-i$INTERFACE" -c "$WPA_CONFIG" >/dev/null 2>&1 || return 1
+    "$UDHCPC" -i "$INTERFACE" -s "$UDHCPC_SCRIPT" >/dev/null 2>&1 &
+    "$IW" dev "$INTERFACE" set power_save off >/dev/null 2>&1 || return 1
+}
+
+stop_wifi() {
+    if require_executable "$PKILL"; then
+        "$PKILL" -TERM wpa_supplicant >/dev/null 2>&1 || true
+        "$PKILL" -TERM udhcpc >/dev/null 2>&1 || true
+    fi
+    require_executable "$RADIO" || return 1
+    "$RADIO" wifioff >/dev/null 2>&1
+}
+
+reconcile() {
+    [ -x "$PLATFORM" ] || { result false false platform_unavailable; return 1; }
+    model=$($PLATFORM model 2>/dev/null) || { result false false platform_unavailable; return 1; }
+    [ "$model" = mini_plus ] || { result false false unsupported_model; return 3; }
+    preference=$(enabled) || { result true false preference_unavailable; return 1; }
+    if [ "$preference" = 1 ]; then
+        if associated; then
+            result true false preserved
+            return 0
+        fi
+        start_wifi || { result true false start_failed; return 1; }
+        result true true started
+        return 0
+    fi
+    stop_wifi || { result true false stop_failed; return 1; }
+    result true true stopped
+}
+
+[ "$#" -eq 1 ] && [ "$1" = reconcile ] || { result false false invalid_arguments; exit 2; }
+reconcile

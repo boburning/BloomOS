@@ -1,0 +1,34 @@
+{
+  "schema": 1,
+  "date": "2026-08-21",
+  "operator": "Codex remote automation",
+  "device": {"family": "mini_plus", "model_id": 354},
+  "installed_build": {"version": "0.1.0-dev-9b5c3aa8", "update_state": "known_good"},
+  "candidate": {
+    "source_base_commit": "58a77b25",
+    "sha256": "5ec86c0d09d25dd7dcb8196725c9e20935478f1cab582a3bb5952e5a04af4c35"
+  },
+  "result": {
+    "operation": "reconcile",
+    "state": "preserved",
+    "applied": false,
+    "settings_sha256_before": "24c35391101d40789feac06966bb6ce75063cded0d0178b21c75f72744e0dd8d",
+    "settings_sha256_after": "24c35391101d40789feac06966bb6ce75063cded0d0178b21c75f72744e0dd8d",
+    "wpa_supplicant_pid_before": 953,
+    "wpa_supplicant_pid_after": 953,
+    "dhcp_pid_before": 1034,
+    "dhcp_pid_after": 1034,
+    "operstate_after": "up",
+    "carrier_after": 1,
+    "ssh_reachable_after": true
+  },
+  "checks": {
+    "upload_hash_matches": "pass",
+    "settings_unchanged": "pass",
+    "network_processes_unchanged": "pass",
+    "association_preserved": "pass",
+    "ssh_session_preserved": "pass",
+    "temporary_candidate_cleanup": "pass"
+  },
+  "notes": "This proves the healthy associated Plus no-op path only. Disconnected start and disable/re-enable remain host-tested pending signed physical validation."
+}

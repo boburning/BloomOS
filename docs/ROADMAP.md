@@ -389,8 +389,13 @@ Current frontend progress:
   fails closed for missing, linked, or malformed state. Plus exact-hash
   evidence confirms the explicit unsupported path without mutation; Flip
   suspend/resume policy remains deferred for physical validation.
-  Suspend mutation, non-Plus public volume backends, and inherited
-  network-backend replacement remain pending.
+  `bloom-wifi` now owns the fixed Plus radio, WPA, DHCP, and power-save
+  lifecycle while the inherited network script is restricted to auxiliary
+  compatibility services. Exact-hash Plus evidence confirms an associated
+  reconciliation is a true no-op that preserves settings bytes, network-client
+  process IDs, carrier, and SSH. Suspend mutation, non-Plus public volume
+  backends, Flip Wi-Fi lifecycle ownership, and replacement of the remaining
+  inherited auxiliary network services remain pending.
 - [ ] Bloom Shell vertical slice and supervised MainUI fallback.
 
 ## Historical BloomOS foundation

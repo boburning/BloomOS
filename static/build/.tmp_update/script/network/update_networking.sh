@@ -24,6 +24,9 @@ main() {
         check) # called by runtime.sh::check_networking
             check
             ;;
+        services) # compatibility services only; Bloom owns Wi-Fi lifecycle
+            check_services
+            ;;
         ftp | telnet | http | smbd)
             service=$1
             case "$2" in
@@ -73,26 +76,20 @@ main() {
 # Standard check from runtime for startup.
 check() {
     log "Network Checker: Update networking"
-    local force_wifi_on_startup=$([ -f /customer/app/axp_test ] && [ -f $sysdir/config/.ntpForce ] && echo 1 || echo 0)
-    local has_wifi=$(wifi_enabled && echo 1 || echo 0)
-
     check_wifi
+    check_services
+}
+
+check_services() {
+    local has_wifi=$(wifi_enabled && echo 1 || echo 0)
     check_ftpstate &
     check_sshstate &
     check_telnetstate &
     check_httpstate &
     check_smbdstate &
 
-    if [ "$is_booting" -eq 1 ]; then
-        if [ "$has_wifi" -eq 0 ]; then
-            if [ "$force_wifi_on_startup" -eq 1 ]; then
-                bootScreen Boot "Turning on Wi-Fi..."
-                wifi_on
-                has_wifi=1
-            fi
-        else
-            bootScreen Boot "Waiting for network..."
-        fi
+    if [ "$is_booting" -eq 1 ] && [ "$has_wifi" -eq 1 ]; then
+        bootScreen Boot "Waiting for network..."
     fi
 
     if [ "$has_wifi" -eq 1 ] && flag_enabled ntpWait && [ $is_booting -eq 1 ]; then
@@ -111,10 +108,6 @@ check() {
         $sysdir/script/ota_update.sh check &
     fi
 
-    if [ "$is_booting" -eq 1 ] && [ "$force_wifi_on_startup" -eq 1 ] && wifi_disabled; then
-        bootScreen Boot "Turning off Wi-Fi..."
-        wifi_off
-    fi
 }
 
 # Function to help disable and kill off all processes
