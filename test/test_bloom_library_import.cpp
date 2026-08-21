@@ -119,11 +119,27 @@ TEST_F(BloomLibraryImportTest, ImportsNormalizedSystemsAndAppsIdempotently)
               text("SELECT launch_path FROM systems WHERE system_id='gba'"));
     EXPECT_EQ("bloom-app-v1:Tweaks", text("SELECT app_id FROM apps"));
     EXPECT_EQ("Icons/Default/app/tweaks.png", text("SELECT icon_path FROM apps"));
+    EXPECT_EQ("mainui-dependent", text("SELECT compatibility FROM apps"));
 
     result = {};
     ASSERT_EQ(SQLITE_OK, import(&result, error, sizeof(error))) << error;
     EXPECT_EQ(0, result.changed);
     EXPECT_EQ(1, result.generation);
+}
+
+TEST_F(BloomLibraryImportTest, ImportsOnlyExplicitCompatibilityClasses)
+{
+    write(app_ / "Tweaks" / "config.json",
+          R"({"label":"Tweaks","launch":"launch.sh","bloom_compatibility":"onion-compatible"})");
+    BloomLibraryImportResult result{};
+    char error[160]{};
+    ASSERT_EQ(SQLITE_OK, import(&result, error, sizeof(error))) << error;
+    EXPECT_EQ("onion-compatible", text("SELECT compatibility FROM apps"));
+
+    write(app_ / "Tweaks" / "config.json",
+          R"({"label":"Tweaks","launch":"launch.sh","bloom_compatibility":"probably-safe"})");
+    EXPECT_NE(SQLITE_OK, import(&result, error, sizeof(error)));
+    EXPECT_EQ("onion-compatible", text("SELECT compatibility FROM apps"));
 }
 
 TEST_F(BloomLibraryImportTest, CatalogCanDeclareDistinctRomFolder)

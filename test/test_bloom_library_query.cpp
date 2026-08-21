@@ -205,9 +205,9 @@ TEST_F(BloomLibraryQueryTest, FavoritesPreserveCanonicalOrderAndSystemFilter)
 TEST_F(BloomLibraryQueryTest, AppsAreBoundedSortedAndPresentOnly)
 {
     execute("INSERT INTO apps VALUES"
-            "('settings','Settings','App/Settings/launch.sh',NULL,1,2,1),"
-            "('activity','Activity','App/Activity/launch.sh','activity.png',1,2,1),"
-            "('gone','Gone','App/Gone/launch.sh',NULL,1,2,0)");
+            "('settings','Settings','App/Settings/launch.sh',NULL,1,2,1,'bloom-native'),"
+            "('activity','Activity','App/Activity/launch.sh','activity.png',1,2,1,'onion-compatible'),"
+            "('gone','Gone','App/Gone/launch.sh',NULL,1,2,0,'mainui-dependent')");
     BloomLibraryApp apps[3]{};
     size_t count = 0;
     ASSERT_EQ(SQLITE_OK, bloom_library_query_apps(database_, 3, apps, 3, &count));
@@ -216,8 +216,10 @@ TEST_F(BloomLibraryQueryTest, AppsAreBoundedSortedAndPresentOnly)
     EXPECT_STREQ("Activity", apps[0].label);
     EXPECT_STREQ("App/Activity/launch.sh", apps[0].launch_path);
     EXPECT_STREQ("activity.png", apps[0].icon_path);
+    EXPECT_STREQ("onion-compatible", apps[0].compatibility);
     EXPECT_STREQ("settings", apps[1].app_id);
     EXPECT_STREQ("", apps[1].icon_path);
+    EXPECT_STREQ("bloom-native", apps[1].compatibility);
 }
 
 TEST_F(BloomLibraryQueryTest, AppsRejectUnboundedRequestsAndMalformedRows)
@@ -226,6 +228,6 @@ TEST_F(BloomLibraryQueryTest, AppsRejectUnboundedRequestsAndMalformedRows)
     size_t count = 7;
     EXPECT_EQ(SQLITE_MISUSE, bloom_library_query_apps(database_, 0, &app, 1, &count));
     EXPECT_EQ(SQLITE_MISUSE, bloom_library_query_apps(database_, 101, &app, 1, &count));
-    execute("INSERT INTO apps VALUES('bad','Bad','',NULL,1,2,1)");
+    execute("INSERT INTO apps VALUES('bad','Bad','',NULL,1,2,1,'mainui-dependent')");
     EXPECT_EQ(SQLITE_CORRUPT, bloom_library_query_apps(database_, 1, &app, 1, &count));
 }

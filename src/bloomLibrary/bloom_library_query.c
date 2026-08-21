@@ -211,7 +211,7 @@ int bloom_library_query_apps(sqlite3 *database, size_t limit, BloomLibraryApp *a
     sqlite3_stmt *statement = NULL;
     int sql = sqlite3_prepare_v2(
         database,
-        "SELECT app_id,label,launch_path,icon_path FROM apps WHERE present=1 "
+        "SELECT app_id,label,launch_path,icon_path,compatibility FROM apps WHERE present=1 "
         "ORDER BY label,app_id LIMIT ?1",
         -1, &statement, NULL);
     if (sql == SQLITE_OK)
@@ -224,8 +224,8 @@ int bloom_library_query_apps(sqlite3 *database, size_t limit, BloomLibraryApp *a
             (sql = copy_column(statement, 1, app->label, sizeof(app->label), 0)) != SQLITE_OK ||
             (sql = copy_column(statement, 2, app->launch_path, sizeof(app->launch_path), 0)) !=
                 SQLITE_OK ||
-            (sql = copy_column(statement, 3, app->icon_path, sizeof(app->icon_path), 1)) !=
-                SQLITE_OK)
+            (sql = copy_column(statement, 3, app->icon_path, sizeof(app->icon_path), 1)) != SQLITE_OK ||
+            (sql = copy_column(statement, 4, app->compatibility, sizeof(app->compatibility), 0)) != SQLITE_OK)
             break;
         ++*count;
     }

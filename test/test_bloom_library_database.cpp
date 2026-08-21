@@ -62,7 +62,7 @@ TEST_F(BloomLibraryDatabaseTest, HealthCountsOnlyPresentIndexedContent)
             "INSERT INTO systems VALUES('old','Old','OLD',NULL,'launch.sh','bin',1,2,0);"
             "INSERT INTO games VALUES('bloom-game-v1:one','gba','GBA/one.gba','One','one',NULL,3,4,1);"
             "INSERT INTO games VALUES('bloom-game-v1:gone','gba','GBA/gone.gba','Gone','gone',NULL,3,4,0);"
-            "INSERT INTO apps VALUES('bloom-app-v1:tweaks','Tweaks','App/Tweaks/launch.sh',NULL,1,2,1);"
+            "INSERT INTO apps VALUES('bloom-app-v1:tweaks','Tweaks','App/Tweaks/launch.sh',NULL,1,2,1,'bloom-native');"
             "INSERT INTO favorites VALUES('bloom-game-v1:one',0);"
             "INSERT INTO recents VALUES('bloom-game-v1:one',0);"
             "UPDATE library_state SET generation=7,status='ready' WHERE id=1;");
@@ -111,7 +111,7 @@ TEST_F(BloomLibraryDatabaseTest, SchemaOneAddsGlobalPagingIndexTransactionally)
     ASSERT_EQ(SQLITE_OK, bloom_library_database_open(path_.c_str(), &database));
     BloomLibraryHealth health{};
     ASSERT_EQ(SQLITE_OK, bloom_library_database_health(database, &health));
-    EXPECT_EQ(3, health.schema_version);
+    EXPECT_EQ(4, health.schema_version);
     EXPECT_EQ(4, health.generation);
     EXPECT_EQ(1, health.games);
     sqlite3_stmt *statement = nullptr;
@@ -134,16 +134,38 @@ TEST_F(BloomLibraryDatabaseTest, SchemaTwoAddsCanonicalRecentsWithoutLosingState
             "INSERT INTO systems VALUES('gba','GBA','GBA',NULL,'launch','gba',1,2,1);"
             "INSERT INTO games VALUES('bloom-game-v1:one','gba','GBA/one.gba','One','one',NULL,3,4,1);"
             "INSERT INTO favorites VALUES('bloom-game-v1:one',0);"
-            "UPDATE schema_version SET version=2;DROP TABLE recents;");
+            "UPDATE schema_version SET version=2;DROP TABLE recents;"
+            "ALTER TABLE apps DROP COLUMN compatibility;");
     sqlite3_close(database);
 
     ASSERT_EQ(SQLITE_OK, bloom_library_database_open(path_.c_str(), &database));
     BloomLibraryHealth health{};
     ASSERT_EQ(SQLITE_OK, bloom_library_database_health(database, &health));
-    EXPECT_EQ(3, health.schema_version);
+    EXPECT_EQ(4, health.schema_version);
     EXPECT_EQ(1, health.games);
     EXPECT_EQ(1, health.favorites);
     EXPECT_EQ(0, health.recents);
+    sqlite3_close(database);
+}
+
+TEST_F(BloomLibraryDatabaseTest, SchemaThreeClassifiesExistingAppsConservatively)
+{
+    sqlite3 *database = nullptr;
+    ASSERT_EQ(SQLITE_OK, bloom_library_database_open(path_.c_str(), &database));
+    execute(database,
+            "INSERT INTO apps VALUES('legacy','Legacy','App/Legacy/launch.sh',NULL,1,2,1,'bloom-native');"
+            "UPDATE schema_version SET version=3;ALTER TABLE apps DROP COLUMN compatibility;");
+    sqlite3_close(database);
+
+    ASSERT_EQ(SQLITE_OK, bloom_library_database_open(path_.c_str(), &database));
+    sqlite3_stmt *statement = nullptr;
+    ASSERT_EQ(SQLITE_OK, sqlite3_prepare_v2(database,
+                                            "SELECT compatibility FROM apps WHERE app_id='legacy'",
+                                            -1, &statement, nullptr));
+    ASSERT_EQ(SQLITE_ROW, sqlite3_step(statement));
+    EXPECT_STREQ("mainui-dependent",
+                 reinterpret_cast<const char *>(sqlite3_column_text(statement, 0)));
+    sqlite3_finalize(statement);
     sqlite3_close(database);
 }
 
