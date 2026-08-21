@@ -3,7 +3,7 @@
 set -u
 
 BLOOM_ROOT="${BLOOM_ROOT:-}"
-SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 BLOOM_PLATFORM="$SCRIPT_DIR/bloom-platform"
 BLOOM_UPDATE_STAGE="${BLOOM_UPDATE_STAGE_BIN:-$SCRIPT_DIR/bloom-update-stage}"
 BLOOM_UPDATE_PREPARE="${BLOOM_UPDATE_PREPARE_BIN:-$SCRIPT_DIR/bloom-update-prepare}"
