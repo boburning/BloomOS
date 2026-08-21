@@ -27,6 +27,8 @@ CFILES := $(CFILES) ../src/playActivity/playActivityDuration.c
 CFILES := $(CFILES) ../src/gameSwitcher/gameSwitcherIdentity.c
 CFILES := $(CFILES) ../src/gameSwitcher/gameSwitcherAchievements.c
 CFILES := $(CFILES) ../src/bloomUi/bloom_ui_core.c
+CFILES := $(CFILES) ../src/bloomUi/bloom_ui_renderer.c
+CFILES := $(CFILES) ../src/bloomUi/bloom_ui_input.c
 CFILES := $(CFILES) ../src/common/utils/udp.c
 include ../src/common/config.mk
 CFLAGS += -I. -DBLOOM_TEST=1 -I../third-party/rcheevos/include -I../third-party/rcheevos/src \
