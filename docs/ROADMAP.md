@@ -412,6 +412,13 @@ Current frontend progress:
   and falls back to MainUI. An exact-hash Plus probe loaded the live read-only
   catalog and found one GB game without opening the display. Interactive
   browse/launch/return and crash-fallback hardware validation remain pending.
+- [ ] Unified Bloom Settings and Quick Settings. Bloom Shell now exposes the
+  agreed top-level settings categories with capability-filtered Network and
+  Developer controls, preserves the plain-language System health/update/RA
+  summary as a nested destination, and opens a bounded START Quick Settings
+  model on every normal shell screen. Canonical settings reads, immediate safe
+  mutations, full nested pages, and physical readability/input validation
+  remain pending.
 
 ## Historical BloomOS foundation
 
