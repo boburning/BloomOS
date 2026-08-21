@@ -91,6 +91,14 @@ static int validate_schema(sqlite3 *database, int version)
         if (result != SQLITE_OK || !exists)
             return result == SQLITE_OK ? SQLITE_CORRUPT : result;
     }
+    if (version >= 4) {
+        sqlite3_stmt *columns = NULL;
+        int result = sqlite3_prepare_v2(database, "SELECT compatibility FROM apps LIMIT 0", -1,
+                                        &columns, NULL);
+        sqlite3_finalize(columns);
+        if (result != SQLITE_OK)
+            return SQLITE_CORRUPT;
+    }
     sqlite3_stmt *statement = NULL;
     int result = sqlite3_prepare_v2(database, "SELECT COUNT(*) FROM schema_version", -1,
                                     &statement, NULL);
@@ -168,6 +176,28 @@ int bloom_library_database_migrate(sqlite3 *database)
             result = sqlite3_exec(database, "COMMIT", NULL, NULL, NULL);
         if (result != SQLITE_OK)
             sqlite3_exec(database, "ROLLBACK", NULL, NULL, NULL);
+        if (result != SQLITE_OK)
+            return result;
+        version = 3;
+    }
+    if (version == 3) {
+        result = validate_schema(database, 3);
+        if (result != SQLITE_OK)
+            return result;
+        result = sqlite3_exec(database, "BEGIN IMMEDIATE", NULL, NULL, NULL);
+        if (result == SQLITE_OK)
+            result = sqlite3_exec(
+                database,
+                "ALTER TABLE apps ADD COLUMN compatibility TEXT NOT NULL DEFAULT 'mainui-dependent' "
+                "CHECK(compatibility IN('bloom-native','onion-compatible','mainui-dependent','development-only'));"
+                "UPDATE schema_version SET version=4",
+                NULL, NULL, NULL);
+        if (result == SQLITE_OK)
+            result = validate_schema(database, 4);
+        if (result == SQLITE_OK)
+            result = sqlite3_exec(database, "COMMIT", NULL, NULL, NULL);
+        if (result != SQLITE_OK)
+            sqlite3_exec(database, "ROLLBACK", NULL, NULL, NULL);
         return result;
     }
     result = sqlite3_exec(database, "BEGIN IMMEDIATE", NULL, NULL, NULL);
@@ -176,7 +206,7 @@ int bloom_library_database_migrate(sqlite3 *database)
     result = sqlite3_exec(
         database,
         "CREATE TABLE schema_version(version INTEGER NOT NULL);"
-        "INSERT INTO schema_version VALUES(3);"
+        "INSERT INTO schema_version VALUES(4);"
         "CREATE TABLE library_state("
         "id INTEGER PRIMARY KEY CHECK(id=1),generation INTEGER NOT NULL DEFAULT 0,status TEXT NOT NULL "
         "CHECK(status IN('empty','ready','scanning','stale','error')),source TEXT NOT NULL);"
@@ -195,7 +225,8 @@ int bloom_library_database_migrate(sqlite3 *database)
         "CREATE TABLE apps("
         "app_id TEXT PRIMARY KEY,label TEXT NOT NULL,launch_path TEXT NOT NULL,icon_path TEXT,"
         "config_size INTEGER NOT NULL,config_mtime INTEGER NOT NULL,present INTEGER NOT NULL "
-        "CHECK(present IN(0,1)));"
+        "CHECK(present IN(0,1)),compatibility TEXT NOT NULL DEFAULT 'mainui-dependent' "
+        "CHECK(compatibility IN('bloom-native','onion-compatible','mainui-dependent','development-only')));"
         "CREATE INDEX apps_sort ON apps(present,label,app_id);"
         "CREATE TABLE favorites("
         "bloom_game_id TEXT PRIMARY KEY,position INTEGER NOT NULL UNIQUE,"
@@ -210,7 +241,7 @@ int bloom_library_database_migrate(sqlite3 *database)
         "PRIMARY KEY(kind,position),FOREIGN KEY(bloom_game_id) REFERENCES games(bloom_game_id));",
         NULL, NULL, NULL);
     if (result == SQLITE_OK)
-        result = validate_schema(database, 3);
+        result = validate_schema(database, 4);
     if (result == SQLITE_OK)
         result = sqlite3_exec(database, "COMMIT", NULL, NULL, NULL);
     if (result != SQLITE_OK)

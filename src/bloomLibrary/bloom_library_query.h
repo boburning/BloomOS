@@ -29,6 +29,7 @@ typedef struct {
     char label[BLOOM_LIBRARY_TEXT_SIZE];
     char launch_path[BLOOM_LIBRARY_TEXT_SIZE];
     char icon_path[BLOOM_LIBRARY_TEXT_SIZE];
+    char compatibility[32];
 } BloomLibraryApp;
 
 int bloom_library_query_games(sqlite3 *database, const char *system_id, const char *after_game_id,

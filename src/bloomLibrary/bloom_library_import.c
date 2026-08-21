@@ -396,6 +396,7 @@ static int import_app(sqlite3 *database, const char *name, const char *app_root,
     char label[TEXT_SIZE];
     char launch_raw[TEXT_SIZE];
     char icon_raw[TEXT_SIZE];
+    char compatibility[32];
     char launch_path[TEXT_SIZE];
     char icon_path[TEXT_SIZE];
     char app_id[ID_SIZE + 16];
@@ -403,9 +404,20 @@ static int import_app(sqlite3 *database, const char *name, const char *app_root,
         !read_string(config, "label", label, sizeof(label), 1) ||
         !read_string(config, "launch", launch_raw, sizeof(launch_raw), 1) ||
         !read_string(config, "icon", icon_raw, sizeof(icon_raw), 0) ||
+        !read_string(config, "bloom_compatibility", compatibility, sizeof(compatibility), 0) ||
         snprintf(app_id, sizeof(app_id), "bloom-app-v1:%s", name) >= (int)sizeof(app_id)) {
         cJSON_Delete(config);
         set_error(error, error_size, "application config fields are invalid");
+        return SQLITE_CORRUPT;
+    }
+    if (compatibility[0] == '\0')
+        snprintf(compatibility, sizeof(compatibility), "%s", "mainui-dependent");
+    if (strcmp(compatibility, "bloom-native") != 0 &&
+        strcmp(compatibility, "onion-compatible") != 0 &&
+        strcmp(compatibility, "mainui-dependent") != 0 &&
+        strcmp(compatibility, "development-only") != 0) {
+        cJSON_Delete(config);
+        set_error(error, error_size, "application compatibility is invalid");
         return SQLITE_CORRUPT;
     }
     if (strcmp(launch_raw, "launch.sh") == 0)
@@ -431,12 +443,14 @@ static int import_app(sqlite3 *database, const char *name, const char *app_root,
     sqlite3_stmt *statement = NULL;
     int result = sqlite3_prepare_v2(
         database,
-        "INSERT INTO apps(app_id,label,launch_path,icon_path,config_size,config_mtime,present) "
-        "VALUES(?1,?2,?3,?4,?5,?6,1) ON CONFLICT(app_id) DO UPDATE SET label=excluded.label,"
+        "INSERT INTO apps(app_id,label,launch_path,icon_path,config_size,config_mtime,present,compatibility) "
+        "VALUES(?1,?2,?3,?4,?5,?6,1,?7) ON CONFLICT(app_id) DO UPDATE SET label=excluded.label,"
         "launch_path=excluded.launch_path,icon_path=excluded.icon_path,config_size=excluded.config_size,"
-        "config_mtime=excluded.config_mtime,present=1 WHERE label IS NOT excluded.label OR "
+        "config_mtime=excluded.config_mtime,present=1,compatibility=excluded.compatibility "
+        "WHERE label IS NOT excluded.label OR "
         "launch_path IS NOT excluded.launch_path OR icon_path IS NOT excluded.icon_path OR "
-        "config_size IS NOT excluded.config_size OR config_mtime IS NOT excluded.config_mtime OR present<>1",
+        "config_size IS NOT excluded.config_size OR "
+        "config_mtime IS NOT excluded.config_mtime OR compatibility IS NOT excluded.compatibility OR present<>1",
         -1, &statement, NULL);
     if (result == SQLITE_OK)
         result = bind_text(statement, 1, app_id);
@@ -451,6 +465,8 @@ static int import_app(sqlite3 *database, const char *name, const char *app_root,
         result = sqlite3_bind_int64(statement, 5, config_metadata.st_size);
     if (result == SQLITE_OK)
         result = sqlite3_bind_int64(statement, 6, config_metadata.st_mtime);
+    if (result == SQLITE_OK)
+        result = bind_text(statement, 7, compatibility);
     if (result == SQLITE_OK)
         result = sqlite3_step(statement) == SQLITE_DONE ? SQLITE_OK : sqlite3_errcode(database);
     sqlite3_finalize(statement);

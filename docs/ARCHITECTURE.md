@@ -136,6 +136,14 @@ prior known-good catalog. The signed mapping distinguishes compatibility quirks
 such as the `PSX` emulator folder using `Roms/PS` without relaxing the path
 boundary.
 
+Application rows carry one explicit compatibility class: `bloom-native`,
+`onion-compatible`, `mainui-dependent`, or `development-only`. Schema 4
+conservatively migrates every existing row to `mainui-dependent`. Onion app
+imports keep that default unless the reviewed config declares a valid
+`bloom_compatibility` value; unknown values abort the transaction. Queries
+return the class with the launch path so consumers can enforce policy without
+guessing from an app name or script contents.
+
 Game enumeration and consumer queries live behind the same service.
 `bloomctl library scan --changed|--all|--system SYSTEM`
 enumerates only extensions declared by the imported system configuration,
