@@ -25,6 +25,7 @@ int bloom_shell_ra_form_append(BloomShellRaForm *form);
 int bloom_shell_ra_form_backspace(BloomShellRaForm *form);
 int bloom_shell_ra_form_label(const BloomShellRaForm *form, char *label, size_t label_size);
 int bloom_shell_ra_form_submit(const char *bloom_ra_path, BloomShellRaForm *form);
+int bloom_shell_ra_sign_out(const char *bloom_ra_path);
 void bloom_shell_ra_form_clear(BloomShellRaForm *form);
 
 #endif
