@@ -17,7 +17,7 @@
 #define COMMAND_PATH "/mnt/SDCARD/.tmp_update/cmd_to_run.sh"
 #define SESSION_REQUEST_PATH "/tmp/bloom-session/request.json"
 #define SESSION_BINARY "/mnt/SDCARD/.tmp_update/bin/bloom-session"
-#define BLOOMCTL_BINARY "/mnt/SDCARD/.tmp_update/bin/bloomctl"
+#define BLOOM_STATUS_BINARY "/mnt/SDCARD/.tmp_update/bin/bloom-shell-status"
 #define GB_CORE "gambatte_libretro.so"
 #define GAME_PAGE_SIZE 100
 #define GAME_CAPACITY_MAX 4096
@@ -181,7 +181,7 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
 int main(int argc, char **argv)
 {
     BloomShellStatus status = {0};
-    bloom_shell_status_load(BLOOMCTL_BINARY, &status);
+    bloom_shell_status_load(BLOOM_STATUS_BINARY, &status);
     BloomLibraryGame *games = NULL;
     BloomLibraryGame recent = {0};
     BloomLibraryGame favorites[FAVORITES_CAPACITY_MAX] = {0};

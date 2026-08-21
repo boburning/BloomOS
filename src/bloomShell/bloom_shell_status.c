@@ -87,7 +87,7 @@ int bloom_shell_status_load(const char *bloomctl_path, BloomShellStatus *status)
         if (dup2(output[1], STDOUT_FILENO) < 0)
             _exit(127);
         close(output[1]);
-        execl(bloomctl_path, bloomctl_path, "health", "--json", (char *)NULL);
+        execl(bloomctl_path, bloomctl_path, (char *)NULL);
         _exit(127);
     }
     close(output[1]);
