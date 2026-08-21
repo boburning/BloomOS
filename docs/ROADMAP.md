@@ -2,7 +2,7 @@
 
 ## Implementation status
 
-Last updated: 2026-08-19
+Last updated: 2026-08-20
 
 This section tracks delivered increments and deferred physical validation. A
 checked repository item means the implementation and automated tests have
@@ -304,7 +304,32 @@ guessed from inherited bytes.
 - [ ] Collect equivalent external physical evidence for original Mini V1, V3,
   and V4 before claiming stable support for those revisions.
 
-## BloomOS 1.0 foundation
+## BloomOS 1.0 productization
+
+The original roadmap treated a replacement frontend as later research. Bloom's
+structured launch, session, save, activity, update, platform, health, and
+RetroAchievements boundaries are now mature enough to move frontend ownership
+into 1.0 safely. Historical rationale remains below; the authoritative product,
+UX, design, migration, and validation contracts are:
+
+- [1.0 product specification](1.0_PRODUCT_SPEC.md)
+- [1.0 UX contract](UX_1.0.md)
+- [branding and visual design](BRANDING_AND_VISUAL_DESIGN.md)
+- [MainUI migration map](MAINUI_MIGRATION.md)
+- [1.0 test matrix](1.0_TEST_MATRIX.md)
+
+The implementation order is: inventory current MainUI responsibilities and
+user-facing Onion assets; establish Bloom design primitives and single settings
+and library authorities; deliver a Bloom Shell vertical slice; migrate primary
+navigation, GameSwitcher, settings, health, updates, apps, and themes; add Safe
+Mode; decouple health, boot, update, and game return from MainUI; then complete
+performance, migration, physical hardware, and release-candidate gates.
+
+MainUI remains a development recovery fallback during this sequence. It is not
+the stable 1.0 frontend, and no responsibility is removed before its Bloom-owned
+replacement passes the relevant recovery and device tests.
+
+## Historical BloomOS foundation
 
 1. Repository bootstrap, attribution, upstream and Flip audits, and dependency inventory.
 2. Pinned build environment, CI, host and shell tests, reproducible packaging, and developer harness.
@@ -313,7 +338,8 @@ guessed from inherited bytes.
 5. Structured launch and session lifecycle, canonical game identity, activity correctness, and save safety.
 6. Regression hardening, physical test matrix, migration safety, recovery, and release tooling.
 
-BloomOS 1.0 is not blocked on Sync, Hub, Link, profiles, or a replacement frontend.
+BloomOS 1.0 is not blocked on Sync, Hub, Link, or profiles. A Bloom-owned
+frontend replacing MainUI in normal operation is now required for 1.0.
 
 ## Later 1.x releases
 
