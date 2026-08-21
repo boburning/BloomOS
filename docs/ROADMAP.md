@@ -344,6 +344,10 @@ Current frontend progress:
   are implemented. Automated and Plus cutover/rollback evidence remain before
   Bloom authority becomes the shipped default; closed-MainUI writes continue
   through the service-owned reconciliation bridge until that UI is replaced.
+- [ ] Bloom library authority. The durable transactional SQLite schema and
+  bounded `bloomctl library status` boundary are in progress. Deterministic
+  Onion system/app/favorite/recent import, incremental game indexing, paging,
+  invalidation, 10k-game fixtures, and consumer cutover remain pending.
 - [ ] Bloom Shell vertical slice and supervised MainUI fallback.
 
 ## Historical BloomOS foundation

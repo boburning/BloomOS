@@ -475,3 +475,25 @@ SH
         sh /workspace/static/build/.tmp_update/bin/bloomctl settings unknown
     [ "$status" -eq 2 ]
 }
+
+@test "bloomctl library exposes only the bounded status operation" {
+    service="$BATS_TEST_TMPDIR/bloom-library"
+    cat >"$service" <<'SH'
+#!/bin/sh
+printf '{"schema":1,"arguments":"%s"}\n' "$*"
+SH
+    chmod +x "$service"
+
+    run env BLOOM_LIBRARY_BIN="$service" \
+        sh /workspace/static/build/.tmp_update/bin/bloomctl library status
+    [ "$status" -eq 0 ]
+    [ "$output" = '{"schema":1,"arguments":"status"}' ]
+
+    run env BLOOM_LIBRARY_BIN="$service" \
+        sh /workspace/static/build/.tmp_update/bin/bloomctl library import-onion
+    [ "$status" -eq 2 ]
+
+    run env BLOOM_LIBRARY_BIN="$service" \
+        sh /workspace/static/build/.tmp_update/bin/bloomctl library status extra
+    [ "$status" -eq 2 ]
+}
