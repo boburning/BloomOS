@@ -117,10 +117,23 @@ prior known-good catalog. The signed mapping distinguishes compatibility quirks
 such as the `PSX` emulator folder using `Roms/PS` without relaxing the path
 boundary.
 
-Favorite/recent import, game enumeration, and consumer queries are added behind
-the same service in subsequent focused changes. Until those imports and
-consumer migrations are physically proven, MainUI remains the compatibility
-authority and the canonical catalog does not change launch behavior.
+Game enumeration and consumer queries live behind the same service.
+`bloomctl library scan --changed|--all|--system SYSTEM`
+enumerates only extensions declared by the imported system configuration,
+rejects symlink traversal, derives canonical Bloom GameID without reading ROM
+contents, and atomically invalidates only the systems included in that scan.
+File size, mtime, display metadata, and presence changes advance one catalog
+generation; an unchanged repeat is a no-op.
+
+`bloomctl library games` provides a bounded local page of at most 100 present
+games, optionally filtered by system. Its GameID cursor resumes the stable
+`sort_title, bloom_game_id` ordering without exposing SQL or allowing a UI
+consumer to initiate filesystem or network work. Schema 2 adds and validates a
+global paging index through an additive transaction while retaining the
+system-specific index. Favorite/recent import and consumer migrations remain
+subsequent work. Until those migrations are
+physically proven, MainUI remains the compatibility authority and the canonical
+catalog does not change launch behavior.
 
 ## BloomPlatform foundation
 

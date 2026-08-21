@@ -75,6 +75,54 @@ TEST_F(BloomLibraryDatabaseTest, HealthCountsOnlyPresentIndexedContent)
     sqlite3_close(database);
 }
 
+TEST_F(BloomLibraryDatabaseTest, SchemaOneAddsGlobalPagingIndexTransactionally)
+{
+    sqlite3 *database = nullptr;
+    ASSERT_EQ(SQLITE_OK, sqlite3_open(path_.c_str(), &database));
+    execute(database,
+            "CREATE TABLE schema_version(version INTEGER NOT NULL);INSERT INTO schema_version VALUES(1);"
+            "CREATE TABLE library_state(id INTEGER PRIMARY KEY CHECK(id=1),generation INTEGER NOT NULL "
+            "DEFAULT 0,status TEXT NOT NULL CHECK(status IN('empty','ready','scanning','stale','error')),"
+            "source TEXT NOT NULL);INSERT INTO library_state VALUES(1,4,'ready','onion');"
+            "CREATE TABLE systems(system_id TEXT PRIMARY KEY,label TEXT NOT NULL,rom_path TEXT NOT NULL,"
+            "img_path TEXT,launch_path TEXT NOT NULL,extensions TEXT NOT NULL,config_size INTEGER NOT NULL,"
+            "config_mtime INTEGER NOT NULL,present INTEGER NOT NULL CHECK(present IN(0,1)));"
+            "CREATE TABLE games(bloom_game_id TEXT PRIMARY KEY,system_id TEXT NOT NULL,"
+            "normalized_rom_path TEXT NOT NULL,display_title TEXT NOT NULL,sort_title TEXT NOT NULL,"
+            "image_path TEXT,file_size INTEGER NOT NULL,file_mtime INTEGER NOT NULL,present INTEGER NOT NULL "
+            "CHECK(present IN(0,1)),UNIQUE(system_id,normalized_rom_path),FOREIGN KEY(system_id) "
+            "REFERENCES systems(system_id));CREATE INDEX games_system_sort ON games(system_id,present,"
+            "sort_title,bloom_game_id);CREATE TABLE apps(app_id TEXT PRIMARY KEY,label TEXT NOT NULL,"
+            "launch_path TEXT NOT NULL,icon_path TEXT,config_size INTEGER NOT NULL,config_mtime INTEGER NOT NULL,"
+            "present INTEGER NOT NULL CHECK(present IN(0,1)));CREATE INDEX apps_sort ON apps(present,label,app_id);"
+            "CREATE TABLE favorites(bloom_game_id TEXT PRIMARY KEY,position INTEGER NOT NULL UNIQUE,"
+            "FOREIGN KEY(bloom_game_id) REFERENCES games(bloom_game_id));CREATE TABLE legacy_items(kind TEXT "
+            "NOT NULL CHECK(kind IN('favorite','recent')),position INTEGER NOT NULL,legacy_identity TEXT NOT NULL,"
+            "status TEXT NOT NULL CHECK(status IN('matched','unmatched','duplicate','invalid')),bloom_game_id TEXT,"
+            "PRIMARY KEY(kind,position),FOREIGN KEY(bloom_game_id) REFERENCES games(bloom_game_id));");
+    execute(database,
+            "INSERT INTO systems VALUES('gba','GBA','GBA',NULL,'launch','gba',1,2,1);"
+            "INSERT INTO games VALUES('bloom-game-v1:one','gba','GBA/one.gba','One','one',NULL,3,4,1);");
+    sqlite3_close(database);
+
+    ASSERT_EQ(SQLITE_OK, bloom_library_database_open(path_.c_str(), &database));
+    BloomLibraryHealth health{};
+    ASSERT_EQ(SQLITE_OK, bloom_library_database_health(database, &health));
+    EXPECT_EQ(2, health.schema_version);
+    EXPECT_EQ(4, health.generation);
+    EXPECT_EQ(1, health.games);
+    sqlite3_stmt *statement = nullptr;
+    ASSERT_EQ(SQLITE_OK,
+              sqlite3_prepare_v2(database,
+                                 "SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND "
+                                 "name='games_global_sort'",
+                                 -1, &statement, nullptr));
+    ASSERT_EQ(SQLITE_ROW, sqlite3_step(statement));
+    EXPECT_EQ(1, sqlite3_column_int(statement, 0));
+    sqlite3_finalize(statement);
+    sqlite3_close(database);
+}
+
 TEST_F(BloomLibraryDatabaseTest, NewerSchemaRefusesToOpen)
 {
     sqlite3 *database = nullptr;
@@ -93,6 +141,19 @@ TEST_F(BloomLibraryDatabaseTest, CorruptKnownSchemaRefusesToOpen)
     ASSERT_EQ(SQLITE_OK, sqlite3_open(path_.c_str(), &database));
     execute(database, "CREATE TABLE schema_version(version INTEGER NOT NULL);"
                       "INSERT INTO schema_version VALUES(1);");
+    sqlite3_close(database);
+    database = nullptr;
+    EXPECT_EQ(SQLITE_CORRUPT, bloom_library_database_open(path_.c_str(), &database));
+    EXPECT_EQ(nullptr, database);
+}
+
+TEST_F(BloomLibraryDatabaseTest, MissingPagingIndexRefusesToOpen)
+{
+    sqlite3 *database = nullptr;
+    ASSERT_EQ(SQLITE_OK, bloom_library_database_open(path_.c_str(), &database));
+    sqlite3_close(database);
+    ASSERT_EQ(SQLITE_OK, sqlite3_open(path_.c_str(), &database));
+    execute(database, "DROP INDEX games_global_sort");
     sqlite3_close(database);
     database = nullptr;
     EXPECT_EQ(SQLITE_CORRUPT, bloom_library_database_open(path_.c_str(), &database));

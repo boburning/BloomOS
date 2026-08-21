@@ -350,8 +350,11 @@ Current frontend progress:
   bounded status boundary are implemented. Deterministic Onion system/app
   import is implemented behind a signed 53-system mapping with transactional
   publication, repeat no-op behavior, and prior-known-good preservation.
-  Favorite/recent import, incremental game indexing, paging, invalidation,
-  10k-game fixtures, device evidence, and consumer cutover remain pending.
+  Incremental game enumeration/invalidation and bounded GameID-cursor paging
+  are implemented; a 10k-game host fixture completes in about 1.1 seconds, and
+  an exact-hash Plus candidate indexed 22 installed games with a repeat no-op.
+  Favorite/recent import, signed-update persistence, and consumer cutover
+  remain pending.
 - [ ] Bloom Shell vertical slice and supervised MainUI fallback.
 
 ## Historical BloomOS foundation

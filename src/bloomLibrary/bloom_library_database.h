@@ -3,7 +3,7 @@
 
 #include <sqlite3/sqlite3.h>
 
-#define BLOOM_LIBRARY_DATABASE_SCHEMA_VERSION 1
+#define BLOOM_LIBRARY_DATABASE_SCHEMA_VERSION 2
 
 typedef struct {
     int schema_version;
