@@ -1,7 +1,11 @@
 #ifndef SETTINGS_H__
 #define SETTINGS_H__
 
+#include <errno.h>
+#include <fcntl.h>
 #include <stdbool.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 #include "display.h"
 #include "system/volume.h"
@@ -20,6 +24,7 @@
 #define RECENTLISTMIGRATED "/mnt/SDCARD/Saves/CurrentProfile/config/.recentListMigrated"
 #define DEFAULT_THEME_PATH "/mnt/SDCARD/Themes/Silky by DiMo/"
 #define RECORDED_DIR "/mnt/SDCARD/Media/Videos/Recorded"
+#define BLOOM_SETTINGS_SERVICE "/mnt/SDCARD/.tmp_update/bin/bloom-settings"
 
 typedef struct settings_s {
     int volume;
@@ -337,6 +342,29 @@ void _settings_save_mainui(void)
     fclose(fp);
 }
 
+static void _settings_sync_bloom_compatibility(void)
+{
+    if (access(BLOOM_SETTINGS_SERVICE, X_OK) != 0)
+        return;
+    pid_t child = fork();
+    if (child == 0) {
+        int null_output = open("/dev/null", O_WRONLY);
+        if (null_output >= 0) {
+            dup2(null_output, STDOUT_FILENO);
+            dup2(null_output, STDERR_FILENO);
+            if (null_output > STDERR_FILENO)
+                close(null_output);
+        }
+        execl(BLOOM_SETTINGS_SERVICE, BLOOM_SETTINGS_SERVICE, "sync-onion", (char *)NULL);
+        _exit(127);
+    }
+    if (child < 0)
+        return;
+    int status = 0;
+    while (waitpid(child, &status, 0) < 0 && errno == EINTR)
+        ;
+}
+
 void settings_save(void)
 {
     config_flag_set(".noAutoStart", !settings.startup_auto_resume);
@@ -373,6 +401,7 @@ void settings_save(void)
 
     _settings_save_keymap();
     _settings_save_mainui();
+    _settings_sync_bloom_compatibility();
 
     temp_flag_set("settings_changed", true);
 }
@@ -388,6 +417,7 @@ bool settings_saveSystemProperty(const char *prop_name, int value)
     cJSON_SetNumberValue(prop, value);
     json_save(json_root, MAIN_UI_SETTINGS);
     cJSON_Delete(json_root);
+    _settings_sync_bloom_compatibility();
     temp_flag_set("settings_changed", true);
 
     return true;

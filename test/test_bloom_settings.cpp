@@ -5,6 +5,7 @@
 #include <string>
 
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 extern "C" {
@@ -220,4 +221,131 @@ TEST_F(BloomSettingsTest, RefusesUnsafePreexistingSnapshot)
     std::string content((std::istreambuf_iterator<char>(stream)),
                         std::istreambuf_iterator<char>());
     EXPECT_EQ("do-not-overwrite", content);
+}
+
+TEST_F(BloomSettingsTest, LegacySyncChangesOnlyWhenEffectiveInputChanges)
+{
+    write(system, R"({"vol":5,"unknown_legacy":"first"})");
+    BloomSettingsImportResult imported{};
+    char error[160] = {};
+    ASSERT_EQ(0, bloom_settings_import_onion(system.c_str(), config.c_str(), settings.c_str(),
+                                             snapshot.c_str(), &imported, error, sizeof(error)));
+
+    BloomSettingsSyncResult unchanged{};
+    ASSERT_EQ(0, bloom_settings_sync_onion(system.c_str(), config.c_str(), settings.c_str(),
+                                           &unchanged, error, sizeof(error)))
+        << error;
+    EXPECT_EQ(0, unchanged.changed);
+    EXPECT_EQ(1, unchanged.generation);
+
+    cJSON *canonical = load_settings();
+    ASSERT_TRUE(cJSON_IsObject(canonical));
+    cJSON_AddStringToObject(canonical, "future_bloom_field", "preserved");
+    char *serialized = cJSON_PrintUnformatted(canonical);
+    ASSERT_NE(nullptr, serialized);
+    write(settings, serialized);
+    cJSON_free(serialized);
+    cJSON_Delete(canonical);
+    write(system, R"({"vol":16,"unknown_legacy":"second"})");
+    write(config / ".showExpert", "");
+
+    BloomSettingsSyncResult changed{};
+    ASSERT_EQ(0, bloom_settings_sync_onion(system.c_str(), config.c_str(), settings.c_str(),
+                                           &changed, error, sizeof(error)))
+        << error;
+    EXPECT_EQ(1, changed.changed);
+    EXPECT_EQ(2, changed.generation);
+    canonical = load_settings();
+    EXPECT_EQ(2, cJSON_GetObjectItem(canonical, "generation")->valueint);
+    EXPECT_STREQ("preserved", cJSON_GetObjectItem(canonical, "future_bloom_field")->valuestring);
+    cJSON *device = cJSON_GetObjectItem(canonical, "device");
+    EXPECT_EQ(16, cJSON_GetObjectItem(device, "volume")->valueint);
+    cJSON *interface = cJSON_GetObjectItem(canonical, "interface");
+    EXPECT_TRUE(cJSON_IsTrue(cJSON_GetObjectItem(interface, "show_expert")));
+    cJSON *compatibility = cJSON_GetObjectItem(canonical, "compatibility");
+    cJSON *legacy = cJSON_GetObjectItem(compatibility, "onion_system");
+    EXPECT_STREQ("second", cJSON_GetObjectItem(legacy, "unknown_legacy")->valuestring);
+    cJSON_Delete(canonical);
+
+    BloomSettingsSyncResult repeated{};
+    ASSERT_EQ(0, bloom_settings_sync_onion(system.c_str(), config.c_str(), settings.c_str(),
+                                           &repeated, error, sizeof(error)));
+    EXPECT_EQ(0, repeated.changed);
+    EXPECT_EQ(2, repeated.generation);
+}
+
+TEST_F(BloomSettingsTest, LegacySyncIsRejectedAfterBloomAuthorityCutover)
+{
+    write(system, R"({"vol":5})");
+    BloomSettingsImportResult imported{};
+    char error[160] = {};
+    ASSERT_EQ(0, bloom_settings_import_onion(system.c_str(), config.c_str(), settings.c_str(),
+                                             snapshot.c_str(), &imported, error, sizeof(error)));
+    cJSON *canonical = load_settings();
+    ASSERT_TRUE(cJSON_ReplaceItemInObjectCaseSensitive(
+        canonical, "authority", cJSON_CreateString("bloom")));
+    char *serialized = cJSON_PrintUnformatted(canonical);
+    ASSERT_NE(nullptr, serialized);
+    write(settings, serialized);
+    cJSON_free(serialized);
+    cJSON_Delete(canonical);
+    write(system, R"({"vol":19})");
+
+    BloomSettingsSyncResult result{};
+    EXPECT_NE(0, bloom_settings_sync_onion(system.c_str(), config.c_str(), settings.c_str(),
+                                           &result, error, sizeof(error)));
+    canonical = load_settings();
+    cJSON *device = cJSON_GetObjectItem(canonical, "device");
+    EXPECT_EQ(5, cJSON_GetObjectItem(device, "volume")->valueint);
+    EXPECT_EQ(1, cJSON_GetObjectItem(canonical, "generation")->valueint);
+    cJSON_Delete(canonical);
+}
+
+TEST_F(BloomSettingsTest, ConcurrentLegacySyncsSerializeToOneGeneration)
+{
+    write(system, R"({"vol":5})");
+    BloomSettingsImportResult imported{};
+    char error[160] = {};
+    ASSERT_EQ(0, bloom_settings_import_onion(system.c_str(), config.c_str(), settings.c_str(),
+                                             snapshot.c_str(), &imported, error, sizeof(error)));
+    write(system, R"({"vol":13})");
+
+    constexpr int process_count = 4;
+    pid_t children[process_count] = {};
+    for (int index = 0; index < process_count; ++index) {
+        children[index] = fork();
+        ASSERT_GE(children[index], 0);
+        if (children[index] == 0) {
+            BloomSettingsSyncResult result{};
+            char child_error[160] = {};
+            int status = bloom_settings_sync_onion(system.c_str(), config.c_str(), settings.c_str(),
+                                                   &result, child_error, sizeof(child_error));
+            _exit(status == 0 ? 0 : 1);
+        }
+    }
+    for (pid_t child : children) {
+        int status = 0;
+        ASSERT_EQ(child, waitpid(child, &status, 0));
+        ASSERT_TRUE(WIFEXITED(status));
+        EXPECT_EQ(0, WEXITSTATUS(status));
+    }
+    cJSON *canonical = load_settings();
+    ASSERT_TRUE(cJSON_IsObject(canonical));
+    EXPECT_EQ(2, cJSON_GetObjectItem(canonical, "generation")->valueint);
+    cJSON *device = cJSON_GetObjectItem(canonical, "device");
+    EXPECT_EQ(13, cJSON_GetObjectItem(device, "volume")->valueint);
+    cJSON_Delete(canonical);
+}
+
+TEST_F(BloomSettingsTest, SymlinkedWriterLockFailsClosed)
+{
+    auto outside = root / "outside.lock";
+    write(outside, "outside");
+    std::filesystem::create_symlink(outside, settings.string() + ".lock");
+    write(system, R"({"vol":8})");
+    BloomSettingsImportResult result{};
+    char error[160] = {};
+    EXPECT_NE(0, bloom_settings_import_onion(system.c_str(), config.c_str(), settings.c_str(),
+                                             snapshot.c_str(), &result, error, sizeof(error)));
+    EXPECT_FALSE(std::filesystem::exists(settings));
 }

@@ -438,6 +438,11 @@ SH
     [ "$output" = '{"schema":1,"operation":"import-onion"}' ]
 
     run env BLOOM_SETTINGS_BIN="$service" \
+        sh /workspace/static/build/.tmp_update/bin/bloomctl settings sync-onion
+    [ "$status" -eq 0 ]
+    [ "$output" = '{"schema":1,"operation":"sync-onion"}' ]
+
+    run env BLOOM_SETTINGS_BIN="$service" \
         sh /workspace/static/build/.tmp_update/bin/bloomctl settings unknown
     [ "$status" -eq 2 ]
 }

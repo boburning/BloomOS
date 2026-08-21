@@ -252,7 +252,7 @@ usage() {
     printf '       bloomctl saves snapshots\n' >&2
     printf '       bloomctl logs export\n' >&2
     printf '       bloomctl platform capabilities\n' >&2
-    printf '       bloomctl settings {status|import-onion}\n' >&2
+    printf '       bloomctl settings {status|import-onion|sync-onion}\n' >&2
     printf '       bloomctl test smoke SYSTEM ROM_PATH [DURATION_SECONDS]\n' >&2
     printf '       bloomctl test achievements --system SYSTEM --rom-base64 DATA --core CORE [--session-seconds N [--operator-unlock I_ACCEPT_PROFILE_CHANGES]]\n' >&2
     printf '       bloomctl achievements {status|game BLOOM_GAME_ID|collection|cores|account status|login|set FIELD VALUE|sign-out|proxy status|pending|cache-rom ROM_PATH|cache-system SYSTEM|scan --changed|--all|--system SYSTEM|--status|--cancel}\n' >&2
@@ -381,7 +381,7 @@ platform_command() {
 settings_command() {
     [ -x "$BLOOM_SETTINGS" ] || { printf 'bloomctl: settings service is unavailable\n' >&2; return 1; }
     case "${1:-}" in
-        status|import-onion)
+        status|import-onion|sync-onion)
             [ "$#" -eq 1 ] || { usage; return 2; }
             "$BLOOM_SETTINGS" "$1"
             ;;
