@@ -144,6 +144,17 @@ imports keep that default unless the reviewed config declares a valid
 return the class with the launch path so consumers can enforce policy without
 guessing from an app name or script contents.
 
+Bloom Shell owns a capability-filtered settings presentation rather than
+reusing the legacy Tweaks menu. The top-level model exposes Display, Audio,
+Controls, Gameplay, RetroAchievements, Appearance, and System on every
+supported device; Network appears only on Plus and Flip, and Advanced appears
+only while Developer Mode is active. System retains the bounded health,
+update, and RetroAchievements summary loaded before the render loop. START
+opens a compact Quick Settings model from any normal shell destination;
+Original Mini omits Wi-Fi while Plus and Flip include it. This initial slice is
+navigation-only: mutations remain disabled until they can use the canonical
+settings service and apply hardware state atomically.
+
 Bloom Shell applies that policy at a single supervised launch boundary. Only
 `bloom-native` and reviewed `onion-compatible` rows may stage a command;
 `mainui-dependent` and `development-only` rows remain visible but cannot launch

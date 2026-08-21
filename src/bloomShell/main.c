@@ -1,4 +1,5 @@
 #include "bloom_shell_launch.h"
+#include "bloom_shell_settings.h"
 #include "bloom_shell_status.h"
 
 #include "../bloomUi/bloom_ui_core.h"
@@ -18,6 +19,7 @@
 #define SESSION_REQUEST_PATH "/tmp/bloom-session/request.json"
 #define SESSION_BINARY "/mnt/SDCARD/.tmp_update/bin/bloom-session"
 #define BLOOM_STATUS_BINARY "/mnt/SDCARD/.tmp_update/bin/bloom-shell-status"
+#define DEVICE_MODEL_PATH "/tmp/deviceModel"
 #define GB_CORE "gambatte_libretro.so"
 #define GAME_PAGE_SIZE 100
 #define GAME_CAPACITY_MAX 4096
@@ -102,30 +104,38 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
                  const BloomLibraryGame *favorites, const BloomLibraryGame *recent, int has_recent,
                  size_t home_selected, const BloomUiFocus *settings_focus,
                  const BloomUiFocus *apps_focus, const BloomLibraryApp *apps,
-                 const BloomShellStatus *status)
+                 const BloomShellStatus *status, const BloomShellCapabilities *capabilities,
+                 int settings_system, int quick_settings,
+                 const BloomUiFocus *quick_settings_focus)
 {
     const BloomUiFocus *focus = destination == BLOOM_UI_DESTINATION_COLLECTIONS
                                     ? collections_focus
                                     : library_focus;
     const BloomLibraryGame *rows = destination == BLOOM_UI_DESTINATION_COLLECTIONS ? favorites : games;
-    size_t item_count = destination == BLOOM_UI_DESTINATION_HOME   ? (has_recent ? 2 : 1)
+    size_t item_count = quick_settings
+                            ? quick_settings_focus->item_count
+                        : destination == BLOOM_UI_DESTINATION_HOME ? (has_recent ? 2 : 1)
                         : destination == BLOOM_UI_DESTINATION_APPS ? apps_focus->item_count
                         : destination == BLOOM_UI_DESTINATION_SETTINGS
                             ? settings_focus->item_count
                             : focus->item_count;
-    size_t selected = destination == BLOOM_UI_DESTINATION_HOME   ? home_selected
+    size_t selected = quick_settings
+                          ? quick_settings_focus->selected
+                      : destination == BLOOM_UI_DESTINATION_HOME ? home_selected
                       : destination == BLOOM_UI_DESTINATION_APPS ? apps_focus->selected
                       : destination == BLOOM_UI_DESTINATION_SETTINGS
                           ? settings_focus->selected
                           : focus->selected;
-    size_t window_start = destination == BLOOM_UI_DESTINATION_HOME ? 0
+    size_t window_start = quick_settings
+                              ? quick_settings_focus->window_start
+                          : destination == BLOOM_UI_DESTINATION_HOME ? 0
                           : destination == BLOOM_UI_DESTINATION_APPS
                               ? apps_focus->window_start
                           : destination == BLOOM_UI_DESTINATION_SETTINGS
                               ? settings_focus->window_start
                               : focus->window_start;
     BloomUiScene scene = {
-        .destination = destination,
+        .destination = quick_settings ? BLOOM_UI_DESTINATION_SETTINGS : destination,
         .item_count = item_count,
         .selected = selected,
         .window_start = window_start,
@@ -133,7 +143,17 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
     };
     bloom_ui_render_shell(screen, layout, &scene);
     SDL_Color cream = {243, 226, 189, 0};
-    if (destination == BLOOM_UI_DESTINATION_HOME) {
+    if (quick_settings) {
+        for (size_t row = 0; row < quick_settings_focus->item_count; ++row) {
+            const char *label = bloom_shell_quick_settings_label(capabilities, row);
+            if (label != NULL)
+                render_label(screen, font, label, layout->content.x + 20,
+                             layout->content.y + (int)row * layout->row_height +
+                                 layout->row_height / 3,
+                             layout->content.width - 40, cream);
+        }
+    }
+    else if (destination == BLOOM_UI_DESTINATION_HOME) {
         char label[640];
         if (has_recent) {
             snprintf(label, sizeof(label), "Resume %s", recent->display_title);
@@ -162,8 +182,13 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
                          layout->content.width - 40, cream);
     else if (destination == BLOOM_UI_DESTINATION_SETTINGS) {
         for (size_t row = 0; row < settings_focus->item_count; ++row) {
-            char label[96];
-            if (bloom_shell_status_label(status, row, label, sizeof(label)) == 0)
+            char status_label[96];
+            const char *label = settings_system ? status_label
+                                                : bloom_shell_settings_label(capabilities, row);
+            if (settings_system &&
+                bloom_shell_status_label(status, row, status_label, sizeof(status_label)) != 0)
+                label = NULL;
+            if (label != NULL)
                 render_label(screen, font, label, layout->content.x + 20,
                              layout->content.y + (int)row * layout->row_height +
                                  layout->row_height / 3,
@@ -190,6 +215,17 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
 
 int main(int argc, char **argv)
 {
+    int model = 0;
+    FILE *model_file = fopen(DEVICE_MODEL_PATH, "r");
+    if (model_file == NULL || fscanf(model_file, "%d", &model) != 1) {
+        if (model_file != NULL)
+            fclose(model_file);
+        return 1;
+    }
+    fclose(model_file);
+    BloomShellCapabilities capabilities = {0};
+    if (bloom_shell_capabilities_from_model(model, 0, &capabilities) != 0)
+        return 1;
     BloomShellStatus status = {0};
     bloom_shell_status_load(BLOOM_STATUS_BINARY, &status);
     BloomLibraryGame *games = NULL;
@@ -247,12 +283,18 @@ int main(int argc, char **argv)
     BloomUiFocus collections_focus;
     BloomUiFocus settings_focus;
     BloomUiFocus apps_focus;
+    BloomUiFocus quick_settings_focus;
     bloom_ui_focus_init(&library_focus, game_count);
     bloom_ui_focus_init(&collections_focus, favorite_count);
-    bloom_ui_focus_init(&settings_focus, 3);
+    bloom_ui_focus_init(&settings_focus, bloom_shell_settings_count(&capabilities));
     bloom_ui_focus_init(&apps_focus, app_count);
+    bloom_ui_focus_init(&quick_settings_focus,
+                        bloom_shell_quick_settings_count(&capabilities));
+    int quick_settings = 0;
+    int settings_system = 0;
     draw(screen, video, &layout, font, destination, &library_focus, &collections_focus, games,
-         favorites, &recent, has_recent, home_selected, &settings_focus, &apps_focus, apps, &status);
+         favorites, &recent, has_recent, home_selected, &settings_focus, &apps_focus, apps, &status,
+         &capabilities, settings_system, quick_settings, &quick_settings_focus);
     int running = 1;
     int exit_code = 0;
     while (running) {
@@ -266,7 +308,27 @@ int main(int argc, char **argv)
         if (event.type != SDL_KEYDOWN)
             continue;
         BloomUiAction action = bloom_ui_normalize_input(bloom_ui_input_from_sdl_key(event.key.keysym.sym));
-        if (action == BLOOM_UI_ACTION_BACK) {
+        if (action == BLOOM_UI_ACTION_QUICK_SETTINGS) {
+            quick_settings = !quick_settings;
+        }
+        else if (action == BLOOM_UI_ACTION_BACK && quick_settings) {
+            quick_settings = 0;
+        }
+        else if (quick_settings && action == BLOOM_UI_ACTION_FOCUS_UP) {
+            bloom_ui_focus_step(&quick_settings_focus, -1, layout.visible_rows);
+        }
+        else if (quick_settings && action == BLOOM_UI_ACTION_FOCUS_DOWN) {
+            bloom_ui_focus_step(&quick_settings_focus, 1, layout.visible_rows);
+        }
+        else if (quick_settings) {
+            continue;
+        }
+        else if (action == BLOOM_UI_ACTION_BACK && destination == BLOOM_UI_DESTINATION_SETTINGS &&
+                 settings_system) {
+            settings_system = 0;
+            bloom_ui_focus_init(&settings_focus, bloom_shell_settings_count(&capabilities));
+        }
+        else if (action == BLOOM_UI_ACTION_BACK) {
             if (destination != BLOOM_UI_DESTINATION_HOME)
                 destination = BLOOM_UI_DESTINATION_HOME;
             else
@@ -312,6 +374,14 @@ int main(int argc, char **argv)
             bloom_ui_focus_step(&apps_focus, -1, layout.visible_rows);
         else if (action == BLOOM_UI_ACTION_FOCUS_DOWN && destination == BLOOM_UI_DESTINATION_APPS)
             bloom_ui_focus_step(&apps_focus, 1, layout.visible_rows);
+        else if (action == BLOOM_UI_ACTION_CONFIRM && destination == BLOOM_UI_DESTINATION_SETTINGS &&
+                 !settings_system) {
+            const char *selected = bloom_shell_settings_label(&capabilities, settings_focus.selected);
+            if (selected != NULL && strcmp(selected, "System") == 0) {
+                settings_system = 1;
+                bloom_ui_focus_init(&settings_focus, 3);
+            }
+        }
         else if (action == BLOOM_UI_ACTION_CONFIRM && destination == BLOOM_UI_DESTINATION_LIBRARY &&
                  library_focus.item_count > 0) {
             char error[256] = {0};
@@ -345,7 +415,8 @@ int main(int argc, char **argv)
         if (running)
             draw(screen, video, &layout, font, destination, &library_focus, &collections_focus,
                  games, favorites, &recent, has_recent, home_selected, &settings_focus, &apps_focus,
-                 apps, &status);
+                 apps, &status, &capabilities, settings_system, quick_settings,
+                 &quick_settings_focus);
     }
     TTF_CloseFont(font);
     SDL_FreeSurface(screen);
