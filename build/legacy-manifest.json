@@ -692,6 +692,19 @@
       "resolution": "source-build"
     },
     {
+      "id": "runtime-tmp-update-bin-bloom-shell-status",
+      "kind": "runtime",
+      "path": "static/build/.tmp_update/bin/bloom-shell-status",
+      "file_count": 1,
+      "byte_count": 1739,
+      "tree_sha256": "eb28ddbcf48c9e7e2f002cf117b1d6bab57b669c87468b3018de4bd9895f4c7e",
+      "source": "https://github.com/boburning/BloomOS",
+      "source_revision": "release-commit",
+      "license": "GPL-3.0-only",
+      "build_recipe": "Makefile",
+      "resolution": "source-build"
+    },
+    {
       "id": "runtime-tmp-update-bin-bloom-test-runner",
       "kind": "runtime",
       "path": "static/build/.tmp_update/bin/bloom-test-runner",

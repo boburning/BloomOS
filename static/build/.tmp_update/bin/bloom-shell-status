@@ -1,0 +1,35 @@
+#!/bin/sh
+set -u
+
+SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
+SYSTEM_HEALTH="${BLOOM_SYSTEM_HEALTH_BIN:-$SCRIPT_DIR/bloom-health-system}"
+UPDATE_STATE="${BLOOM_UPDATE_STATE_BIN:-$SCRIPT_DIR/bloom-update-state}"
+RA_STATUS="${BLOOM_RA_BIN:-$SCRIPT_DIR/bloom-ra}"
+LIB_DIR="${BLOOM_LIBRARY_DIR:-/mnt/SDCARD/.tmp_update/lib}"
+
+system_output="$("$SYSTEM_HEALTH" 2>/dev/null)"
+system_status=$?
+update_output="$("$UPDATE_STATE" status 2>/dev/null)"
+update_status=$?
+ra_output="$(LD_LIBRARY_PATH="$LIB_DIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" "$RA_STATUS" status 2>/dev/null)"
+ra_status=$?
+
+case "$system_output" in *'"healthy":true'*) system_healthy=true ;; *) system_healthy=false ;; esac
+phase="$(printf '%s\n' "$update_output" | sed -n 's/.*"phase":"\([a-z_]*\)".*/\1/p')"
+case "$phase" in
+    idle|armed|activation_pending|testing|known_good|rollback_pending) update_healthy=true ;;
+    *) update_healthy=false; phase=invalid_state ;;
+esac
+case "$ra_output" in *'"enabled":true'*) ra_enabled=true ;; *) ra_enabled=false ;; esac
+ra_state="$(printf '%s\n' "$ra_output" | sed -n 's/.*"state":"\([a-z_]*\)".*/\1/p')"
+case "$ra_state" in ''|*[!a-z_]*) ra_state=unavailable; ra_healthy=false ;; *) ra_healthy=true ;; esac
+
+if [ "$system_status" -eq 0 ] && [ "$update_status" -eq 0 ] && [ "$ra_status" -eq 0 ] &&
+   [ "$system_healthy" = true ] && [ "$update_healthy" = true ] && [ "$ra_healthy" = true ]; then
+    healthy=true
+else
+    healthy=false
+fi
+
+printf '{"schema":1,"healthy":%s,"checks":{"system":{"healthy":%s},"update_state":{"healthy":%s,"phase":"%s"},"retroachievements":{"healthy":%s,"enabled":%s,"state":"%s"}}}\n' \
+    "$healthy" "$system_healthy" "$update_healthy" "$phase" "$ra_healthy" "$ra_enabled" "$ra_state"
