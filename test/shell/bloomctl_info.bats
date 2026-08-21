@@ -476,6 +476,22 @@ SH
     [ "$status" -eq 2 ]
 }
 
+@test "bloomctl settings values delegates one bounded read-only operation" {
+    service="$BATS_TEST_TMPDIR/bloom-settings-values"
+    cat >"$service" <<'EOF'
+#!/bin/sh
+[ "$#" -eq 1 ] && [ "$1" = values ] || exit 2
+printf '%s\n' '{"schema":1,"service":"bloom-settings","device":{"brightness":7,"volume":12,"mute":false,"wifi_enabled":true}}'
+EOF
+    chmod +x "$service"
+
+    run env BLOOM_SETTINGS_BIN="$service" \
+        sh /workspace/static/build/.tmp_update/bin/bloomctl settings values
+    [ "$status" -eq 0 ]
+    printf '%s' "$output" | grep -F '"brightness":7'
+    printf '%s' "$output" | grep -F '"wifi_enabled":true'
+}
+
 @test "bloomctl library exposes bounded import and scan operations" {
     service="$BATS_TEST_TMPDIR/bloom-library"
     cat >"$service" <<'SH'

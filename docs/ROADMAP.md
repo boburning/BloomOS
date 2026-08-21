@@ -418,7 +418,9 @@ Current frontend progress:
   summary as a nested destination, and opens a bounded START Quick Settings
   model on every normal shell screen. Canonical settings reads, immediate safe
   mutations, full nested pages, and physical readability/input validation
-  remain pending.
+  remain pending. A bounded `settings values` read now exposes only the four
+  high-frequency device controls plus generation/authority, without leaking
+  unrelated canonical or legacy state.
 
 ## Historical BloomOS foundation
 

@@ -26,7 +26,7 @@ static int usage(void)
 {
     fprintf(stderr,
             "Usage: bloom-settings status|import-onion|sync-onion|reconcile-onion|"
-            "materialize-onion|activate-bloom|rollback-authority\n"
+            "materialize-onion|activate-bloom|rollback-authority|values\n"
             "       bloom-settings set FIELD VALUE\n");
     return 2;
 }
@@ -65,6 +65,19 @@ int main(int argc, char **argv)
         printf("{\"schema\":1,\"service\":\"bloom-settings\",\"settings_schema\":%d,"
                "\"state\":\"ready\",\"source\":\"%s\",\"authority\":\"%s\"}\n",
                schema, source, authority);
+        return 0;
+    }
+    if (strcmp(argv[1], "values") == 0) {
+        BloomSettingsValues values;
+        if (bloom_settings_read_values(SETTINGS_PATH, &values, error, sizeof(error)) != 0) {
+            fprintf(stderr, "{\"schema\":1,\"error\":{\"code\":\"settings_unavailable\"}}\n");
+            return 1;
+        }
+        printf("{\"schema\":1,\"service\":\"bloom-settings\",\"generation\":%d,"
+               "\"authority\":\"%s\",\"device\":{\"brightness\":%d,\"volume\":%d,"
+               "\"mute\":%s,\"wifi_enabled\":%s}}\n",
+               values.generation, values.authority, values.brightness, values.volume,
+               values.mute ? "true" : "false", values.wifi_enabled ? "true" : "false");
         return 0;
     }
     if (strcmp(argv[1], "sync-onion") == 0) {
