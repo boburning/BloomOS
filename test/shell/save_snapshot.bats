@@ -91,6 +91,7 @@ create_snapshot() {
     newest="$(printf '%s\n' $ids | sed -n '4p')"
     [ ! -e "$SDCARD/Saves/BloomSnapshots/$oldest" ]
     [ -d "$SDCARD/Saves/BloomSnapshots/$newest" ]
+    tar -xOf "$SDCARD/Saves/BloomSnapshots/$newest/saves.tar" saves/Gambatte/game.srm | grep -Fx save-4
     printf '%s' "$output" | grep -F '"retention":2'
 }
 

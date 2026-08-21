@@ -157,6 +157,13 @@ create_snapshot() {
     validate_sources
     lock
     timestamp="$(date -u +%Y%m%dT%H%M%SZ)" || fail "cannot read time"
+    # Retention orders snapshot identifiers lexically.  Wait out an occupied
+    # whole-second prefix so that rapid successive creates retain that order
+    # even when process identifiers do not increase monotonically.
+    while find "$SNAPSHOT_ROOT" -mindepth 1 -maxdepth 1 -name "$timestamp-*" | grep -q .; do
+        sleep 1
+        timestamp="$(date -u +%Y%m%dT%H%M%SZ)" || fail "cannot read time"
+    done
     snapshot_id="${timestamp}-${trigger}-$$"
     safe_name "$snapshot_id" || fail "invalid snapshot identifier"
     staging="$SNAPSHOT_ROOT/.tmp.$snapshot_id"
