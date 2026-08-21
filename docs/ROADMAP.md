@@ -360,6 +360,12 @@ Current frontend progress:
   repeated idempotently before restoring the database and MainUI lists to their
   original hashes. Signed-update persistence and Bloom-owned consumer cutover
   remain pending.
+- [ ] Bloom power and network ownership. The first `bloom-power` boundary is
+  implemented with model-aware status, fixed reboot/poweroff requests, and
+  fail-closed unknown hardware. Runtime shutdown and automatic update rollback
+  use it while retaining the proven low-level FAT-clean shutdown implementation;
+  keymon and charging state now use the same adapter. Suspend/lid, brightness,
+  volume, clock, Wi-Fi, and network-service ownership remain pending.
 - [ ] Bloom Shell vertical slice and supervised MainUI fallback.
 
 ## Historical BloomOS foundation

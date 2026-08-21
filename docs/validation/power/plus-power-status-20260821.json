@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "date": "2026-08-21",
+  "operator": "Codex remote automation",
+  "device": {
+    "family": "mini_plus",
+    "model_id": 354
+  },
+  "installed_build": {
+    "version": "0.1.0-dev-9b5c3aa8",
+    "update_state": "known_good"
+  },
+  "candidate": {
+    "source_base_commit": "632fd88fd814897c8d50d0510aa6723ebeb94c3e",
+    "sha256": "1d3fa9fac3e9abe7d9542e4890c1a8e1611ec34ec05d5adfdf3165f2144a0f90"
+  },
+  "status": {
+    "available": true,
+    "model": "mini_plus",
+    "poweroff_strategy": "poweroff",
+    "reboot_supported": true
+  },
+  "checks": {
+    "upload_hash_matches": "pass",
+    "script_executes": "pass",
+    "platform_dependency": "pass",
+    "shutdown_dependency": "pass",
+    "bounded_json": "pass",
+    "temporary_candidate_cleanup": "pass"
+  },
+  "notes": "Read-only candidate validation. No reboot or poweroff was requested. Existing clean-FAT and reboot evidence covers the unchanged low-level helper separately."
+}

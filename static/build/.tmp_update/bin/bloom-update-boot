@@ -5,7 +5,7 @@ SD_ROOT="${BLOOM_SD_ROOT:-/mnt/SDCARD}"
 STATE_BIN="${BLOOM_UPDATE_STATE_BIN:-$SD_ROOT/.tmp_update/bin/bloom-update-state}"
 HEALTH_BIN="${BLOOM_HEALTH_BIN:-$SD_ROOT/.tmp_update/bin/bloomctl}"
 ROLLBACK_BIN="${BLOOM_UPDATE_ROLLBACK_BIN:-$SD_ROOT/.tmp_update/bin/bloom-update-rollback}"
-SHUTDOWN_BIN="${BLOOM_SHUTDOWN_BIN:-$SD_ROOT/.tmp_update/bin/shutdown}"
+POWER_BIN="${BLOOM_POWER_BIN:-$SD_ROOT/.tmp_update/bin/bloom-power}"
 JQ="${BLOOM_JQ_BIN:-$SD_ROOT/.tmp_update/bin/jq}"
 VERSION_FILE="${BLOOM_VERSION_FILE:-$SD_ROOT/.tmp_update/onionVersion/version.txt}"
 
@@ -26,9 +26,9 @@ case "${1:-}" in
                 phase="$(printf '%s\n' "$state" | "$JQ" -er '.phase')" || fail "update state is invalid"
                 if [ "$phase" = recovery_required ]; then
                     [ -x "$ROLLBACK_BIN" ] || fail "rollback service is unavailable"
-                    [ -x "$SHUTDOWN_BIN" ] || fail "shutdown service is unavailable"
+                    [ -x "$POWER_BIN" ] || fail "power service is unavailable"
                     "$ROLLBACK_BIN" || fail "automatic rollback publication failed"
-                    "$SHUTDOWN_BIN" -r
+                    "$POWER_BIN" request reboot
                     fail "automatic rollback reboot returned"
                 fi
                 printf '%s\n' "$state"

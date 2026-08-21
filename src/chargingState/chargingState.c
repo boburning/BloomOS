@@ -252,7 +252,7 @@ int main(void)
     if (turn_off) {
 #ifdef PLATFORM_MIYOOMINI
         display_setScreen(false);
-        system("shutdown; sleep 10");
+        system("/mnt/SDCARD/.tmp_update/bin/bloom-power request poweroff");
 #endif
     }
     else {
