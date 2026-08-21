@@ -107,11 +107,20 @@ metadata while enumeration is incomplete. UI consumers page and sort through
 local queries only; drawing a library row must never scan the ROM tree or use
 network I/O.
 
-The initial public boundary is `bloomctl library status`. Onion system, app,
-favorite, and recent imports are added behind the same service in subsequent
-focused changes. Until those imports and consumer migrations are physically
-proven, MainUI remains the compatibility authority and the empty canonical
-catalog does not change launch behavior.
+The public boundary exposes `bloomctl library status` and the explicit
+`bloomctl library import-onion` mutation. The importer reads a signed package
+catalog that maps Onion emulator folders to stable Bloom system IDs, validates
+each installed system/application config without following symlinks, normalizes
+only fixed SD-card path prefixes, and atomically publishes a new generation.
+Repeated imports are no-ops; malformed or empty discovery cannot replace the
+prior known-good catalog. The signed mapping distinguishes compatibility quirks
+such as the `PSX` emulator folder using `Roms/PS` without relaxing the path
+boundary.
+
+Favorite/recent import, game enumeration, and consumer queries are added behind
+the same service in subsequent focused changes. Until those imports and
+consumer migrations are physically proven, MainUI remains the compatibility
+authority and the canonical catalog does not change launch behavior.
 
 ## BloomPlatform foundation
 

@@ -165,6 +165,7 @@ core: $(CACHE)/.setup shared-libs
 	@cp $(SRC_DIR)/bloomRaProxy/bloom-ra-proxy $(BIN_DIR)/bloom-ra-proxy
 	@cp $(SRC_DIR)/bloomRaTest/bloom-ra-test $(BIN_DIR)/bloom-ra-test
 	@cp $(ROOT_DIR)/build/ra-core-policy.json $(BUILD_DIR)/.tmp_update/config/ra-core-policy.json
+	@cp $(ROOT_DIR)/build/system-catalog.json $(BUILD_DIR)/.tmp_update/config/system-catalog.json
 
 # Build dependencies for installer
 	@mkdir -p $(INSTALLER_DIR)/bin

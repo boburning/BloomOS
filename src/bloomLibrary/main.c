@@ -1,4 +1,5 @@
 #include "bloom_library_database.h"
+#include "bloom_library_import.h"
 
 #include <errno.h>
 #include <stdio.h>
@@ -8,6 +9,9 @@
 #define BLOOM_ROOT "/mnt/SDCARD/.bloom"
 #define LIBRARY_ROOT BLOOM_ROOT "/library"
 #define DATABASE_PATH LIBRARY_ROOT "/catalog.sqlite3"
+#define SYSTEM_CATALOG_PATH "/mnt/SDCARD/.tmp_update/config/system-catalog.json"
+#define EMU_ROOT "/mnt/SDCARD/Emu"
+#define APP_ROOT "/mnt/SDCARD/App"
 
 static int ensure_directory(const char *path)
 {
@@ -22,8 +26,9 @@ static int ensure_directory(const char *path)
 
 int main(int argc, char **argv)
 {
-    if (argc != 2 || strcmp(argv[1], "status") != 0) {
-        fprintf(stderr, "Usage: bloom-library status\n");
+    if (argc != 2 || (strcmp(argv[1], "status") != 0 &&
+                      strcmp(argv[1], "import-onion") != 0)) {
+        fprintf(stderr, "Usage: bloom-library status|import-onion\n");
         return 2;
     }
     if (ensure_directory(BLOOM_ROOT) != 0 || ensure_directory(LIBRARY_ROOT) != 0) {
@@ -32,8 +37,27 @@ int main(int argc, char **argv)
     }
     sqlite3 *database = NULL;
     BloomLibraryHealth health;
-    if (bloom_library_database_open(DATABASE_PATH, &database) != SQLITE_OK ||
-        bloom_library_database_health(database, &health) != SQLITE_OK) {
+    if (bloom_library_database_open(DATABASE_PATH, &database) != SQLITE_OK) {
+        fprintf(stderr, "{\"schema\":1,\"error\":{\"code\":\"library_unavailable\"}}\n");
+        return 1;
+    }
+    if (strcmp(argv[1], "import-onion") == 0) {
+        BloomLibraryImportResult imported;
+        char error[160] = {0};
+        if (bloom_library_import_onion(database, SYSTEM_CATALOG_PATH, EMU_ROOT, APP_ROOT, &imported,
+                                       error, sizeof(error)) != SQLITE_OK) {
+            sqlite3_close(database);
+            fprintf(stderr, "{\"schema\":1,\"error\":{\"code\":\"import_failed\"}}\n");
+            return 1;
+        }
+        sqlite3_close(database);
+        printf("{\"schema\":1,\"service\":\"bloom-library\",\"changed\":%s,"
+               "\"generation\":%d,\"systems\":%d,\"apps\":%d}\n",
+               imported.changed ? "true" : "false", imported.generation, imported.systems,
+               imported.apps);
+        return 0;
+    }
+    if (bloom_library_database_health(database, &health) != SQLITE_OK) {
         sqlite3_close(database);
         fprintf(stderr, "{\"schema\":1,\"error\":{\"code\":\"library_unavailable\"}}\n");
         return 1;
