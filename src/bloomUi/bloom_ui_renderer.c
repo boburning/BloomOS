@@ -145,3 +145,33 @@ int bloom_ui_render_shell(SDL_Surface *surface, const BloomUiLayout *layout,
     draw_footer(surface, layout, scene);
     return 0;
 }
+
+int bloom_ui_rotate_180(SDL_Surface *surface)
+{
+    if (surface == NULL || surface->format == NULL || surface->format->BitsPerPixel != 32 ||
+        surface->pixels == NULL) {
+        return -1;
+    }
+    if (SDL_MUSTLOCK(surface) && SDL_LockSurface(surface) != 0) {
+        return -1;
+    }
+    const size_t pixel_count = (size_t)surface->w * (size_t)surface->h;
+    Uint8 *bytes = surface->pixels;
+    for (size_t index = 0; index < pixel_count / 2; ++index) {
+        size_t opposite = pixel_count - index - 1;
+        size_t y = index / (size_t)surface->w;
+        size_t x = index % (size_t)surface->w;
+        size_t opposite_y = opposite / (size_t)surface->w;
+        size_t opposite_x = opposite % (size_t)surface->w;
+        Uint32 *first = (Uint32 *)(bytes + y * (size_t)surface->pitch + x * sizeof(Uint32));
+        Uint32 *second =
+            (Uint32 *)(bytes + opposite_y * (size_t)surface->pitch + opposite_x * sizeof(Uint32));
+        Uint32 temporary = *first;
+        *first = *second;
+        *second = temporary;
+    }
+    if (SDL_MUSTLOCK(surface)) {
+        SDL_UnlockSurface(surface);
+    }
+    return 0;
+}

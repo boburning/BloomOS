@@ -134,6 +134,9 @@ static void draw(SDL_Surface *screen, const BloomUiLayout *layout, TTF_Font *fon
                          layout->content.x + 20,
                          layout->content.y + (int)row * layout->row_height + layout->row_height / 3,
                          layout->content.width - 40, cream);
+#ifdef PLATFORM_MIYOOMINI
+    bloom_ui_rotate_180(screen);
+#endif
     SDL_Flip(screen);
 }
 
