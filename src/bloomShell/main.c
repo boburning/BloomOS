@@ -1,4 +1,5 @@
 #include "bloom_shell_launch.h"
+#include "bloom_shell_status.h"
 
 #include "../bloomUi/bloom_ui_core.h"
 #include "../bloomUi/bloom_ui_input.h"
@@ -16,6 +17,7 @@
 #define COMMAND_PATH "/mnt/SDCARD/.tmp_update/cmd_to_run.sh"
 #define SESSION_REQUEST_PATH "/tmp/bloom-session/request.json"
 #define SESSION_BINARY "/mnt/SDCARD/.tmp_update/bin/bloom-session"
+#define BLOOMCTL_BINARY "/mnt/SDCARD/.tmp_update/bin/bloomctl"
 #define GB_CORE "gambatte_libretro.so"
 #define GAME_PAGE_SIZE 100
 #define GAME_CAPACITY_MAX 4096
@@ -147,6 +149,8 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
 
 int main(int argc, char **argv)
 {
+    BloomShellStatus status = {0};
+    bloom_shell_status_load(BLOOMCTL_BINARY, &status);
     BloomLibraryGame *games = NULL;
     BloomLibraryGame recent = {0};
     BloomLibraryGame favorites[FAVORITES_CAPACITY_MAX] = {0};
@@ -157,8 +161,9 @@ int main(int argc, char **argv)
         return 1;
     if (argc == 2 && strcmp(argv[1], "--probe") == 0) {
         printf("{\"schema\":1,\"service\":\"bloom-shell\",\"ready\":true,\"gb_games\":%zu,"
-               "\"gb_recent\":%s,\"gb_favorites\":%zu}\n",
-               game_count, has_recent ? "true" : "false", favorite_count);
+               "\"gb_recent\":%s,\"gb_favorites\":%zu,\"health_ready\":%s,\"healthy\":%s}\n",
+               game_count, has_recent ? "true" : "false", favorite_count,
+               status.ready ? "true" : "false", status.healthy ? "true" : "false");
         free(games);
         return 0;
     }
