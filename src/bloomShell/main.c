@@ -19,6 +19,9 @@
 #define SESSION_REQUEST_PATH "/tmp/bloom-session/request.json"
 #define SESSION_BINARY "/mnt/SDCARD/.tmp_update/bin/bloom-session"
 #define BLOOM_STATUS_BINARY "/mnt/SDCARD/.tmp_update/bin/bloom-shell-status"
+#define BLOOM_SETTINGS_BINARY "/mnt/SDCARD/.tmp_update/bin/bloom-settings"
+#define BLOOM_CONTROLS_BINARY "/mnt/SDCARD/.tmp_update/bin/bloom-controls"
+#define BLOOM_NETWORK_BINARY "/mnt/SDCARD/.tmp_update/bin/bloom-network"
 #define DEVICE_MODEL_PATH "/tmp/deviceModel"
 #define GB_CORE "gambatte_libretro.so"
 #define GAME_PAGE_SIZE 100
@@ -105,6 +108,7 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
                  size_t home_selected, const BloomUiFocus *settings_focus,
                  const BloomUiFocus *apps_focus, const BloomLibraryApp *apps,
                  const BloomShellStatus *status, const BloomShellCapabilities *capabilities,
+                 const BloomShellQuickValues *quick_values,
                  int settings_system, int quick_settings,
                  const BloomUiFocus *quick_settings_focus)
 {
@@ -145,8 +149,9 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
     SDL_Color cream = {243, 226, 189, 0};
     if (quick_settings) {
         for (size_t row = 0; row < quick_settings_focus->item_count; ++row) {
-            const char *label = bloom_shell_quick_settings_label(capabilities, row);
-            if (label != NULL)
+            char label[96];
+            if (bloom_shell_quick_settings_format(capabilities, quick_values, row, label,
+                                                  sizeof(label)) == 0)
                 render_label(screen, font, label, layout->content.x + 20,
                              layout->content.y + (int)row * layout->row_height +
                                  layout->row_height / 3,
@@ -228,6 +233,8 @@ int main(int argc, char **argv)
         return 1;
     BloomShellStatus status = {0};
     bloom_shell_status_load(BLOOM_STATUS_BINARY, &status);
+    BloomShellQuickValues quick_values = {0};
+    bloom_shell_quick_values_load(BLOOM_SETTINGS_BINARY, &quick_values);
     BloomLibraryGame *games = NULL;
     BloomLibraryGame recent = {0};
     BloomLibraryGame favorites[FAVORITES_CAPACITY_MAX] = {0};
@@ -294,7 +301,7 @@ int main(int argc, char **argv)
     int settings_system = 0;
     draw(screen, video, &layout, font, destination, &library_focus, &collections_focus, games,
          favorites, &recent, has_recent, home_selected, &settings_focus, &apps_focus, apps, &status,
-         &capabilities, settings_system, quick_settings, &quick_settings_focus);
+         &capabilities, &quick_values, settings_system, quick_settings, &quick_settings_focus);
     int running = 1;
     int exit_code = 0;
     while (running) {
@@ -319,6 +326,13 @@ int main(int argc, char **argv)
         }
         else if (quick_settings && action == BLOOM_UI_ACTION_FOCUS_DOWN) {
             bloom_ui_focus_step(&quick_settings_focus, 1, layout.visible_rows);
+        }
+        else if (quick_settings && (action == BLOOM_UI_ACTION_FOCUS_LEFT ||
+                                    action == BLOOM_UI_ACTION_FOCUS_RIGHT)) {
+            bloom_shell_quick_settings_adjust(
+                &capabilities, &quick_values, quick_settings_focus.selected,
+                action == BLOOM_UI_ACTION_FOCUS_RIGHT ? 1 : -1, BLOOM_CONTROLS_BINARY,
+                BLOOM_NETWORK_BINARY);
         }
         else if (quick_settings) {
             continue;
@@ -415,7 +429,7 @@ int main(int argc, char **argv)
         if (running)
             draw(screen, video, &layout, font, destination, &library_focus, &collections_focus,
                  games, favorites, &recent, has_recent, home_selected, &settings_focus, &apps_focus,
-                 apps, &status, &capabilities, settings_system, quick_settings,
+                 apps, &status, &capabilities, &quick_values, settings_system, quick_settings,
                  &quick_settings_focus);
     }
     TTF_CloseFont(font);

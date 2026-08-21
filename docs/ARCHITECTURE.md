@@ -151,16 +151,21 @@ supported device; Network appears only on Plus and Flip, and Advanced appears
 only while Developer Mode is active. System retains the bounded health,
 update, and RetroAchievements summary loaded before the render loop. START
 opens a compact Quick Settings model from any normal shell destination;
-Original Mini omits Wi-Fi while Plus and Flip include it. This initial slice is
-navigation-only: mutations remain disabled until they can use the canonical
-settings service and apply hardware state atomically.
+Original Mini omits Wi-Fi while Plus and Flip include it. The shell loads one
+bounded canonical value snapshot before entering the render loop and displays
+explicit unavailable state if that read fails. Left and right requests are
+event-driven fixed-argument executions of the Bloom brightness, volume, and
+network adapters; the in-memory value changes only after the adapter succeeds.
+No settings subprocess runs while rendering, and arbitrary fields or commands
+cannot cross this boundary.
 
 The canonical service exposes `bloomctl settings values` as the bounded,
 read-only bridge for future UI consumers. Its schema-1 response includes only
 generation, authority, brightness, volume, mute, and Wi-Fi state; it does not
 serialize themes, control mappings, account data, credentials, or preserved
-legacy fields. Mutations continue through the existing allowlisted `set`
-boundary rather than accepting arbitrary JSON.
+legacy fields. Mutations continue through the existing allowlisted control and
+network adapters, which persist through the canonical `set` boundary, rather
+than accepting arbitrary JSON.
 
 Bloom Shell applies that policy at a single supervised launch boundary. Only
 `bloom-native` and reviewed `onion-compatible` rows may stage a command;

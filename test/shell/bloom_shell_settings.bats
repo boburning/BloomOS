@@ -13,6 +13,10 @@
     grep -F 'action == BLOOM_UI_ACTION_QUICK_SETTINGS' "$shell"
     grep -F 'quick_settings = !quick_settings;' "$shell"
     grep -F 'bloom_shell_quick_settings_count(&capabilities)' "$shell"
+    grep -F 'bloom_shell_quick_values_load(BLOOM_SETTINGS_BINARY, &quick_values);' "$shell"
+    grep -F 'BLOOM_CONTROLS_BINARY' "$shell"
+    grep -F 'BLOOM_NETWORK_BINARY' "$shell"
+    grep -F 'action == BLOOM_UI_ACTION_FOCUS_RIGHT ? 1 : -1' "$shell"
 
     render=$(sed -n '/static void draw(/,/^}/p' "$shell")
     [[ "$render" != *'system('* ]]
