@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "palette": {
+    "canvas": "#211711",
+    "surface": "#352319",
+    "surface-raised": "#493025",
+    "cream": "#F3E2BD",
+    "sand": "#CDAF7B",
+    "orange": "#D86A2C",
+    "gold": "#E2A93B",
+    "red": "#A84832",
+    "green": "#708A4A"
+  },
+  "roles": {
+    "background": "canvas",
+    "panel": "surface",
+    "focus-fill": "surface-raised",
+    "text-primary": "cream",
+    "text-secondary": "sand",
+    "accent": "orange",
+    "highlight": "gold",
+    "danger": "red",
+    "success": "green"
+  },
+  "required_contrast": [
+    ["cream", "canvas", 4.5],
+    ["cream", "surface", 4.5],
+    ["sand", "canvas", 4.5],
+    ["sand", "surface", 4.5]
+  ]
+}
