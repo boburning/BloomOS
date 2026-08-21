@@ -180,6 +180,21 @@ bypass, and firmware syscall fallbacks that already have physical Plus evidence.
 Suspend/lid behavior, brightness, volume, clock, and network consumers remain
 explicit follow-up migrations; this first slice does not broaden their claims.
 
+## Bloom network boundary
+
+`bloom-network` owns the schema-1, privacy-bounded local network status used by
+Bloom consumers. It combines `bloom-platform` Wi-Fi capability, the firmware's
+current Wi-Fi preference, and read-only `wlan0` association signals without
+exposing an SSID, address, credential, or network scan. Original Mini hardware
+reports `no_network_hardware` immediately instead of waiting on an interface
+that cannot exist; enabled but disconnected radios report `not_associated`.
+
+The service intentionally does not claim internet reachability and performs no
+network I/O. `bloom-ra-network` consumes its local state and then adds the
+separate bounded clock, DNS, TLS, and RetroAchievements service probe. This
+keeps generic hardware/association facts independent from RA transport policy.
+Wi-Fi mutations and inherited network-service lifecycle remain follow-up work.
+
 ## Structured launch boundary
 
 `bloom-launch` owns schema-1 `BloomLaunchRequest` validation and atomic request

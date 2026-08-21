@@ -54,6 +54,7 @@ BLOOM_RUNTIME_SOURCE_IDS = {
     "runtime-tmp-update-bin-bloom-health-system",
     "runtime-tmp-update-bin-bloom-launch-override",
     "runtime-tmp-update-bin-bloom-launch-run",
+    "runtime-tmp-update-bin-bloom-network",
     "runtime-tmp-update-bin-bloom-platform",
     "runtime-tmp-update-bin-bloom-power",
     "runtime-tmp-update-bin-bloom-ra-login",

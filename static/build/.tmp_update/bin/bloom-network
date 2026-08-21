@@ -1,0 +1,42 @@
+#!/bin/sh
+set -eu
+
+ROOT=${BLOOM_NETWORK_ROOT:-}
+PLATFORM=${BLOOM_PLATFORM_BIN:-/mnt/SDCARD/.tmp_update/bin/bloom-platform}
+JSONVAL=${BLOOM_NETWORK_JSONVAL_BIN:-/customer/app/jsonval}
+LIB_DIR=${BLOOM_NETWORK_LIB_DIR:-$ROOT/mnt/SDCARD/.tmp_update/lib}
+
+result() {
+    printf '{"schema":1,"service":"bloom-network","available":%s,"wifi_capable":%s,"wifi_enabled":%s,"associated":%s,"state":"%s"}\n' \
+        "$1" "$2" "$3" "$4" "$5"
+}
+
+[ "$#" -eq 1 ] && [ "$1" = status ] || { result false false false false invalid_arguments; exit 2; }
+[ -x "$PLATFORM" ] || { result false false false false platform_unavailable; exit 1; }
+
+wifi=$($PLATFORM capability wifi 2>/dev/null) || { result false false false false platform_unavailable; exit 1; }
+case "$wifi" in
+    false) result true false false false no_network_hardware; exit 0 ;;
+    true) ;;
+    *) result false false false false platform_unavailable; exit 1 ;;
+esac
+
+[ -x "$JSONVAL" ] || { result false true false false wifi_state_unavailable; exit 1; }
+enabled=$(LD_LIBRARY_PATH="/lib:/config/lib:/customer/lib:$LIB_DIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" \
+    "$JSONVAL" wifi 2>/dev/null) || { result false true false false wifi_state_unavailable; exit 1; }
+case "$enabled" in
+    0) result true true false false wifi_disabled; exit 0 ;;
+    1) ;;
+    *) result false true false false wifi_state_unavailable; exit 1 ;;
+esac
+
+interface=$ROOT/sys/class/net/wlan0
+[ -d "$interface" ] || { result true true true false not_associated; exit 0; }
+
+operstate=''
+carrier=''
+[ ! -r "$interface/operstate" ] || IFS= read -r operstate <"$interface/operstate" || true
+[ ! -r "$interface/carrier" ] || IFS= read -r carrier <"$interface/carrier" || true
+[ "$operstate" = up ] && [ "$carrier" = 1 ] || { result true true true false not_associated; exit 0; }
+
+result true true true true associated
