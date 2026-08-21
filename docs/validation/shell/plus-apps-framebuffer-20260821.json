@@ -1,0 +1,47 @@
+{
+  "schema": 1,
+  "device": "miyoo-mini-plus",
+  "model_id": 354,
+  "signed_candidate": {
+    "version": "0.1.0-dev-1fa75806",
+    "workflow_run": 32503384109,
+    "archive_size": 203034143,
+    "archive_sha256": "5fea46e7c36678868dcecbe67212f9efc3da76f901a794d9ddad94be020dcd3d",
+    "signature_verified": true,
+    "shell_size": 79816,
+    "shell_sha256": "76369a9b3cae75c1b5d76a8991ae9e991cefc2c38385e12821f93741a9124584",
+    "status_adapter_sha256": "98046f04fea1a112d1ae516f54e9e90f828fc8a0d9dd13b80ae354c359b23515",
+    "probe": {
+      "ready": true,
+      "gb_games": 1,
+      "gb_recent": false,
+      "gb_favorites": 0,
+      "apps": 23,
+      "health_ready": true,
+      "healthy": true
+    }
+  },
+  "framebuffer_transition": {
+    "geometry": "640x1440x32",
+    "visible_page_bytes": 1228800,
+    "page_count": 3,
+    "padding_bytes": 507904,
+    "orientation_correction": "rotate_180_for_inspection",
+    "home_page_sha256": "145fcb86b106bc702e3648a06781acdfa43d72e51fa03e907d20461e67a4d563",
+    "library_page_sha256": "f5d10d91835b83019192608242b19c86ab505783fb92fb3d78df8f5949192e6e",
+    "home_full_sha256": "542de8214bcc5f3de6dae7ad80db644ad4c304928254ec59c732f1d855e2ebc7",
+    "library_full_sha256": "a883b8e2aef0d360e13421b4d7a1e49b20a9bfbd091f7aa4c8027ee43c874100",
+    "all_visible_pages_equal_at_every_capture": true,
+    "home_restored_exactly": true,
+    "rotated_visual_inspection": "coherent_upright",
+    "capture_intervals": ["immediate", "one_second", "two_seconds", "one_second_after_back"]
+  },
+  "cleanup": {
+    "temporary_files_removed": true,
+    "installed_shell_pid": 1184,
+    "update_phase": "testing",
+    "pending_version": "0.1.0-dev-5e81cfef",
+    "update_confirmed": false
+  },
+  "notes": "Remote captures prove page equality and coherent rotated images at sampled times, not physical LCD scanout between samples. App launching was not exercised."
+}
