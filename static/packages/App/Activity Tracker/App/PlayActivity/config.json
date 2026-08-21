@@ -2,5 +2,6 @@
 "label":"Activity Tracker",
 "icon":"../../Icons/Default/app/activity.png",
 "launch":"launch.sh",
+"bloom_compatibility":"bloom-native",
 "description":"Track your play activity"
 }
