@@ -9,14 +9,22 @@ import re
 import sys
 
 
-SCOPES = ("src/tweaks",)
-TEXT_SUFFIXES = {".c", ".cc", ".cpp", ".h", ".hpp"}
+SCOPES = (
+    "src/tweaks",
+    "src/installUI",
+    "src/prompt/test.sh",
+    "static/configs/Saves/CurrentProfile/states/README.txt",
+    "static/configs/Saves/CurrentProfile/saves/README.txt",
+    "static/build/autorun.inf",
+)
+TEXT_SUFFIXES = {".c", ".cc", ".cpp", ".h", ".hpp", ".inf", ".sh", ".txt"}
 ONION = re.compile(r"onion", re.IGNORECASE)
 LEGACY_CREDENTIALS = {
     '"Username: onion\\n"',
     '"Password: onion\\n"',
     '"Password: onion\\n");',
 }
+INTERNAL_IDENTIFIERS = ("onionVersion", "ONION_VERSION")
 
 
 def validate(repository: pathlib.Path) -> tuple[list[str], int]:
@@ -24,10 +32,14 @@ def validate(repository: pathlib.Path) -> tuple[list[str], int]:
     classified = 0
     for scope in SCOPES:
         root = repository / scope
-        if not root.is_dir():
+        if root.is_dir():
+            paths = sorted(root.rglob("*"))
+        elif root.is_file():
+            paths = [root]
+        else:
             failures.append(f"missing audit scope: {scope}")
             continue
-        for path in sorted(root.rglob("*")):
+        for path in paths:
             if not path.is_file() or path.suffix.lower() not in TEXT_SUFFIXES:
                 continue
             try:
@@ -39,7 +51,10 @@ def validate(repository: pathlib.Path) -> tuple[list[str], int]:
                 if not ONION.search(line):
                     continue
                 stripped = line.strip()
-                if stripped in LEGACY_CREDENTIALS:
+                classified_line = stripped in LEGACY_CREDENTIALS or any(
+                    identifier in line for identifier in INTERNAL_IDENTIFIERS
+                )
+                if classified_line:
                     classified += 1
                     continue
                 relative = path.relative_to(repository).as_posix()
@@ -56,7 +71,7 @@ def main() -> int:
         for failure in failures:
             print(f"branding copy: {failure}", file=sys.stderr)
         return 1
-    print(f"branding copy validate: {classified} classified compatibility literals")
+    print(f"branding copy validate: {classified} classified legacy literals")
     return 0
 
 

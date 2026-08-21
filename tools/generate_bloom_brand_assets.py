@@ -10,6 +10,8 @@ import pathlib
 import struct
 import zlib
 
+from generate_quick_guide import FONT as BITMAP_FONT
+
 
 GLYPHS = {
     "B": ("11110", "10001", "10001", "11110", "10001", "10001", "11110"),
@@ -81,6 +83,16 @@ class Canvas:
             for px in range(center_x - radius, center_x + radius + 1):
                 if abs(px - center_x) + abs(py - center_y) <= radius:
                     self.set(px, py, color)
+
+    def text(self, x: int, y: int, value: str, scale: int, color: tuple[int, int, int, int]) -> None:
+        cursor = x
+        for character in value.upper():
+            glyph = BITMAP_FONT.get(character, BITMAP_FONT["?"])
+            for row, bits in enumerate(glyph):
+                for column in range(5):
+                    if bits & (1 << (4 - column)):
+                        self.rectangle(cursor + column * scale, y + row * scale, scale, scale, color)
+            cursor += 6 * scale
 
     def png(self) -> bytes:
         raw = bytearray()
@@ -160,6 +172,49 @@ def draw_wordmark(canvas: Canvas, x: int, y: int, scale: int, colors: dict[str, 
         cursor += 6 * scale
 
 
+INSTALL_SLIDES = (
+    ("WELCOME TO BLOOMOS", "A CLEAN START FOR YOUR", "MIYOO HANDHELD"),
+    ("YOUR GAMES, YOUR CARD", "ROMS AND SAVES STAY IN", "FAMILIAR FOLDERS"),
+    ("SAFE BY DEFAULT", "SIGNED UPDATES AND", "RECOVERABLE ROLLBACKS"),
+    ("QUICK RETURN", "GAMESWITCHER KEEPS", "RECENT SESSIONS CLOSE"),
+    ("PLAY ACTIVITY", "LOCAL HISTORY USES", "STABLE GAME IDENTITY"),
+    ("RETROACHIEVEMENTS", "OPTIONAL, PRIVATE, AND", "BUILT AROUND EXACT GAMES"),
+    ("OFFLINE FRIENDLY", "BADGES AND METADATA", "REMAIN AVAILABLE"),
+    ("ONE BLOOMOS FAMILY", "MINI, MINI PLUS, AND FLIP", "SHARE THE SAME FOUNDATION"),
+    ("READY TO PLAY", "INSTALLATION WILL FINISH", "AUTOMATICALLY"),
+)
+
+
+def install_slide(
+    index: int,
+    title: str,
+    first_line: str,
+    second_line: str,
+    colors: dict[str, tuple[int, int, int, int]],
+) -> bytes:
+    slide = Canvas(640, 480, colors["canvas"])
+    slide.rectangle(0, 0, 640, 8, colors["orange"])
+    draw_mark(slide, 70, 70, 72, colors)
+    slide.text(122, 43, "BLOOMOS", 3, colors["cream"])
+    slide.rectangle(52, 132, 536, 4, colors["surface-raised"])
+    slide.text(52, 170, title, 4, colors["cream"])
+    slide.text(52, 265, first_line, 3, colors["sand"])
+    slide.text(52, 310, second_line, 3, colors["sand"])
+    slide.rectangle(52, 398, 536, 2, colors["surface-raised"])
+    slide.text(52, 426, f"{index + 1:02d} / {len(INSTALL_SLIDES):02d}", 2, colors["gold"])
+    slide.text(406, 426, "INSTALLING BLOOMOS", 2, colors["orange"])
+    return slide.png()
+
+
+def install_waiting(colors: dict[str, tuple[int, int, int, int]]) -> bytes:
+    waiting = Canvas(640, 480, colors["canvas"])
+    waiting.rectangle(0, 0, 640, 8, colors["orange"])
+    draw_mark(waiting, 320, 190, 150, colors)
+    draw_wordmark(waiting, 173, 292, 7, colors)
+    waiting.text(230, 384, "PREPARING INSTALL", 2, colors["sand"])
+    return waiting.png()
+
+
 def generate(repository: pathlib.Path) -> dict[pathlib.Path, bytes]:
     tokens_path = repository / "build/bloom-design-tokens.json"
     mark_path = repository / "src/bloomUi/assets/bloom-mark.svg"
@@ -182,6 +237,11 @@ def generate(repository: pathlib.Path) -> dict[pathlib.Path, bytes]:
     boot_png = boot.png()
     outputs[repository / "assets/branding/bloom-boot-640x480.png"] = boot_png
     outputs[repository / "src/bootScreen/res/bootScreen.png"] = boot_png
+    outputs[repository / "src/installUI/res/waitingBG.png"] = install_waiting(colors)
+    for index, (title, first_line, second_line) in enumerate(INSTALL_SLIDES):
+        outputs[repository / f"src/installUI/res/installSlide{index}.png"] = install_slide(
+            index, title, first_line, second_line, colors
+        )
     return outputs
 
 
