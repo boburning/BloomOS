@@ -4,6 +4,11 @@
 
 #include <array>
 #include <cstdint>
+#include <filesystem>
+#include <fstream>
+#include <vector>
+
+#include <unistd.h>
 
 extern "C" {
 #include "../src/bloomUi/bloom_ui_renderer.h"
@@ -164,5 +169,37 @@ TEST(BloomUiRenderer, RotatesPresentationPixelsByOneHundredEightyDegrees)
         EXPECT_EQ(index + 1, pixels[index]);
     }
     EXPECT_NE(0, bloom_ui_rotate_180(nullptr));
+    SDL_FreeSurface(surface);
+}
+
+TEST(BloomUiRenderer, PublishesEveryFramebufferPage)
+{
+    SDL_Surface *surface = make_surface(3, 2);
+    ASSERT_NE(nullptr, surface);
+    auto *pixels = static_cast<Uint8 *>(surface->pixels);
+    for (int y = 0; y < surface->h; ++y)
+        for (int x = 0; x < surface->w * 4; ++x)
+            pixels[y * surface->pitch + x] = static_cast<Uint8>(y * 32 + x);
+
+    const auto path = std::filesystem::temp_directory_path() /
+                      ("bloom-framebuffer-pages-" + std::to_string(getpid()));
+    {
+        std::ofstream target(path, std::ios::binary);
+        std::vector<char> empty(3 * 2 * 4 * 3, '\0');
+        target.write(empty.data(), static_cast<std::streamsize>(empty.size()));
+    }
+    ASSERT_EQ(0, bloom_ui_publish_framebuffer_pages(surface, path.c_str(), 3));
+    std::ifstream source(path, std::ios::binary);
+    std::vector<Uint8> actual((std::istreambuf_iterator<char>(source)),
+                              std::istreambuf_iterator<char>());
+    std::vector<Uint8> expected;
+    for (int page = 0; page < 3; ++page)
+        for (int y = 0; y < surface->h; ++y)
+            expected.insert(expected.end(), pixels + y * surface->pitch,
+                            pixels + y * surface->pitch + surface->w * 4);
+    EXPECT_EQ(expected, actual);
+    EXPECT_NE(0, bloom_ui_publish_framebuffer_pages(surface, "", 3));
+    EXPECT_NE(0, bloom_ui_publish_framebuffer_pages(surface, path.c_str(), 0));
+    std::filesystem::remove(path);
     SDL_FreeSurface(surface);
 }

@@ -136,10 +136,9 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
                          layout->content.width - 40, cream);
 #ifdef PLATFORM_MIYOOMINI
     bloom_ui_rotate_180(screen);
-    for (int page = 0; page < 3; ++page) {
-        SDL_BlitSurface(screen, NULL, video, NULL);
+    SDL_BlitSurface(screen, NULL, video, NULL);
+    if (bloom_ui_publish_framebuffer_pages(video, "/dev/fb0", 3) != 0)
         SDL_Flip(video);
-    }
 #else
     SDL_BlitSurface(screen, NULL, video, NULL);
     SDL_Flip(video);

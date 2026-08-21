@@ -49,6 +49,10 @@ int bloom_ui_render_shell(SDL_Surface *surface, const BloomUiLayout *layout,
 /* Adapts logical top-left rendering to the Mini-family physical framebuffer. */
 int bloom_ui_rotate_180(SDL_Surface *surface);
 
+/* Copies one rendered frame into every page of a Mini-family framebuffer. */
+int bloom_ui_publish_framebuffer_pages(SDL_Surface *surface, const char *framebuffer_path,
+                                       size_t page_count);
+
 #ifdef __cplusplus
 }
 #endif
