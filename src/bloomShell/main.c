@@ -322,6 +322,15 @@ int main(int argc, char **argv)
                 running = 0;
             }
         }
+        else if (action == BLOOM_UI_ACTION_CONFIRM && destination == BLOOM_UI_DESTINATION_APPS &&
+                 apps_focus.item_count > 0) {
+            char error[256] = {0};
+            if (bloom_shell_stage_app(&apps[apps_focus.selected], "/mnt/SDCARD", COMMAND_PATH,
+                                      error, sizeof(error)) == 0) {
+                exit_code = LAUNCH_READY_EXIT;
+                running = 0;
+            }
+        }
         else if (action == BLOOM_UI_ACTION_CONFIRM &&
                  destination == BLOOM_UI_DESTINATION_COLLECTIONS &&
                  collections_focus.item_count > 0) {
