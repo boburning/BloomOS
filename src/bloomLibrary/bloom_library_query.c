@@ -132,8 +132,9 @@ int bloom_library_query_games(sqlite3 *database, const char *system_id, const ch
     return sql;
 }
 
-int bloom_library_query_recents(sqlite3 *database, const char *system_id, size_t limit,
-                                BloomLibraryGame *games, size_t games_capacity, size_t *count)
+static int query_ordered(sqlite3 *database, const char *table, const char *system_id,
+                         size_t limit, BloomLibraryGame *games, size_t games_capacity,
+                         size_t *count)
 {
     if (database == NULL || !valid_system_id(system_id) || limit == 0 ||
         limit > BLOOM_LIBRARY_QUERY_LIMIT_MAX || games == NULL || games_capacity < limit ||
@@ -141,13 +142,20 @@ int bloom_library_query_recents(sqlite3 *database, const char *system_id, size_t
         return SQLITE_MISUSE;
     *count = 0;
     sqlite3_stmt *statement = NULL;
-    const char *sql_text =
+    const char *recents_sql =
         "SELECT games.bloom_game_id,games.system_id,games.normalized_rom_path,"
         "games.display_title,games.image_path,games.file_size,games.file_mtime,systems.launch_path "
         "FROM recents JOIN games USING(bloom_game_id) JOIN systems USING(system_id) "
         "WHERE games.present=1 AND systems.present=1 AND (?1 IS NULL OR games.system_id=?1) "
         "ORDER BY recents.position LIMIT ?2";
-    int sql = sqlite3_prepare_v2(database, sql_text, -1, &statement, NULL);
+    const char *favorites_sql =
+        "SELECT games.bloom_game_id,games.system_id,games.normalized_rom_path,"
+        "games.display_title,games.image_path,games.file_size,games.file_mtime,systems.launch_path "
+        "FROM favorites JOIN games USING(bloom_game_id) JOIN systems USING(system_id) "
+        "WHERE games.present=1 AND systems.present=1 AND (?1 IS NULL OR games.system_id=?1) "
+        "ORDER BY favorites.position LIMIT ?2";
+    int sql = sqlite3_prepare_v2(database, strcmp(table, "recents") == 0 ? recents_sql : favorites_sql,
+                                 -1, &statement, NULL);
     if (sql == SQLITE_OK)
         sql = system_id == NULL ? sqlite3_bind_null(statement, 1)
                                 : sqlite3_bind_text(statement, 1, system_id, -1, SQLITE_STATIC);
@@ -179,4 +187,16 @@ int bloom_library_query_recents(sqlite3 *database, const char *system_id, size_t
         sql = step;
     sqlite3_finalize(statement);
     return sql;
+}
+
+int bloom_library_query_recents(sqlite3 *database, const char *system_id, size_t limit,
+                                BloomLibraryGame *games, size_t games_capacity, size_t *count)
+{
+    return query_ordered(database, "recents", system_id, limit, games, games_capacity, count);
+}
+
+int bloom_library_query_favorites(sqlite3 *database, const char *system_id, size_t limit,
+                                  BloomLibraryGame *games, size_t games_capacity, size_t *count)
+{
+    return query_ordered(database, "favorites", system_id, limit, games, games_capacity, count);
 }
