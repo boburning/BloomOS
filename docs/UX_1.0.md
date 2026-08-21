@@ -44,6 +44,13 @@ The shared text-entry model exposes lowercase, uppercase, digits, and printable
 ASCII symbols with bounded append/backspace operations; a feature may mask the
 rendered value, but it must not remove access to uppercase or symbols.
 
+`src/bloomUi/bloom_ui_renderer` owns only deterministic, pixel-aligned drawing
+onto a caller-owned SDL surface. It consumes the shared layout and navigation
+state without performing file or network I/O. The initial geometry layer draws
+canonical shell chrome, destination focus, visible list focus, status, and
+progress at both supported resolutions; font and image adapters overlay actual
+content without becoming navigation authorities.
+
 ## Performance behavior
 
 The renderer never waits for network, hashing, scanning, scraping, or update

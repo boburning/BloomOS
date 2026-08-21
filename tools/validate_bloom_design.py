@@ -28,11 +28,13 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--tokens", type=pathlib.Path, required=True)
     parser.add_argument("--mark", type=pathlib.Path, required=True)
+    parser.add_argument("--renderer", type=pathlib.Path, required=True)
     args = parser.parse_args()
     failures: list[str] = []
     try:
         data = json.loads(args.tokens.read_text(encoding="utf-8"))
         mark = args.mark.read_text(encoding="utf-8")
+        renderer = args.renderer.read_text(encoding="utf-8")
     except (OSError, UnicodeError, json.JSONDecodeError) as error:
         print(f"Bloom design: unreadable input: {error}", file=sys.stderr)
         return 1
@@ -58,6 +60,13 @@ def main() -> int:
         failures.append(f"mark uses colors outside the palette: {', '.join(unknown)}")
     if "<title" not in mark or "<desc" not in mark or mark.count("<path") < 9:
         failures.append("mark lacks accessible metadata or radial geometry")
+    renderer_palette = {
+        name: f"#{value}" for value, name in re.findall(
+            r"0x([0-9A-F]{6}),\s*/\*\s*([a-z-]+)\s*\*/", renderer
+        )
+    }
+    if renderer_palette != palette:
+        failures.append("renderer palette does not match canonical design tokens")
     if failures:
         for failure in failures:
             print(f"Bloom design: {failure}", file=sys.stderr)

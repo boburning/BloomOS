@@ -329,6 +329,14 @@ MainUI remains a development recovery fallback during this sequence. It is not
 the stable 1.0 frontend, and no responsibility is removed before its Bloom-owned
 replacement passes the relevant recovery and device tests.
 
+Current frontend progress:
+
+- [x] Shared resolution-safe navigation, focus, dialog, and text-entry state.
+- [ ] Shared Bloom SDL rendering and device-input foundation. Deterministic
+  shell geometry and host golden coverage are in progress; font/image adapters,
+  device input, and physical display validation remain.
+- [ ] Bloom Shell vertical slice and supervised MainUI fallback.
+
 ## Historical BloomOS foundation
 
 1. Repository bootstrap, attribution, upstream and Flip audits, and dependency inventory.
