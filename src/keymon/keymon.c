@@ -434,6 +434,7 @@ int main(void)
     signal(SIGTERM, quit);
     signal(SIGSEGV, quit);
     signal(SIGUSR1, signal_refresh);
+    signal(SIGPIPE, SIG_IGN);
     log_setName("keymon");
 
     getDeviceModel();

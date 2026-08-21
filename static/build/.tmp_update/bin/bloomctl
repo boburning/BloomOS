@@ -265,7 +265,7 @@ usage() {
     printf '       bloomctl settings {status|import-onion|sync-onion|reconcile-onion|materialize-onion|activate-bloom|rollback-authority|set FIELD VALUE}\n' >&2
     printf '       bloomctl power {status|reboot|poweroff}\n' >&2
     printf '       bloomctl network {status|reconcile|enable|disable}\n' >&2
-    printf '       bloomctl controls {status|brightness VALUE}\n' >&2
+    printf '       bloomctl controls {status|brightness VALUE|volume VALUE}\n' >&2
     printf '       bloomctl time status\n' >&2
     printf '       bloomctl library {status|import-onion|import-legacy|scan --changed|--all|--system SYSTEM|games --limit N [--after GAME_ID]|games --system SYSTEM --limit N [--after GAME_ID]}\n' >&2
     printf '       bloomctl test smoke SYSTEM ROM_PATH [DURATION_SECONDS]\n' >&2
@@ -491,6 +491,7 @@ controls_command() {
     case "$#:${1:-}" in
         1:status) "$BLOOM_CONTROLS" status ;;
         2:brightness) "$BLOOM_CONTROLS" request brightness "$2" ;;
+        2:volume) "$BLOOM_CONTROLS" request volume "$2" ;;
         *) usage; return 2 ;;
     esac
 }

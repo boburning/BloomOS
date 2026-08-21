@@ -210,8 +210,9 @@ remains follow-up work.
 
 ## Bloom controls boundary
 
-`bloom-controls` begins the model-aware runtime-control boundary with
-brightness. `status` reports only the known model and bounded raw PWM state.
+`bloom-controls` is the model-aware brightness and volume runtime-control
+boundary. `status` reports only the known model, bounded raw PWM state, and
+whether the firmware audio-server FIFO is available.
 The public brightness request accepts exactly 0 through 10, persists only
 `device.brightness` through `bloom-settings`, and applies Bloom's single
 canonical logical-to-PWM curve. Settings rejection remains distinct from a
@@ -219,11 +220,17 @@ later hardware-apply failure.
 
 The separate internal `apply brightness` operation never persists state. Boot
 uses it after preparing the PWM period, removing the duplicated curve and raw
-duty-cycle write from `runtime.sh`. Unknown hardware and unavailable controls
-fail closed. Volume control will extend this boundary only after its real
-device backend is characterized; the Plus, for example, exposes
-the firmware audio server but not the historical `/dev/mi_ao` node while
-MainUI is idle.
+duty-cycle write from `runtime.sh`. Public volume requests accept exactly 0
+through 20, persist the canonical level and cleared mute intent, and map it to
+the inherited logarithmic -60 through +3 dB curve. A small source-built
+`bloom-volume` helper writes the Plus firmware audio server's fixed 24-byte
+atomic FIFO request; it rejects linked/non-FIFO endpoints and never waits
+indefinitely for a missing reader. Keymon retains the direct device path where
+firmware exposes it and uses this absolute-volume fallback on Plus audio-server
+firmware. Public volume requests preflight the backend before changing
+settings; non-Plus public backends remain follow-up work. Relative audio boost
+remains unavailable on that fallback because the server does not expose a safe
+current-level query. Unknown hardware and unavailable controls fail closed.
 
 ## Bloom time boundary
 

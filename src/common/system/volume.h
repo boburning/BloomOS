@@ -1,9 +1,13 @@
 #ifndef VOLUME_H__
 #define VOLUME_H__
 
+#include <errno.h>
 #include <fcntl.h>
 #include <math.h>
+#include <stdint.h>
 #include <sys/ioctl.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #include "utils/file.h"
 
@@ -20,8 +24,32 @@ int setVolumeRaw(int value, int add)
 {
     int fd;
 
-    if ((fd = open("/dev/mi_ao", O_RDWR)) < 0)
-        return 0;
+    if ((fd = open("/dev/mi_ao", O_RDWR)) < 0) {
+        // The Plus/Flip firmware audio server owns and removes /dev/mi_ao.
+        // Its 24-byte control FIFO accepts command -1 plus an absolute raw
+        // volume. Relative audio boost remains unavailable without a readable
+        // device value, but normal volume and resume restoration stay usable.
+        if (add)
+            return 0;
+        value += MIN_RAW_VALUE;
+        if (value > MAX_RAW_VALUE)
+            value = MAX_RAW_VALUE;
+        else if (value < MIN_RAW_VALUE)
+            value = MIN_RAW_VALUE;
+        int32_t request[6] = {-1, value, 0, 0, 0, 0};
+        struct stat info;
+        if (lstat("/tmp/audio_fifo_ioctl_req", &info) != 0 || !S_ISFIFO(info.st_mode))
+            return 0;
+        fd = open("/tmp/audio_fifo_ioctl_req", O_WRONLY | O_NONBLOCK | O_NOFOLLOW);
+        if (fd < 0)
+            return 0;
+        ssize_t written;
+        do {
+            written = write(fd, request, sizeof(request));
+        } while (written < 0 && errno == EINTR);
+        close(fd);
+        return written == (ssize_t)sizeof(request) ? value : 0;
+    }
 
     int buf2[] = {0, 0};
     uint64_t buf1[] = {sizeof(buf2), (uintptr_t)buf2};

@@ -378,11 +378,15 @@ Current frontend progress:
   `bloom-controls` now owns bounded canonical brightness persistence and the
   shared logical-to-PWM apply curve; boot uses the non-persisting adapter path,
   and an exact-hash Plus no-op retained both raw PWM and settings bytes.
+  The same boundary now owns 0-20 volume persistence and a source-built,
+  nonblocking Plus audio-server FIFO backend. Exact-hash evidence confirms an
+  idempotent -60 dB request left settings byte-identical and the audio server
+  alive; keymon uses the fallback for normal adjustment and resume restoration.
   `bloom-time` now owns RTC/clock status and validated boot reconciliation;
   exact-hash Plus evidence took the no-mutation RTC path while no-RTC fallback
   and failure semantics are host-tested.
-  Suspend/lid, volume, and inherited
-  network-backend replacement remain pending.
+  Suspend/lid, non-Plus public volume backends, and inherited network-backend
+  replacement remain pending.
 - [ ] Bloom Shell vertical slice and supervised MainUI fallback.
 
 ## Historical BloomOS foundation
