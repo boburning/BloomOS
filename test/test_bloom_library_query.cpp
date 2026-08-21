@@ -201,3 +201,31 @@ TEST_F(BloomLibraryQueryTest, FavoritesPreserveCanonicalOrderAndSystemFilter)
     EXPECT_EQ(second, games[0].bloom_game_id);
     EXPECT_EQ(third, games[1].bloom_game_id);
 }
+
+TEST_F(BloomLibraryQueryTest, AppsAreBoundedSortedAndPresentOnly)
+{
+    execute("INSERT INTO apps VALUES"
+            "('settings','Settings','App/Settings/launch.sh',NULL,1,2,1),"
+            "('activity','Activity','App/Activity/launch.sh','activity.png',1,2,1),"
+            "('gone','Gone','App/Gone/launch.sh',NULL,1,2,0)");
+    BloomLibraryApp apps[3]{};
+    size_t count = 0;
+    ASSERT_EQ(SQLITE_OK, bloom_library_query_apps(database_, 3, apps, 3, &count));
+    ASSERT_EQ(2U, count);
+    EXPECT_STREQ("activity", apps[0].app_id);
+    EXPECT_STREQ("Activity", apps[0].label);
+    EXPECT_STREQ("App/Activity/launch.sh", apps[0].launch_path);
+    EXPECT_STREQ("activity.png", apps[0].icon_path);
+    EXPECT_STREQ("settings", apps[1].app_id);
+    EXPECT_STREQ("", apps[1].icon_path);
+}
+
+TEST_F(BloomLibraryQueryTest, AppsRejectUnboundedRequestsAndMalformedRows)
+{
+    BloomLibraryApp app{};
+    size_t count = 7;
+    EXPECT_EQ(SQLITE_MISUSE, bloom_library_query_apps(database_, 0, &app, 1, &count));
+    EXPECT_EQ(SQLITE_MISUSE, bloom_library_query_apps(database_, 101, &app, 1, &count));
+    execute("INSERT INTO apps VALUES('bad','Bad','',NULL,1,2,1)");
+    EXPECT_EQ(SQLITE_CORRUPT, bloom_library_query_apps(database_, 1, &app, 1, &count));
+}

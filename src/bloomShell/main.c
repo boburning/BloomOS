@@ -22,16 +22,19 @@
 #define GAME_PAGE_SIZE 100
 #define GAME_CAPACITY_MAX 4096
 #define FAVORITES_CAPACITY_MAX 100
+#define APPS_CAPACITY_MAX 100
 #define LAUNCH_READY_EXIT 20
 
-static int load_games(BloomLibraryGame **games, size_t *game_count, BloomLibraryGame *recent,
-                      int *has_recent, BloomLibraryGame *favorites, size_t *favorite_count)
+static int load_catalog(BloomLibraryGame **games, size_t *game_count, BloomLibraryGame *recent,
+                        int *has_recent, BloomLibraryGame *favorites, size_t *favorite_count,
+                        BloomLibraryApp *apps, size_t *app_count)
 {
     sqlite3 *database = NULL;
     *games = calloc(GAME_CAPACITY_MAX, sizeof(**games));
     *game_count = 0;
     *has_recent = 0;
     *favorite_count = 0;
+    *app_count = 0;
     if (*games == NULL ||
         sqlite3_open_v2(DATABASE_PATH, &database, SQLITE_OPEN_READONLY, NULL) != SQLITE_OK ||
         sqlite3_exec(database, "PRAGMA query_only=ON", NULL, NULL, NULL) != SQLITE_OK) {
@@ -48,6 +51,9 @@ static int load_games(BloomLibraryGame **games, size_t *game_count, BloomLibrary
     if (result == SQLITE_OK)
         result = bloom_library_query_favorites(database, "gb", FAVORITES_CAPACITY_MAX, favorites,
                                                FAVORITES_CAPACITY_MAX, favorite_count);
+    if (result == SQLITE_OK)
+        result = bloom_library_query_apps(database, APPS_CAPACITY_MAX, apps, APPS_CAPACITY_MAX,
+                                          app_count);
     char cursor[79] = {0};
     while (result == SQLITE_OK && *game_count < GAME_CAPACITY_MAX) {
         size_t remaining = GAME_CAPACITY_MAX - *game_count;
@@ -95,6 +101,7 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
                  const BloomUiFocus *collections_focus, const BloomLibraryGame *games,
                  const BloomLibraryGame *favorites, const BloomLibraryGame *recent, int has_recent,
                  size_t home_selected, const BloomUiFocus *settings_focus,
+                 const BloomUiFocus *apps_focus, const BloomLibraryApp *apps,
                  const BloomShellStatus *status)
 {
     const BloomUiFocus *focus = destination == BLOOM_UI_DESTINATION_COLLECTIONS
@@ -102,18 +109,18 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
                                     : library_focus;
     const BloomLibraryGame *rows = destination == BLOOM_UI_DESTINATION_COLLECTIONS ? favorites : games;
     size_t item_count = destination == BLOOM_UI_DESTINATION_HOME   ? (has_recent ? 2 : 1)
-                        : destination == BLOOM_UI_DESTINATION_APPS ? 1
+                        : destination == BLOOM_UI_DESTINATION_APPS ? apps_focus->item_count
                         : destination == BLOOM_UI_DESTINATION_SETTINGS
                             ? settings_focus->item_count
                             : focus->item_count;
     size_t selected = destination == BLOOM_UI_DESTINATION_HOME   ? home_selected
-                      : destination == BLOOM_UI_DESTINATION_APPS ? 0
+                      : destination == BLOOM_UI_DESTINATION_APPS ? apps_focus->selected
                       : destination == BLOOM_UI_DESTINATION_SETTINGS
                           ? settings_focus->selected
                           : focus->selected;
-    size_t window_start = destination == BLOOM_UI_DESTINATION_HOME ||
-                                  destination == BLOOM_UI_DESTINATION_APPS
-                              ? 0
+    size_t window_start = destination == BLOOM_UI_DESTINATION_HOME ? 0
+                          : destination == BLOOM_UI_DESTINATION_APPS
+                              ? apps_focus->window_start
                           : destination == BLOOM_UI_DESTINATION_SETTINGS
                               ? settings_focus->window_start
                               : focus->window_start;
@@ -145,11 +152,14 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
                          layout->content.width - 40, cream);
         }
     }
-    else if (destination == BLOOM_UI_DESTINATION_APPS) {
-        render_label(screen, font, "Applications migration in progress", layout->content.x + 20,
-                     layout->content.y + layout->row_height / 3, layout->content.width - 40,
-                     cream);
-    }
+    else if (destination == BLOOM_UI_DESTINATION_APPS)
+        for (size_t row = 0;
+             row < layout->visible_rows && apps_focus->window_start + row < apps_focus->item_count;
+             ++row)
+            render_label(screen, font, apps[apps_focus->window_start + row].label,
+                         layout->content.x + 20,
+                         layout->content.y + (int)row * layout->row_height + layout->row_height / 3,
+                         layout->content.width - 40, cream);
     else if (destination == BLOOM_UI_DESTINATION_SETTINGS) {
         for (size_t row = 0; row < settings_focus->item_count; ++row) {
             char label[96];
@@ -185,15 +195,19 @@ int main(int argc, char **argv)
     BloomLibraryGame *games = NULL;
     BloomLibraryGame recent = {0};
     BloomLibraryGame favorites[FAVORITES_CAPACITY_MAX] = {0};
+    BloomLibraryApp apps[APPS_CAPACITY_MAX] = {0};
     size_t game_count = 0;
     size_t favorite_count = 0;
+    size_t app_count = 0;
     int has_recent = 0;
-    if (load_games(&games, &game_count, &recent, &has_recent, favorites, &favorite_count) != 0)
+    if (load_catalog(&games, &game_count, &recent, &has_recent, favorites, &favorite_count, apps,
+                     &app_count) != 0)
         return 1;
     if (argc == 2 && strcmp(argv[1], "--probe") == 0) {
         printf("{\"schema\":1,\"service\":\"bloom-shell\",\"ready\":true,\"gb_games\":%zu,"
-               "\"gb_recent\":%s,\"gb_favorites\":%zu,\"health_ready\":%s,\"healthy\":%s}\n",
-               game_count, has_recent ? "true" : "false", favorite_count,
+               "\"gb_recent\":%s,\"gb_favorites\":%zu,\"apps\":%zu,\"health_ready\":%s,"
+               "\"healthy\":%s}\n",
+               game_count, has_recent ? "true" : "false", favorite_count, app_count,
                status.ready ? "true" : "false", status.healthy ? "true" : "false");
         free(games);
         return 0;
@@ -232,11 +246,13 @@ int main(int argc, char **argv)
     BloomUiFocus library_focus;
     BloomUiFocus collections_focus;
     BloomUiFocus settings_focus;
+    BloomUiFocus apps_focus;
     bloom_ui_focus_init(&library_focus, game_count);
     bloom_ui_focus_init(&collections_focus, favorite_count);
     bloom_ui_focus_init(&settings_focus, 3);
+    bloom_ui_focus_init(&apps_focus, app_count);
     draw(screen, video, &layout, font, destination, &library_focus, &collections_focus, games,
-         favorites, &recent, has_recent, home_selected, &settings_focus, &status);
+         favorites, &recent, has_recent, home_selected, &settings_focus, &apps_focus, apps, &status);
     int running = 1;
     int exit_code = 0;
     while (running) {
@@ -292,6 +308,10 @@ int main(int argc, char **argv)
         else if (action == BLOOM_UI_ACTION_FOCUS_DOWN &&
                  destination == BLOOM_UI_DESTINATION_SETTINGS)
             bloom_ui_focus_step(&settings_focus, 1, layout.visible_rows);
+        else if (action == BLOOM_UI_ACTION_FOCUS_UP && destination == BLOOM_UI_DESTINATION_APPS)
+            bloom_ui_focus_step(&apps_focus, -1, layout.visible_rows);
+        else if (action == BLOOM_UI_ACTION_FOCUS_DOWN && destination == BLOOM_UI_DESTINATION_APPS)
+            bloom_ui_focus_step(&apps_focus, 1, layout.visible_rows);
         else if (action == BLOOM_UI_ACTION_CONFIRM && destination == BLOOM_UI_DESTINATION_LIBRARY &&
                  library_focus.item_count > 0) {
             char error[256] = {0};
@@ -315,7 +335,8 @@ int main(int argc, char **argv)
         }
         if (running)
             draw(screen, video, &layout, font, destination, &library_focus, &collections_focus,
-                 games, favorites, &recent, has_recent, home_selected, &settings_focus, &status);
+                 games, favorites, &recent, has_recent, home_selected, &settings_focus, &apps_focus,
+                 apps, &status);
     }
     TTF_CloseFont(font);
     SDL_FreeSurface(screen);

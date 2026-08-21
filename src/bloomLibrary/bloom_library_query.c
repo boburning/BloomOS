@@ -200,3 +200,37 @@ int bloom_library_query_favorites(sqlite3 *database, const char *system_id, size
 {
     return query_ordered(database, "favorites", system_id, limit, games, games_capacity, count);
 }
+
+int bloom_library_query_apps(sqlite3 *database, size_t limit, BloomLibraryApp *apps,
+                             size_t apps_capacity, size_t *count)
+{
+    if (database == NULL || limit == 0 || limit > BLOOM_LIBRARY_QUERY_LIMIT_MAX || apps == NULL ||
+        apps_capacity < limit || count == NULL)
+        return SQLITE_MISUSE;
+    *count = 0;
+    sqlite3_stmt *statement = NULL;
+    int sql = sqlite3_prepare_v2(
+        database,
+        "SELECT app_id,label,launch_path,icon_path FROM apps WHERE present=1 "
+        "ORDER BY label,app_id LIMIT ?1",
+        -1, &statement, NULL);
+    if (sql == SQLITE_OK)
+        sql = sqlite3_bind_int(statement, 1, (int)limit);
+    int step = SQLITE_DONE;
+    while (sql == SQLITE_OK && (step = sqlite3_step(statement)) == SQLITE_ROW) {
+        BloomLibraryApp *app = &apps[*count];
+        memset(app, 0, sizeof(*app));
+        if ((sql = copy_column(statement, 0, app->app_id, sizeof(app->app_id), 0)) != SQLITE_OK ||
+            (sql = copy_column(statement, 1, app->label, sizeof(app->label), 0)) != SQLITE_OK ||
+            (sql = copy_column(statement, 2, app->launch_path, sizeof(app->launch_path), 0)) !=
+                SQLITE_OK ||
+            (sql = copy_column(statement, 3, app->icon_path, sizeof(app->icon_path), 1)) !=
+                SQLITE_OK)
+            break;
+        ++*count;
+    }
+    if (sql == SQLITE_OK && step != SQLITE_DONE)
+        sql = step;
+    sqlite3_finalize(statement);
+    return sql;
+}
