@@ -81,6 +81,7 @@ password prompts and unknown host keys.
 tools/bloom-device info bloom-plus
 tools/run-smoke-tests.sh bloom-plus
 tools/collect-logs.sh bloom-plus
+tools/bloom-device screenshot bloom-plus
 tools/bloom-device game-smoke bloom-plus GB \
   "/mnt/SDCARD/Roms/GB/Example.zip" 10
 ```
@@ -90,6 +91,13 @@ The first smoke check is intentionally read-only. Diagnostic collection writes
 directory unless an explicit output path is supplied. Device activation
 requires `.bloom-dev` and a valid developer public key; no address, password,
 private key, or accepted host fingerprint is stored in the repository.
+
+`screenshot` is read-only. It preserves the complete raw framebuffer, derives
+the visible page geometry from `bloom-platform`, writes a 180-degree-rotated PNG
+for every page, and records each visible-page SHA-256 plus padding and equality
+status in `metadata.json`. The rotation corrects the Mini-family capture
+orientation for inspection; it does not alter the device framebuffer or prove
+physical LCD scanout between captures.
 
 `game-smoke` is an explicitly developer-only runtime probe for GB, GBC, GBA,
 NES/FC, SNES/SFC, PSX, and PICO-8 through Fake-08. It confines the supplied ROM

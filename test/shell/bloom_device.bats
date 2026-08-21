@@ -34,6 +34,8 @@ mock_ssh_device() {
 printf '%s\n' "ssh \$*" >>"$MOCK_LOG"
 case "\${*}" in
   *bloomctl*) printf '%s\n' '{"model": "$model", "developer_mode": true}' ;;
+  *bloom-platform*) printf '%s\n' '{"display":{"width":"2","height":"1","virtual_size":"2,2"}}' ;;
+  *"base64 /dev/fb0"*) printf '%s\n' 'AAECAwQFBgcICQoLDA0ODw==' ;;
   *bloom-game-smoke*) printf '%s\n' '{"schema":1,"status":"passed","system":"GB"}' ;;
   *dmesg*) printf '%s\n' 'bounded diagnostic fixture' ;;
 esac
@@ -70,6 +72,27 @@ EOF
     [ "$status" -eq 0 ]
     grep -F '"model": "mini_plus"' "$output_dir/device.json"
     grep -F 'bounded diagnostic fixture' "$output_dir/runtime.log"
+}
+
+@test "screenshot preserves raw pages and writes rotated PNG evidence" {
+    output_dir="$BLOOM_TEST_ROOT/screenshot"
+
+    run "$DEVICE_TOOL" screenshot test-plus "$output_dir"
+
+    [ "$status" -eq 0 ]
+    [ -f "$output_dir/framebuffer.raw" ]
+    [ -f "$output_dir/page-0-rotated.png" ]
+    [ -f "$output_dir/page-1-rotated.png" ]
+    python3 - "$output_dir/metadata.json" <<'PY'
+import json
+import sys
+metadata = json.load(open(sys.argv[1], encoding="utf-8"))
+assert metadata["pages"] == 2
+assert metadata["visible_bytes"] == 16
+assert metadata["padding_bytes"] == 0
+assert metadata["orientation_correction"] == "rotate_180"
+assert not metadata["all_pages_equal"]
+PY
 }
 
 @test "unknown targets and commands fail closed" {
