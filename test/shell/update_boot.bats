@@ -8,7 +8,7 @@ setup() {
     export BLOOM_UPDATE_STATE_BIN="$BLOOM_TEST_ROOT/mock-state"
     export BLOOM_HEALTH_BIN="$BLOOM_TEST_ROOT/mock-health"
     export BLOOM_UPDATE_ROLLBACK_BIN="$BLOOM_TEST_ROOT/mock-rollback"
-    export BLOOM_SHUTDOWN_BIN="$BLOOM_TEST_ROOT/mock-shutdown"
+    export BLOOM_POWER_BIN="$BLOOM_TEST_ROOT/mock-power"
     export BLOOM_JQ_BIN=/usr/bin/jq
     export BLOOM_VERSION_FILE="$SDCARD/.tmp_update/onionVersion/version.txt"
     export PHASE=activation_pending
@@ -29,11 +29,11 @@ EOF
 #!/bin/sh
 printf '%s\n' rollback >>"$BLOOM_TEST_ROOT/calls"
 EOF
-    cat >"$BLOOM_SHUTDOWN_BIN" <<'EOF'
+    cat >"$BLOOM_POWER_BIN" <<'EOF'
 #!/bin/sh
-printf 'shutdown:%s\n' "$1" >>"$BLOOM_TEST_ROOT/calls"
+printf 'power:%s\n' "$*" >>"$BLOOM_TEST_ROOT/calls"
 EOF
-    chmod +x "$BLOOM_UPDATE_STATE_BIN" "$BLOOM_HEALTH_BIN" "$BLOOM_UPDATE_ROLLBACK_BIN" "$BLOOM_SHUTDOWN_BIN"
+    chmod +x "$BLOOM_UPDATE_STATE_BIN" "$BLOOM_HEALTH_BIN" "$BLOOM_UPDATE_ROLLBACK_BIN" "$BLOOM_POWER_BIN"
 }
 
 teardown() { teardown_bloom_fixture; }
@@ -53,7 +53,7 @@ teardown() { teardown_bloom_fixture; }
     [ "$status" -eq 1 ]
     grep -Fx 'boot-attempt:' "$BLOOM_TEST_ROOT/calls"
     grep -Fx rollback "$BLOOM_TEST_ROOT/calls"
-    grep -Fx 'shutdown:-r' "$BLOOM_TEST_ROOT/calls"
+    grep -Fx 'power:request reboot' "$BLOOM_TEST_ROOT/calls"
     printf '%s' "$output" | grep -F 'automatic rollback reboot returned'
 }
 
@@ -66,7 +66,7 @@ teardown() { teardown_bloom_fixture; }
     [ "$status" -eq 0 ]
     grep -Fx 'boot-attempt:' "$BLOOM_TEST_ROOT/calls"
     ! grep -Fx rollback "$BLOOM_TEST_ROOT/calls"
-    ! grep -q '^shutdown:' "$BLOOM_TEST_ROOT/calls"
+    ! grep -q '^power:' "$BLOOM_TEST_ROOT/calls"
     printf '%s' "$output" | grep -F '"phase":"rollback_failed"'
 }
 

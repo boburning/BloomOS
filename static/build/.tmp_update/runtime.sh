@@ -686,7 +686,7 @@ check_off_order() {
 
         bootScreen "$1" &
         sleep 1 # Allow the bootScreen to be displayed
-        shutdown
+        bloom-power request poweroff
     fi
 }
 

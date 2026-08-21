@@ -58,7 +58,7 @@ teardown() { teardown_bloom_fixture; }
 }
 
 @test "all BloomOS shutdown paths use the detached clean shutdown script" {
-    grep -F 'system("shutdown")' /workspace/src/keymon/keymon.c
-    grep -F 'system("shutdown; sleep 10")' /workspace/src/chargingState/chargingState.c
-    grep -F '        shutdown' /workspace/static/build/.tmp_update/runtime.sh
+    grep -F 'system("/mnt/SDCARD/.tmp_update/bin/bloom-power request poweroff")' /workspace/src/keymon/keymon.c
+    grep -F 'system("/mnt/SDCARD/.tmp_update/bin/bloom-power request poweroff")' /workspace/src/chargingState/chargingState.c
+    grep -F '        bloom-power request poweroff' /workspace/static/build/.tmp_update/runtime.sh
 }

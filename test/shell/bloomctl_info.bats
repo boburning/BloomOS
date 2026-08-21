@@ -532,3 +532,35 @@ SH
         sh /workspace/static/build/.tmp_update/bin/bloomctl library status extra
     [ "$status" -eq 2 ]
 }
+
+@test "bloomctl power delegates only bounded power operations" {
+    service="$BATS_TEST_TMPDIR/bloom-power"
+    cat >"$service" <<'SH'
+#!/bin/sh
+printf '{"schema":1,"arguments":"%s"}\n' "$*"
+SH
+    chmod +x "$service"
+
+    run env BLOOM_POWER_BIN="$service" \
+        sh /workspace/static/build/.tmp_update/bin/bloomctl power status
+    [ "$status" -eq 0 ]
+    [ "$output" = '{"schema":1,"arguments":"status"}' ]
+
+    run env BLOOM_POWER_BIN="$service" \
+        sh /workspace/static/build/.tmp_update/bin/bloomctl power reboot
+    [ "$status" -eq 0 ]
+    [ "$output" = '{"schema":1,"arguments":"request reboot"}' ]
+
+    run env BLOOM_POWER_BIN="$service" \
+        sh /workspace/static/build/.tmp_update/bin/bloomctl power poweroff
+    [ "$status" -eq 0 ]
+    [ "$output" = '{"schema":1,"arguments":"request poweroff"}' ]
+
+    run env BLOOM_POWER_BIN="$service" \
+        sh /workspace/static/build/.tmp_update/bin/bloomctl power suspend
+    [ "$status" -eq 2 ]
+
+    run env BLOOM_POWER_BIN="$service" \
+        sh /workspace/static/build/.tmp_update/bin/bloomctl power reboot extra
+    [ "$status" -eq 2 ]
+}

@@ -20,7 +20,7 @@ ownership boundary.
 | MENU and context actions | `src/keymon/menuButtonAction.h` MainUI actions | Bloom input/shell | Stable control grammar and fallback |
 | Brightness and volume | keymon plus shared settings helpers | `bloom-settings` and platform adapters | One writer and device tests |
 | Network settings | Tweaks network menu and settings flags | Bloom network service/UI | Capability-gated Plus/Flip tests |
-| Power, suspend, shutdown | keymon and Bloom shutdown scripts | Bloom power service | clean FAT, reboot, lid, recovery evidence |
+| Power, suspend, shutdown | keymon, charging state, and the low-level clean shutdown helper | `bloom-power` | All current shutdown/reboot callers are behind the versioned power adapter; suspend migration plus clean FAT, reboot, lid, and recovery evidence remain |
 | Theme installation | themeSwitcher plus MainUI-specific resources | Bloom theme adapter | malformed-theme fallback and UI parity |
 | Health payload check | `bloom-health-system` currently requires MainUI | Bloom runtime health | green health with MainUI absent |
 | Update activation | updater publishes a MainUI boot trigger/bind mount | Bloom boot/update trigger | signed activate/confirm/rollback without MainUI |

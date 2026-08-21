@@ -189,7 +189,7 @@ void force_shutdown(void)
     system_clock_get();
     system_clock_save();
     sync();
-    system("shutdown");
+    system("/mnt/SDCARD/.tmp_update/bin/bloom-power request poweroff");
     while (1)
         pause();
     exit(0);

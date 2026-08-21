@@ -1,0 +1,53 @@
+#!/bin/sh
+
+set -u
+
+SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
+PLATFORM="${BLOOM_PLATFORM_BIN:-$SCRIPT_DIR/bloom-platform}"
+SHUTDOWN="${BLOOM_SHUTDOWN_BIN:-$SCRIPT_DIR/shutdown}"
+
+fail() {
+    printf '{"schema":1,"error":{"code":"%s"}}\n' "$1" >&2
+    exit "${2:-1}"
+}
+
+model() {
+    [ -x "$PLATFORM" ] || fail platform_unavailable
+    value="$($PLATFORM model 2>/dev/null)" || fail platform_unavailable
+    case "$value" in
+        mini|mini_plus|mini_flip) printf '%s' "$value" ;;
+        *) printf 'unknown' ;;
+    esac
+}
+
+status() {
+    device_model="$(model)" || exit $?
+    available=false
+    strategy=unavailable
+    if [ -x "$SHUTDOWN" ]; then
+        case "$device_model" in
+            mini) available=true; strategy=reboot ;;
+            mini_plus|mini_flip) available=true; strategy=poweroff ;;
+        esac
+    fi
+    printf '{"schema":1,"service":"bloom-power","available":%s,"model":"%s","poweroff_strategy":"%s","reboot_supported":%s}\n' \
+        "$available" "$device_model" "$strategy" "$available"
+}
+
+request() {
+    [ "$#" -eq 1 ] || fail invalid_request 2
+    device_model="$(model)" || exit $?
+    case "$device_model" in mini|mini_plus|mini_flip) ;; *) fail unsupported_hardware ;; esac
+    [ -x "$SHUTDOWN" ] || fail shutdown_unavailable
+    case "$1" in
+        reboot) exec "$SHUTDOWN" -r ;;
+        poweroff) exec "$SHUTDOWN" ;;
+        *) fail invalid_request 2 ;;
+    esac
+}
+
+case "${1:-}" in
+    status) [ "$#" -eq 1 ] || fail invalid_request 2; status ;;
+    request) shift; request "$@" ;;
+    *) fail invalid_request 2 ;;
+esac

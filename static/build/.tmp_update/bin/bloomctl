@@ -3,7 +3,7 @@
 set -u
 
 BLOOM_ROOT="${BLOOM_ROOT:-}"
-SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 BLOOM_PLATFORM="$SCRIPT_DIR/bloom-platform"
 BLOOM_UPDATE_STAGE="${BLOOM_UPDATE_STAGE_BIN:-$SCRIPT_DIR/bloom-update-stage}"
 BLOOM_UPDATE_PREPARE="${BLOOM_UPDATE_PREPARE_BIN:-$SCRIPT_DIR/bloom-update-prepare}"
@@ -22,6 +22,7 @@ BLOOM_RA_PROXY="${BLOOM_RA_PROXY_BIN:-$SCRIPT_DIR/bloom-ra-proxy}"
 BLOOM_RA_TEST="${BLOOM_RA_TEST_BIN:-$SCRIPT_DIR/bloom-ra-test}"
 BLOOM_SETTINGS="${BLOOM_SETTINGS_BIN:-$SCRIPT_DIR/bloom-settings}"
 BLOOM_LIBRARY="${BLOOM_LIBRARY_BIN:-$SCRIPT_DIR/bloom-library}"
+BLOOM_POWER="${BLOOM_POWER_BIN:-$SCRIPT_DIR/bloom-power}"
 
 path() {
     printf '%s%s' "$BLOOM_ROOT" "$1"
@@ -259,6 +260,7 @@ usage() {
     printf '       bloomctl logs export\n' >&2
     printf '       bloomctl platform capabilities\n' >&2
     printf '       bloomctl settings {status|import-onion|sync-onion|reconcile-onion|materialize-onion|activate-bloom|rollback-authority|set FIELD VALUE}\n' >&2
+    printf '       bloomctl power {status|reboot|poweroff}\n' >&2
     printf '       bloomctl library {status|import-onion|import-legacy|scan --changed|--all|--system SYSTEM|games --limit N [--after GAME_ID]|games --system SYSTEM --limit N [--after GAME_ID]}\n' >&2
     printf '       bloomctl test smoke SYSTEM ROM_PATH [DURATION_SECONDS]\n' >&2
     printf '       bloomctl test achievements --system SYSTEM --rom-base64 DATA --core CORE [--session-seconds N [--operator-unlock I_ACCEPT_PROFILE_CHANGES]]\n' >&2
@@ -452,6 +454,21 @@ library_command() {
     esac
 }
 
+power_command() {
+    [ -x "$BLOOM_POWER" ] || { printf 'bloomctl: power service is unavailable\n' >&2; return 1; }
+    case "${1:-}" in
+        status)
+            [ "$#" -eq 1 ] || { usage; return 2; }
+            "$BLOOM_POWER" status
+            ;;
+        reboot|poweroff)
+            [ "$#" -eq 1 ] || { usage; return 2; }
+            "$BLOOM_POWER" request "$1"
+            ;;
+        *) usage; return 2 ;;
+    esac
+}
+
 logs_command() {
     case "${1:-}" in
         export)
@@ -564,6 +581,10 @@ case "${1:-}" in
     library)
         shift
         library_command "$@"
+        ;;
+    power)
+        shift
+        power_command "$@"
         ;;
     test)
         shift

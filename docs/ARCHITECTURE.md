@@ -156,12 +156,29 @@ checks. Unknown hardware remains `unknown`; the maintainer-owned Mini V2 does
 not authorize guessing an original Mini V1–V4 revision.
 
 The interface intentionally reports facts without changing hardware state.
-Brightness, clocks, key maps, radios, lid behavior, and power controls remain
-outside this initial boundary until each operation has a capability guard,
-restore path, and device-matrix evidence. `bloomctl` and the guarded original
-Mini test runner are the first migrated consumers. The vendor runtime remains a
-compatibility consumer and will be migrated incrementally after live parity is
-established.
+Brightness, clocks, key maps, radios, and lid behavior remain outside this
+initial boundary until each operation has a capability guard, restore path, and
+device-matrix evidence. `bloomctl` and the guarded original Mini test runner are
+the first migrated consumers. The vendor runtime remains a compatibility
+consumer and will be migrated incrementally after live parity is established.
+
+## Bloom power boundary
+
+`bloom-power` is the versioned policy adapter above the existing low-level clean
+shutdown implementation. Its read-only status reports the platform-derived
+poweroff strategy: original Mini firmware uses reboot for its poweroff handoff,
+while Plus and Flip use poweroff. Unknown hardware and missing dependencies fail
+closed. The only mutations are fixed `request reboot` and `request poweroff`
+operations; arbitrary commands or arguments cannot cross the boundary.
+
+`bloomctl power` exposes that contract to Bloom-owned consumers. Automatic
+update rollback, runtime shutdown, keymon forced shutdown, and the charging UI
+call the adapter rather than the low-level helper directly. The low-level helper
+continues to own SD-backed swap shutdown, settings flush, FAT read-only remount,
+recursive unmount, charging-mode
+bypass, and firmware syscall fallbacks that already have physical Plus evidence.
+Suspend/lid behavior, brightness, volume, clock, and network consumers remain
+explicit follow-up migrations; this first slice does not broaden their claims.
 
 ## Structured launch boundary
 
