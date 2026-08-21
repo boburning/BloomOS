@@ -24,6 +24,13 @@ typedef struct {
     char next_cursor[79];
 } BloomLibraryGamePage;
 
+typedef struct {
+    char app_id[BLOOM_LIBRARY_TEXT_SIZE];
+    char label[BLOOM_LIBRARY_TEXT_SIZE];
+    char launch_path[BLOOM_LIBRARY_TEXT_SIZE];
+    char icon_path[BLOOM_LIBRARY_TEXT_SIZE];
+} BloomLibraryApp;
+
 int bloom_library_query_games(sqlite3 *database, const char *system_id, const char *after_game_id,
                               size_t limit, BloomLibraryGame *games, size_t games_capacity,
                               BloomLibraryGamePage *page);
@@ -33,5 +40,8 @@ int bloom_library_query_recents(sqlite3 *database, const char *system_id, size_t
 
 int bloom_library_query_favorites(sqlite3 *database, const char *system_id, size_t limit,
                                   BloomLibraryGame *games, size_t games_capacity, size_t *count);
+
+int bloom_library_query_apps(sqlite3 *database, size_t limit, BloomLibraryApp *apps,
+                             size_t apps_capacity, size_t *count);
 
 #endif
