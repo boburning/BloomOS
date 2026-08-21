@@ -178,4 +178,26 @@ TEST_F(BloomLibraryQueryTest, RecentsRejectUnboundedOrUnsafeRequests)
               bloom_library_query_recents(database_, nullptr, 0, &game, 1, &count));
     EXPECT_EQ(SQLITE_MISUSE,
               bloom_library_query_recents(database_, nullptr, 101, &game, 101, &count));
+    EXPECT_EQ(SQLITE_MISUSE,
+              bloom_library_query_favorites(database_, "../gb", 1, &game, 1, &count));
+    EXPECT_EQ(SQLITE_MISUSE,
+              bloom_library_query_favorites(database_, nullptr, 101, &game, 101, &count));
+}
+
+TEST_F(BloomLibraryQueryTest, FavoritesPreserveCanonicalOrderAndSystemFilter)
+{
+    std::string first = add_game("gba", "GBA/First.gba", "First", "first");
+    std::string second = add_game("gb", "GB/Second.gb", "Second", "second");
+    std::string third = add_game("gb", "GB/Third.gb", "Third", "third");
+    execute(("INSERT INTO favorites VALUES('" + first + "',0),('" + second + "',1),('" +
+             third + "',2)")
+                .c_str());
+
+    BloomLibraryGame games[3]{};
+    size_t count = 0;
+    ASSERT_EQ(SQLITE_OK,
+              bloom_library_query_favorites(database_, "gb", 3, games, 3, &count));
+    ASSERT_EQ(2U, count);
+    EXPECT_EQ(second, games[0].bloom_game_id);
+    EXPECT_EQ(third, games[1].bloom_game_id);
 }

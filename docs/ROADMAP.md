@@ -400,8 +400,10 @@ Current frontend progress:
   development shell now renders Home and a cursor-paged Game Boy library from
   in-memory Bloom catalog rows. Home consumes the canonical recent order and
   offers one-press resume for the latest present GB game without reparsing the
-  MainUI list. Library selection and Home resume stage through the structured launch
-  and session services, and returns through the runtime loop. Render-time
+  MainUI list. Collections consumes canonical GB favorites, with L1/R1 navigation
+  limited to the three destinations that have real models. Library, favorite, and
+  Home resume selections stage through the structured launch and session services,
+  and return through the runtime loop. Render-time
   subprocesses are prohibited by a shell gate. A fixed development flag enables
   the path, while any non-launch exit or crash removes incomplete handoff state
   and falls back to MainUI. An exact-hash Plus probe loaded the live read-only
