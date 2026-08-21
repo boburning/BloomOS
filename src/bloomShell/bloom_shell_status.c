@@ -132,3 +132,40 @@ int bloom_shell_status_load(const char *bloomctl_path, BloomShellStatus *status)
     json[length] = '\0';
     return failed ? -1 : bloom_shell_status_parse(json, status);
 }
+
+static const char *update_label(const BloomShellStatus *status)
+{
+    if (!status->ready || !status->update_healthy)
+        return "Needs attention";
+    if (strcmp(status->update_phase, "known_good") == 0)
+        return "Up to date";
+    if (strcmp(status->update_phase, "testing") == 0)
+        return "Testing an update";
+    if (strcmp(status->update_phase, "activation_pending") == 0 ||
+        strcmp(status->update_phase, "armed") == 0)
+        return "Restart required";
+    if (strcmp(status->update_phase, "rollback_pending") == 0)
+        return "Recovery pending";
+    if (strcmp(status->update_phase, "idle") == 0)
+        return "Ready";
+    return "Needs attention";
+}
+
+int bloom_shell_status_label(const BloomShellStatus *status, size_t row, char *label,
+                             size_t label_size)
+{
+    if (status == NULL || label == NULL || label_size == 0 || row >= 3)
+        return -1;
+    int length = -1;
+    if (row == 0)
+        length = snprintf(label, label_size, "System health: %s",
+                          status->ready && status->system_healthy ? "Good" : "Needs attention");
+    else if (row == 1)
+        length = snprintf(label, label_size, "Updates: %s", update_label(status));
+    else
+        length = snprintf(label, label_size, "RetroAchievements: %s",
+                          !status->ready || !status->ra_healthy
+                              ? "Needs attention"
+                              : (status->ra_enabled ? "On" : "Off"));
+    return length >= 0 && (size_t)length < label_size ? 0 : -1;
+}
