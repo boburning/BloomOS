@@ -28,4 +28,7 @@ int bloom_library_query_games(sqlite3 *database, const char *system_id, const ch
                               size_t limit, BloomLibraryGame *games, size_t games_capacity,
                               BloomLibraryGamePage *page);
 
+int bloom_library_query_recents(sqlite3 *database, const char *system_id, size_t limit,
+                                BloomLibraryGame *games, size_t games_capacity, size_t *count);
+
 #endif

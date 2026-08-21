@@ -131,3 +131,52 @@ int bloom_library_query_games(sqlite3 *database, const char *system_id, const ch
                sizeof(page->next_cursor));
     return sql;
 }
+
+int bloom_library_query_recents(sqlite3 *database, const char *system_id, size_t limit,
+                                BloomLibraryGame *games, size_t games_capacity, size_t *count)
+{
+    if (database == NULL || !valid_system_id(system_id) || limit == 0 ||
+        limit > BLOOM_LIBRARY_QUERY_LIMIT_MAX || games == NULL || games_capacity < limit ||
+        count == NULL)
+        return SQLITE_MISUSE;
+    *count = 0;
+    sqlite3_stmt *statement = NULL;
+    const char *sql_text =
+        "SELECT games.bloom_game_id,games.system_id,games.normalized_rom_path,"
+        "games.display_title,games.image_path,games.file_size,games.file_mtime,systems.launch_path "
+        "FROM recents JOIN games USING(bloom_game_id) JOIN systems USING(system_id) "
+        "WHERE games.present=1 AND systems.present=1 AND (?1 IS NULL OR games.system_id=?1) "
+        "ORDER BY recents.position LIMIT ?2";
+    int sql = sqlite3_prepare_v2(database, sql_text, -1, &statement, NULL);
+    if (sql == SQLITE_OK)
+        sql = system_id == NULL ? sqlite3_bind_null(statement, 1)
+                                : sqlite3_bind_text(statement, 1, system_id, -1, SQLITE_STATIC);
+    if (sql == SQLITE_OK)
+        sql = sqlite3_bind_int(statement, 2, (int)limit);
+    int step = SQLITE_DONE;
+    while (sql == SQLITE_OK && (step = sqlite3_step(statement)) == SQLITE_ROW) {
+        BloomLibraryGame *game = &games[*count];
+        memset(game, 0, sizeof(*game));
+        if ((sql = copy_column(statement, 0, game->bloom_game_id,
+                               sizeof(game->bloom_game_id), 0)) != SQLITE_OK ||
+            (sql = copy_column(statement, 1, game->system_id, sizeof(game->system_id), 0)) !=
+                SQLITE_OK ||
+            (sql = copy_column(statement, 2, game->normalized_rom_path,
+                               sizeof(game->normalized_rom_path), 0)) != SQLITE_OK ||
+            (sql = copy_column(statement, 3, game->display_title,
+                               sizeof(game->display_title), 0)) != SQLITE_OK ||
+            (sql = copy_column(statement, 4, game->image_path, sizeof(game->image_path), 1)) !=
+                SQLITE_OK)
+            break;
+        game->file_size = sqlite3_column_int64(statement, 5);
+        game->file_mtime = sqlite3_column_int64(statement, 6);
+        if ((sql = copy_column(statement, 7, game->launch_path, sizeof(game->launch_path), 0)) !=
+            SQLITE_OK)
+            break;
+        ++*count;
+    }
+    if (sql == SQLITE_OK && step != SQLITE_DONE)
+        sql = step;
+    sqlite3_finalize(statement);
+    return sql;
+}

@@ -141,3 +141,41 @@ TEST_F(BloomLibraryQueryTest, InvalidAndStaleCursorsFailClosed)
     EXPECT_EQ(SQLITE_NOTFOUND,
               bloom_library_query_games(database_, nullptr, stale.c_str(), 1, &game, 1, &page));
 }
+
+TEST_F(BloomLibraryQueryTest, RecentsPreserveCanonicalOrderAndFilterMissingGames)
+{
+    std::string newest = add_game("gb", "GB/New.gb", "New", "new");
+    std::string second = add_game("gba", "GBA/Second.gba", "Second", "second");
+    std::string older = add_game("gb", "GB/Older.gb", "Older", "older");
+    std::string missing = add_game("gb", "GB/Missing.gb", "Missing", "missing", 0);
+    execute(("INSERT INTO recents VALUES('" + newest + "',0),('" + second +
+             "',1),('" + missing + "',2),('" + older + "',3)")
+                .c_str());
+
+    BloomLibraryGame games[4]{};
+    size_t count = 0;
+    ASSERT_EQ(SQLITE_OK,
+              bloom_library_query_recents(database_, nullptr, 4, games, 4, &count));
+    ASSERT_EQ(3U, count);
+    EXPECT_EQ(newest, games[0].bloom_game_id);
+    EXPECT_EQ(second, games[1].bloom_game_id);
+    EXPECT_EQ(older, games[2].bloom_game_id);
+
+    ASSERT_EQ(SQLITE_OK,
+              bloom_library_query_recents(database_, "gb", 4, games, 4, &count));
+    ASSERT_EQ(2U, count);
+    EXPECT_EQ(newest, games[0].bloom_game_id);
+    EXPECT_EQ(older, games[1].bloom_game_id);
+}
+
+TEST_F(BloomLibraryQueryTest, RecentsRejectUnboundedOrUnsafeRequests)
+{
+    BloomLibraryGame game{};
+    size_t count = 7;
+    EXPECT_EQ(SQLITE_MISUSE,
+              bloom_library_query_recents(database_, "../gb", 1, &game, 1, &count));
+    EXPECT_EQ(SQLITE_MISUSE,
+              bloom_library_query_recents(database_, nullptr, 0, &game, 1, &count));
+    EXPECT_EQ(SQLITE_MISUSE,
+              bloom_library_query_recents(database_, nullptr, 101, &game, 101, &count));
+}

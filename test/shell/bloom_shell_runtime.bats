@@ -12,5 +12,7 @@
     source=/workspace/src/bloomShell/main.c
     ! grep -E '\b(system|popen|fork|exec[a-z]*)[[:space:]]*\(' "$source"
     grep -F 'bloom_library_query_games(database, "gb"' "$source"
+    grep -F 'bloom_library_query_recents(database, "gb"' "$source"
     grep -F 'bloom_shell_stage_game(&games[focus.selected]' "$source"
+    grep -F 'bloom_shell_stage_game(&recent, GB_CORE' "$source"
 }
