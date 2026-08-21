@@ -51,6 +51,11 @@ canonical shell chrome, destination focus, visible list focus, status, and
 progress at both supported resolutions; font and image adapters overlay actual
 content without becoming navigation authorities.
 
+`src/bloomUi/bloom_ui_input` is the device-facing adapter for the established
+Miyoo SDL key contract. It is shared by ordinary SDL events and Bloom's existing
+direct-framebuffer Linux-input translation, and leaves unassigned controls
+unbound rather than inventing hidden chords.
+
 ## Performance behavior
 
 The renderer never waits for network, hashing, scanning, scraping, or update

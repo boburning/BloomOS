@@ -333,8 +333,8 @@ Current frontend progress:
 
 - [x] Shared resolution-safe navigation, focus, dialog, and text-entry state.
 - [ ] Shared Bloom SDL rendering and device-input foundation. Deterministic
-  shell geometry and host golden coverage are in progress; font/image adapters,
-  device input, and physical display validation remain.
+  shell geometry, host golden coverage, and semantic Miyoo key mapping are in
+  progress; font/image adapters and physical display/input validation remain.
 - [ ] Bloom Shell vertical slice and supervised MainUI fallback.
 
 ## Historical BloomOS foundation
