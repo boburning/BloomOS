@@ -31,6 +31,8 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        fetch-depth: 2
     - name: Resolve submodule cache key
       id: submodules
       shell: bash
@@ -43,8 +45,23 @@ jobs:
     - name: Checkout pinned submodules
       shell: bash
       run: tools/checkout-submodules.sh
+    - name: Resolve build scope
+      id: scope
+      if: github.event_name == 'pull_request'
+      shell: bash
+      env:
+        BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      run: echo "targets=$(git diff --name-only "$BASE_SHA"...HEAD | sh tools/ci-scope.sh build)" >> "$GITHUB_OUTPUT"
     - name: Build
       shell: bash
       run: |
         source /root/.bashrc
-        make build
+        targets='${{ steps.scope.outputs.targets }}'
+        if [ '${{ github.event_name }}' != 'pull_request' ] || [ "$targets" = full ]; then
+          make build
+        elif [ "$targets" != none ]; then
+          mkdir -p "$PWD/build/.tmp_update/bin"
+          for target in $targets; do
+            make -C "src/$target" BUILD_DIR="$PWD/build/.tmp_update/bin" clean build
+          done
+        fi
