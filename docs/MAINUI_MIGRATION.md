@@ -3,6 +3,12 @@
 Status: implementation-derived transition map for BloomOS 1.0. MainUI remains a
 development recovery fallback until the corresponding Bloom owner is proven.
 
+The machine-readable source of this inventory is
+`build/mainui-responsibilities.json`. The shell gate validates that every entry
+has a unique owner transition, a stable removal gate, and repository paths that
+still exist. Update both representations whenever implementation moves an
+ownership boundary.
+
 ## Current responsibility map
 
 | Responsibility | Current evidence | Target owner | Removal gate |

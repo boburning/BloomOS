@@ -1,0 +1,101 @@
+{
+  "schema": 1,
+  "responsibilities": [
+    {
+      "id": "navigation-state",
+      "summary": "Main menu tab and cursor state",
+      "classification": "replace",
+      "current_paths": ["src/setState/setState.c", "src/keymon/menuButtonAction.h"],
+      "target_owner": "bloom-shell",
+      "stable_gate": "Bloom navigation and resume tests pass with MainUI absent"
+    },
+    {
+      "id": "favorites",
+      "summary": "Favorites storage and change notification",
+      "classification": "import-then-replace",
+      "current_paths": ["src/keymon/keymon.c", "src/gameSwitcher/gameSwitcher.c"],
+      "target_owner": "bloom-library",
+      "stable_gate": "Canonical idempotent import and atomic Bloom writes are proven"
+    },
+    {
+      "id": "recents-activity",
+      "summary": "Recent games, resume position, and activity compatibility",
+      "classification": "import-then-replace",
+      "current_paths": ["src/gameSwitcher", "src/playActivity"],
+      "target_owner": "bloom-library and bloom-activity",
+      "stable_gate": "Deterministic import, direct resume, and duration ownership pass"
+    },
+    {
+      "id": "launch-handoff",
+      "summary": "Command-file game launch and MainUI termination",
+      "classification": "compatibility-adapter",
+      "current_paths": ["src/keymon/menuButtonAction.h", "src/gameSwitcher/gameSwitcher.c"],
+      "target_owner": "bloom-launch and bloom-session",
+      "stable_gate": "Normal structured launch and direct Bloom Shell return pass on hardware"
+    },
+    {
+      "id": "menu-input",
+      "summary": "MENU button, context actions, and resume dispatch",
+      "classification": "replace",
+      "current_paths": ["src/keymon/menuButtonAction.h", "src/keymon/keymon.c"],
+      "target_owner": "bloom-input and bloom-shell",
+      "stable_gate": "Stable control grammar and development crash fallback are proven"
+    },
+    {
+      "id": "settings",
+      "summary": "MainUI, Tweaks, brightness, volume, and device preference writers",
+      "classification": "import-then-replace",
+      "current_paths": ["src/tweaks", "src/keymon/keymon.c", "src/common/system/settings.h"],
+      "target_owner": "bloom-settings",
+      "stable_gate": "One versioned writer owns every persistent setting category"
+    },
+    {
+      "id": "network",
+      "summary": "Wi-Fi and network-service controls",
+      "classification": "replace",
+      "current_paths": ["src/tweaks/network.h", "static/build/.tmp_update/script/network"],
+      "target_owner": "bloom-network",
+      "stable_gate": "Capability-gated Plus and Flip network behavior passes without MainUI"
+    },
+    {
+      "id": "power",
+      "summary": "Suspend, shutdown, reboot, brightness restore, and firmware handoff",
+      "classification": "replace",
+      "current_paths": ["src/keymon/keymon.c", "static/build/.tmp_update/bin/shutdown"],
+      "target_owner": "bloom-power",
+      "stable_gate": "Clean FAT, reboot, power, and Flip lid matrices pass"
+    },
+    {
+      "id": "themes",
+      "summary": "Theme installation and MainUI-specific resource application",
+      "classification": "compatibility-adapter",
+      "current_paths": ["src/themeSwitcher", "static/build/miyoo/app/skin"],
+      "target_owner": "bloom-theme",
+      "stable_gate": "Bloom rendering and safe fallback pass for valid and malformed themes"
+    },
+    {
+      "id": "health",
+      "summary": "Runtime payload health requirement",
+      "classification": "replace",
+      "current_paths": ["static/build/.tmp_update/bin/bloom-health-system"],
+      "target_owner": "bloom-health",
+      "stable_gate": "Structured health is green with MainUI absent"
+    },
+    {
+      "id": "update-activation",
+      "summary": "Installer trigger and live MainUI boundary replacement",
+      "classification": "firmware-adapter",
+      "current_paths": ["static/build/.tmp_update/bin/bloom-update-activate", "static/build/.tmp_update/bin/bloom-update-rollback"],
+      "target_owner": "bloom-update and bloom-boot",
+      "stable_gate": "Signed activate, confirm, failed-candidate recovery, and rollback pass without MainUI"
+    },
+    {
+      "id": "app-return",
+      "summary": "Application launch and return to the menu process",
+      "classification": "compatibility-adapter",
+      "current_paths": ["static/packages/App", "static/packages/RApp"],
+      "target_owner": "bloom-app-supervisor",
+      "stable_gate": "Supported app matrix launches and returns directly to Bloom Shell"
+    }
+  ]
+}
