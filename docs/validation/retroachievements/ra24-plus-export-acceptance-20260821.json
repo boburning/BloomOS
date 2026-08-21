@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "base_commit": "d9c306dc",
+  "device_family": "miyoo-mini-plus",
+  "tested_at": "2026-08-21T02:30:00Z",
+  "operator": "codex-with-boburning-device",
+  "test_scope": "network-failure-classification-and-support-export-acceptance",
+  "runtime_sha256": {
+    "bloom_ra_log": "50e4369263c0db4a553136b49fe8010490efb2f31d3a1f9fb2a23d8af83ad97f",
+    "bloom_diagnostics_export": "bef9414a670fe721b325d08e90691edbe29b66e438f66d238f745cc31c357ba1"
+  },
+  "results": {
+    "dns_failure": "pass",
+    "network_unreachable": "pass",
+    "timeout": "pass",
+    "tls_failure": "pass",
+    "curl_service_failure": "pass",
+    "http_service_failure": "pass",
+    "real_endpoint_ready": "pass",
+    "archive_ra_log_schema_normalization": "pass",
+    "archive_finish_detail_removed": "pass",
+    "archive_forbidden_data_scan": "pass",
+    "temporary_artifacts_removed": "pass"
+  },
+  "privacy": {
+    "archive_committed": false,
+    "username_recorded": false,
+    "credential_recorded": false,
+    "rom_path_or_title_recorded": false,
+    "individual_award_recorded": false
+  },
+  "notes": "Transport failures were injected through a temporary fixed-behavior curl substitute while the physical network interface remained associated, so SSH was never disrupted. The real RA endpoint subsequently returned ready. A device-generated support archive contained only reconstructed schema-1 RA launch/finish events and no cheevos token, username, password, private marker, or ROM path. The archive and test helpers were deleted after validation."
+}

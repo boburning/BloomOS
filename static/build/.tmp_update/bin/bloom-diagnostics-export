@@ -5,6 +5,7 @@ set -u
 BLOOM_ROOT="${BLOOM_ROOT:-}"
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 BLOOMCTL="${BLOOMCTL_BIN:-$SCRIPT_DIR/bloomctl}"
+RA_LOGGER="${BLOOM_RA_LOG_BIN:-$SCRIPT_DIR/bloom-ra-log}"
 OUTPUT_DIR="${BLOOM_DIAGNOSTICS_DIR:-${BLOOM_ROOT}/mnt/SDCARD/BloomDiagnostics}"
 NOW="${BLOOM_DIAGNOSTICS_NOW:-$(date -u +%Y%m%dT%H%M%SZ)}"
 STAGE="$OUTPUT_DIR/.diagnostics-$NOW-$$"
@@ -60,10 +61,16 @@ capture snapshots.json "$BLOOMCTL" saves snapshots
 } >"$STAGE/system.txt"
 
 mkdir "$STAGE/logs"
+if [ -x "$RA_LOGGER" ]; then
+    sanitized_ra_log="$STAGE/logs/retroachievements.log"
+    if ! BLOOM_RA_LOG_DIR="${BLOOM_ROOT}/appconfigs/bloom/logs" \
+        "$RA_LOGGER" export >"$sanitized_ra_log" 2>/dev/null; then
+        rm -f "$sanitized_ra_log"
+    fi
+fi
 for source in \
     "${BLOOM_ROOT}/mnt/SDCARD/.tmp_update/logs/bloom-update-boot.log" \
     "${BLOOM_ROOT}/mnt/SDCARD/.tmp_update/logs/bloom-test-runner.log" \
-    "${BLOOM_ROOT}/appconfigs/bloom/logs/retroachievements.log" \
     "${BLOOM_ROOT}/appconfigs/bloom-shutdown.log"
 do
     [ -f "$source" ] && [ ! -L "$source" ] || continue

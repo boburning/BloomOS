@@ -13,6 +13,58 @@ safe_word() { case "$1" in ''|*[!A-Za-z0-9_.-]*) return 1 ;; esac; }
 case "$MAX_BYTES" in ''|*[!0-9]*) fail "invalid log limit" ;; esac
 [ "$MAX_BYTES" -ge 1024 ] && [ "$MAX_BYTES" -le 1048576 ] || fail "invalid log limit"
 case "${1:-}" in
+    export)
+        [ "$#" -eq 1 ] || fail "export expects no arguments"
+        [ ! -e "$LOG_FILE" ] && exit 0
+        [ -f "$LOG_FILE" ] && [ ! -L "$LOG_FILE" ] || fail "log path is unsafe"
+        awk -F '"' '
+            function safe_word(value) { return value ~ /^[A-Za-z0-9_.-]+$/ && length(value) <= 64 }
+            function valid_prefix() {
+                return $1 == "{" && $2 == "schema" && $3 == ":1," &&
+                       $4 == "event" && $5 == ":"
+            }
+            $6 == "launch" && NF == 27 && valid_prefix() &&
+                $7 == "," && $8 == "mode" && $9 == ":" &&
+                ($10 == "softcore" || $10 == "hardcore") &&
+                $11 == "," && $12 == "transport" && $13 == ":" &&
+                ($14 == "direct" || $14 == "proxy") &&
+                $15 == "," && $16 == "core" && $17 == ":" &&
+                $18 ~ /^[A-Za-z0-9_.-]+_libretro[.]so$/ &&
+                $19 == "," && $20 == "core_sha256" && $21 == ":" &&
+                $22 ~ /^[0-9a-f]+$/ && length($22) == 64 &&
+                $23 == "," && $24 == "core_certification" && $25 == ":" &&
+                ($26 == "verified" || $26 == "best_effort" ||
+                 $26 == "incompatible" || $26 == "untested") && $27 == "}" {
+                    expected = "{\"schema\":1,\"event\":\"launch\",\"mode\":\"" $10
+                    expected = expected "\",\"transport\":\"" $14 "\",\"core\":\"" $18
+                    expected = expected "\",\"core_sha256\":\"" $22
+                    expected = expected "\",\"core_certification\":\"" $26 "\"}"
+                    if ($0 == expected) print expected
+                    next
+                }
+            $6 == "finish" && NF == 15 && valid_prefix() &&
+                $7 == "," && $8 == "outcome" && $9 == ":" &&
+                ($10 == "stopped" || $10 == "failed") &&
+                $11 == "," && $12 == "detail" && $13 == ":" &&
+                safe_word($14) && $15 == "}" {
+                    expected = "{\"schema\":1,\"event\":\"finish\",\"outcome\":\"" $10
+                    original = expected "\",\"detail\":\"" $14 "\"}"
+                    if ($0 == original) print expected "\"}"
+                    next
+                }
+            $6 == "prepare_failure" && NF == 11 && valid_prefix() &&
+                $7 == "," && $8 == "category" && $9 == ":" &&
+                ($10 == "account_invalid" || $10 == "hardcore_unidentified" ||
+                 $10 == "request_invalid" || $10 == "core_unavailable" ||
+                 $10 == "core_policy_invalid" || $10 == "hardcore_incompatible" ||
+                 $10 == "proxy_unavailable" || $10 == "config_generation_failed") &&
+                $11 == "}" {
+                    expected = "{\"schema\":1,\"event\":\"prepare_failure\",\"category\":\"" $10 "\"}"
+                    if ($0 == expected) print expected
+                }
+        ' "$LOG_FILE"
+        exit 0
+        ;;
     launch)
         [ "$#" -eq 6 ] || fail "launch expects MODE TRANSPORT CORE SHA CERTIFICATION"
         mode=$2 transport=$3 core=$4 sha=$5 certification=$6
@@ -41,7 +93,7 @@ case "${1:-}" in
         esac
         line=$(printf '{"schema":1,"event":"prepare_failure","category":"%s"}' "$category")
         ;;
-    *) fail "expected {launch|finish|prepare-failure}" ;;
+    *) fail "expected {export|launch|finish|prepare-failure}" ;;
 esac
 
 [ ! -L "$LOG_DIR" ] && [ ! -L "$LOG_FILE" ] && [ ! -L "$ROTATED" ] || fail "log path is unsafe"

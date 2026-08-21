@@ -481,13 +481,16 @@ embedding subsystem output. It carries enabled/state, catalog status and
 aggregate counts, plus proxy installed/running/cache/pending counts. Username,
 credentials, ROM paths, hashes, titles, award details, and unexpected provider
 fields are discarded even if a malformed or incompatible helper prints them.
-The support archive consumes only this redacted health result; raw RA/proxy logs
-remain excluded until a similarly structured redaction path exists.
+The support archive consumes only this redacted health result. Proxy logs remain
+excluded. RA session logs pass through a separate schema allowlist: export
+reconstructs recognized launch, finish, and preparation-failure events, drops
+unknown or malformed lines, and omits free-form finish details. A corrupted or
+manually modified log therefore cannot bypass the producer's privacy boundary.
 
 Logs are bounded/rotating and may contain subsystem version, catalog generation,
 aggregate scan counts, selected transport, core basename/SHA/policy, proxy
 state, and generic network error class. Support exports enforce the same
-redaction.
+redaction; files are never copied merely because their name is allowlisted.
 
 Catalog, RA service, proxy, or core-policy failure degrades independently and
 does not prevent ordinary game launch. Cached valid badge metadata survives a

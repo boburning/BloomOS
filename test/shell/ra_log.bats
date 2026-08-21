@@ -48,3 +48,25 @@ teardown() { teardown_bloom_fixture; }
     [ "$(stat -c %s "$BLOOM_RA_LOG_DIR/retroachievements.log.1")" -eq 1024 ]
     [ "$(wc -l <"$BLOOM_RA_LOG_DIR/retroachievements.log")" -eq 1 ]
 }
+
+@test "log export normalizes allowlisted events and drops corrupted data" {
+    "$LOGGER" launch softcore direct gpsp_libretro.so "$SHA" best_effort
+    "$LOGGER" finish stopped 60
+    "$LOGGER" prepare-failure proxy_unavailable
+    printf '%s\n' \
+        '{"schema":1,"event":"finish","outcome":"failed","detail":"private_username"}' \
+        '{"schema":1,"event":"finish","outcome":"failed","detail":"secret path"}' \
+        '{"schema":1,"event":"unknown","token":"private-token"}' \
+        >>"$BLOOM_RA_LOG_DIR/retroachievements.log"
+
+    run "$LOGGER" export
+    [ "$status" -eq 0 ]
+    [ "$(printf '%s\n' "$output" | wc -l)" -eq 4 ]
+    [[ "$output" == *'"event":"launch"'* ]]
+    [[ "$output" == *'{"schema":1,"event":"finish","outcome":"stopped"}'* ]]
+    [[ "$output" == *'{"schema":1,"event":"finish","outcome":"failed"}'* ]]
+    [[ "$output" == *'"category":"proxy_unavailable"'* ]]
+    [[ "$output" != *'private_username'* ]]
+    [[ "$output" != *'private-token'* ]]
+    [[ "$output" != *'"detail"'* ]]
+}
