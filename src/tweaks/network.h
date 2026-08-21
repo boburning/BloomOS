@@ -628,7 +628,7 @@ void menu_network(void *_)
                                  "files through a web browser on your phone,\n"
                                  "PC or tablet.\n"
                                  " \n"
-                                 "Think of it as a website hosted by Onion,\n"
+                                 "Think of it as a website hosted by BloomOS,\n"
                                  "simply enter the IP address in your browser.");
         list_addItemWithInfoNote(&_menu_network,
                                  (ListItem){
@@ -640,7 +640,7 @@ void menu_network(void *_)
                                      .value = (int)network_state.ftp,
                                      .action = menu_ftp},
                                  "FTP provides a method of transferring files\n"
-                                 "between Onion and a PC, phone, or tablet.\n"
+                                 "between BloomOS and a PC, phone, or tablet.\n"
                                  "You'll need an FTP client installed on the\n"
                                  "other device.");
         list_addItemWithInfoNote(&_menu_network,
