@@ -416,11 +416,14 @@ Current frontend progress:
   agreed top-level settings categories with capability-filtered Network and
   Developer controls, preserves the plain-language System health/update/RA
   summary as a nested destination, and opens a bounded START Quick Settings
-  model on every normal shell screen. Canonical settings reads, immediate safe
-  mutations, full nested pages, and physical readability/input validation
-  remain pending. A bounded `settings values` read now exposes only the four
-  high-frequency device controls plus generation/authority, without leaking
-  unrelated canonical or legacy state.
+  model on every normal shell screen. It now loads the bounded canonical values
+  once before rendering, shows actual brightness/volume/mute/Wi-Fi state, and
+  routes left/right changes through fixed Bloom control and network adapters;
+  failed reads are explicit and failed requests do not change the displayed
+  value. Full nested pages, battery integration, and physical readability/input
+  and adjustment-latency validation remain pending. The bounded `settings
+  values` response exposes only the four high-frequency device controls plus
+  generation/authority, without leaking unrelated canonical or legacy state.
 
 ## Historical BloomOS foundation
 
