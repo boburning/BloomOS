@@ -32,6 +32,13 @@ Every text/background and focus combination must pass the project's legibility
 fixtures and physical-panel review. Focus cannot rely on orange alone: pair it
 with a filled shape, border, or positional indicator.
 
+The canonical machine-readable palette and semantic roles live in
+`build/bloom-design-tokens.json`. `src/bloomUi/assets/bloom-mark.svg` is the
+original vector source for the radial Bloom mark. The design gate verifies
+required WCAG contrast pairs, restricts the mark to canonical colors, and
+requires accessible title/description metadata. Device bitmap renditions must
+be generated deterministically from this source rather than edited separately.
+
 ## Visual grammar
 
 Use crisp pixel-aligned geometry, limited radii, strong silhouettes, and one

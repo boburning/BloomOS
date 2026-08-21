@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
+  <title id="title">BloomOS radial bloom mark</title>
+  <desc id="desc">Eight warm geometric petals opening around a cream center.</desc>
+  <g fill="#D86A2C">
+    <path d="M32 4c6 7 7 14 0 23-7-9-6-16 0-23Z"/>
+    <path d="m51.8 12.2-2.1 17.7-9.6-9.6 11.7-8.1Z"/>
+    <path d="M60 32c-7 6-14 7-23 0 9-7 16-6 23 0Z"/>
+    <path d="m51.8 51.8-17.7-2.1 9.6-9.6 8.1 11.7Z"/>
+    <path d="M32 60c-6-7-7-14 0-23 7 9 6 16 0 23Z"/>
+    <path d="m12.2 51.8 2.1-17.7 9.6 9.6-11.7 8.1Z"/>
+    <path d="M4 32c7-6 14-7 23 0-9 7-16 6-23 0Z"/>
+    <path d="m12.2 12.2 17.7 2.1-9.6 9.6-8.1-11.7Z"/>
+  </g>
+  <path fill="#E2A93B" d="M32 18 46 32 32 46 18 32Z"/>
+  <circle cx="32" cy="32" r="7" fill="#F3E2BD"/>
+  <circle cx="32" cy="32" r="3" fill="#493025"/>
+</svg>
