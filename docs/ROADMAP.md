@@ -408,7 +408,10 @@ Current frontend progress:
   supervised, atomic `App/` command boundary, while MainUI-dependent and
   development-only rows are refused. Render-time
   subprocesses are prohibited by a shell gate. A fixed development flag enables
-  the path, while any non-launch exit or crash removes incomplete handoff state
+  the path. The shared renderer now provides a bounded one-to-three-button
+  confirmation layer with safe focus and distinct destructive treatment,
+  ready for guarded update actions without exposing those mutations yet. Any
+  non-launch exit or crash removes incomplete handoff state
   and falls back to MainUI. An exact-hash Plus probe loaded the live read-only
   catalog and found one GB game without opening the display. Interactive
   browse/launch/return and crash-fallback hardware validation remain pending.

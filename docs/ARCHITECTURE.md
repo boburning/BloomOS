@@ -115,6 +115,13 @@ through bounded SQLite cursor pages before entering the render loop. Drawing
 and navigation use only in-memory rows; no subprocess, ROM scan, or network
 request occurs on the render path.
 
+The shared pixel-aligned renderer also owns a bounded confirmation-dialog
+layer for one to three actions. It distinguishes focused, ordinary, and
+destructive actions using the Bloom palette while leaving labels and behavior
+to the consumer. Dialog focus defaults and movement remain in the UI core, so
+future update actions can require an explicit safe-default confirmation without
+duplicating geometry or input policy.
+
 Confirming a game creates a schema-1 structured request, asks `bloom-session`
 to own the immutable session, and publishes the existing quoted command adapter
 only after validation. Runtime opt-in is controlled by the development-only

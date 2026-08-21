@@ -150,6 +150,43 @@ int bloom_ui_render_shell(SDL_Surface *surface, const BloomUiLayout *layout,
     return 0;
 }
 
+int bloom_ui_render_dialog(SDL_Surface *surface, const BloomUiLayout *layout,
+                           const BloomUiDialogFocus *dialog)
+{
+    if (surface == NULL || surface->format == NULL || surface->format->BitsPerPixel != 32 ||
+        layout == NULL || dialog == NULL || surface->w != layout->viewport_width ||
+        surface->h != layout->viewport_height || dialog->button_count == 0 ||
+        dialog->button_count > 3 || dialog->selected >= dialog->button_count ||
+        dialog->destructive >= dialog->button_count)
+        return -1;
+
+    int width = layout->content.width * 4 / 5;
+    int height = layout->viewport_height / 3;
+    int x = (layout->viewport_width - width) / 2;
+    int y = (layout->viewport_height - height) / 2;
+    fill(surface, x - 4, y - 4, width + 8, height + 8, BLOOM_UI_COLOR_ORANGE);
+    fill(surface, x, y, width, height, BLOOM_UI_COLOR_SURFACE_RAISED);
+    fill(surface, x + 24, y + 24, width * 2 / 3, 5, BLOOM_UI_COLOR_CREAM);
+    fill(surface, x + 24, y + 46, width - 48, 3, BLOOM_UI_COLOR_SAND);
+
+    int gap = 12;
+    int button_width = (width - 48 - gap * ((int)dialog->button_count - 1)) /
+                       (int)dialog->button_count;
+    int button_height = layout->row_height * 2 / 3;
+    int button_y = y + height - button_height - 20;
+    for (size_t index = 0; index < dialog->button_count; ++index) {
+        int button_x = x + 24 + (int)index * (button_width + gap);
+        BloomUiColor color = index == dialog->selected      ? BLOOM_UI_COLOR_CREAM
+                             : index == dialog->destructive ? BLOOM_UI_COLOR_RED
+                                                            : BLOOM_UI_COLOR_SURFACE;
+        fill(surface, button_x, button_y, button_width, button_height, color);
+        if (index == dialog->selected)
+            fill(surface, button_x, button_y + button_height - 5, button_width, 5,
+                 index == dialog->destructive ? BLOOM_UI_COLOR_RED : BLOOM_UI_COLOR_ORANGE);
+    }
+    return 0;
+}
+
 int bloom_ui_rotate_180(SDL_Surface *surface)
 {
     if (surface == NULL || surface->format == NULL || surface->format->BitsPerPixel != 32 ||

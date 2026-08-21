@@ -172,6 +172,60 @@ TEST(BloomUiRenderer, RotatesPresentationPixelsByOneHundredEightyDegrees)
     SDL_FreeSurface(surface);
 }
 
+TEST(BloomUiRenderer, DialogUsesSafeFocusAndDestructiveColorWithoutChangingSceneState)
+{
+    BloomUiLayout layout{};
+    ASSERT_EQ(0, bloom_ui_layout_init(640, 480, 0, &layout));
+    SDL_Surface *surface = make_surface(640, 480);
+    ASSERT_NE(nullptr, surface);
+    BloomUiScene scene = example_scene();
+    ASSERT_EQ(0, bloom_ui_render_shell(surface, &layout, &scene));
+    BloomUiDialogFocus dialog{};
+    ASSERT_EQ(0, bloom_ui_dialog_init(&dialog, 2, 0, 1));
+    ASSERT_EQ(0, bloom_ui_render_dialog(surface, &layout, &dialog));
+
+    int width = layout.content.width * 4 / 5;
+    int height = layout.viewport_height / 3;
+    int x = (layout.viewport_width - width) / 2;
+    int y = (layout.viewport_height - height) / 2;
+    int button_width = (width - 48 - 12) / 2;
+    int button_height = layout.row_height * 2 / 3;
+    int button_y = y + height - button_height - 20;
+    auto *pixels = static_cast<Uint32 *>(surface->pixels);
+    Uint8 red = 0, green = 0, blue = 0;
+    SDL_GetRGB(pixels[(button_y + 2) * surface->pitch / 4 + x + 26], surface->format,
+               &red, &green, &blue);
+    EXPECT_EQ(0xF3, red);
+    EXPECT_EQ(0xE2, green);
+    EXPECT_EQ(0xBD, blue);
+    SDL_GetRGB(pixels[(button_y + 2) * surface->pitch / 4 + x + 24 + button_width + 14],
+               surface->format, &red, &green, &blue);
+    EXPECT_EQ(0xA8, red);
+    EXPECT_EQ(0x48, green);
+    EXPECT_EQ(0x32, blue);
+    EXPECT_EQ(3U, scene.selected);
+    SDL_FreeSurface(surface);
+}
+
+TEST(BloomUiRenderer, DialogRejectsMalformedStateAndSurfaceShape)
+{
+    BloomUiLayout layout{};
+    ASSERT_EQ(0, bloom_ui_layout_init(640, 480, 0, &layout));
+    SDL_Surface *surface = make_surface(640, 480);
+    ASSERT_NE(nullptr, surface);
+    BloomUiDialogFocus dialog{};
+    EXPECT_NE(0, bloom_ui_render_dialog(surface, &layout, &dialog));
+    dialog.button_count = 2;
+    dialog.selected = 2;
+    dialog.destructive = 1;
+    EXPECT_NE(0, bloom_ui_render_dialog(surface, &layout, &dialog));
+    dialog.selected = 0;
+    dialog.destructive = 2;
+    EXPECT_NE(0, bloom_ui_render_dialog(surface, &layout, &dialog));
+    EXPECT_NE(0, bloom_ui_render_dialog(nullptr, &layout, &dialog));
+    SDL_FreeSurface(surface);
+}
+
 TEST(BloomUiRenderer, PublishesEveryFramebufferPage)
 {
     SDL_Surface *surface = make_surface(3, 2);
