@@ -16,7 +16,6 @@ on:
       - 'test/**/*.cpp'
       - 'test/**/*.hpp'
       - 'third-party/**'
-      - 'tools/checkout-submodules.sh'
       - 'tools/ci-scope.sh'
       - 'test/test_ci_scope.sh'
 
@@ -36,14 +35,7 @@ jobs:
     - name: Install test dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install --yes build-essential cmake cppcheck libgtest-dev libsdl1.2-dev libsdl-image1.2-dev libsdl-ttf2.0-dev
-    - name: Install gtest manually
-      run: |
-        cd /usr/src/gtest
-        sudo cmake CMakeLists.txt && sudo make
-        sudo cp /usr/src/gtest/lib/*.a /usr/lib
-        sudo ln -s /usr/lib/libgtest.a /usr/local/lib/libgtest.a
-        sudo ln -s /usr/lib/libgtest_main.a /usr/local/lib/libgtest_main.a
+        sudo apt-get install --yes build-essential cppcheck libgtest-dev libsdl1.2-dev libsdl-image1.2-dev libsdl-ttf2.0-dev
     - name: Checkout repository
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
@@ -51,14 +43,16 @@ jobs:
     - name: Resolve submodule cache key
       id: submodules
       shell: bash
-      run: echo "sha=$(git ls-files --stage | awk '$1 == 160000 { print $2, $4 }' | sha256sum | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
+      run: echo "sha=$(git ls-files --stage third-party/rcheevos third-party/zlib | sha256sum | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
     - name: Restore submodule object cache
       uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4.2.0
       with:
-        path: .git/modules
-        key: submodules-${{ runner.os }}-${{ steps.submodules.outputs.sha }}
-    - name: Checkout pinned submodules
-      run: tools/checkout-submodules.sh
+        path: |
+          .git/modules/third-party/rcheevos
+          .git/modules/third-party/zlib
+        key: test-submodules-${{ runner.os }}-${{ steps.submodules.outputs.sha }}
+    - name: Checkout pinned test submodules
+      run: git submodule update --init --force --depth 1 -- third-party/rcheevos third-party/zlib
     - name: Test CI scope policy
       run: sh test/test_ci_scope.sh
     - name: Resolve static-analysis scope
@@ -81,10 +75,10 @@ jobs:
     - name: Test
       shell: bash
       run: |
-        GTEST_INCLUDE_DIR=/usr/src/gtest/include make test
+        GTEST_INCLUDE_DIR=/usr/include make test
     - name: Test with AddressSanitizer
       shell: bash
       env:
         ASAN_OPTIONS: detect_leaks=1:halt_on_error=1:strict_string_checks=1
       run: |
-        GTEST_INCLUDE_DIR=/usr/src/gtest/include SANITIZE=1 make test
+        GTEST_INCLUDE_DIR=/usr/include SANITIZE=1 make test
