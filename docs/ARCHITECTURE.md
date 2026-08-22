@@ -165,20 +165,19 @@ Application rows carry one explicit compatibility class: `bloom-native`,
 conservatively migrates every existing row to `mainui-dependent`. Onion app
 imports keep that default unless the reviewed config declares a valid
 `bloom_compatibility` value; unknown values abort the transaction. Queries
-return the class with the launch path so consumers can enforce policy without
-guessing from an app name or script contents.
+return only reviewed native/compatible applications for stable use, add
+`development-only` entries only under explicit Developer Mode, and keep inherited
+MainUI-dependent packages hidden without deleting rollback data. The complete 1.0
+product disposition is recorded in `APP_DISPOSITIONS_1.0.md`.
 
-Bloom Shell owns a capability-filtered settings presentation rather than
-reusing the legacy Tweaks menu. The top-level model exposes Display, Audio,
-Controls, Gameplay, RetroAchievements, Appearance, and System on every
-supported device; Network appears only on Plus and Flip, and Advanced appears
-only while Developer Mode is active. Every category opens a bounded detail
-page and Back restores the prior top-level selection. Display, Audio, and
-Network reuse the same event-driven fixed adapters as Quick Settings; Controls,
-Gameplay, Appearance, and Advanced expose stable plain-language policy values.
-System and RetroAchievements retain bounded status summaries loaded before the
-render loop. System shows bounded free storage derived by the existing health
-probe and identifies the installed BloomOS version. Confirm
+Bloom Shell owns one flat, capability-filtered Settings surface rather than
+reusing the legacy Tweaks menu. Section headers are non-selectable; simple
+Display, Audio, and Network values mutate inline through the same bounded adapters
+as Quick Settings. RetroAchievements and signed Update use one focused overlay
+and return directly to Settings. Network appears only on Plus and Flip, while
+Developer rows appear only under explicit Developer Mode. Status summaries are
+loaded before the render loop. System shows bounded free storage derived by the
+existing health probe and identifies the installed BloomOS version. Confirm
 on System Health invokes only the fixed `bloomctl logs export` operation with a
 bounded wait and reports completion without exposing paths; the exporter remains
 responsible for allowlisting and privacy. START

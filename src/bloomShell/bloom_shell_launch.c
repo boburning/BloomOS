@@ -166,12 +166,14 @@ int bloom_shell_stage_executable(const char *executable, const char *command_pat
     return 0;
 }
 
-int bloom_shell_stage_app(const BloomLibraryApp *app, const char *sd_root,
+int bloom_shell_stage_app(const BloomLibraryApp *app, int allow_development, const char *sd_root,
                           const char *command_path, char *error, size_t error_size)
 {
-    if (app == NULL || sd_root == NULL || command_path == NULL || command_path[0] != '/' ||
+    if (app == NULL || (allow_development != 0 && allow_development != 1) || sd_root == NULL ||
+        command_path == NULL || command_path[0] != '/' ||
         (strcmp(app->compatibility, "bloom-native") != 0 &&
-         strcmp(app->compatibility, "onion-compatible") != 0) ||
+         strcmp(app->compatibility, "onion-compatible") != 0 &&
+         (!allow_development || strcmp(app->compatibility, "development-only") != 0)) ||
         strncmp(app->launch_path, "App/", 4) != 0 || !safe_relative(app->launch_path)) {
         set_error(error, error_size, "application is not launchable");
         return -1;

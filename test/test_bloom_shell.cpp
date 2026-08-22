@@ -89,7 +89,7 @@ TEST_F(BloomShellLaunchTest, StagesStructuredSessionAndQuotedLegacyBoundary)
 TEST_F(BloomShellLaunchTest, StagesCompatibleAppWithShellSafeAtomicCommand)
 {
     char error[256] = {};
-    ASSERT_EQ(0, bloom_shell_stage_app(&app_, sd_root_.c_str(), command_.c_str(), error,
+    ASSERT_EQ(0, bloom_shell_stage_app(&app_, 0, sd_root_.c_str(), command_.c_str(), error,
                                        sizeof(error)))
         << error;
     std::ifstream stream(command_);
@@ -133,7 +133,7 @@ TEST_F(BloomShellLaunchTest, AllowsOnionCompatibleApps)
 {
     snprintf(app_.compatibility, sizeof(app_.compatibility), "onion-compatible");
     char error[256] = {};
-    EXPECT_EQ(0, bloom_shell_stage_app(&app_, sd_root_.c_str(), command_.c_str(), error,
+    EXPECT_EQ(0, bloom_shell_stage_app(&app_, 0, sd_root_.c_str(), command_.c_str(), error,
                                        sizeof(error)))
         << error;
 }
@@ -141,19 +141,29 @@ TEST_F(BloomShellLaunchTest, AllowsOnionCompatibleApps)
 TEST_F(BloomShellLaunchTest, RejectsUnsafeOrUnsupportedApps)
 {
     char error[256] = {};
-    for (const char *compatibility : {"mainui-dependent", "development-only"}) {
-        snprintf(app_.compatibility, sizeof(app_.compatibility), "%s", compatibility);
-        EXPECT_NE(0, bloom_shell_stage_app(&app_, sd_root_.c_str(), command_.c_str(), error,
-                                           sizeof(error)));
-        EXPECT_FALSE(std::filesystem::exists(command_));
-    }
+    EXPECT_NE(0, bloom_shell_stage_app(&app_, 2, sd_root_.c_str(), command_.c_str(), error,
+                                       sizeof(error)));
+    EXPECT_FALSE(std::filesystem::exists(command_));
+
+    snprintf(app_.compatibility, sizeof(app_.compatibility), "mainui-dependent");
+    EXPECT_NE(0, bloom_shell_stage_app(&app_, 1, sd_root_.c_str(), command_.c_str(), error,
+                                       sizeof(error)));
+    EXPECT_FALSE(std::filesystem::exists(command_));
+
+    snprintf(app_.compatibility, sizeof(app_.compatibility), "development-only");
+    EXPECT_NE(0, bloom_shell_stage_app(&app_, 0, sd_root_.c_str(), command_.c_str(), error,
+                                       sizeof(error)));
+    EXPECT_FALSE(std::filesystem::exists(command_));
+    EXPECT_EQ(0, bloom_shell_stage_app(&app_, 1, sd_root_.c_str(), command_.c_str(), error,
+                                       sizeof(error)));
+    std::filesystem::remove(command_);
 
     snprintf(app_.compatibility, sizeof(app_.compatibility), "bloom-native");
     snprintf(app_.launch_path, sizeof(app_.launch_path), "App/../secret.sh");
-    EXPECT_NE(0, bloom_shell_stage_app(&app_, sd_root_.c_str(), command_.c_str(), error,
+    EXPECT_NE(0, bloom_shell_stage_app(&app_, 0, sd_root_.c_str(), command_.c_str(), error,
                                        sizeof(error)));
     snprintf(app_.launch_path, sizeof(app_.launch_path), "Emu/GB/launch.sh");
-    EXPECT_NE(0, bloom_shell_stage_app(&app_, sd_root_.c_str(), command_.c_str(), error,
+    EXPECT_NE(0, bloom_shell_stage_app(&app_, 0, sd_root_.c_str(), command_.c_str(), error,
                                        sizeof(error)));
 }
 
@@ -161,18 +171,18 @@ TEST_F(BloomShellLaunchTest, RejectsMissingNonExecutableSymlinkAndOccupiedBounda
 {
     char error[256] = {};
     chmod(launcher_.c_str(), 0644);
-    EXPECT_NE(0, bloom_shell_stage_app(&app_, sd_root_.c_str(), command_.c_str(), error,
+    EXPECT_NE(0, bloom_shell_stage_app(&app_, 0, sd_root_.c_str(), command_.c_str(), error,
                                        sizeof(error)));
     chmod(launcher_.c_str(), 0755);
     std::filesystem::remove(launcher_);
     std::filesystem::create_symlink("/bin/true", launcher_);
-    EXPECT_NE(0, bloom_shell_stage_app(&app_, sd_root_.c_str(), command_.c_str(), error,
+    EXPECT_NE(0, bloom_shell_stage_app(&app_, 0, sd_root_.c_str(), command_.c_str(), error,
                                        sizeof(error)));
     std::filesystem::remove(launcher_);
     std::ofstream(launcher_) << "#!/bin/sh\nexit 0\n";
     chmod(launcher_.c_str(), 0755);
     std::ofstream(command_) << "occupied";
-    EXPECT_NE(0, bloom_shell_stage_app(&app_, sd_root_.c_str(), command_.c_str(), error,
+    EXPECT_NE(0, bloom_shell_stage_app(&app_, 0, sd_root_.c_str(), command_.c_str(), error,
                                        sizeof(error)));
 }
 

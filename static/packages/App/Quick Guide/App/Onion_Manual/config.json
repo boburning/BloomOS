@@ -2,5 +2,6 @@
 "label":"Quick Guide",
 "icon":"../../Icons/Default/app/manual.png",
 "launch":"launch.sh",
+"bloom_compatibility":"bloom-native",
 "description":"Getting started with BloomOS"
 }
