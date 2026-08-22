@@ -95,6 +95,35 @@ setup() {
     grep -F '"$shell_guard" ready "$launch_id"' "$runtime"
     grep -F '"$shell_guard" failed "$launch_id"' "$runtime"
     grep -F '"$shell_guard" complete "$launch_id"' "$runtime"
+    grep -F 'Bloom Safe Mode pending; suppressing automatic resume' "$runtime"
+    grep -F 'export BLOOM_RA_FORCE_DISABLED=1' "$runtime"
+    grep -F '"$shell_guard" clear-safe-mode' "$runtime"
+}
+
+@test "runtime suppresses auto-resume before an interrupted start crosses the threshold" {
+    sysdir="$BATS_TEST_TMPDIR/system"
+    mkdir -p "$sysdir/bin"
+    cp "$GUARD" "$sysdir/bin/bloom-shell-guard"
+    chmod +x "$sysdir/bin/bloom-shell-guard"
+    ln -s /usr/bin/jq "$sysdir/bin/jq"
+    eval "$(sed -n '/^bloom_shell_safe_mode_pending() {/,/^launch_bloom_shell() {/p' \
+        /workspace/static/build/.tmp_update/runtime.sh | sed '$d')"
+
+    run bloom_shell_safe_mode_pending
+    [ "$status" -ne 0 ]
+    first_id="$("$GUARD" begin | jq -er '.launch_id')"
+    "$GUARD" failed "$first_id" > /dev/null
+    second_id="$("$GUARD" begin | jq -er '.launch_id')"
+    "$GUARD" failed "$second_id" > /dev/null
+    "$GUARD" begin > /dev/null
+
+    run bloom_shell_safe_mode_pending
+    [ "$status" -eq 0 ]
+    [ "$("$GUARD" status | jq -er '.safe_mode')" = false ]
+
+    printf 'malformed\n' > "$BLOOM_SHELL_GUARD_ROOT/shell-state.json"
+    run bloom_shell_safe_mode_pending
+    [ "$status" -eq 0 ]
 }
 
 @test "runtime dynamically records crashes latches safe mode and clears structured handoff" {
@@ -111,6 +140,8 @@ setup() {
     start_audioserver() { :; }
     launch_main_ui() { printf 'fallback\n' >> "$calls"; }
     set_prev_state() { printf '%s\n' "$1" > "$BATS_TEST_TMPDIR/prev-state"; }
+    eval "$(sed -n '/^bloom_shell_safe_mode_pending() {/,/^launch_bloom_shell() {/p' \
+        /workspace/static/build/.tmp_update/runtime.sh | sed '$d')"
     eval "$(sed -n '/^launch_bloom_shell() {/,/^launch_main_ui() {/p' \
         /workspace/static/build/.tmp_update/runtime.sh | sed '$d')"
 
@@ -134,7 +165,17 @@ SH
     [ "$status" -eq 0 ]
     [ "$(tail -n 1 "$BLOOM_TEST_SAFE_MODES")" = true ]
 
-    "$GUARD" clear-safe-mode > /dev/null
+    cat > "$sysdir/bin/bloom-shell" <<'SH'
+#!/bin/sh
+[ "$BLOOM_SAFE_MODE" = true ]
+exit 21
+SH
+    chmod +x "$sysdir/bin/bloom-shell"
+    run launch_bloom_shell
+    [ "$status" -eq 0 ]
+    [ "$("$GUARD" status | jq -er '.safe_mode')" = false ]
+    [ "${BLOOM_RA_FORCE_DISABLED:-}" = "" ]
+
     cat > "$sysdir/bin/bloom-shell" <<'SH'
 #!/bin/sh
 printf 'launch\n' > "$BLOOM_TEST_COMMAND"

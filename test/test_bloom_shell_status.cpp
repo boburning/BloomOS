@@ -142,3 +142,26 @@ TEST(BloomShellStatusTest, ConfirmsUpdateWithFixedArgumentsWithoutAShell)
     EXPECT_NE(0, bloom_shell_update_confirm("bloomctl"));
     std::filesystem::remove_all(directory);
 }
+
+TEST(BloomShellStatusTest, RollsBackUpdateWithFixedArgumentsWithoutAShell)
+{
+    const auto directory = std::filesystem::temp_directory_path() /
+                           ("bloom-shell-rollback-" + std::to_string(getpid()));
+    std::filesystem::create_directory(directory);
+    const auto script = directory / "bloomctl";
+    const auto arguments = directory / "arguments";
+    {
+        std::ofstream output(script);
+        output << "#!/bin/sh\n"
+                  "printf '%s\\n' \"$*\" >\"$(dirname \"$0\")/arguments\"\n"
+                  "[ \"$1\" = update ] && [ \"$2\" = rollback ]\n";
+    }
+    ASSERT_EQ(0, chmod(script.c_str(), 0700));
+    ASSERT_EQ(0, bloom_shell_update_rollback(script.c_str()));
+    std::ifstream input(arguments);
+    std::string value;
+    std::getline(input, value);
+    EXPECT_EQ("update rollback", value);
+    EXPECT_NE(0, bloom_shell_update_rollback("bloomctl"));
+    std::filesystem::remove_all(directory);
+}

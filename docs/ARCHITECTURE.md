@@ -155,11 +155,19 @@ launch ID, consecutive startup-failure count, and Safe Mode flag. Runtime marks
 each shell start before execution, marks it ready only while the same launch is
 still alive after the startup window, and clears the count after a structured
 launch handoff. Three consecutive early failures, including a start interrupted
-by power loss, latch Safe Mode for the next shell launch. State publication is
-private, atomic, and symlink-refusing; malformed state fails closed rather than
-being silently reset. MainUI remains the development
-fallback until the Bloom-owned Safe Mode surface and default-shell transition
-are complete.
+by power loss, latch Safe Mode for the next shell launch. Runtime suppresses
+automatic resume and custom startup scripts before that launch, forces
+RetroAchievements session work off, and presents a Bloom-owned flat recovery
+surface using the compiled Bloom palette. The surface keeps Games available and
+exposes bounded health refresh, privacy-safe support export, confirmed
+signed-update rollback, and an explicit normal restart. The latch is cleared
+only when runtime receives that dedicated
+restart handoff. State publication is private, atomic, and symlink-refusing;
+malformed state is preserved and runtime fails into Safe Mode rather than
+silently resetting it or resuming normal work. MainUI remains
+the development fallback until the default-shell transition and physical
+recovery validation are complete. A guarded settings-reset service and
+first-run recovery presentation remain separate work.
 
 The public boundary exposes `bloomctl library status` and the explicit
 `bloomctl library import-onion` mutation. The importer reads a signed package

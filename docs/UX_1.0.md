@@ -47,6 +47,13 @@ Bloom Shell, GameSwitcher, Settings, dialogs, search, and Safe Mode assign them
 no navigation responsibility and never show shoulder hints. Essential behavior
 must not depend on long presses, chords, or undocumented timing.
 
+Safe Mode uses one flat recovery list rather than a second launcher hierarchy.
+It removes Continue and automatic resume, retains Games browsing, and exposes
+only bounded recovery actions: health refresh, privacy-safe support export,
+confirmed signed-version restore, and explicit normal restart. `B` at the Safe
+Mode root is safe, `START` still owns Quick Settings, `MENU` still owns
+GameSwitcher, and shoulders remain unassigned.
+
 `src/bloomUi/bloom_ui_core` owns semantic input and focus behavior. Device
 adapters translate physical input without inventing hidden shortcuts. Lists
 clamp at their ends, keep selection visible, and use bounded repeat with smooth

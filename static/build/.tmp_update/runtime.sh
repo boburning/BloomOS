@@ -140,19 +140,27 @@ main() {
     mkdir -p "$sysdir/checkoff"
     startup_scripts=$(find "$sysdir/startup" -type f -name "*.sh")
 
-    for startup_script in $startup_scripts; do
-        sh "$startup_script"
-    done
+    if bloom_shell_safe_mode_pending; then
+        log "Bloom Safe Mode pending; suppressing custom startup scripts"
+    else
+        for startup_script in $startup_scripts; do
+            sh "$startup_script"
+        done
+    fi
 
-    # Auto launch
-    if [ ! -f $sysdir/config/.noAutoStart ]; then
+    # Auto launch is suppressed whenever Safe Mode is already latched or the
+    # previous interrupted start will cross the bounded failure threshold.
+    if bloom_shell_safe_mode_pending; then
+        log "Bloom Safe Mode pending; suppressing automatic resume"
+        rm -f "$sysdir/cmd_to_run.sh" 2> /dev/null
+    elif [ ! -f $sysdir/config/.noAutoStart ]; then
         state_change check_game
     else
         rm -f "$sysdir/cmd_to_run.sh" 2> /dev/null
     fi
 
     # Only launch startup app if not quick switching
-    if [ ! -f /tmp/quick_switch ]; then
+    if ! bloom_shell_safe_mode_pending && [ ! -f /tmp/quick_switch ]; then
         startup_app=$(cat $sysdir/config/startup/app)
 
         if [ $startup_app -eq 1 ]; then
@@ -224,6 +232,19 @@ check_main_ui() {
     fi
 }
 
+bloom_shell_safe_mode_pending() {
+    pending_guard="$sysdir/bin/bloom-shell-guard"
+    [ -x "$pending_guard" ] || return 1
+    pending_threshold="${BLOOM_SHELL_FAILURE_THRESHOLD:-3}"
+    case "$pending_threshold" in ''|*[!0-9]*) return 0 ;; esac
+    pending_state="$($pending_guard status 2> /dev/null)" || return 0
+    pending_effective="$(printf '%s\n' "$pending_state" | \
+        "$sysdir/bin/jq" -r --argjson threshold "$pending_threshold" \
+        '.safe_mode or (.phase == "starting" and (.consecutive_failures + 1) >= $threshold)' \
+        2> /dev/null)" || return 0
+    [ "$pending_effective" = true ]
+}
+
 launch_bloom_shell() {
     log "\n:: Launch Bloom Shell"
     start_audioserver
@@ -233,13 +254,17 @@ launch_bloom_shell() {
     safe_mode=false
     if [ -x "$shell_guard" ]; then
         guard_state="$($shell_guard begin)" || {
-            log "Bloom Shell crash state is unavailable; using normal mode"
+            log "Bloom Shell crash state is unavailable; using Safe Mode"
             guard_state=""
+            safe_mode=true
         }
         if [ -n "$guard_state" ]; then
             launch_id="$(printf '%s\n' "$guard_state" | "$sysdir/bin/jq" -er '.launch_id')"
             safe_mode="$(printf '%s\n' "$guard_state" | "$sysdir/bin/jq" -er '.safe_mode')"
         fi
+    fi
+    if [ "$safe_mode" = true ]; then
+        export BLOOM_RA_FORCE_DISABLED=1
     fi
 
     PATH="$sysdir/bin:$PATH" \
@@ -263,6 +288,15 @@ launch_bloom_shell() {
         kill "$ready_marker_pid" 2> /dev/null || true
         wait "$ready_marker_pid" 2> /dev/null || true
     fi
+    if [ "$shell_status" -eq 21 ]; then
+        if [ -n "$launch_id" ] && "$shell_guard" clear-safe-mode > /dev/null 2>&1; then
+            unset BLOOM_RA_FORCE_DISABLED
+            log "Bloom Safe Mode cleared; restarting normally"
+            return 0
+        fi
+        log "Bloom Safe Mode could not be cleared"
+        return 0
+    fi
     if [ "$shell_status" -eq 20 ] && [ -f "$sysdir/cmd_to_run.sh" ]; then
         [ -z "$launch_id" ] || "$shell_guard" complete "$launch_id" > /dev/null 2>&1 ||
             log "Bloom Shell successful launch state could not be cleared"
@@ -271,6 +305,10 @@ launch_bloom_shell() {
     fi
     [ -z "$launch_id" ] || "$shell_guard" failed "$launch_id" > /dev/null 2>&1 ||
         log "Bloom Shell failure state could not be recorded"
+    if bloom_shell_safe_mode_pending; then
+        log "Bloom Shell failure threshold reached; entering Safe Mode"
+        return 0
+    fi
     log "Bloom Shell exited without a launch (status $shell_status); falling back to MainUI"
     rm -f "$sysdir/cmd_to_run.sh" "$sysdir/bloom-shell-launch.json"
     launch_main_ui
