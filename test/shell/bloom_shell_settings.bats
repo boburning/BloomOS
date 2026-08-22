@@ -30,6 +30,10 @@
     grep -F 'BLOOM_SHELL_SETTINGS_ROW_SLIDER' "$model"
     grep -F 'BLOOM_SHELL_SETTINGS_ROW_TOGGLE' "$model"
     grep -F 'BLOOM_SHELL_SETTINGS_ROW_DETAIL' "$model"
+    grep -F 'BLOOM_SHELL_SETTINGS_RA_ENABLED' "$model"
+    grep -F 'BLOOM_SHELL_SETTINGS_RA_MODE' "$model"
+    grep -F 'BLOOM_SHELL_SETTINGS_RA_OFFLINE' "$model"
+    grep -F 'bloom_shell_ra_settings_change(' "$shell"
     ! grep -F 'settings_page' "$shell"
     ! grep -F 'bloom_shell_settings_page' "$model"
 

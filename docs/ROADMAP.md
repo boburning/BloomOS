@@ -368,7 +368,7 @@ Current frontend progress:
   reboot persistence, FAT read-only remount, and structured health checks;
   Bloom is the active authority on that device. Closed-MainUI writes continue
   through the service-owned reconciliation bridge until that UI is replaced.
-- [ ] Bloom library authority. The durable transactional SQLite schema and
+- [x] Bloom library authority. The durable transactional SQLite schema and
   bounded status boundary are implemented. Deterministic Onion system/app
   import is implemented behind a signed 53-system mapping with transactional
   publication, repeat no-op behavior, and prior-known-good preservation.
@@ -380,8 +380,9 @@ Current frontend progress:
   outcomes. An exact-hash Plus candidate matched a real indexed favorite,
   classified the remaining fixture and app-only recent entries correctly, and
   repeated idempotently before restoring the database and MainUI lists to their
-  original hashes. Signed-update persistence and Bloom-owned consumer cutover
-  remain pending.
+  original hashes. Signed build `4093ec3e` physically proved Bloom-owned Shell,
+  launch, Recent, GameSwitcher, and Continue consumers plus durable persistence;
+  the remaining device-matrix work is tracked under hardware and UX certification.
 - [ ] Bloom power and network ownership. The first `bloom-power` boundary is
   implemented with model-aware status, fixed reboot/poweroff requests, and
   fail-closed unknown hardware. Runtime shutdown and automatic update rollback
@@ -474,15 +475,18 @@ Current frontend progress:
   value. Battery comes from a separate bounded platform adapter that
   normalizes sysfs, batmon, and AXP paths without moving hardware heuristics
   into the shell. Display, Audio, and Network reuse the fixed adapters; Update
-  and RetroAchievements use focused overlays that return directly to Settings.
+  uses its focused confirmation overlay. RetroAchievements exposes inline enable,
+  Softcore/Hardcore, and offline-award
+  controls plus one focused account overlay that returns directly to Settings.
   Audio mute is actionable through the canonical control adapter and restores
   the persisted volume when unmuted.
   System shows bounded free storage from the existing health probe, and System
   Health offers a fixed, timeout-bounded support export with explicit completion
   or failure feedback. Guarded update actions, RetroAchievements account
-  interaction, and reusable keyboard flows are implemented; physical
-  readability/input and adjustment-latency validation remain pending. The bounded `settings
-  values` response exposes only the four high-frequency device controls plus
+  interaction, reusable keyboard flows, and GameSwitcher's explicit Open Settings
+  action are implemented; physical readability/input and adjustment-latency
+  validation remain pending. The bounded `settings values` response exposes only
+  the four high-frequency device controls plus
   generation/authority, without leaking unrelated canonical or legacy state.
 
 ## Historical BloomOS foundation
@@ -554,11 +558,12 @@ Planned work includes safe updates and rollback, optional synchronization and of
   password-to-token exchange, and device-local mode-`0600` JFFS2 token storage
   are implemented and physically exercised with both a disposable token and a
   real RA login on Mini Plus. Redacted account status, enable/mode/offline
-  settings mutations, and sign-out are available through the stable CLI;
-  Tweaks now provides the graphical account status, enable/mode/offline controls,
-  device-native QWERTY credential entry, sign-out, connection check, changed-game scan,
-  offline-cache selectors, and aggregate pending-award status. Physical UI
-  validation and a real password-to-token login pass on Mini Plus. Passwords
+  settings mutations, and sign-out are available through the stable CLI. Bloom's
+  flat Settings surface now owns graphical account status, inline
+  enable/mode/offline controls, device-native QWERTY credential entry, sign-out,
+  and connection status. The earlier Tweaks implementation supplied physical UI
+  validation and a real password-to-token login pass on Mini Plus; the Bloom-owned
+  replacement still requires physical UX validation. Passwords
   remain masked, stdin-only, and are not retained; only the device-local token
   is stored.
 - [ ] RA-14: finish session-runner integration for structured RA launch policy.
@@ -614,8 +619,10 @@ Planned work includes safe updates and rollback, optional synchronization and of
   Mini Plus physically cached RA Game ID 8038 over verified TLS and reported it
   through the adapter. Favorites, Recent, and all supported-system selectors
   now run serially with resumable upstream state and privacy-bounded aggregate
-  results. Tweaks presents bounded progress, supports `B` cancellation of only
-  the cache process group, and reports aggregate completion/error counts.
+  results. The legacy Tweaks UI supplied evidence for bounded progress, `B`
+  cancellation of only the cache process group, and aggregate completion/error
+  counts. Its stable Bloom-owned contextual or Settings-detail replacement remains
+  migration work rather than a reason to expose Tweaks.
   Mini Plus physical cancellation confirmed that no cache worker or temporary
   credential remained, the proxy stayed stopped, the account stayed
   authenticated, and permanent RetroArch configuration stayed unchanged.

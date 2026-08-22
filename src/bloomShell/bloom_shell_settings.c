@@ -55,7 +55,10 @@ static const BloomShellSettingsDefinition settings_rows[] = {
     {{BLOOM_SHELL_SETTINGS_RA_SECTION, BLOOM_SHELL_SETTINGS_ROW_SECTION, "RETROACHIEVEMENTS"},
      0,
      0},
+    {{BLOOM_SHELL_SETTINGS_RA_ENABLED, BLOOM_SHELL_SETTINGS_ROW_TOGGLE, "Achievements"}, 0, 0},
     {{BLOOM_SHELL_SETTINGS_RA_ACCOUNT, BLOOM_SHELL_SETTINGS_ROW_DETAIL, "Account"}, 0, 0},
+    {{BLOOM_SHELL_SETTINGS_RA_MODE, BLOOM_SHELL_SETTINGS_ROW_ENUM, "Mode"}, 0, 0},
+    {{BLOOM_SHELL_SETTINGS_RA_OFFLINE, BLOOM_SHELL_SETTINGS_ROW_ENUM, "Offline awards"}, 0, 0},
     {{BLOOM_SHELL_SETTINGS_RA_CONNECTION, BLOOM_SHELL_SETTINGS_ROW_READ_ONLY, "Connection"}, 0, 0},
     {{BLOOM_SHELL_SETTINGS_SYSTEM_SECTION, BLOOM_SHELL_SETTINGS_ROW_SECTION, "SYSTEM"}, 0, 0},
     {{BLOOM_SHELL_SETTINGS_UPDATE, BLOOM_SHELL_SETTINGS_ROW_ACTION, "Update"}, 0, 0},
@@ -381,6 +384,113 @@ int bloom_shell_quick_battery_load(const char *platform_path, BloomShellQuickVal
     return load_output(platform_path, "battery", "--json", json, sizeof(json)) == 0
                ? bloom_shell_quick_battery_parse(json, values)
                : -1;
+}
+
+int bloom_shell_ra_values_parse(const char *json, BloomShellRaValues *values)
+{
+    if (json == NULL || values == NULL)
+        return -1;
+    memset(values, 0, sizeof(*values));
+    cJSON *root = cJSON_Parse(json);
+    const cJSON *schema = root == NULL ? NULL : cJSON_GetObjectItemCaseSensitive(root, "schema");
+    const cJSON *configured =
+        root == NULL ? NULL : cJSON_GetObjectItemCaseSensitive(root, "configured");
+    const cJSON *enabled = root == NULL ? NULL : cJSON_GetObjectItemCaseSensitive(root, "enabled");
+    const cJSON *authenticated =
+        root == NULL ? NULL : cJSON_GetObjectItemCaseSensitive(root, "authenticated");
+    const cJSON *mode = root == NULL ? NULL : cJSON_GetObjectItemCaseSensitive(root, "mode");
+    const cJSON *offline =
+        root == NULL ? NULL : cJSON_GetObjectItemCaseSensitive(root, "offline_casual");
+    int result = -1;
+    if (cJSON_IsNumber(schema) && schema->valuedouble == 1.0 && cJSON_IsBool(configured) &&
+        cJSON_IsBool(enabled) && cJSON_IsBool(authenticated) && cJSON_IsString(mode) &&
+        (strcmp(mode->valuestring, "softcore") == 0 || strcmp(mode->valuestring, "hardcore") == 0) &&
+        cJSON_IsBool(offline)) {
+        values->ready = 1;
+        values->configured = cJSON_IsTrue(configured);
+        values->enabled = cJSON_IsTrue(enabled);
+        values->authenticated = cJSON_IsTrue(authenticated);
+        values->hardcore = strcmp(mode->valuestring, "hardcore") == 0;
+        values->offline_casual = cJSON_IsTrue(offline);
+        result = 0;
+    }
+    cJSON_Delete(root);
+    return result;
+}
+
+int bloom_shell_ra_values_load(const char *ra_path, BloomShellRaValues *values)
+{
+    char json[QUICK_OUTPUT_MAX + 1];
+    return load_output(ra_path, "account", "status", json, sizeof(json)) == 0
+               ? bloom_shell_ra_values_parse(json, values)
+               : -1;
+}
+
+int bloom_shell_ra_settings_format(const BloomShellRaValues *values,
+                                   BloomShellSettingsRowId id, char *label,
+                                   size_t label_size)
+{
+    if (values == NULL || label == NULL || label_size == 0)
+        return -1;
+    int length = -1;
+    if (!values->ready) {
+        const char *name = id == BLOOM_SHELL_SETTINGS_RA_ENABLED   ? "Achievements"
+                           : id == BLOOM_SHELL_SETTINGS_RA_MODE    ? "Mode"
+                           : id == BLOOM_SHELL_SETTINGS_RA_OFFLINE ? "Offline awards"
+                                                                   : NULL;
+        if (name != NULL)
+            length = snprintf(label, label_size, "%s       unavailable", name);
+    }
+    else if (id == BLOOM_SHELL_SETTINGS_RA_ENABLED)
+        length = snprintf(label, label_size, "Achievements              %s",
+                          values->enabled ? "On" : "Off");
+    else if (id == BLOOM_SHELL_SETTINGS_RA_MODE)
+        length = snprintf(label, label_size, "Mode                 %s",
+                          values->hardcore ? "Hardcore" : "Softcore");
+    else if (id == BLOOM_SHELL_SETTINGS_RA_OFFLINE)
+        length = snprintf(label, label_size, "Offline awards       %s",
+                          values->offline_casual ? "Automatic" : "Off");
+    return length >= 0 && (size_t)length < label_size ? 0 : -1;
+}
+
+int bloom_shell_ra_settings_change(BloomShellRaValues *values,
+                                   BloomShellSettingsRowId id, int direction,
+                                   const char *ra_path)
+{
+    if (values == NULL || !values->ready || !values->configured ||
+        (direction != -1 && direction != 1) || ra_path == NULL || ra_path[0] != '/')
+        return -1;
+    const char *field = NULL;
+    const char *value = NULL;
+    int *current = NULL;
+    if (id == BLOOM_SHELL_SETTINGS_RA_ENABLED) {
+        field = "enabled";
+        value = direction > 0 ? "true" : "false";
+        current = &values->enabled;
+    }
+    else if (id == BLOOM_SHELL_SETTINGS_RA_MODE) {
+        field = "mode";
+        value = direction > 0 ? "hardcore" : "softcore";
+        current = &values->hardcore;
+    }
+    else if (id == BLOOM_SHELL_SETTINGS_RA_OFFLINE) {
+        field = "offline-casual";
+        value = direction > 0 ? "automatic" : "disabled";
+        current = &values->offline_casual;
+    }
+    if (field == NULL || *current == (direction > 0))
+        return field == NULL ? -1 : 0;
+    pid_t child = fork();
+    if (child < 0)
+        return -1;
+    if (child == 0) {
+        execl(ra_path, ra_path, "account", "set", field, value, (char *)NULL);
+        _exit(127);
+    }
+    if (wait_child(child) != 0)
+        return -1;
+    *current = direction > 0;
+    return 0;
 }
 
 int bloom_shell_quick_settings_format(const BloomShellCapabilities *capabilities,

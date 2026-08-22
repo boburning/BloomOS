@@ -54,7 +54,7 @@ expect "full" static-analysis "Makefile"
 
 grep -F 'git config --global --add safe.directory "$GITHUB_WORKSPACE"' \
     "$root/.github/workflows/build.yml" >/dev/null
-grep -F 'git submodule update --init --force --depth 1 -- third-party/rcheevos third-party/zlib' \
+grep -F 'tools/checkout-submodules.sh third-party/rcheevos third-party/zlib' \
     "$root/.github/workflows/test.yml" >/dev/null
 grep -F 'GTEST_INCLUDE_DIR=/usr/include make test' "$root/.github/workflows/test.yml" >/dev/null
 if grep -F 'Install gtest manually' "$root/.github/workflows/test.yml" >/dev/null; then

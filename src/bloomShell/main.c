@@ -288,6 +288,7 @@ static void render_label(SDL_Surface *screen, TTF_Font *font, const char *label,
 
 static int settings_flat_label(const BloomShellCapabilities *capabilities,
                                const BloomShellQuickValues *values,
+                               const BloomShellRaValues *ra_values,
                                const BloomShellStatus *status, int support_export_result,
                                int update_confirm_result, int ra_form_result, size_t row,
                                char *label, size_t label_size)
@@ -320,8 +321,19 @@ static int settings_flat_label(const BloomShellCapabilities *capabilities,
         int length = snprintf(label, label_size, "About       BloomOS %s", BLOOM_VERSION);
         return length >= 0 && (size_t)length < label_size ? 0 : -1;
     }
-    if (settings_row.id == BLOOM_SHELL_SETTINGS_RA_ACCOUNT)
-        return bloom_shell_status_label(status, 2, label, label_size);
+    if (settings_row.id == BLOOM_SHELL_SETTINGS_RA_ACCOUNT) {
+        const char *account = !ra_values->ready
+                                  ? "unavailable"
+                              : ra_values->configured && ra_values->authenticated
+                                  ? "Signed in >"
+                                  : "Not signed in >";
+        int length = snprintf(label, label_size, "Account       %s", account);
+        return length >= 0 && (size_t)length < label_size ? 0 : -1;
+    }
+    if (settings_row.id == BLOOM_SHELL_SETTINGS_RA_ENABLED ||
+        settings_row.id == BLOOM_SHELL_SETTINGS_RA_MODE ||
+        settings_row.id == BLOOM_SHELL_SETTINGS_RA_OFFLINE)
+        return bloom_shell_ra_settings_format(ra_values, settings_row.id, label, label_size);
     if (settings_row.id == BLOOM_SHELL_SETTINGS_RA_CONNECTION) {
         const char *connection = ra_form_result == 1                   ? "Sign-in complete"
                                  : ra_form_result == -1                ? "Sign-in failed"
@@ -704,7 +716,8 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
                  const BloomUiFocus *settings_focus, const BloomUiFocus *apps_focus,
                  const BloomLibraryApp *apps, const BloomShellStatus *status,
                  const BloomShellCapabilities *capabilities,
-                 const BloomShellQuickValues *quick_values, int support_export_result,
+                 const BloomShellQuickValues *quick_values,
+                 const BloomShellRaValues *ra_values, int support_export_result,
                  int update_confirm_result, int ra_form_result, int quick_settings,
                  int ra_form_open, const BloomShellRaForm *ra_form,
                  int ra_sign_out_open, const BloomUiDialogFocus *ra_sign_out_dialog,
@@ -862,9 +875,9 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
             char status_label[96];
             BloomShellSettingsRow settings_row;
             const char *label = status_label;
-            if (settings_flat_label(capabilities, quick_values, status, support_export_result,
-                                    update_confirm_result, ra_form_result, item, status_label,
-                                    sizeof(status_label)) != 0 ||
+            if (settings_flat_label(capabilities, quick_values, ra_values, status,
+                                    support_export_result, update_confirm_result, ra_form_result,
+                                    item, status_label, sizeof(status_label)) != 0 ||
                 bloom_shell_settings_row(capabilities, item, &settings_row) != 0)
                 label = NULL;
             if (label != NULL)
@@ -997,6 +1010,8 @@ int main(int argc, char **argv)
     BloomShellQuickValues quick_values = {0};
     bloom_shell_quick_values_load(BLOOM_SETTINGS_BINARY, &quick_values);
     bloom_shell_quick_battery_load(BLOOM_PLATFORM_BINARY, &quick_values);
+    BloomShellRaValues ra_values = {0};
+    bloom_shell_ra_values_load(BLOOM_RA_BINARY, &ra_values);
     BloomLibraryGame *games = NULL;
     BloomLibraryGame recents[RECENTS_CAPACITY_MAX] = {0};
     BloomLibraryGame favorites[FAVORITES_CAPACITY_MAX] = {0};
@@ -1129,7 +1144,8 @@ int main(int argc, char **argv)
     int first_run_result = first_run.ready ? 0 : -1;
     draw(screen, video, &layout, font, compact_font, destination, &root, &games_browser, &favorites_focus,
          &recent_focus, games, &achievement_index, favorites, recents, has_recent, &search, &settings_focus, &apps_focus, apps, &status,
-         &capabilities, &quick_values, support_export_result, update_confirm_result, ra_form_result,
+         &capabilities, &quick_values, &ra_values, support_export_result, update_confirm_result,
+         ra_form_result,
          quick_settings, ra_form_open, &ra_form, ra_sign_out_open, &ra_sign_out_dialog,
          update_confirm_open, &update_confirm_dialog, &quick_settings_focus, game_actions_open,
          &game_actions_focus,
@@ -1271,6 +1287,7 @@ int main(int argc, char **argv)
             if (ra_sign_out_dialog.selected == 1) {
                 ra_form_result = bloom_shell_ra_sign_out(BLOOM_RA_BINARY) == 0 ? 2 : -2;
                 bloom_shell_status_load(BLOOM_STATUS_BINARY, &status);
+                bloom_shell_ra_values_load(BLOOM_RA_BINARY, &ra_values);
             }
             ra_sign_out_open = 0;
         }
@@ -1305,6 +1322,7 @@ int main(int argc, char **argv)
             ra_form_result = bloom_shell_ra_form_submit(BLOOM_RA_BINARY, &ra_form) == 0 ? 1 : -1;
             if (ra_form_result > 0) {
                 bloom_shell_status_load(BLOOM_STATUS_BINARY, &status);
+                bloom_shell_ra_values_load(BLOOM_RA_BINARY, &ra_values);
                 bloom_shell_ra_form_clear(&ra_form);
                 ra_form_open = 0;
             }
@@ -1551,6 +1569,14 @@ int main(int argc, char **argv)
                     &capabilities, &quick_values, quick_row,
                     action == BLOOM_UI_ACTION_FOCUS_RIGHT ? 1 : -1, BLOOM_CONTROLS_BINARY,
                     BLOOM_NETWORK_BINARY);
+            else if (selected_settings.id == BLOOM_SHELL_SETTINGS_RA_ENABLED ||
+                     selected_settings.id == BLOOM_SHELL_SETTINGS_RA_MODE ||
+                     selected_settings.id == BLOOM_SHELL_SETTINGS_RA_OFFLINE) {
+                bloom_shell_ra_settings_change(
+                    &ra_values, selected_settings.id,
+                    action == BLOOM_UI_ACTION_FOCUS_RIGHT ? 1 : -1, BLOOM_RA_BINARY);
+                bloom_shell_status_load(BLOOM_STATUS_BINARY, &status);
+            }
         }
         else if (action == BLOOM_UI_ACTION_CONFIRM &&
                  destination == BLOOM_UI_DESTINATION_SETTINGS &&
@@ -1563,6 +1589,20 @@ int main(int argc, char **argv)
             bloom_shell_quick_settings_adjust(&capabilities, &quick_values, 2,
                                               quick_values.wifi_enabled ? -1 : 1,
                                               BLOOM_CONTROLS_BINARY, BLOOM_NETWORK_BINARY);
+        }
+        else if (action == BLOOM_UI_ACTION_CONFIRM &&
+                 destination == BLOOM_UI_DESTINATION_SETTINGS && selected_settings_valid &&
+                 (selected_settings.id == BLOOM_SHELL_SETTINGS_RA_ENABLED ||
+                  selected_settings.id == BLOOM_SHELL_SETTINGS_RA_MODE ||
+                  selected_settings.id == BLOOM_SHELL_SETTINGS_RA_OFFLINE)) {
+            int enabled = selected_settings.id == BLOOM_SHELL_SETTINGS_RA_ENABLED
+                              ? ra_values.enabled
+                          : selected_settings.id == BLOOM_SHELL_SETTINGS_RA_MODE
+                              ? ra_values.hardcore
+                              : ra_values.offline_casual;
+            bloom_shell_ra_settings_change(&ra_values, selected_settings.id,
+                                           enabled ? -1 : 1, BLOOM_RA_BINARY);
+            bloom_shell_status_load(BLOOM_STATUS_BINARY, &status);
         }
         else if (action == BLOOM_UI_ACTION_CONFIRM &&
                  destination == BLOOM_UI_DESTINATION_SETTINGS && selected_settings_valid &&
@@ -1581,7 +1621,8 @@ int main(int argc, char **argv)
         else if (action == BLOOM_UI_ACTION_CONFIRM &&
                  destination == BLOOM_UI_DESTINATION_SETTINGS &&
                  selected_settings_valid &&
-                 selected_settings.id == BLOOM_SHELL_SETTINGS_RA_ACCOUNT && !status.ra_enabled) {
+                 selected_settings.id == BLOOM_SHELL_SETTINGS_RA_ACCOUNT &&
+                 (!ra_values.configured || !ra_values.authenticated)) {
             bloom_shell_ra_form_init(&ra_form);
             ra_form_result = 0;
             ra_form_open = 1;
@@ -1589,7 +1630,8 @@ int main(int argc, char **argv)
         else if (action == BLOOM_UI_ACTION_CONFIRM &&
                  destination == BLOOM_UI_DESTINATION_SETTINGS &&
                  selected_settings_valid &&
-                 selected_settings.id == BLOOM_SHELL_SETTINGS_RA_ACCOUNT && status.ra_enabled &&
+                 selected_settings.id == BLOOM_SHELL_SETTINGS_RA_ACCOUNT &&
+                 ra_values.configured && ra_values.authenticated &&
                  bloom_ui_dialog_init(&ra_sign_out_dialog, 2, 0, 1) == 0) {
             ra_form_result = 0;
             ra_sign_out_open = 1;
@@ -1637,7 +1679,7 @@ int main(int argc, char **argv)
         if (running) {
             draw(screen, video, &layout, font, compact_font, destination, &root, &games_browser, &favorites_focus,
                  &recent_focus, games, &achievement_index, favorites, recents, has_recent, &search, &settings_focus, &apps_focus,
-                 apps, &status, &capabilities, &quick_values, support_export_result,
+                 apps, &status, &capabilities, &quick_values, &ra_values, support_export_result,
                  update_confirm_result, ra_form_result, quick_settings,
                  ra_form_open, &ra_form,
                  ra_sign_out_open, &ra_sign_out_dialog, update_confirm_open,
@@ -1654,7 +1696,8 @@ int main(int argc, char **argv)
                 draw(screen, video, &layout, font, compact_font, destination, &root,
                      &games_browser, &favorites_focus, &recent_focus, games, &achievement_index, favorites, recents,
                      has_recent, &search, &settings_focus, &apps_focus, apps, &status,
-                     &capabilities, &quick_values, support_export_result, update_confirm_result,
+                     &capabilities, &quick_values, &ra_values, support_export_result,
+                     update_confirm_result,
                      ra_form_result, quick_settings, ra_form_open, &ra_form, ra_sign_out_open,
                      &ra_sign_out_dialog, update_confirm_open, &update_confirm_dialog,
                      &quick_settings_focus, game_actions_open, &game_actions_focus,
@@ -1669,7 +1712,8 @@ int main(int argc, char **argv)
                 draw(screen, video, &layout, font, compact_font, destination, &root,
                      &games_browser, &favorites_focus, &recent_focus, games, &achievement_index, favorites, recents,
                      has_recent, &search, &settings_focus, &apps_focus, apps, &status,
-                     &capabilities, &quick_values, support_export_result, update_confirm_result,
+                     &capabilities, &quick_values, &ra_values, support_export_result,
+                     update_confirm_result,
                      ra_form_result, quick_settings, ra_form_open, &ra_form, ra_sign_out_open,
                      &ra_sign_out_dialog, update_confirm_open, &update_confirm_dialog,
                      &quick_settings_focus, game_actions_open, &game_actions_focus,

@@ -245,13 +245,14 @@ never returns the username or token. Device-native login exchanges credentials
 for an authenticated token without placing the username, password, or token in
 process arguments.
 
-Tweaks exposes the graphical account/settings surface on every Mini family
-device. It consumes only the redacted account and aggregate proxy contracts,
-delegates mutations to `bloomctl`, and provides a QWERTY on-screen keyboard for
+Bloom Shell's flat Settings surface exposes account state plus inline
+Achievements, Mode, and Offline awards controls on every Mini family device. It
+consumes only the redacted account contract, delegates mutations through fixed
+`bloom-ra account set` arguments, and provides a QWERTY on-screen keyboard for
 the one-time password-to-token exchange. The password is masked, travels only
 over a private child-process standard-input pipe, is cleared from the UI buffer,
-and is never retained. Tweaks never reads the resulting token, proxy database,
-ROM path, or individual award detail.
+and is never retained. Bloom Shell never reads the resulting token, proxy
+database, ROM path, or individual award detail.
 
 ## Structured launch policy
 
@@ -336,8 +337,8 @@ stores the token in device-local JFFS2 at
 card therefore moves offline metadata and preferences, but never the online
 credential; each device must be authenticated separately. The host bootstrap
 helper remains available for development and recovery. Ordinary users sign in
-directly under Tweaks. The device submits a verified-TLS form to RA's documented
-login endpoint, imports only the returned token through standard input, and
+directly under Bloom Settings. The device submits a verified-TLS form to RA's
+documented login endpoint, imports only the returned token through standard input, and
 discards the password. Passwords and tokens are never command-line arguments.
 
 `BloomLaunchRequest` gains a validated achievements policy. Bloom generates a
@@ -437,10 +438,12 @@ the caller can cancel them normally; upstream persists each completed cache
 entry, making a later retry resumable without a Bloom-owned queue. Favorites,
 Recent, and all supported-system selectors use the same foreground contract.
 They report bounded aggregate processed/cached/error counts without exposing ROM
-paths or titles. Tweaks runs those batches in an isolated foreground process
-group, displays bounded progress, allows `B` to cancel, and reports only final
-aggregate cached/error counts. Cancellation preserves upstream-completed cache
-entries, so rerunning the selector resumes safely without a second Bloom queue.
+paths or titles. The legacy Tweaks implementation supplied the physical evidence
+for isolated foreground process groups, bounded progress, `B` cancellation, and
+aggregate cached/error counts. Stable BloomOS retains that code as migration
+reference until these batch actions move to a Bloom-owned contextual or Settings
+detail surface. Cancellation preserves upstream-completed cache entries, so
+rerunning the selector resumes safely without a second Bloom queue.
 
 Before proxy startup or caching, the adapter imports Bloom's canonical account
 through a mode-`0600` temporary RetroArch-format file. The credential never
