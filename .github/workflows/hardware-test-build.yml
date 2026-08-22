@@ -14,9 +14,20 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          submodules: recursive
+          fetch-depth: 2
       - name: Trust checked-out repository
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Resolve submodule cache key
+        id: submodules
+        shell: bash
+        run: echo "sha=$(git ls-files --stage | awk '$1 == 160000 { print $2, $4 }' | sha256sum | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
+      - name: Restore submodule object cache
+        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4.2.0
+        with:
+          path: .git/modules
+          key: submodules-${{ runner.os }}-${{ steps.submodules.outputs.sha }}
+      - name: Checkout pinned submodules
+        run: tools/checkout-submodules.sh
       - name: Get version
         run: |
           short_sha="${GITHUB_SHA::8}"
