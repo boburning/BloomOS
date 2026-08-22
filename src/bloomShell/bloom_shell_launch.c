@@ -224,13 +224,16 @@ int bloom_shell_stage_app(const BloomLibraryApp *app, int allow_development, con
     return 0;
 }
 
-static int run_session(const char *binary, const char *first, const char *second)
+static int run_session(const char *binary, const char *first, const char *second,
+                       const char *third)
 {
     pid_t child = fork();
     if (child < 0)
         return -1;
     if (child == 0) {
-        if (second == NULL)
+        if (third != NULL)
+            execl(binary, binary, first, second, third, (char *)NULL);
+        else if (second == NULL)
             execl(binary, binary, first, (char *)NULL);
         else
             execl(binary, binary, first, second, (char *)NULL);
@@ -272,15 +275,15 @@ int bloom_shell_stage_game(const BloomLibraryGame *game, const char *core,
     if (bloom_launch_create_file(request_path, game->bloom_game_id, game->system_id, rom_path,
                                  launcher, "retroarch", core, 0, error, error_size) != 0)
         return -1;
-    if (run_session(session_binary, "start", request_path) != 0) {
+    if (run_session(session_binary, "start", request_path, NULL) != 0) {
         unlink(request_path);
         set_error(error, error_size, "session launch staging failed");
         return -1;
     }
     if (bloom_launch_write_legacy(session_request_path, command_path, error, error_size) != 0 ||
-        run_session(session_binary, "transition", "PREPARING:STARTING") != 0) {
+        run_session(session_binary, "transition", "PREPARING", "STARTING") != 0) {
         unlink(command_path);
-        run_session(session_binary, "fail", "shell_launch_failed");
+        run_session(session_binary, "fail", "shell_launch_failed", NULL);
         unlink(request_path);
         set_error(error, error_size, "session launch staging failed");
         return -1;
