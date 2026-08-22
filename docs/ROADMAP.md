@@ -329,14 +329,18 @@ MainUI remains a development recovery fallback during this sequence. It is not
 the stable 1.0 frontend, and no responsibility is removed before its Bloom-owned
 replacement passes the relevant recovery and device tests.
 
-The first Safe Mode foundation is implemented behind the development shell:
-each start has a durable bounded launch ID and phase, an interrupted or early
-failed start increments a consecutive counter, a sustained live shell clears
-the counter, and three failures latch Safe Mode for the next launch. The state
-service refuses malformed or symlinked data and publishes atomically. The
-Bloom-owned recovery surface, optional-service suppression, explicit normal
-restart, and physical boot-loop validation remain before MainUI can be removed
-as the development fallback.
+Safe Mode is implemented behind the development shell. Each start has a durable
+bounded launch ID and phase; an interrupted or early failed start increments a
+consecutive counter, a sustained live shell clears the counter, and three
+failures latch Safe Mode. The state service refuses malformed or symlinked data
+and publishes atomically. Runtime suppresses automatic resume and custom
+startup scripts, disables RetroAchievements session work, and relaunches into
+one Bloom-owned recovery list instead of expanding the MainUI fallback. Games
+remain browsable, while health refresh, support export, confirmed signed
+rollback, and explicit normal restart use fixed service boundaries. A guarded settings-reset operation,
+first-run/migration presentation, default-shell transition, and physical
+boot-loop validation remain before MainUI can be removed as the development
+fallback.
 
 Current frontend progress:
 

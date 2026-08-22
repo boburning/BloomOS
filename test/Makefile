@@ -37,6 +37,7 @@ CFILES := $(CFILES) ../src/bloomShell/bloom_shell_ra_form.c
 CFILES := $(CFILES) ../src/bloomShell/bloom_shell_root.c
 CFILES := $(CFILES) ../src/bloomShell/bloom_shell_games.c
 CFILES := $(CFILES) ../src/bloomShell/bloom_shell_search.c
+CFILES := $(CFILES) ../src/bloomShell/bloom_shell_safe_mode.c
 CFILES := $(CFILES) ../src/bloomSettings/bloom_settings.c
 CFILES := $(CFILES) ../src/bloomLibrary/bloom_library_database.c
 CFILES := $(CFILES) ../src/bloomLibrary/bloom_library_import.c
