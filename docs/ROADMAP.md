@@ -663,9 +663,12 @@ Planned work includes safe updates and rollback, optional synchronization and of
   Pull-request scheduling now runs one shell gate for shell-only changes, limits
   native/ARM jobs to compile-relevant paths, cancels superseded runs, and caches
   exact pinned submodule objects with bounded checkout retries.
-- [ ] Keep RA-27 as a future consumer of the same `bloom-ra` API when Bloom owns
-  the primary library browser; closed MainUI replacement is not a prerequisite
-  for the P0 GameSwitcher badge.
+- [x] RA-27 consumes the existing local RA-06 metadata in the Bloom-owned
+  primary browser. Bloom Shell loads exact supported GameIDs once before its
+  render loop and displays a compact RA badge in the shared list and preview.
+  Missing or malformed optional metadata degrades to no badge without blocking
+  browsing; no ROM hashing, network access, duplicate authority, or per-frame
+  database work was added.
 
 - [ ] Restore Nintendo DS support with a reproducible, open-source libretro
   core such as melonDS or DeSmuME. Build it from pinned source for Bloom's

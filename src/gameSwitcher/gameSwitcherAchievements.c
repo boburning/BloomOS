@@ -49,7 +49,8 @@ int gameswitcher_achievements_lookup(const char *database_path, const char *game
     int result = sqlite3_prepare_v2(
         cached_database,
         "SELECT ra_game_id,achievement_count FROM library_games "
-        "WHERE bloom_game_id=?1 AND official_set=1 AND achievement_count>0 AND ra_game_id>0",
+        "WHERE bloom_game_id=?1 AND status='identified' AND official_set=1 "
+        "AND achievement_count>0 AND ra_game_id>0",
         -1, &statement, NULL);
     if (result != SQLITE_OK) {
         if (error != NULL && error_size > 0)

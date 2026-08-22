@@ -593,7 +593,7 @@ RA-23 original Mini offline certification
 RA-24 health/diagnostics/export
 RA-25 smoke/certification tooling
 RA-26 complete CI release gate
-RA-27 future Bloom library-browser consumer
+RA-27 Bloom library-browser badge consumer
 ```
 
 Each issue produces a focused PR, automated tests, contract documentation, and
@@ -601,6 +601,13 @@ honest `pending` hardware status. Host-side RAOfflineProxy packaging and adapter
 work may proceed while RA-16 physical validation is deferred, but proxy
 enablement and public support claims remain blocked until the direct path and
 Hardcore invariants are proven on hardware.
+
+Bloom Shell consumes RA-06 metadata as a read-only startup snapshot. It loads
+only exact Bloom GameIDs with an official non-empty achievement set, sorts them
+in memory, and uses binary membership checks for list and preview badges. A
+missing or malformed optional RA index produces no badges and never blocks
+ordinary library browsing. The shell does not hash ROMs, contact the network,
+or query SQLite from its render loop.
 
 ## Public terminology
 

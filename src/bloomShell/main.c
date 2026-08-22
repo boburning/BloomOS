@@ -1,3 +1,4 @@
+#include "bloom_shell_achievements.h"
 #include "bloom_shell_games.h"
 #include "bloom_shell_launch.h"
 #include "bloom_shell_ra_form.h"
@@ -22,6 +23,7 @@
 #include <sys/stat.h>
 
 #define DATABASE_PATH "/mnt/SDCARD/.bloom/library/catalog.sqlite3"
+#define RA_DATABASE_PATH "/mnt/SDCARD/.bloom/achievements/catalog.sqlite3"
 #define REQUEST_PATH "/mnt/SDCARD/.tmp_update/bloom-shell-launch.json"
 #define COMMAND_PATH "/mnt/SDCARD/.tmp_update/cmd_to_run.sh"
 #define SESSION_REQUEST_PATH "/tmp/bloom-session/request.json"
@@ -586,7 +588,8 @@ static void draw_root_icon(SDL_Surface *screen, BloomShellRootDestination destin
 }
 
 static void draw_game_preview(SDL_Surface *screen, const BloomUiLayout *layout, TTF_Font *font,
-                              const BloomLibraryGame *game)
+                              const BloomLibraryGame *game,
+                              const BloomShellAchievementIndex *achievement_index)
 {
     if (game == NULL)
         return;
@@ -610,6 +613,10 @@ static void draw_game_preview(SDL_Surface *screen, const BloomUiLayout *layout, 
                  width, cream);
     render_label(screen, font, game->system_id, x,
                  layout->content.y + cover_height + layout->row_height, width, sand);
+    if (bloom_shell_achievements_contains(achievement_index, game->bloom_game_id))
+        render_label(screen, font, "RetroAchievements", x,
+                     layout->content.y + cover_height + layout->row_height * 3 / 2, width,
+                     (SDL_Color){226, 169, 59, 0});
 }
 
 static void draw_root(SDL_Surface *screen, const BloomUiLayout *layout, TTF_Font *font,
@@ -691,6 +698,7 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
                  BloomUiDestination destination, const BloomShellRootState *root,
                  const BloomShellGamesBrowser *games_browser, const BloomUiFocus *favorites_focus,
                  const BloomUiFocus *recent_focus, const BloomLibraryGame *games,
+                 const BloomShellAchievementIndex *achievement_index,
                  const BloomLibraryGame *favorites, const BloomLibraryGame *recent, int has_recent,
                  const BloomShellSearch *search,
                  const BloomUiFocus *settings_focus, const BloomUiFocus *apps_focus,
@@ -898,21 +906,30 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
         render_label(screen, font, "Launch a game and it will appear here.", layout->content.x + 20,
                      layout->content.y + layout->row_height * 2, layout->content.width - 40, sand);
     }
-    else
+    else {
         for (size_t row = 0; row < layout->visible_rows && focus->window_start + row < focus->item_count;
-             ++row)
-            render_label(screen, font,
-                         search->active
-                             ? search->results[focus->window_start + row]->display_title
-                             : rows[focus->window_start + row].display_title,
-                         layout->content.x + 20,
+             ++row) {
+            const BloomLibraryGame *game = search->active
+                                               ? search->results[focus->window_start + row]
+                                               : &rows[focus->window_start + row];
+            int badge = bloom_shell_achievements_contains(achievement_index,
+                                                          game->bloom_game_id);
+            if (badge)
+                render_label(screen, compact_font, "RA", layout->content.x + 20,
+                             layout->content.y + (int)row * layout->row_height +
+                                 layout->row_height / 3,
+                             30, (SDL_Color){226, 169, 59, 0});
+            render_label(screen, font, game->display_title,
+                         layout->content.x + (badge ? 58 : 20),
                          layout->content.y + (int)row * layout->row_height + layout->row_height / 3,
                          (game_destination ? layout->content.width * 58 / 100
                                            : layout->content.width) -
-                             40,
+                             (badge ? 78 : 40),
                          cream);
+        }
+    }
     if (game_destination)
-        draw_game_preview(screen, layout, font, preview_game);
+        draw_game_preview(screen, layout, font, preview_game, achievement_index);
     const char *footer = quick_settings
                              ? "Left/Right Change   A Toggle   B/START Close"
                          : first_run_open
@@ -992,6 +1009,12 @@ int main(int argc, char **argv)
     if (load_catalog(&games, &game_count, recents, &recent_count, favorites, &favorite_count, apps,
                      &app_count, developer_mode, &games_browser) != 0)
         return 1;
+    BloomShellAchievementIndex achievement_index = {0};
+    if (game_count > 0 &&
+        bloom_shell_achievements_load(&achievement_index, RA_DATABASE_PATH, game_count) != 0) {
+        free(games);
+        return 1;
+    }
     int has_recent = recent_count > 0;
     if (argc == 2 && strcmp(argv[1], "--probe") == 0) {
         size_t gb_games = 0;
@@ -1000,19 +1023,22 @@ int main(int argc, char **argv)
                 gb_games = games_browser.systems[index].system.game_count;
         printf("{\"schema\":1,\"service\":\"bloom-shell\",\"ready\":true,\"gb_games\":%zu,"
                "\"gb_recent\":%s,\"gb_favorites\":%zu,\"apps\":%zu,\"health_ready\":%s,"
-               "\"healthy\":%s,\"systems\":%zu,\"games\":%zu}\n",
+               "\"healthy\":%s,\"systems\":%zu,\"games\":%zu,\"ra_supported\":%zu}\n",
                gb_games, has_recent ? "true" : "false", favorite_count, app_count,
                status.ready ? "true" : "false", status.healthy ? "true" : "false",
-               games_browser.system_count, game_count);
+               games_browser.system_count, game_count, achievement_index.count);
+        bloom_shell_achievements_destroy(&achievement_index);
         free(games);
         return 0;
     }
     if (argc != 1) {
+        bloom_shell_achievements_destroy(&achievement_index);
         free(games);
         return 2;
     }
 
     if (SDL_Init(SDL_INIT_VIDEO) != 0 || TTF_Init() != 0) {
+        bloom_shell_achievements_destroy(&achievement_index);
         free(games);
         return 1;
     }
@@ -1021,6 +1047,7 @@ int main(int argc, char **argv)
     int height = info != NULL && info->current_h >= 480 ? info->current_h : 480;
     BloomUiLayout layout;
     if (bloom_ui_layout_init(width, height, 0, &layout) != 0) {
+        bloom_shell_achievements_destroy(&achievement_index);
         free(games);
         return 1;
     }
@@ -1036,6 +1063,7 @@ int main(int argc, char **argv)
             TTF_CloseFont(font);
         if (screen != NULL)
             SDL_FreeSurface(screen);
+        bloom_shell_achievements_destroy(&achievement_index);
         free(games);
         return 1;
     }
@@ -1066,6 +1094,7 @@ int main(int argc, char **argv)
         SDL_FreeSurface(screen);
         TTF_Quit();
         SDL_Quit();
+        bloom_shell_achievements_destroy(&achievement_index);
         free(games);
         return 1;
     }
@@ -1097,7 +1126,7 @@ int main(int argc, char **argv)
     int first_run_open = !safe_mode && !first_run.complete;
     int first_run_result = first_run.ready ? 0 : -1;
     draw(screen, video, &layout, font, compact_font, destination, &root, &games_browser, &favorites_focus,
-         &recent_focus, games, favorites, recents, has_recent, &search, &settings_focus, &apps_focus, apps, &status,
+         &recent_focus, games, &achievement_index, favorites, recents, has_recent, &search, &settings_focus, &apps_focus, apps, &status,
          &capabilities, &quick_values, support_export_result, update_confirm_result, ra_form_result,
          quick_settings, ra_form_open, &ra_form, ra_sign_out_open, &ra_sign_out_dialog,
          update_confirm_open, &update_confirm_dialog, &quick_settings_focus, game_actions_open,
@@ -1595,7 +1624,7 @@ int main(int argc, char **argv)
         }
         if (running) {
             draw(screen, video, &layout, font, compact_font, destination, &root, &games_browser, &favorites_focus,
-                 &recent_focus, games, favorites, recents, has_recent, &search, &settings_focus, &apps_focus,
+                 &recent_focus, games, &achievement_index, favorites, recents, has_recent, &search, &settings_focus, &apps_focus,
                  apps, &status, &capabilities, &quick_values, support_export_result,
                  update_confirm_result, ra_form_result, quick_settings,
                  ra_form_open, &ra_form,
@@ -1611,7 +1640,7 @@ int main(int argc, char **argv)
                 rollback_result = bloom_shell_update_rollback(BLOOMCTL_BINARY) == 0 ? 1 : -1;
                 bloom_shell_status_load(BLOOM_STATUS_BINARY, &status);
                 draw(screen, video, &layout, font, compact_font, destination, &root,
-                     &games_browser, &favorites_focus, &recent_focus, games, favorites, recents,
+                     &games_browser, &favorites_focus, &recent_focus, games, &achievement_index, favorites, recents,
                      has_recent, &search, &settings_focus, &apps_focus, apps, &status,
                      &capabilities, &quick_values, support_export_result, update_confirm_result,
                      ra_form_result, quick_settings, ra_form_open, &ra_form, ra_sign_out_open,
@@ -1626,7 +1655,7 @@ int main(int argc, char **argv)
             if (reset_result == 2) {
                 reset_result = bloom_shell_settings_reset(BLOOMCTL_BINARY) == 0 ? 1 : -1;
                 draw(screen, video, &layout, font, compact_font, destination, &root,
-                     &games_browser, &favorites_focus, &recent_focus, games, favorites, recents,
+                     &games_browser, &favorites_focus, &recent_focus, games, &achievement_index, favorites, recents,
                      has_recent, &search, &settings_focus, &apps_focus, apps, &status,
                      &capabilities, &quick_values, support_export_result, update_confirm_result,
                      ra_form_result, quick_settings, ra_form_open, &ra_form, ra_sign_out_open,
@@ -1647,6 +1676,7 @@ int main(int argc, char **argv)
     SDL_FreeSurface(screen);
     TTF_Quit();
     SDL_Quit();
+    bloom_shell_achievements_destroy(&achievement_index);
     free(games);
     return exit_code;
 }
