@@ -11,6 +11,7 @@ MODEL_MM=283
 MODEL_MMF=285
 MODEL_MMP=354
 screen_resolution="640x480"
+bloom_developer_marker="${BLOOM_DEVELOPER_MARKER:-/mnt/SDCARD/.bloom-dev}"
 
 main() {
     # Detect the physical model. The Flip hall sensor is a stronger identity
@@ -160,7 +161,8 @@ main() {
     fi
 
     # Only launch startup app if not quick switching
-    if ! bloom_shell_safe_mode_pending && [ ! -f /tmp/quick_switch ]; then
+    if mainui_development_fallback_enabled && ! bloom_shell_safe_mode_pending &&
+        [ ! -f /tmp/quick_switch ]; then
         startup_app=$(cat $sysdir/config/startup/app)
 
         if [ $startup_app -eq 1 ]; then
@@ -177,7 +179,9 @@ main() {
     fi
 
     state_change check_switcher
-    set_startup_tab
+    if mainui_development_fallback_enabled; then
+        set_startup_tab
+    fi
     # Main runtime loop
     while true; do
         state_change check_main_ui
@@ -219,17 +223,22 @@ clear_logs() {
 
 check_main_ui() {
     if [ ! -f $sysdir/cmd_to_run.sh ]; then
-        if [ -f /tmp/run_advmenu ]; then
+        if mainui_development_fallback_enabled && [ -f /tmp/run_advmenu ]; then
             rm /tmp/run_advmenu
             $sysdir/bin/adv/run_advmenu.sh
-        elif [ -f "$sysdir/config/.bloomShell" ]; then
-            launch_bloom_shell
-        else
+        elif mainui_development_fallback_enabled; then
             launch_main_ui
+        else
+            launch_bloom_shell
         fi
 
         check_off_order "End"
     fi
+}
+
+mainui_development_fallback_enabled() {
+    [ -f "$bloom_developer_marker" ] && [ ! -L "$bloom_developer_marker" ] &&
+        [ -f "$sysdir/config/.mainuiFallback" ] && [ ! -L "$sysdir/config/.mainuiFallback" ]
 }
 
 bloom_shell_safe_mode_pending() {
@@ -309,9 +318,14 @@ launch_bloom_shell() {
         log "Bloom Shell failure threshold reached; entering Safe Mode"
         return 0
     fi
-    log "Bloom Shell exited without a launch (status $shell_status); falling back to MainUI"
+    log "Bloom Shell exited without a launch (status $shell_status)"
     rm -f "$sysdir/cmd_to_run.sh" "$sysdir/bloom-shell-launch.json"
-    launch_main_ui
+    if mainui_development_fallback_enabled; then
+        log "Explicit developer recovery fallback enabled; launching MainUI"
+        launch_main_ui
+    else
+        log "Retrying Bloom Shell through the guarded Safe Mode threshold"
+    fi
 }
 
 launch_main_ui() {

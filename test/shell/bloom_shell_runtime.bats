@@ -1,11 +1,47 @@
 #!/usr/bin/env bats
 
-@test "development Bloom Shell has an explicit MainUI fallback and structured launch exit" {
+@test "Bloom Shell is default and MainUI requires an explicit developer recovery gate" {
     runtime=/workspace/static/build/.tmp_update/runtime.sh
-    grep -F 'elif [ -f "$sysdir/config/.bloomShell" ]; then' "$runtime"
+    grep -F 'elif mainui_development_fallback_enabled; then' "$runtime"
+    grep -F 'if mainui_development_fallback_enabled && [ -f /tmp/run_advmenu ]; then' "$runtime"
+    grep -F '[ -f "$bloom_developer_marker" ] && [ ! -L "$bloom_developer_marker" ] &&' "$runtime"
+    grep -F '[ -f "$sysdir/config/.mainuiFallback" ] && [ ! -L "$sysdir/config/.mainuiFallback" ]' "$runtime"
+    grep -F 'if mainui_development_fallback_enabled && ! bloom_shell_safe_mode_pending &&' "$runtime"
+    grep -F 'Retrying Bloom Shell through the guarded Safe Mode threshold' "$runtime"
     grep -F '"$sysdir/bin/bloom-shell" >/dev/null 2>&1' "$runtime"
     grep -F '[ "$shell_status" -eq 20 ] && [ -f "$sysdir/cmd_to_run.sh" ]' "$runtime"
-    grep -F 'launch_main_ui' "$runtime"
+    ! grep -F '[ -f "$sysdir/config/.bloomShell" ]' "$runtime"
+}
+
+@test "runtime dispatch cannot enter MainUI with only one recovery gate" {
+    runtime=/workspace/static/build/.tmp_update/runtime.sh
+    sysdir="$BATS_TEST_TMPDIR/system"
+    bloom_developer_marker="$BATS_TEST_TMPDIR/.bloom-dev"
+    mkdir -p "$sysdir/config"
+    calls="$BATS_TEST_TMPDIR/calls"
+
+    launch_bloom_shell() { printf 'bloom\n' >> "$calls"; }
+    launch_main_ui() { printf 'mainui\n' >> "$calls"; }
+    check_off_order() { :; }
+    eval "$(sed -n '/^check_main_ui() {/,/^bloom_shell_safe_mode_pending() {/p' "$runtime" | sed '$d')"
+
+    check_main_ui
+    [ "$(tail -n 1 "$calls")" = bloom ]
+    touch "$sysdir/config/.mainuiFallback"
+    check_main_ui
+    [ "$(tail -n 1 "$calls")" = bloom ]
+    rm "$sysdir/config/.mainuiFallback"
+    touch "$bloom_developer_marker"
+    check_main_ui
+    [ "$(tail -n 1 "$calls")" = bloom ]
+    touch "$BATS_TEST_TMPDIR/fallback-target"
+    ln -s "$BATS_TEST_TMPDIR/fallback-target" "$sysdir/config/.mainuiFallback"
+    check_main_ui
+    [ "$(tail -n 1 "$calls")" = bloom ]
+    rm "$sysdir/config/.mainuiFallback"
+    touch "$sysdir/config/.mainuiFallback"
+    check_main_ui
+    [ "$(tail -n 1 "$calls")" = mainui ]
 }
 
 @test "boot reconciles signed application declarations before Bloom Shell reads the catalog" {

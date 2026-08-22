@@ -325,9 +325,9 @@ navigation, GameSwitcher, settings, health, updates, apps, and themes; add Safe
 Mode; decouple health, boot, update, and game return from MainUI; then complete
 performance, migration, physical hardware, and release-candidate gates.
 
-MainUI remains a development recovery fallback during this sequence. It is not
-the stable 1.0 frontend, and no responsibility is removed before its Bloom-owned
-replacement passes the relevant recovery and device tests.
+Bloom Shell is the normal runtime frontend. MainUI is not a stable 1.0 frontend
+and is reachable only through the explicit Developer Mode recovery gate while
+remaining physical certification is completed.
 
 Safe Mode is implemented behind the development shell. Each start has a durable
 bounded launch ID and phase; an interrupted or early failed start increments a
