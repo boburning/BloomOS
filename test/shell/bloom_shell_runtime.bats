@@ -19,9 +19,12 @@
     grep -F 'stage_game(&recents[recent_focus.selected])' "$source"
     grep -F 'bloom_shell_stage_executable(GAME_SWITCHER_BINARY' "$source"
     grep -F 'destination == BLOOM_UI_DESTINATION_RECENT && recent_focus.item_count > 0' "$source"
-    grep -F 'recent_actions_open = 1;' "$source"
+    grep -F 'game_actions_open = 1;' "$source"
+    grep -F 'bloom_shell_search_rebuild(&search, source, source_count' "$source"
+    grep -F 'favorite_toggle(&selected_copy, favorites' "$source"
     grep -F 'bloom_ui_dialog_init(&recent_remove_dialog, 2, 0, 1)' "$source"
     grep -F 'gameswitcher_library_remove_recent(' "$source"
     ! grep -F 'navigation_open' "$source"
     ! grep -F 'MENU Navigate' "$source"
+    ! grep -F 'draw_recent_actions' "$source"
 }

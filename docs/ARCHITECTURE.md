@@ -230,6 +230,12 @@ consumer to initiate filesystem or network work. Schema 2 adds and validates a
 global paging index through an additive transaction while retaining the
 system-specific index.
 
+`bloomctl library favorite set GAME_ID true|false` is the bounded mutation
+boundary used by Bloom-owned game surfaces. It validates the canonical GameID,
+requires a present indexed game, and updates compact favorite ordering in one
+transaction. Search and filtering remain in-memory UI operations and never
+invoke this boundary while rendering.
+
 `bloomctl library import-legacy` reads the newline-delimited Onion favorites and
 active recent list without modifying either source. Known historical game types
 and colon-packed launcher/ROM entries are normalized to the already indexed ROM

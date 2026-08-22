@@ -2,9 +2,11 @@
 #include "bloom_shell_launch.h"
 #include "bloom_shell_ra_form.h"
 #include "bloom_shell_root.h"
+#include "bloom_shell_search.h"
 #include "bloom_shell_settings.h"
 #include "bloom_shell_status.h"
 
+#include "../bloomLibrary/bloom_library_mutation.h"
 #include "../bloomUi/bloom_ui_core.h"
 #include "../bloomUi/bloom_ui_input.h"
 #include "../bloomUi/bloom_ui_renderer.h"
@@ -76,6 +78,99 @@ static int stage_game(const BloomLibraryGame *game)
         snprintf(core, sizeof(core), "%s", default_core);
     }
     return stage_game_with_core(game, core);
+}
+
+static int favorite_index(const BloomLibraryGame *favorites, size_t count, const char *game_id)
+{
+    for (size_t index = 0; index < count; ++index)
+        if (strcmp(favorites[index].bloom_game_id, game_id) == 0)
+            return (int)index;
+    return -1;
+}
+
+static int favorite_set(const BloomLibraryGame *game, int favorite)
+{
+    sqlite3 *database = NULL;
+    int changed = 0;
+    int result = sqlite3_open_v2(DATABASE_PATH, &database, SQLITE_OPEN_READWRITE, NULL);
+    if (result == SQLITE_OK)
+        result = bloom_library_favorite_set(database, game->bloom_game_id, favorite, &changed);
+    if (database != NULL)
+        sqlite3_close(database);
+    return result == SQLITE_OK ? 0 : -1;
+}
+
+static int favorite_toggle(const BloomLibraryGame *game, BloomLibraryGame *favorites,
+                           size_t *favorite_count, BloomUiFocus *favorites_focus,
+                           size_t visible_rows)
+{
+    int index = favorite_index(favorites, *favorite_count, game->bloom_game_id);
+    int favorite = index < 0;
+    if (favorite && *favorite_count >= FAVORITES_CAPACITY_MAX)
+        return -1;
+    if (favorite_set(game, favorite) != 0)
+        return -1;
+    if (favorite && *favorite_count < FAVORITES_CAPACITY_MAX)
+        favorites[(*favorite_count)++] = *game;
+    else if (!favorite) {
+        if ((size_t)index + 1 < *favorite_count)
+            memmove(&favorites[index], &favorites[index + 1],
+                    (*favorite_count - (size_t)index - 1) * sizeof(favorites[0]));
+        memset(&favorites[*favorite_count - 1], 0, sizeof(favorites[0]));
+        (*favorite_count)--;
+    }
+    bloom_ui_focus_set_count(favorites_focus, *favorite_count, visible_rows);
+    return 0;
+}
+
+static const BloomLibraryGame *game_source(BloomUiDestination destination,
+                                           const BloomShellGamesBrowser *browser,
+                                           const BloomLibraryGame *games,
+                                           const BloomLibraryGame *favorites, size_t favorite_count,
+                                           const BloomLibraryGame *recents, size_t recent_count,
+                                           size_t *count)
+{
+    *count = 0;
+    if (destination == BLOOM_UI_DESTINATION_GAMES) {
+        const BloomShellGamesSystem *system = bloom_shell_games_current(browser);
+        if (system != NULL) {
+            *count = system->focus.item_count;
+            return games + system->game_offset;
+        }
+    }
+    else if (destination == BLOOM_UI_DESTINATION_FAVORITES) {
+        *count = favorite_count;
+        return favorites;
+    }
+    else if (destination == BLOOM_UI_DESTINATION_RECENT) {
+        *count = recent_count;
+        return recents;
+    }
+    return NULL;
+}
+
+static const BloomLibraryGame *selected_game(BloomUiDestination destination,
+                                             const BloomShellGamesBrowser *browser,
+                                             const BloomLibraryGame *games,
+                                             const BloomLibraryGame *favorites,
+                                             const BloomUiFocus *favorites_focus,
+                                             const BloomLibraryGame *recents,
+                                             const BloomUiFocus *recent_focus,
+                                             const BloomShellSearch *search)
+{
+    if (search->active)
+        return search->focus.item_count > 0 ? search->results[search->focus.selected] : NULL;
+    if (destination == BLOOM_UI_DESTINATION_GAMES) {
+        const BloomShellGamesSystem *system = bloom_shell_games_current(browser);
+        return system != NULL && system->focus.item_count > 0
+                   ? &games[system->game_offset + system->focus.selected]
+                   : NULL;
+    }
+    if (destination == BLOOM_UI_DESTINATION_FAVORITES)
+        return favorites_focus->item_count > 0 ? &favorites[favorites_focus->selected] : NULL;
+    if (destination == BLOOM_UI_DESTINATION_RECENT)
+        return recent_focus->item_count > 0 ? &recents[recent_focus->selected] : NULL;
+    return NULL;
 }
 
 static void settings_focus_step(BloomUiFocus *focus,
@@ -276,6 +371,21 @@ static void draw_ra_form(SDL_Surface *screen, const BloomUiLayout *layout, TTF_F
     }
 }
 
+static void draw_search(SDL_Surface *screen, const BloomUiLayout *layout, TTF_Font *font,
+                        const BloomShellSearch *search)
+{
+    if (bloom_ui_render_keyboard(screen, layout, &search->keyboard) != 0)
+        return;
+    SDL_Color cream = {243, 226, 189, 0};
+    char label[128];
+    snprintf(label, sizeof(label), "Search: %s", search->query);
+    render_label(screen, font, label, layout->content.x + 16, layout->content.y + 8,
+                 layout->content.width - 32, cream);
+    render_label(screen, font, "A Type   Y Delete   X Mode   SELECT Apply   B Cancel",
+                 layout->content.x + 16, layout->content.y + 40, layout->content.width - 32,
+                 cream);
+}
+
 static void draw_ra_sign_out(SDL_Surface *screen, const BloomUiLayout *layout, TTF_Font *font,
                              const BloomUiDialogFocus *dialog)
 {
@@ -350,19 +460,21 @@ static void draw_recent_remove_confirm(SDL_Surface *screen, const BloomUiLayout 
                  dialog->selected == 1 ? canvas : cream);
 }
 
-static void draw_recent_actions(SDL_Surface *screen, const BloomUiLayout *layout, TTF_Font *font,
-                                const BloomUiFocus *focus)
+static void draw_game_actions(SDL_Surface *screen, const BloomUiLayout *layout, TTF_Font *font,
+                              const BloomUiFocus *focus, int favorite, int recent)
 {
     SDL_Color cream = {243, 226, 189, 0};
     SDL_Color canvas = {33, 23, 17, 0};
     int width = layout->content.width * 3 / 4;
-    int height = layout->row_height * 3;
+    int height = layout->row_height * (recent ? 4 : 3);
     int x = (layout->viewport_width - width) / 2;
     int y = (layout->viewport_height - height) / 2;
     fill_rect(screen, x - 4, y - 4, width + 8, height + 8, 0xD86A2C);
     fill_rect(screen, x, y, width, height, 0x493025);
-    const char *labels[] = {"Resume", "Remove from Recent"};
-    for (size_t row = 0; row < 2; ++row) {
+    const char *labels[] = {"Play / Resume", favorite ? "Unfavorite" : "Favorite",
+                            "Remove from Recent"};
+    size_t action_count = recent ? 3 : 2;
+    for (size_t row = 0; row < action_count; ++row) {
         int row_y = y + 16 + (int)row * layout->row_height;
         int selected = focus->selected == row;
         fill_rect(screen, x + 16, row_y, width - 32, layout->row_height - 6,
@@ -422,6 +534,7 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
                  const BloomShellGamesBrowser *games_browser, const BloomUiFocus *favorites_focus,
                  const BloomUiFocus *recent_focus, const BloomLibraryGame *games,
                  const BloomLibraryGame *favorites, const BloomLibraryGame *recent, int has_recent,
+                 const BloomShellSearch *search,
                  const BloomUiFocus *settings_focus, const BloomUiFocus *apps_focus,
                  const BloomLibraryApp *apps, const BloomShellStatus *status,
                  const BloomShellCapabilities *capabilities,
@@ -430,8 +543,9 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
                  int ra_form_open, const BloomShellRaForm *ra_form,
                  int ra_sign_out_open, const BloomUiDialogFocus *ra_sign_out_dialog,
                  int update_confirm_open, const BloomUiDialogFocus *update_confirm_dialog,
-                 const BloomUiFocus *quick_settings_focus, int recent_actions_open,
-                 const BloomUiFocus *recent_actions_focus, int recent_remove_confirm_open,
+                 const BloomUiFocus *quick_settings_focus, int game_actions_open,
+                 const BloomUiFocus *game_actions_focus, int action_game_favorite,
+                 int action_game_recent, int recent_remove_confirm_open,
                  const BloomUiDialogFocus *recent_remove_dialog)
 {
     const BloomShellGamesSystem *games_system = bloom_shell_games_current(games_browser);
@@ -447,6 +561,9 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
         : destination == BLOOM_UI_DESTINATION_RECENT
             ? recent
             : games + (games_system == NULL ? 0 : games_system->game_offset);
+    if (search->active) {
+        focus = &search->focus;
+    }
     size_t item_count = quick_settings
                             ? quick_settings_focus->item_count
                         : destination == BLOOM_UI_DESTINATION_ROOT     ? 0
@@ -529,6 +646,12 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
                                                                                    : cream);
         }
     }
+    else if (search->active && search->focus.item_count == 0) {
+        render_label(screen, font, "No matching games", layout->content.x + 20,
+                     layout->content.y + layout->row_height, layout->content.width - 40, cream);
+        render_label(screen, font, "Press SELECT to change the search.", layout->content.x + 20,
+                     layout->content.y + layout->row_height * 2, layout->content.width - 40, sand);
+    }
     else if (destination == BLOOM_UI_DESTINATION_GAMES && games_focus->item_count == 0) {
         render_label(screen, font, "No supported games found", layout->content.x + 20,
                      layout->content.y + layout->row_height, layout->content.width - 40, cream);
@@ -551,7 +674,10 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
     else
         for (size_t row = 0; row < layout->visible_rows && focus->window_start + row < focus->item_count;
              ++row)
-            render_label(screen, font, rows[focus->window_start + row].display_title,
+            render_label(screen, font,
+                         search->active
+                             ? search->results[focus->window_start + row]->display_title
+                             : rows[focus->window_start + row].display_title,
                          layout->content.x + 20,
                          layout->content.y + (int)row * layout->row_height + layout->row_height / 3,
                          layout->content.width - 40, cream);
@@ -566,12 +692,15 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
                  layout->footer.y + layout->footer.height / 3, layout->footer.width - 76, sand);
     if (ra_form_open)
         draw_ra_form(screen, layout, font, ra_form);
+    if (search->open)
+        draw_search(screen, layout, font, search);
     if (ra_sign_out_open)
         draw_ra_sign_out(screen, layout, font, ra_sign_out_dialog);
     if (update_confirm_open)
         draw_update_confirm(screen, layout, font, update_confirm_dialog);
-    if (recent_actions_open)
-        draw_recent_actions(screen, layout, font, recent_actions_focus);
+    if (game_actions_open)
+        draw_game_actions(screen, layout, font, game_actions_focus, action_game_favorite,
+                          action_game_recent);
     if (recent_remove_confirm_open)
         draw_recent_remove_confirm(screen, layout, font, recent_remove_dialog);
 #ifdef PLATFORM_MIYOOMINI
@@ -675,6 +804,15 @@ int main(int argc, char **argv)
     bloom_ui_focus_init(&apps_focus, app_count);
     bloom_ui_focus_init(&quick_settings_focus,
                         bloom_shell_quick_settings_count(&capabilities));
+    BloomShellSearch search;
+    if (bloom_shell_search_init(&search, GAME_CAPACITY_MAX) != 0) {
+        TTF_CloseFont(font);
+        SDL_FreeSurface(screen);
+        TTF_Quit();
+        SDL_Quit();
+        free(games);
+        return 1;
+    }
     int quick_settings = 0;
     int settings_held_repeats = 0;
     int support_export_result = 0;
@@ -687,17 +825,21 @@ int main(int argc, char **argv)
     BloomUiDialogFocus ra_sign_out_dialog = {0};
     int update_confirm_open = 0;
     BloomUiDialogFocus update_confirm_dialog = {0};
-    int recent_actions_open = 0;
-    BloomUiFocus recent_actions_focus;
-    bloom_ui_focus_init(&recent_actions_focus, 2);
+    int game_actions_open = 0;
+    int action_game_recent = 0;
+    BloomLibraryGame action_game = {0};
+    BloomUiFocus game_actions_focus;
+    bloom_ui_focus_init(&game_actions_focus, 2);
     int recent_remove_confirm_open = 0;
     BloomUiDialogFocus recent_remove_dialog = {0};
     draw(screen, video, &layout, font, destination, &root, &games_browser, &favorites_focus,
-         &recent_focus, games, favorites, recents, has_recent, &settings_focus, &apps_focus, apps, &status,
+         &recent_focus, games, favorites, recents, has_recent, &search, &settings_focus, &apps_focus, apps, &status,
          &capabilities, &quick_values, support_export_result, update_confirm_result, ra_form_result,
          quick_settings, ra_form_open, &ra_form, ra_sign_out_open, &ra_sign_out_dialog,
-         update_confirm_open, &update_confirm_dialog, &quick_settings_focus, recent_actions_open,
-         &recent_actions_focus, recent_remove_confirm_open, &recent_remove_dialog);
+         update_confirm_open, &update_confirm_dialog, &quick_settings_focus, game_actions_open,
+         &game_actions_focus,
+         favorite_index(favorites, favorite_count, action_game.bloom_game_id) >= 0,
+         action_game_recent, recent_remove_confirm_open, &recent_remove_dialog);
     int running = 1;
     int exit_code = 0;
     while (running) {
@@ -731,10 +873,13 @@ int main(int argc, char **argv)
         else if (recent_remove_confirm_open && action == BLOOM_UI_ACTION_BACK)
             recent_remove_confirm_open = 0;
         else if (recent_remove_confirm_open && action == BLOOM_UI_ACTION_CONFIRM) {
-            if (recent_remove_dialog.selected == 1 && recent_focus.item_count > 0 &&
-                gameswitcher_library_remove_recent(
-                    DATABASE_PATH, recents[recent_focus.selected].bloom_game_id) == 0) {
-                size_t removed = recent_focus.selected;
+            int recent_index = -1;
+            for (size_t index = 0; index < recent_count; ++index)
+                if (strcmp(recents[index].bloom_game_id, action_game.bloom_game_id) == 0)
+                    recent_index = (int)index;
+            if (recent_remove_dialog.selected == 1 && recent_index >= 0 &&
+                gameswitcher_library_remove_recent(DATABASE_PATH, action_game.bloom_game_id) == 0) {
+                size_t removed = (size_t)recent_index;
                 if (removed + 1 < recent_count)
                     memmove(&recents[removed], &recents[removed + 1],
                             (recent_count - removed - 1) * sizeof(recents[0]));
@@ -745,30 +890,37 @@ int main(int argc, char **argv)
                 root.has_continue = has_recent;
                 if (!has_recent)
                     root.continue_focused = 0;
-                recent_actions_open = 0;
+                game_actions_open = 0;
+                bloom_shell_search_clear(&search);
             }
             recent_remove_confirm_open = 0;
         }
         else if (recent_remove_confirm_open)
             continue;
-        else if (recent_actions_open && action == BLOOM_UI_ACTION_FOCUS_UP)
-            bloom_ui_focus_step(&recent_actions_focus, -1, 2);
-        else if (recent_actions_open && action == BLOOM_UI_ACTION_FOCUS_DOWN)
-            bloom_ui_focus_step(&recent_actions_focus, 1, 2);
-        else if (recent_actions_open && action == BLOOM_UI_ACTION_BACK)
-            recent_actions_open = 0;
-        else if (recent_actions_open && action == BLOOM_UI_ACTION_CONFIRM) {
-            if (recent_actions_focus.selected == 0 && recent_focus.item_count > 0) {
-                if (stage_game(&recents[recent_focus.selected]) == 0) {
+        else if (game_actions_open && action == BLOOM_UI_ACTION_FOCUS_UP)
+            bloom_ui_focus_step(&game_actions_focus, -1, 3);
+        else if (game_actions_open && action == BLOOM_UI_ACTION_FOCUS_DOWN)
+            bloom_ui_focus_step(&game_actions_focus, 1, 3);
+        else if (game_actions_open && action == BLOOM_UI_ACTION_BACK)
+            game_actions_open = 0;
+        else if (game_actions_open && action == BLOOM_UI_ACTION_CONFIRM) {
+            if (game_actions_focus.selected == 0) {
+                if (stage_game(&action_game) == 0) {
                     exit_code = LAUNCH_READY_EXIT;
                     running = 0;
                 }
             }
-            else if (recent_actions_focus.selected == 1 && recent_focus.item_count > 0 &&
+            else if (game_actions_focus.selected == 1) {
+                favorite_toggle(&action_game, favorites, &favorite_count, &favorites_focus,
+                                layout.visible_rows);
+                game_actions_open = 0;
+                bloom_shell_search_clear(&search);
+            }
+            else if (game_actions_focus.selected == 2 && action_game_recent &&
                      bloom_ui_dialog_init(&recent_remove_dialog, 2, 0, 1) == 0)
                 recent_remove_confirm_open = 1;
         }
-        else if (recent_actions_open)
+        else if (game_actions_open)
             continue;
         else if (update_confirm_open && action == BLOOM_UI_ACTION_FOCUS_LEFT)
             bloom_ui_dialog_step(&update_confirm_dialog, -1);
@@ -836,6 +988,45 @@ int main(int argc, char **argv)
         }
         else if (ra_form_open)
             continue;
+        else if (search.open && action == BLOOM_UI_ACTION_GAME_SWITCHER) {
+            char error[256] = {0};
+            if (bloom_shell_stage_executable(GAME_SWITCHER_BINARY, COMMAND_PATH, error,
+                                             sizeof(error)) == 0) {
+                exit_code = LAUNCH_READY_EXIT;
+                running = 0;
+            }
+        }
+        else if (search.open && action == BLOOM_UI_ACTION_QUICK_SETTINGS) {
+            search.open = 0;
+            quick_settings = 1;
+        }
+        else if (search.open && action == BLOOM_UI_ACTION_FOCUS_UP)
+            bloom_ui_keyboard_move(&search.keyboard, 0, -1);
+        else if (search.open && action == BLOOM_UI_ACTION_FOCUS_DOWN)
+            bloom_ui_keyboard_move(&search.keyboard, 0, 1);
+        else if (search.open && action == BLOOM_UI_ACTION_FOCUS_LEFT)
+            bloom_ui_keyboard_move(&search.keyboard, -1, 0);
+        else if (search.open && action == BLOOM_UI_ACTION_FOCUS_RIGHT)
+            bloom_ui_keyboard_move(&search.keyboard, 1, 0);
+        else if (search.open && (action == BLOOM_UI_ACTION_CONFIRM ||
+                                 action == BLOOM_UI_ACTION_TOGGLE_FAVORITE)) {
+            size_t source_count = 0;
+            const BloomLibraryGame *source = game_source(
+                destination, &games_browser, games, favorites, favorite_count, recents,
+                recent_count, &source_count);
+            if (action == BLOOM_UI_ACTION_CONFIRM)
+                bloom_shell_search_append(&search, source, source_count, layout.visible_rows);
+            else
+                bloom_shell_search_backspace(&search, source, source_count, layout.visible_rows);
+        }
+        else if (search.open && action == BLOOM_UI_ACTION_CONTEXT)
+            bloom_ui_keyboard_cycle_mode(&search.keyboard);
+        else if (search.open && action == BLOOM_UI_ACTION_SEARCH)
+            search.open = 0;
+        else if (search.open && action == BLOOM_UI_ACTION_BACK)
+            bloom_shell_search_clear(&search);
+        else if (search.open)
+            continue;
         else if (action == BLOOM_UI_ACTION_GAME_SWITCHER) {
             quick_settings = 0;
             char error[256] = {0};
@@ -868,6 +1059,7 @@ int main(int argc, char **argv)
             continue;
         }
         else if (action == BLOOM_UI_ACTION_BACK) {
+            bloom_shell_search_clear(&search);
             if (destination != BLOOM_UI_DESTINATION_ROOT)
                 destination = BLOOM_UI_DESTINATION_ROOT;
         }
@@ -885,11 +1077,19 @@ int main(int argc, char **argv)
                 destination = bloom_shell_root_open(&root);
         }
         else if (action == BLOOM_UI_ACTION_FOCUS_LEFT &&
-                 destination == BLOOM_UI_DESTINATION_GAMES)
+                 destination == BLOOM_UI_DESTINATION_GAMES) {
+            bloom_shell_search_clear(&search);
             bloom_shell_games_switch(&games_browser, -1);
+        }
         else if (action == BLOOM_UI_ACTION_FOCUS_RIGHT &&
-                 destination == BLOOM_UI_DESTINATION_GAMES)
+                 destination == BLOOM_UI_DESTINATION_GAMES) {
+            bloom_shell_search_clear(&search);
             bloom_shell_games_switch(&games_browser, 1);
+        }
+        else if ((action == BLOOM_UI_ACTION_FOCUS_UP || action == BLOOM_UI_ACTION_FOCUS_DOWN) &&
+                 search.active)
+            bloom_ui_focus_step(&search.focus, action == BLOOM_UI_ACTION_FOCUS_UP ? -1 : 1,
+                                layout.visible_rows);
         else if (action == BLOOM_UI_ACTION_FOCUS_UP && destination == BLOOM_UI_DESTINATION_GAMES)
             bloom_shell_games_step(&games_browser, -1, layout.visible_rows);
         else if (action == BLOOM_UI_ACTION_FOCUS_DOWN && destination == BLOOM_UI_DESTINATION_GAMES)
@@ -906,10 +1106,50 @@ int main(int argc, char **argv)
         else if (action == BLOOM_UI_ACTION_FOCUS_DOWN &&
                  destination == BLOOM_UI_DESTINATION_RECENT)
             bloom_ui_focus_step(&recent_focus, 1, layout.visible_rows);
+        else if (action == BLOOM_UI_ACTION_SEARCH &&
+                 (destination == BLOOM_UI_DESTINATION_GAMES ||
+                  destination == BLOOM_UI_DESTINATION_FAVORITES ||
+                  destination == BLOOM_UI_DESTINATION_RECENT)) {
+            size_t source_count = 0;
+            const BloomLibraryGame *source = game_source(
+                destination, &games_browser, games, favorites, favorite_count, recents,
+                recent_count, &source_count);
+            search.open = 1;
+            bloom_shell_search_rebuild(&search, source, source_count, layout.visible_rows);
+        }
         else if (action == BLOOM_UI_ACTION_CONTEXT &&
-                 destination == BLOOM_UI_DESTINATION_RECENT && recent_focus.item_count > 0) {
-            bloom_ui_focus_init(&recent_actions_focus, 2);
-            recent_actions_open = 1;
+                 (destination == BLOOM_UI_DESTINATION_GAMES ||
+                  destination == BLOOM_UI_DESTINATION_FAVORITES ||
+                  destination == BLOOM_UI_DESTINATION_RECENT)) {
+            const BloomLibraryGame *game = selected_game(
+                destination, &games_browser, games, favorites, &favorites_focus, recents,
+                &recent_focus, &search);
+            if (game != NULL) {
+                action_game = *game;
+                action_game_recent = destination == BLOOM_UI_DESTINATION_RECENT;
+                bloom_ui_focus_init(&game_actions_focus, action_game_recent ? 3 : 2);
+                game_actions_open = 1;
+            }
+        }
+        else if (action == BLOOM_UI_ACTION_TOGGLE_FAVORITE &&
+                 (destination == BLOOM_UI_DESTINATION_GAMES ||
+                  destination == BLOOM_UI_DESTINATION_FAVORITES ||
+                  destination == BLOOM_UI_DESTINATION_RECENT)) {
+            const BloomLibraryGame *game = selected_game(
+                destination, &games_browser, games, favorites, &favorites_focus, recents,
+                &recent_focus, &search);
+            if (game != NULL) {
+                BloomLibraryGame selected_copy = *game;
+                favorite_toggle(&selected_copy, favorites, &favorite_count, &favorites_focus,
+                                layout.visible_rows);
+                if (search.active) {
+                    size_t source_count = 0;
+                    const BloomLibraryGame *source = game_source(
+                        destination, &games_browser, games, favorites, favorite_count, recents,
+                        recent_count, &source_count);
+                    bloom_shell_search_rebuild(&search, source, source_count, layout.visible_rows);
+                }
+            }
         }
         else if (action == BLOOM_UI_ACTION_FOCUS_UP &&
                  destination == BLOOM_UI_DESTINATION_SETTINGS)
@@ -980,6 +1220,13 @@ int main(int argc, char **argv)
             ra_form_result = 0;
             ra_sign_out_open = 1;
         }
+        else if (action == BLOOM_UI_ACTION_CONFIRM && search.active &&
+                 search.focus.item_count > 0) {
+            if (stage_game(search.results[search.focus.selected]) == 0) {
+                exit_code = LAUNCH_READY_EXIT;
+                running = 0;
+            }
+        }
         else if (action == BLOOM_UI_ACTION_CONFIRM && destination == BLOOM_UI_DESTINATION_GAMES &&
                  games_browser.system_count > 0) {
             const BloomShellGamesSystem *system = bloom_shell_games_current(&games_browser);
@@ -1015,16 +1262,19 @@ int main(int argc, char **argv)
         }
         if (running)
             draw(screen, video, &layout, font, destination, &root, &games_browser, &favorites_focus,
-                 &recent_focus, games, favorites, recents, has_recent, &settings_focus, &apps_focus,
+                 &recent_focus, games, favorites, recents, has_recent, &search, &settings_focus, &apps_focus,
                  apps, &status, &capabilities, &quick_values, support_export_result,
                  update_confirm_result, ra_form_result, quick_settings,
                  ra_form_open, &ra_form,
                  ra_sign_out_open, &ra_sign_out_dialog, update_confirm_open,
-                 &update_confirm_dialog, &quick_settings_focus, recent_actions_open,
-                 &recent_actions_focus, recent_remove_confirm_open, &recent_remove_dialog);
+                 &update_confirm_dialog, &quick_settings_focus, game_actions_open,
+                 &game_actions_focus,
+                 favorite_index(favorites, favorite_count, action_game.bloom_game_id) >= 0,
+                 action_game_recent, recent_remove_confirm_open, &recent_remove_dialog);
     }
     TTF_CloseFont(font);
     bloom_shell_ra_form_clear(&ra_form);
+    bloom_shell_search_destroy(&search);
     SDL_FreeSurface(screen);
     TTF_Quit();
     SDL_Quit();

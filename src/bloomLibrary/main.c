@@ -1,6 +1,7 @@
 #include "bloom_library_database.h"
 #include "bloom_library_import.h"
 #include "bloom_library_legacy.h"
+#include "bloom_library_mutation.h"
 #include "bloom_library_query.h"
 #include "bloom_library_scan.h"
 
@@ -126,6 +127,21 @@ static int games_command(sqlite3 *database, int argc, char **argv)
     return 0;
 }
 
+static int favorite_command(sqlite3 *database, int argc, char **argv)
+{
+    if (argc != 5 || strcmp(argv[2], "set") != 0 ||
+        (strcmp(argv[4], "true") != 0 && strcmp(argv[4], "false") != 0))
+        return 2;
+    int favorite = strcmp(argv[4], "true") == 0;
+    int changed = 0;
+    int result = bloom_library_favorite_set(database, argv[3], favorite, &changed);
+    if (result != SQLITE_OK)
+        return result == SQLITE_MISUSE ? 2 : 1;
+    printf("{\"schema\":1,\"service\":\"bloom-library\",\"favorite\":%s,\"changed\":%s}\n",
+           favorite ? "true" : "false", changed ? "true" : "false");
+    return 0;
+}
+
 int main(int argc, char **argv)
 {
     int status_command = argc == 2 && strcmp(argv[1], "status") == 0;
@@ -136,12 +152,13 @@ int main(int argc, char **argv)
     int scan_system = argc == 4 && strcmp(argv[1], "scan") == 0 &&
                       strcmp(argv[2], "--system") == 0;
     int query_games = argc >= 2 && strcmp(argv[1], "games") == 0;
+    int mutate_favorite = argc >= 2 && strcmp(argv[1], "favorite") == 0;
     if (!status_command && !import_command && !import_legacy && !scan_all && !scan_system &&
-        !query_games) {
+        !query_games && !mutate_favorite) {
         fprintf(stderr,
                 "Usage: bloom-library status|import-onion|import-legacy|scan "
                 "--changed|--all|--system SYSTEM|games --limit N [--after GAME_ID]|games "
-                "--system SYSTEM --limit N [--after GAME_ID]\n");
+                "--system SYSTEM --limit N [--after GAME_ID]|favorite set GAME_ID true|false\n");
         return 2;
     }
     if (ensure_directory(BLOOM_ROOT) != 0 || ensure_directory(LIBRARY_ROOT) != 0) {
@@ -214,6 +231,15 @@ int main(int argc, char **argv)
             fprintf(stderr, "{\"schema\":1,\"error\":{\"code\":\"invalid_request\"}}\n");
         else if (result != 0)
             fprintf(stderr, "{\"schema\":1,\"error\":{\"code\":\"query_failed\"}}\n");
+        return result;
+    }
+    if (mutate_favorite) {
+        int result = favorite_command(database, argc, argv);
+        sqlite3_close(database);
+        if (result == 2)
+            fprintf(stderr, "{\"schema\":1,\"error\":{\"code\":\"invalid_request\"}}\n");
+        else if (result != 0)
+            fprintf(stderr, "{\"schema\":1,\"error\":{\"code\":\"mutation_failed\"}}\n");
         return result;
     }
     if (bloom_library_database_health(database, &health) != SQLITE_OK) {
