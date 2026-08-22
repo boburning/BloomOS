@@ -17,8 +17,9 @@ setup() {
         "$SDCARD/.tmp_update/runtime.sh" \
         "$SDCARD/.tmp_update/bin/bloomctl" \
         "$SDCARD/.tmp_update/bin/bloom-platform" \
+        "$SDCARD/.tmp_update/bin/bloom-shell" \
         "$SDCARD/RetroArch/retroarch" \
-        "$SDCARD/miyoo/app/MainUI"
+        "$SDCARD/.tmp_update/onionVersion/version.txt"
     default_update_state="$BLOOM_TEST_ROOT/default-update-state"
     cat >"$default_update_state" <<'EOF'
 #!/bin/sh
