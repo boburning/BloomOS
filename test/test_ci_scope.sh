@@ -16,9 +16,16 @@ expect() {
 }
 
 expect "bloomShell" build "src/bloomUi/bloom_ui_renderer.c"
+expect "gameSwitcher" build "src/gameSwitcher/gameSwitcherAchievements.c"
+expect "src/gameSwitcher" static-analysis "src/gameSwitcher/gs_keystate.h"
+expect "bloomShell gameSwitcher" build "src/bloomShell/bloom_shell_settings.h"
+expect "src/bloomShell src/gameSwitcher" static-analysis "src/bloomShell/bloom_shell_settings.c"
+expect "bloomShell gameSwitcher" build "src/bloomShell/bloom_shell_launch.c"
 expect "bloomRa bloomShell" build "src/bloomRa/bloom_ra_account.c
 src/bloomShell/main.c"
-expect "bloomLibrary bloomShell" build "src/bloomLibrary/bloom_library_query.c"
+expect "bloomLibrary bloomShell gameSwitcher" build "src/bloomLibrary/bloom_library_query.c"
+expect "bloomLaunch bloomShell gameSwitcher" build "src/bloomLaunch/bloom_launch.c"
+expect "playActivity gameSwitcher" build "src/playActivity/playActivityModel.c"
 expect "bloomSettings bloomShell" build "src/bloomSettings/bloom_settings.c
 src/bloomShell/main.c
 static/build/.tmp_update/runtime.sh
@@ -44,5 +51,8 @@ build/dependencies.lock"
 expect "full" build "src/common/config.mk"
 expect "full" build "build/shared-libs/build.sh"
 expect "full" static-analysis "Makefile"
+
+grep -F 'git config --global --add safe.directory "$GITHUB_WORKSPACE"' \
+    "$root/.github/workflows/build.yml" >/dev/null
 
 echo "ci scope tests passed"
