@@ -23,28 +23,57 @@ typedef struct {
 } BloomShellQuickValues;
 
 typedef enum {
-    BLOOM_SHELL_SETTINGS_TOP = -1,
-    BLOOM_SHELL_SETTINGS_DISPLAY = 0,
-    BLOOM_SHELL_SETTINGS_AUDIO,
-    BLOOM_SHELL_SETTINGS_CONTROLS,
-    BLOOM_SHELL_SETTINGS_GAMEPLAY,
-    BLOOM_SHELL_SETTINGS_NETWORK,
-    BLOOM_SHELL_SETTINGS_RETROACHIEVEMENTS,
-    BLOOM_SHELL_SETTINGS_APPEARANCE,
-    BLOOM_SHELL_SETTINGS_SYSTEM,
-    BLOOM_SHELL_SETTINGS_ADVANCED,
-} BloomShellSettingsPage;
+    BLOOM_SHELL_SETTINGS_ROW_SECTION,
+    BLOOM_SHELL_SETTINGS_ROW_SLIDER,
+    BLOOM_SHELL_SETTINGS_ROW_TOGGLE,
+    BLOOM_SHELL_SETTINGS_ROW_DETAIL,
+    BLOOM_SHELL_SETTINGS_ROW_ACTION,
+    BLOOM_SHELL_SETTINGS_ROW_READ_ONLY,
+} BloomShellSettingsRowKind;
+
+typedef enum {
+    BLOOM_SHELL_SETTINGS_DISPLAY_SECTION,
+    BLOOM_SHELL_SETTINGS_BRIGHTNESS,
+    BLOOM_SHELL_SETTINGS_THEME,
+    BLOOM_SHELL_SETTINGS_AUDIO_SECTION,
+    BLOOM_SHELL_SETTINGS_VOLUME,
+    BLOOM_SHELL_SETTINGS_MUTE,
+    BLOOM_SHELL_SETTINGS_CONTROLS_SECTION,
+    BLOOM_SHELL_SETTINGS_BUTTON_GRAMMAR,
+    BLOOM_SHELL_SETTINGS_LAUNCH_BEHAVIOR,
+    BLOOM_SHELL_SETTINGS_NETWORK_SECTION,
+    BLOOM_SHELL_SETTINGS_WIFI,
+    BLOOM_SHELL_SETTINGS_RA_SECTION,
+    BLOOM_SHELL_SETTINGS_RA_ACCOUNT,
+    BLOOM_SHELL_SETTINGS_RA_CONNECTION,
+    BLOOM_SHELL_SETTINGS_SYSTEM_SECTION,
+    BLOOM_SHELL_SETTINGS_UPDATE,
+    BLOOM_SHELL_SETTINGS_STORAGE,
+    BLOOM_SHELL_SETTINGS_HEALTH,
+    BLOOM_SHELL_SETTINGS_ABOUT,
+    BLOOM_SHELL_SETTINGS_DEVELOPER_SECTION,
+    BLOOM_SHELL_SETTINGS_DEVELOPER_MODE,
+    BLOOM_SHELL_SETTINGS_DIAGNOSTICS,
+} BloomShellSettingsRowId;
+
+typedef struct {
+    BloomShellSettingsRowId id;
+    BloomShellSettingsRowKind kind;
+    const char *label;
+} BloomShellSettingsRow;
 
 int bloom_shell_capabilities_from_model(int model, int developer_mode,
                                         BloomShellCapabilities *capabilities);
 size_t bloom_shell_settings_count(const BloomShellCapabilities *capabilities);
-const char *bloom_shell_settings_label(const BloomShellCapabilities *capabilities, size_t row);
-BloomShellSettingsPage bloom_shell_settings_page(const BloomShellCapabilities *capabilities,
-                                                 size_t row);
-size_t bloom_shell_settings_page_count(BloomShellSettingsPage page);
-int bloom_shell_settings_page_format(BloomShellSettingsPage page,
-                                     const BloomShellQuickValues *values, size_t row,
-                                     char *label, size_t label_size);
+int bloom_shell_settings_row(const BloomShellCapabilities *capabilities, size_t row,
+                             BloomShellSettingsRow *settings_row);
+int bloom_shell_settings_row_format(const BloomShellCapabilities *capabilities,
+                                    const BloomShellQuickValues *values, size_t row, char *label,
+                                    size_t label_size);
+int bloom_shell_settings_row_selectable(const BloomShellCapabilities *capabilities, size_t row);
+size_t bloom_shell_settings_first_selectable(const BloomShellCapabilities *capabilities);
+size_t bloom_shell_settings_next_selectable(const BloomShellCapabilities *capabilities,
+                                            size_t row, int direction);
 size_t bloom_shell_quick_settings_count(const BloomShellCapabilities *capabilities);
 const char *bloom_shell_quick_settings_label(const BloomShellCapabilities *capabilities, size_t row);
 int bloom_shell_quick_values_parse(const char *json, BloomShellQuickValues *values);
