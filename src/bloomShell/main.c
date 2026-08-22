@@ -1,3 +1,4 @@
+#include "bloom_shell_games.h"
 #include "bloom_shell_launch.h"
 #include "bloom_shell_ra_form.h"
 #include "bloom_shell_root.h"
@@ -29,7 +30,6 @@
 #define BLOOM_RA_BINARY "/mnt/SDCARD/.tmp_update/bin/bloom-ra"
 #define GAME_SWITCHER_BINARY "/mnt/SDCARD/.tmp_update/bin/gameSwitcher"
 #define DEVICE_MODEL_PATH "/tmp/deviceModel"
-#define GB_CORE "gambatte_libretro.so"
 #define GAME_PAGE_SIZE 100
 #define GAME_CAPACITY_MAX 4096
 #define FAVORITES_CAPACITY_MAX 100
@@ -45,9 +45,31 @@ static const char *screen_labels[BLOOM_UI_DESTINATION_COUNT] = {
     "Settings",
 };
 
+static int stage_game_with_core(const BloomLibraryGame *game, const char *core)
+{
+    char error[256] = {0};
+    return bloom_shell_stage_game(game, core, REQUEST_PATH, COMMAND_PATH, SESSION_REQUEST_PATH,
+                                  SESSION_BINARY, error, sizeof(error));
+}
+
+static int stage_game(const BloomLibraryGame *game)
+{
+    char core[128] = {0};
+    if (game == NULL)
+        return -1;
+    if (bloom_shell_detect_core("/mnt/SDCARD", game->launch_path, core, sizeof(core)) != 0) {
+        const char *default_core = bloom_shell_games_default_core(game->system_id);
+        if (default_core == NULL)
+            return -1;
+        snprintf(core, sizeof(core), "%s", default_core);
+    }
+    return stage_game_with_core(game, core);
+}
+
 static int load_catalog(BloomLibraryGame **games, size_t *game_count, BloomLibraryGame *recent,
                         int *has_recent, BloomLibraryGame *favorites, size_t *favorite_count,
-                        BloomLibraryApp *apps, size_t *app_count)
+                        BloomLibraryApp *apps, size_t *app_count,
+                        BloomShellGamesBrowser *browser)
 {
     sqlite3 *database = NULL;
     *games = calloc(GAME_CAPACITY_MAX, sizeof(**games));
@@ -65,28 +87,51 @@ static int load_catalog(BloomLibraryGame **games, size_t *game_count, BloomLibra
         return -1;
     }
     size_t recent_count = 0;
-    int result = bloom_library_query_recents(database, "gb", 1, recent, 1, &recent_count);
+    bloom_shell_games_init(browser);
+    int result = bloom_library_query_recents(database, NULL, 1, recent, 1, &recent_count);
     if (result == SQLITE_OK)
         *has_recent = recent_count == 1;
     if (result == SQLITE_OK)
-        result = bloom_library_query_favorites(database, "gb", FAVORITES_CAPACITY_MAX, favorites,
+        result = bloom_library_query_favorites(database, NULL, FAVORITES_CAPACITY_MAX, favorites,
                                                FAVORITES_CAPACITY_MAX, favorite_count);
     if (result == SQLITE_OK)
         result = bloom_library_query_apps(database, APPS_CAPACITY_MAX, apps, APPS_CAPACITY_MAX,
                                           app_count);
-    char cursor[79] = {0};
-    while (result == SQLITE_OK && *game_count < GAME_CAPACITY_MAX) {
-        size_t remaining = GAME_CAPACITY_MAX - *game_count;
-        size_t limit = remaining < GAME_PAGE_SIZE ? remaining : GAME_PAGE_SIZE;
-        BloomLibraryGamePage page = {0};
-        result = bloom_library_query_games(database, "gb", cursor[0] == '\0' ? NULL : cursor,
-                                           limit, *games + *game_count, remaining, &page);
-        if (result != SQLITE_OK)
-            break;
-        *game_count += page.count;
-        if (!page.has_more)
-            break;
-        snprintf(cursor, sizeof(cursor), "%s", page.next_cursor);
+    BloomLibrarySystem systems[BLOOM_SHELL_SYSTEM_CAPACITY] = {0};
+    size_t system_count = 0;
+    if (result == SQLITE_OK)
+        result = bloom_library_query_systems(database, BLOOM_SHELL_SYSTEM_CAPACITY, systems,
+                                             BLOOM_SHELL_SYSTEM_CAPACITY, &system_count);
+    for (size_t system_index = 0;
+         result == SQLITE_OK && system_index < system_count && *game_count < GAME_CAPACITY_MAX;
+         ++system_index) {
+        size_t offset = *game_count;
+        char cursor[79] = {0};
+        while (result == SQLITE_OK && *game_count < GAME_CAPACITY_MAX) {
+            size_t remaining = GAME_CAPACITY_MAX - *game_count;
+            size_t limit = remaining < GAME_PAGE_SIZE ? remaining : GAME_PAGE_SIZE;
+            BloomLibraryGamePage page = {0};
+            result = bloom_library_query_games(
+                database, systems[system_index].system_id, cursor[0] == '\0' ? NULL : cursor,
+                limit, *games + *game_count, remaining, &page);
+            if (result != SQLITE_OK)
+                break;
+            *game_count += page.count;
+            if (!page.has_more)
+                break;
+            snprintf(cursor, sizeof(cursor), "%s", page.next_cursor);
+        }
+        size_t loaded = *game_count - offset;
+        char core[128] = {0};
+        const char *default_core = bloom_shell_games_default_core(systems[system_index].system_id);
+        if (loaded > 0 &&
+            bloom_shell_detect_core("/mnt/SDCARD", (*games)[offset].launch_path, core,
+                                    sizeof(core)) != 0 &&
+            default_core != NULL)
+            snprintf(core, sizeof(core), "%s", default_core);
+        if (loaded == 0 || core[0] == '\0' ||
+            bloom_shell_games_add(browser, &systems[system_index], offset, loaded, core) != 0)
+            *game_count = offset;
     }
     sqlite3_close(database);
     if (result != SQLITE_OK) {
@@ -301,7 +346,7 @@ static void draw_root(SDL_Surface *screen, const BloomUiLayout *layout, TTF_Font
 
 static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *layout, TTF_Font *font,
                  BloomUiDestination destination, const BloomShellRootState *root,
-                 const BloomUiFocus *games_focus, const BloomUiFocus *favorites_focus,
+                 const BloomShellGamesBrowser *games_browser, const BloomUiFocus *favorites_focus,
                  const BloomUiFocus *recent_focus, const BloomLibraryGame *games,
                  const BloomLibraryGame *favorites, const BloomLibraryGame *recent, int has_recent,
                  const BloomUiFocus *settings_focus, const BloomUiFocus *apps_focus,
@@ -314,14 +359,19 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
                  int update_confirm_open, const BloomUiDialogFocus *update_confirm_dialog,
                  const BloomUiFocus *quick_settings_focus)
 {
+    const BloomShellGamesSystem *games_system = bloom_shell_games_current(games_browser);
+    const BloomUiFocus empty_focus = {0};
+    const BloomUiFocus *games_focus = games_system == NULL ? &empty_focus : &games_system->focus;
     const BloomUiFocus *focus = destination == BLOOM_UI_DESTINATION_FAVORITES
                                     ? favorites_focus
                                 : destination == BLOOM_UI_DESTINATION_RECENT ? recent_focus
                                                                              : games_focus;
-    const BloomLibraryGame *rows = destination == BLOOM_UI_DESTINATION_FAVORITES
-                                       ? favorites
-                                   : destination == BLOOM_UI_DESTINATION_RECENT ? recent
-                                                                                : games;
+    const BloomLibraryGame *rows =
+        destination == BLOOM_UI_DESTINATION_FAVORITES
+            ? favorites
+        : destination == BLOOM_UI_DESTINATION_RECENT
+            ? recent
+            : games + (games_system == NULL ? 0 : games_system->game_offset);
     size_t item_count = quick_settings
                             ? quick_settings_focus->item_count
                         : destination == BLOOM_UI_DESTINATION_ROOT     ? 0
@@ -351,7 +401,13 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
     bloom_ui_render_shell(screen, layout, &scene);
     SDL_Color cream = {243, 226, 189, 0};
     SDL_Color sand = {205, 175, 123, 0};
-    render_label(screen, font, quick_settings ? "Quick Settings" : screen_labels[destination],
+    char games_header[640];
+    const char *header = quick_settings ? "Quick Settings" : screen_labels[destination];
+    if (!quick_settings && destination == BLOOM_UI_DESTINATION_GAMES && games_system != NULL) {
+        snprintf(games_header, sizeof(games_header), "Games   < %s >", games_system->system.label);
+        header = games_header;
+    }
+    render_label(screen, font, header,
                  layout->header.height + layout->margin, layout->header.y + 18,
                  layout->header.width - layout->header.height - layout->margin * 2, cream);
     if (quick_settings) {
@@ -398,9 +454,9 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
         }
     }
     else if (destination == BLOOM_UI_DESTINATION_GAMES && games_focus->item_count == 0) {
-        render_label(screen, font, "No Game Boy games found", layout->content.x + 20,
+        render_label(screen, font, "No supported games found", layout->content.x + 20,
                      layout->content.y + layout->row_height, layout->content.width - 40, cream);
-        render_label(screen, font, "Add games to: Roms/GB", layout->content.x + 20,
+        render_label(screen, font, "Add games to a Roms folder.", layout->content.x + 20,
                      layout->content.y + layout->row_height * 2, layout->content.width - 40, sand);
     }
     else if (destination == BLOOM_UI_DESTINATION_FAVORITES &&
@@ -471,19 +527,25 @@ int main(int argc, char **argv)
     BloomLibraryGame recent = {0};
     BloomLibraryGame favorites[FAVORITES_CAPACITY_MAX] = {0};
     BloomLibraryApp apps[APPS_CAPACITY_MAX] = {0};
+    BloomShellGamesBrowser games_browser;
     size_t game_count = 0;
     size_t favorite_count = 0;
     size_t app_count = 0;
     int has_recent = 0;
     if (load_catalog(&games, &game_count, &recent, &has_recent, favorites, &favorite_count, apps,
-                     &app_count) != 0)
+                     &app_count, &games_browser) != 0)
         return 1;
     if (argc == 2 && strcmp(argv[1], "--probe") == 0) {
+        size_t gb_games = 0;
+        for (size_t index = 0; index < games_browser.system_count; ++index)
+            if (strcmp(games_browser.systems[index].system.system_id, "gb") == 0)
+                gb_games = games_browser.systems[index].system.game_count;
         printf("{\"schema\":1,\"service\":\"bloom-shell\",\"ready\":true,\"gb_games\":%zu,"
                "\"gb_recent\":%s,\"gb_favorites\":%zu,\"apps\":%zu,\"health_ready\":%s,"
-               "\"healthy\":%s}\n",
-               game_count, has_recent ? "true" : "false", favorite_count, app_count,
-               status.ready ? "true" : "false", status.healthy ? "true" : "false");
+               "\"healthy\":%s,\"systems\":%zu,\"games\":%zu}\n",
+               gb_games, has_recent ? "true" : "false", favorite_count, app_count,
+               status.ready ? "true" : "false", status.healthy ? "true" : "false",
+               games_browser.system_count, game_count);
         free(games);
         return 0;
     }
@@ -519,13 +581,11 @@ int main(int argc, char **argv)
     BloomUiDestination destination = BLOOM_UI_DESTINATION_ROOT;
     BloomShellRootState root;
     bloom_shell_root_init(&root, has_recent);
-    BloomUiFocus games_focus;
     BloomUiFocus favorites_focus;
     BloomUiFocus recent_focus;
     BloomUiFocus settings_focus;
     BloomUiFocus apps_focus;
     BloomUiFocus quick_settings_focus;
-    bloom_ui_focus_init(&games_focus, game_count);
     bloom_ui_focus_init(&favorites_focus, favorite_count);
     bloom_ui_focus_init(&recent_focus, has_recent ? 1 : 0);
     bloom_ui_focus_init(&settings_focus, bloom_shell_settings_count(&capabilities));
@@ -545,7 +605,7 @@ int main(int argc, char **argv)
     BloomUiDialogFocus ra_sign_out_dialog = {0};
     int update_confirm_open = 0;
     BloomUiDialogFocus update_confirm_dialog = {0};
-    draw(screen, video, &layout, font, destination, &root, &games_focus, &favorites_focus,
+    draw(screen, video, &layout, font, destination, &root, &games_browser, &favorites_focus,
          &recent_focus, games, favorites, &recent, has_recent, &settings_focus, &apps_focus, apps, &status,
          &capabilities, &quick_values, settings_page, support_export_result, update_confirm_result,
          ra_form_result,
@@ -559,6 +619,12 @@ int main(int argc, char **argv)
             continue;
         if (event.type == SDL_QUIT) {
             running = 0;
+            continue;
+        }
+        if (event.type == SDL_KEYUP) {
+            BloomUiInput released = bloom_ui_input_from_sdl_key(event.key.keysym.sym);
+            if (released == BLOOM_UI_INPUT_UP || released == BLOOM_UI_INPUT_DOWN)
+                bloom_shell_games_release(&games_browser);
             continue;
         }
         if (event.type != SDL_KEYDOWN)
@@ -680,10 +746,7 @@ int main(int argc, char **argv)
             bloom_shell_root_handle(&root, action);
         else if (action == BLOOM_UI_ACTION_CONFIRM && destination == BLOOM_UI_DESTINATION_ROOT) {
             if (root.continue_focused && has_recent) {
-                char error[256] = {0};
-                if (bloom_shell_stage_game(&recent, GB_CORE, REQUEST_PATH, COMMAND_PATH,
-                                           SESSION_REQUEST_PATH, SESSION_BINARY, error,
-                                           sizeof(error)) == 0) {
+                if (stage_game(&recent) == 0) {
                     exit_code = LAUNCH_READY_EXIT;
                     running = 0;
                 }
@@ -691,10 +754,16 @@ int main(int argc, char **argv)
             else
                 destination = bloom_shell_root_open(&root);
         }
+        else if (action == BLOOM_UI_ACTION_FOCUS_LEFT &&
+                 destination == BLOOM_UI_DESTINATION_GAMES)
+            bloom_shell_games_switch(&games_browser, -1);
+        else if (action == BLOOM_UI_ACTION_FOCUS_RIGHT &&
+                 destination == BLOOM_UI_DESTINATION_GAMES)
+            bloom_shell_games_switch(&games_browser, 1);
         else if (action == BLOOM_UI_ACTION_FOCUS_UP && destination == BLOOM_UI_DESTINATION_GAMES)
-            bloom_ui_focus_step(&games_focus, -1, layout.visible_rows);
+            bloom_shell_games_step(&games_browser, -1, layout.visible_rows);
         else if (action == BLOOM_UI_ACTION_FOCUS_DOWN && destination == BLOOM_UI_DESTINATION_GAMES)
-            bloom_ui_focus_step(&games_focus, 1, layout.visible_rows);
+            bloom_shell_games_step(&games_browser, 1, layout.visible_rows);
         else if (action == BLOOM_UI_ACTION_FOCUS_UP &&
                  destination == BLOOM_UI_DESTINATION_FAVORITES)
             bloom_ui_focus_step(&favorites_focus, -1, layout.visible_rows);
@@ -769,11 +838,10 @@ int main(int argc, char **argv)
             ra_sign_out_open = 1;
         }
         else if (action == BLOOM_UI_ACTION_CONFIRM && destination == BLOOM_UI_DESTINATION_GAMES &&
-                 games_focus.item_count > 0) {
-            char error[256] = {0};
-            if (bloom_shell_stage_game(&games[games_focus.selected], GB_CORE, REQUEST_PATH,
-                                       COMMAND_PATH, SESSION_REQUEST_PATH, SESSION_BINARY, error,
-                                       sizeof(error)) == 0) {
+                 games_browser.system_count > 0) {
+            const BloomShellGamesSystem *system = bloom_shell_games_current(&games_browser);
+            if (stage_game_with_core(&games[system->game_offset + system->focus.selected],
+                                     system->core) == 0) {
                 exit_code = LAUNCH_READY_EXIT;
                 running = 0;
             }
@@ -790,26 +858,20 @@ int main(int argc, char **argv)
         else if (action == BLOOM_UI_ACTION_CONFIRM &&
                  destination == BLOOM_UI_DESTINATION_FAVORITES &&
                  favorites_focus.item_count > 0) {
-            char error[256] = {0};
-            if (bloom_shell_stage_game(&favorites[favorites_focus.selected], GB_CORE, REQUEST_PATH,
-                                       COMMAND_PATH, SESSION_REQUEST_PATH, SESSION_BINARY, error,
-                                       sizeof(error)) == 0) {
+            if (stage_game(&favorites[favorites_focus.selected]) == 0) {
                 exit_code = LAUNCH_READY_EXIT;
                 running = 0;
             }
         }
         else if (action == BLOOM_UI_ACTION_CONFIRM &&
                  destination == BLOOM_UI_DESTINATION_RECENT && recent_focus.item_count > 0) {
-            char error[256] = {0};
-            if (bloom_shell_stage_game(&recent, GB_CORE, REQUEST_PATH, COMMAND_PATH,
-                                       SESSION_REQUEST_PATH, SESSION_BINARY, error,
-                                       sizeof(error)) == 0) {
+            if (stage_game(&recent) == 0) {
                 exit_code = LAUNCH_READY_EXIT;
                 running = 0;
             }
         }
         if (running)
-            draw(screen, video, &layout, font, destination, &root, &games_focus, &favorites_focus,
+            draw(screen, video, &layout, font, destination, &root, &games_browser, &favorites_focus,
                  &recent_focus, games, favorites, &recent, has_recent, &settings_focus, &apps_focus,
                  apps, &status, &capabilities, &quick_values, settings_page,
                  support_export_result, update_confirm_result, ra_form_result, quick_settings,

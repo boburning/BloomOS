@@ -112,6 +112,23 @@ TEST_F(BloomShellLaunchTest, StagesGameSwitcherAsAValidatedExecutable)
     EXPECT_EQ("#!/bin/sh\nexec '" + session_.string() + "'\n", command);
 }
 
+TEST_F(BloomShellLaunchTest, DetectsTheBoundedCoreFromTheActualSystemLauncher)
+{
+    auto emu = sd_root_ / "Emu/GB";
+    std::filesystem::create_directories(emu);
+    auto launch = emu / "launch.sh";
+    std::ofstream(launch) << "#!/bin/sh\nretroarch -L ../cores/gambatte_libretro.so \"$1\"\n";
+    char core[128] = {};
+    EXPECT_EQ(0, bloom_shell_detect_core(sd_root_.c_str(), "Emu/GB/launch.sh", core,
+                                         sizeof(core)));
+    EXPECT_STREQ("gambatte_libretro.so", core);
+    std::filesystem::remove(launch);
+    std::filesystem::create_symlink("/bin/true", launch);
+    EXPECT_NE(0, bloom_shell_detect_core(sd_root_.c_str(), "Emu/GB/launch.sh", core,
+                                         sizeof(core)));
+    EXPECT_NE(0, bloom_shell_detect_core(sd_root_.c_str(), "../launch.sh", core, sizeof(core)));
+}
+
 TEST_F(BloomShellLaunchTest, AllowsOnionCompatibleApps)
 {
     snprintf(app_.compatibility, sizeof(app_.compatibility), "onion-compatible");
