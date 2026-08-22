@@ -32,7 +32,7 @@ class BloomShellLaunchTest : public ::testing::Test {
         std::ofstream(session_) << "#!/bin/sh\n"
                                    "case \"$1\" in\n"
                                    "start) cp \"$2\" \"$BLOOM_TEST_SESSION_REQUEST\" ;;\n"
-                                   "transition) [ \"$2\" = PREPARING:STARTING ] ;;\n"
+                                   "transition) [ \"$2\" = PREPARING ] && [ \"$3\" = STARTING ] ;;\n"
                                    "fail) exit 0 ;;\n"
                                    "*) exit 2 ;;\n"
                                    "esac\n";
