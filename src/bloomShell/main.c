@@ -1031,7 +1031,8 @@ int main(int argc, char **argv)
         free(games);
         return 0;
     }
-    if (argc != 1) {
+    int settings_requested = argc == 2 && strcmp(argv[1], "--settings") == 0;
+    if (argc != 1 && !settings_requested) {
         bloom_shell_achievements_destroy(&achievement_index);
         free(games);
         return 2;
@@ -1070,7 +1071,8 @@ int main(int argc, char **argv)
     SDL_ShowCursor(SDL_DISABLE);
     SDL_EnableKeyRepeat(300, 70);
 
-    BloomUiDestination destination = BLOOM_UI_DESTINATION_ROOT;
+    BloomUiDestination destination =
+        settings_requested && !safe_mode ? BLOOM_UI_DESTINATION_SETTINGS : BLOOM_UI_DESTINATION_ROOT;
     BloomShellRootState root;
     bloom_shell_root_init(&root, has_recent && !safe_mode);
     BloomUiFocus favorites_focus;

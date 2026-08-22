@@ -15,6 +15,9 @@ int bloom_shell_stage_app(const BloomLibraryApp *app, int allow_development, con
 
 int bloom_shell_stage_executable(const char *executable, const char *command_path,
                                  char *error, size_t error_size);
+int bloom_shell_stage_executable_argument(const char *executable, const char *argument,
+                                          const char *command_path, char *error,
+                                          size_t error_size);
 
 int bloom_shell_detect_core(const char *sd_root, const char *launch_path, char *core,
                             size_t core_size);

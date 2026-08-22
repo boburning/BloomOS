@@ -45,6 +45,8 @@
     grep -F 'bloom_shell_quick_settings_count(&capabilities)' "$shell"
     grep -F 'bloom_shell_quick_settings_activate(' "$shell"
     grep -F 'destination = BLOOM_UI_DESTINATION_SETTINGS;' "$shell"
+    grep -F 'strcmp(argv[1], "--settings") == 0' "$shell"
+    grep -F 'settings_requested && !safe_mode' "$shell"
     grep -F 'bloom_shell_quick_values_load(BLOOM_SETTINGS_BINARY, &quick_values);' "$shell"
     grep -F 'BLOOM_CONTROLS_BINARY' "$shell"
     grep -F 'BLOOM_NETWORK_BINARY' "$shell"
