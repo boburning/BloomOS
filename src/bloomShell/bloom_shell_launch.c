@@ -117,8 +117,8 @@ static int sync_parent(const char *path)
     return result;
 }
 
-int bloom_shell_stage_executable(const char *executable, const char *command_path,
-                                 char *error, size_t error_size)
+static int stage_executable(const char *executable, const char *argument,
+                            const char *command_path, char *error, size_t error_size)
 {
     if (executable == NULL || executable[0] != '/' || command_path == NULL ||
         command_path[0] != '/') {
@@ -140,7 +140,10 @@ int bloom_shell_stage_executable(const char *executable, const char *command_pat
     int published = 0;
     if (!failed) {
         failed = dprintf(descriptor, "#!/bin/sh\nexec ") < 0 ||
-                 write_quoted(descriptor, executable) != 0 || dprintf(descriptor, "\n") < 0 ||
+                 write_quoted(descriptor, executable) != 0 ||
+                 (argument != NULL &&
+                  (dprintf(descriptor, " ") < 0 || write_quoted(descriptor, argument) != 0)) ||
+                 dprintf(descriptor, "\n") < 0 ||
                  fsync(descriptor) != 0;
         if (close(descriptor) != 0)
             failed = 1;
@@ -164,6 +167,23 @@ int bloom_shell_stage_executable(const char *executable, const char *command_pat
         return -1;
     }
     return 0;
+}
+
+int bloom_shell_stage_executable(const char *executable, const char *command_path,
+                                 char *error, size_t error_size)
+{
+    return stage_executable(executable, NULL, command_path, error, error_size);
+}
+
+int bloom_shell_stage_executable_argument(const char *executable, const char *argument,
+                                          const char *command_path, char *error,
+                                          size_t error_size)
+{
+    if (argument == NULL || argument[0] == '\0') {
+        set_error(error, error_size, "executable argument is invalid");
+        return -1;
+    }
+    return stage_executable(executable, argument, command_path, error, error_size);
 }
 
 int bloom_shell_stage_app(const BloomLibraryApp *app, int allow_development, const char *sd_root,

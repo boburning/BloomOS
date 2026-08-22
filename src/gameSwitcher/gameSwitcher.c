@@ -152,8 +152,13 @@ int main(int argc, char *argv[])
         char error[256] = {0};
         print_debug("Returning to Bloom Shell");
         remove("/mnt/SDCARD/.tmp_update/.runGameSwitcher");
-        if (bloom_shell_stage_executable(BLOOM_SHELL_BINARY, CMD_TO_RUN_PATH, error,
-                                         sizeof(error)) != 0)
+        int staged = appState.exit_to_settings
+                         ? bloom_shell_stage_executable_argument(
+                               BLOOM_SHELL_BINARY, "--settings", CMD_TO_RUN_PATH, error,
+                               sizeof(error))
+                         : bloom_shell_stage_executable(BLOOM_SHELL_BINARY, CMD_TO_RUN_PATH,
+                                                        error, sizeof(error));
+        if (staged != 0)
             printf_debug("Unable to stage Bloom Shell: %s\n", error);
         overlay_exit();
         SDL_FillRect(screen, NULL, 0);

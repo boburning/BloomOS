@@ -24,6 +24,7 @@
     grep -F 'bloom_shell_quick_battery_load(BLOOM_PLATFORM_BINARY' "$quick"
     grep -F 'bloom_shell_quick_settings_adjust(' "$quick"
     grep -F 'bloom_shell_mute_toggle(' "$quick"
+    grep -F 'appState.exit_to_settings = true;' "$quick"
     grep -F 'BLOOM_CONTROLS_BINARY' "$quick"
     grep -F 'BLOOM_NETWORK_BINARY' "$quick"
 }
@@ -55,7 +56,8 @@
     grep -F 'Nothing played yet' "$render"
     grep -F 'B Home   MENU Close   START Quick' "$render"
     grep -F 'A Toggle   B/START Close' "$render"
-    grep -F 'bloom_shell_stage_executable(BLOOM_SHELL_BINARY' "$main"
+    grep -F 'bloom_shell_stage_executable_argument(' "$main"
+    grep -F 'BLOOM_SHELL_BINARY, "--settings"' "$main"
     grep -F 'if (!state->is_overlay || game_list_len == 0)' "$keys"
     ! grep -F 'resource_getSurface(EMPTY_BG)' "$main"
     ! grep -F 'theme_renderHeader(' "$main"

@@ -112,6 +112,17 @@ TEST_F(BloomShellLaunchTest, StagesGameSwitcherAsAValidatedExecutable)
     EXPECT_EQ("#!/bin/sh\nexec '" + session_.string() + "'\n", command);
 }
 
+TEST_F(BloomShellLaunchTest, StagesAQuotedExecutableArgument)
+{
+    char error[256] = {};
+    ASSERT_EQ(0, bloom_shell_stage_executable_argument(
+                     session_.c_str(), "--settings", command_.c_str(), error, sizeof(error)))
+        << error;
+    std::ifstream stream(command_);
+    std::string command((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
+    EXPECT_EQ("#!/bin/sh\nexec '" + session_.string() + "' '--settings'\n", command);
+}
+
 TEST_F(BloomShellLaunchTest, DetectsTheBoundedCoreFromTheActualSystemLauncher)
 {
     auto emu = sd_root_ / "Emu/GB";

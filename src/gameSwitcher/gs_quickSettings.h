@@ -49,10 +49,11 @@ static void quickSettings_open(void)
 {
     if (!appState.quick_settings_list._created) {
         size_t count = bloom_shell_quick_settings_count(&quick_capabilities);
+        size_t battery_row = quick_capabilities.wifi ? 3 : 2;
         appState.quick_settings_list = list_create((int)count, LIST_SMALL);
         for (size_t row = 0; row < count; ++row) {
             ListItem item = {.item_type = ACTION, .action_id = (int)row};
-            if (row + 1 == count)
+            if (row == battery_row)
                 item.disable_a_btn = true;
             list_addItem(&appState.quick_settings_list, item);
         }
@@ -83,7 +84,13 @@ static void quickSettings_adjust(int direction)
 static void quickSettings_activate(void)
 {
     int row = appState.quick_settings_list.active_pos;
-    if (row == 1) {
+    size_t count = bloom_shell_quick_settings_count(&quick_capabilities);
+    if (row >= 0 && (size_t)row + 1 == count) {
+        appState.exit_to_menu = true;
+        appState.exit_to_settings = true;
+        appState.quit = true;
+    }
+    else if (row == 1) {
         if (bloom_shell_mute_toggle(&quick_values, BLOOM_CONTROLS_BINARY) == 0) {
             quickSettings_refresh();
             appState.changed = true;

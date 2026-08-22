@@ -13,6 +13,7 @@ typedef struct {
     List quick_settings_list;
     bool quit;
     bool exit_to_menu;
+    bool exit_to_settings;
     bool changed;
     bool current_game_changed;
     bool pop_menu_open;
@@ -31,6 +32,7 @@ static AppState appState = {
     .quick_settings_list = {{0}},
     .quit = false,
     .exit_to_menu = false,
+    .exit_to_settings = false,
     .changed = true,
     .current_game_changed = true,
     .pop_menu_open = false,
