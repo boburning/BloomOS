@@ -57,6 +57,17 @@ teardown() { teardown_bloom_fixture; }
     grep -F '[ $is_charging -eq 1 ] && [ $reboot_to_system -ne 1 ]' "$runtime"
 }
 
+@test "installer second boot preserves reboot intent through Bloom power" {
+    runtime=/workspace/static/build/.tmp_update/runtime.sh
+    installer_start="$(grep -n '^check_installer()' "$runtime" | cut -d: -f1)"
+    installer_end="$(grep -n '^}' "$runtime" | awk -F: -v start="$installer_start" '$1 > start { print $1; exit }')"
+    installer="$(sed -n "${installer_start},${installer_end}p" "$runtime")"
+
+    printf '%s\n' "$installer" | grep -F 'bloom-power request reboot'
+    printf '%s\n' "$installer" | grep -F 'refusing an unmarked firmware reboot'
+    ! printf '%s\n' "$installer" | grep -E '^[[:space:]]*(/sbin/)?reboot([[:space:]]|$)'
+}
+
 @test "all BloomOS shutdown paths use the detached clean shutdown script" {
     grep -F 'system("/mnt/SDCARD/.tmp_update/bin/bloom-power request poweroff")' /workspace/src/keymon/keymon.c
     grep -F 'system("/mnt/SDCARD/.tmp_update/bin/bloom-power request poweroff")' /workspace/src/chargingState/chargingState.c

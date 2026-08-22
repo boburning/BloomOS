@@ -994,9 +994,14 @@ check_installer() {
         echo "Installer detected!"
         cd $miyoodir/app
         ./MainUI
-        reboot
-        sleep 10
-        exit
+        # Installation is a two-boot update path. Use Bloom's clean reboot
+        # boundary for the second boot as well so USB-powered devices retain
+        # reboot intent and bypass charging-only userspace exactly once.
+        if bloom-power request reboot; then
+            exit
+        fi
+        log "Installer reboot request failed; refusing an unmarked firmware reboot"
+        exit 1
     fi
 }
 
