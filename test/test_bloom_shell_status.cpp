@@ -165,3 +165,26 @@ TEST(BloomShellStatusTest, RollsBackUpdateWithFixedArgumentsWithoutAShell)
     EXPECT_NE(0, bloom_shell_update_rollback("bloomctl"));
     std::filesystem::remove_all(directory);
 }
+
+TEST(BloomShellStatusTest, ResetsSettingsWithFixedArgumentsWithoutAShell)
+{
+    const auto directory = std::filesystem::temp_directory_path() /
+                           ("bloom-shell-reset-" + std::to_string(getpid()));
+    std::filesystem::create_directory(directory);
+    const auto script = directory / "bloomctl";
+    const auto arguments = directory / "arguments";
+    {
+        std::ofstream output(script);
+        output << "#!/bin/sh\n"
+                  "printf '%s\\n' \"$*\" >\"$(dirname \"$0\")/arguments\"\n"
+                  "[ \"$1\" = settings ] && [ \"$2\" = reset-defaults ]\n";
+    }
+    ASSERT_EQ(0, chmod(script.c_str(), 0700));
+    ASSERT_EQ(0, bloom_shell_settings_reset(script.c_str()));
+    std::ifstream input(arguments);
+    std::string value;
+    std::getline(input, value);
+    EXPECT_EQ("settings reset-defaults", value);
+    EXPECT_NE(0, bloom_shell_settings_reset("bloomctl"));
+    std::filesystem::remove_all(directory);
+}

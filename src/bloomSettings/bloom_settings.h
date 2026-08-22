@@ -33,6 +33,13 @@ typedef struct {
     int materialized;
 } BloomSettingsMutationResult;
 
+typedef struct {
+    int changed;
+    int generation;
+    int backup_written;
+    int materialized;
+} BloomSettingsResetResult;
+
 #define BLOOM_SETTINGS_TEXT_MAX 256
 
 typedef struct {
@@ -114,6 +121,11 @@ int bloom_settings_rollback_authority(const char *settings_path,
 int bloom_settings_set(const char *settings_path, const char *onion_system_path,
                        const char *onion_config_root, const char *field, const char *value,
                        BloomSettingsMutationResult *result, char *error, size_t error_size);
+int bloom_settings_reset_defaults(const char *settings_path, const char *backup_path,
+                                  const char *onion_system_path,
+                                  const char *onion_config_root,
+                                  BloomSettingsResetResult *result, char *error,
+                                  size_t error_size);
 
 #ifdef __cplusplus
 }

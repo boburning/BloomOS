@@ -7,6 +7,7 @@ static const char *labels[BLOOM_SHELL_SAFE_MODE_ROW_COUNT] = {
     "System Health",
     "Export Support File",
     "Restore Previous Version",
+    "Reset Settings",
     "Restart Normally",
 };
 

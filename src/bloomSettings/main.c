@@ -8,6 +8,7 @@
 #define SETTINGS_ROOT "/mnt/SDCARD/.bloom/settings"
 #define SETTINGS_PATH SETTINGS_ROOT "/settings.json"
 #define SNAPSHOT_PATH SETTINGS_ROOT "/onion-system.snapshot.json"
+#define RESET_BACKUP_PATH SETTINGS_ROOT "/settings.pre-reset.json"
 #define ONION_SYSTEM_PATH "/mnt/SDCARD/system.json"
 #define ONION_CONFIG_ROOT "/mnt/SDCARD/.tmp_update/config"
 
@@ -26,7 +27,7 @@ static int usage(void)
 {
     fprintf(stderr,
             "Usage: bloom-settings status|import-onion|sync-onion|reconcile-onion|"
-            "materialize-onion|activate-bloom|rollback-authority|values\n"
+            "materialize-onion|activate-bloom|rollback-authority|reset-defaults|values\n"
             "       bloom-settings set FIELD VALUE\n");
     return 2;
 }
@@ -139,6 +140,26 @@ int main(int argc, char **argv)
         printf("{\"schema\":1,\"service\":\"bloom-settings\",\"rolled_back\":%s,"
                "\"generation\":%d}\n",
                result.changed ? "true" : "false", result.generation);
+        return 0;
+    }
+    if (strcmp(argv[1], "reset-defaults") == 0) {
+        BloomSettingsResetResult result;
+        if (bloom_settings_reset_defaults(SETTINGS_PATH, RESET_BACKUP_PATH, ONION_SYSTEM_PATH,
+                                          ONION_CONFIG_ROOT, &result, error,
+                                          sizeof(error)) != 0) {
+            fprintf(stderr,
+                    "{\"schema\":1,\"error\":{\"code\":\"reset_rejected\"},"
+                    "\"changed\":%s,\"generation\":%d,\"backup_written\":%s,"
+                    "\"materialized\":%s}\n",
+                    result.changed ? "true" : "false", result.generation,
+                    result.backup_written ? "true" : "false",
+                    result.materialized ? "true" : "false");
+            return 1;
+        }
+        printf("{\"schema\":1,\"service\":\"bloom-settings\",\"reset\":true,"
+               "\"generation\":%d,\"backup_written\":%s,\"materialized\":%s}\n",
+               result.generation, result.backup_written ? "true" : "false",
+               result.materialized ? "true" : "false");
         return 0;
     }
     if (strcmp(argv[1], "import-onion") != 0)

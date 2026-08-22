@@ -1435,3 +1435,89 @@ failure:
     release_settings_lock(lock);
     return -1;
 }
+
+int bloom_settings_reset_defaults(const char *settings_path, const char *backup_path,
+                                  const char *onion_system_path,
+                                  const char *onion_config_root,
+                                  BloomSettingsResetResult *result, char *error,
+                                  size_t error_size)
+{
+    if (settings_path == NULL || backup_path == NULL || onion_system_path == NULL ||
+        onion_config_root == NULL || result == NULL || strcmp(settings_path, backup_path) == 0) {
+        set_error(error, error_size, "invalid settings reset request");
+        return -1;
+    }
+    memset(result, 0, sizeof(*result));
+    int lock = -1;
+    if (acquire_settings_lock(settings_path, &lock, error, error_size) != 0)
+        return -1;
+
+    char *current_raw = NULL;
+    size_t current_length = 0;
+    cJSON *current = NULL;
+    cJSON *empty_system = NULL;
+    cJSON *empty_keymap = NULL;
+    cJSON *defaults = NULL;
+    char *published = NULL;
+    BloomSettingsValues current_values;
+    if (read_regular_file(settings_path, &current_raw, &current_length, 0) != 0 ||
+        !regular_or_missing(backup_path)) {
+        set_error(error, error_size, "settings reset boundary is unavailable");
+        goto failure;
+    }
+    current = cJSON_ParseWithLength(current_raw, current_length);
+    if (!cJSON_IsObject(current) ||
+        parse_settings_values(current, &current_values, error, error_size) != 0 ||
+        strcmp(current_values.authority, "bloom") != 0) {
+        set_error(error, error_size, "settings reset requires Bloom authority");
+        goto failure;
+    }
+    empty_system = cJSON_CreateObject();
+    empty_keymap = cJSON_CreateObject();
+    if (empty_system == NULL || empty_keymap == NULL) {
+        set_error(error, error_size, "default settings could not be created");
+        goto failure;
+    }
+    defaults = build_settings(empty_system, empty_keymap, NULL, 1);
+    cJSON *source = defaults == NULL ? NULL : cJSON_GetObjectItemCaseSensitive(defaults, "source");
+    if (defaults == NULL || !replace_number(defaults, "generation", current_values.generation + 1) ||
+        !replace_string(defaults, "authority", "bloom") || !cJSON_IsObject(source) ||
+        !replace_string(source, "kind", "defaults")) {
+        set_error(error, error_size, "default settings could not be created");
+        goto failure;
+    }
+    published = cJSON_PrintUnformatted(defaults);
+    if (published == NULL || write_atomic(backup_path, current_raw, current_length) != 0) {
+        set_error(error, error_size, "settings backup could not be published");
+        goto failure;
+    }
+    result->backup_written = 1;
+    if (write_atomic(settings_path, published, strlen(published)) != 0) {
+        set_error(error, error_size, "default settings could not be published");
+        goto failure;
+    }
+    result->changed = 1;
+    result->generation = current_values.generation + 1;
+    cJSON_free(published);
+    cJSON_Delete(defaults);
+    cJSON_Delete(empty_keymap);
+    cJSON_Delete(empty_system);
+    cJSON_Delete(current);
+    free(current_raw);
+    release_settings_lock(lock);
+    if (bloom_settings_materialize_onion(settings_path, onion_system_path, onion_config_root,
+                                         error, error_size) != 0)
+        return -1;
+    result->materialized = 1;
+    return 0;
+
+failure:
+    cJSON_free(published);
+    cJSON_Delete(defaults);
+    cJSON_Delete(empty_keymap);
+    cJSON_Delete(empty_system);
+    cJSON_Delete(current);
+    free(current_raw);
+    release_settings_lock(lock);
+    return -1;
+}

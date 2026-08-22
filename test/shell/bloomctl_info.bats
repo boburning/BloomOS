@@ -464,6 +464,11 @@ SH
     [ "$output" = '{"schema":1,"arguments":"rollback-authority"}' ]
 
     run env BLOOM_SETTINGS_BIN="$service" \
+        sh /workspace/static/build/.tmp_update/bin/bloomctl settings reset-defaults
+    [ "$status" -eq 0 ]
+    [ "$output" = '{"schema":1,"arguments":"reset-defaults"}' ]
+
+    run env BLOOM_SETTINGS_BIN="$service" \
         sh /workspace/static/build/.tmp_update/bin/bloomctl settings set interface.theme '/Themes/Bloom OS/'
     [ "$status" -eq 0 ]
     [ "$output" = '{"schema":1,"arguments":"set interface.theme /Themes/Bloom OS/"}' ]
