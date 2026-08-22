@@ -8,6 +8,7 @@
 #include "../bloomUi/bloom_ui_core.h"
 #include "../bloomUi/bloom_ui_input.h"
 #include "../bloomUi/bloom_ui_renderer.h"
+#include "../gameSwitcher/gameSwitcherLibrary.h"
 
 #include <SDL/SDL.h>
 #include <SDL/SDL_ttf.h>
@@ -33,6 +34,7 @@
 #define GAME_PAGE_SIZE 100
 #define GAME_CAPACITY_MAX 4096
 #define FAVORITES_CAPACITY_MAX 100
+#define RECENTS_CAPACITY_MAX 100
 #define APPS_CAPACITY_MAX 100
 #define LAUNCH_READY_EXIT 20
 
@@ -44,6 +46,8 @@ static const char *screen_labels[BLOOM_UI_DESTINATION_COUNT] = {
     "Apps",
     "Settings",
 };
+
+static void fill_rect(SDL_Surface *screen, int x, int y, int width, int height, uint32_t rgb);
 
 static int stage_game_with_core(const BloomLibraryGame *game, const char *core)
 {
@@ -66,15 +70,15 @@ static int stage_game(const BloomLibraryGame *game)
     return stage_game_with_core(game, core);
 }
 
-static int load_catalog(BloomLibraryGame **games, size_t *game_count, BloomLibraryGame *recent,
-                        int *has_recent, BloomLibraryGame *favorites, size_t *favorite_count,
+static int load_catalog(BloomLibraryGame **games, size_t *game_count, BloomLibraryGame *recents,
+                        size_t *recent_count, BloomLibraryGame *favorites, size_t *favorite_count,
                         BloomLibraryApp *apps, size_t *app_count,
                         BloomShellGamesBrowser *browser)
 {
     sqlite3 *database = NULL;
     *games = calloc(GAME_CAPACITY_MAX, sizeof(**games));
     *game_count = 0;
-    *has_recent = 0;
+    *recent_count = 0;
     *favorite_count = 0;
     *app_count = 0;
     if (*games == NULL ||
@@ -86,11 +90,9 @@ static int load_catalog(BloomLibraryGame **games, size_t *game_count, BloomLibra
         *games = NULL;
         return -1;
     }
-    size_t recent_count = 0;
     bloom_shell_games_init(browser);
-    int result = bloom_library_query_recents(database, NULL, 1, recent, 1, &recent_count);
-    if (result == SQLITE_OK)
-        *has_recent = recent_count == 1;
+    int result = bloom_library_query_recents(database, NULL, RECENTS_CAPACITY_MAX, recents,
+                                             RECENTS_CAPACITY_MAX, recent_count);
     if (result == SQLITE_OK)
         result = bloom_library_query_favorites(database, NULL, FAVORITES_CAPACITY_MAX, favorites,
                                                FAVORITES_CAPACITY_MAX, favorite_count);
@@ -299,6 +301,53 @@ static void draw_update_confirm(SDL_Surface *screen, const BloomUiLayout *layout
                  dialog->selected == 1 ? canvas : cream);
 }
 
+static void draw_recent_remove_confirm(SDL_Surface *screen, const BloomUiLayout *layout,
+                                       TTF_Font *font, const BloomUiDialogFocus *dialog)
+{
+    if (bloom_ui_render_dialog(screen, layout, dialog) != 0)
+        return;
+    SDL_Color cream = {243, 226, 189, 0};
+    SDL_Color canvas = {33, 23, 17, 0};
+    int width = layout->content.width * 4 / 5;
+    int height = layout->viewport_height / 3;
+    int x = (layout->viewport_width - width) / 2;
+    int y = (layout->viewport_height - height) / 2;
+    int gap = 12;
+    int button_width = (width - 48 - gap) / 2;
+    int button_height = layout->row_height * 2 / 3;
+    int button_y = y + height - button_height - 20;
+    render_label(screen, font, "Remove this game from Recent?", x + 24, y + 18, width - 48,
+                 cream);
+    render_label(screen, font, "Cancel", x + 24 + button_width / 3,
+                 button_y + button_height / 4, button_width * 2 / 3,
+                 dialog->selected == 0 ? canvas : cream);
+    render_label(screen, font, "Remove", x + 24 + button_width + gap + button_width / 4,
+                 button_y + button_height / 4, button_width * 3 / 4,
+                 dialog->selected == 1 ? canvas : cream);
+}
+
+static void draw_recent_actions(SDL_Surface *screen, const BloomUiLayout *layout, TTF_Font *font,
+                                const BloomUiFocus *focus)
+{
+    SDL_Color cream = {243, 226, 189, 0};
+    SDL_Color canvas = {33, 23, 17, 0};
+    int width = layout->content.width * 3 / 4;
+    int height = layout->row_height * 3;
+    int x = (layout->viewport_width - width) / 2;
+    int y = (layout->viewport_height - height) / 2;
+    fill_rect(screen, x - 4, y - 4, width + 8, height + 8, 0xD86A2C);
+    fill_rect(screen, x, y, width, height, 0x493025);
+    const char *labels[] = {"Resume", "Remove from Recent"};
+    for (size_t row = 0; row < 2; ++row) {
+        int row_y = y + 16 + (int)row * layout->row_height;
+        int selected = focus->selected == row;
+        fill_rect(screen, x + 16, row_y, width - 32, layout->row_height - 6,
+                  selected ? 0xF3E2BD : 0x352319);
+        render_label(screen, font, labels[row], x + 32, row_y + layout->row_height / 3,
+                     width - 64, selected ? canvas : cream);
+    }
+}
+
 static void fill_rect(SDL_Surface *screen, int x, int y, int width, int height, uint32_t rgb)
 {
     SDL_Rect rectangle = {(Sint16)x, (Sint16)y, (Uint16)width, (Uint16)height};
@@ -357,7 +406,9 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
                  int quick_settings, int ra_form_open, const BloomShellRaForm *ra_form,
                  int ra_sign_out_open, const BloomUiDialogFocus *ra_sign_out_dialog,
                  int update_confirm_open, const BloomUiDialogFocus *update_confirm_dialog,
-                 const BloomUiFocus *quick_settings_focus)
+                 const BloomUiFocus *quick_settings_focus, int recent_actions_open,
+                 const BloomUiFocus *recent_actions_focus, int recent_remove_confirm_open,
+                 const BloomUiDialogFocus *recent_remove_dialog)
 {
     const BloomShellGamesSystem *games_system = bloom_shell_games_current(games_browser);
     const BloomUiFocus empty_focus = {0};
@@ -494,6 +545,10 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
         draw_ra_sign_out(screen, layout, font, ra_sign_out_dialog);
     if (update_confirm_open)
         draw_update_confirm(screen, layout, font, update_confirm_dialog);
+    if (recent_actions_open)
+        draw_recent_actions(screen, layout, font, recent_actions_focus);
+    if (recent_remove_confirm_open)
+        draw_recent_remove_confirm(screen, layout, font, recent_remove_dialog);
 #ifdef PLATFORM_MIYOOMINI
     bloom_ui_rotate_180(screen);
     SDL_BlitSurface(screen, NULL, video, NULL);
@@ -524,17 +579,18 @@ int main(int argc, char **argv)
     bloom_shell_quick_values_load(BLOOM_SETTINGS_BINARY, &quick_values);
     bloom_shell_quick_battery_load(BLOOM_PLATFORM_BINARY, &quick_values);
     BloomLibraryGame *games = NULL;
-    BloomLibraryGame recent = {0};
+    BloomLibraryGame recents[RECENTS_CAPACITY_MAX] = {0};
     BloomLibraryGame favorites[FAVORITES_CAPACITY_MAX] = {0};
     BloomLibraryApp apps[APPS_CAPACITY_MAX] = {0};
     BloomShellGamesBrowser games_browser;
     size_t game_count = 0;
+    size_t recent_count = 0;
     size_t favorite_count = 0;
     size_t app_count = 0;
-    int has_recent = 0;
-    if (load_catalog(&games, &game_count, &recent, &has_recent, favorites, &favorite_count, apps,
+    if (load_catalog(&games, &game_count, recents, &recent_count, favorites, &favorite_count, apps,
                      &app_count, &games_browser) != 0)
         return 1;
+    int has_recent = recent_count > 0;
     if (argc == 2 && strcmp(argv[1], "--probe") == 0) {
         size_t gb_games = 0;
         for (size_t index = 0; index < games_browser.system_count; ++index)
@@ -587,7 +643,7 @@ int main(int argc, char **argv)
     BloomUiFocus apps_focus;
     BloomUiFocus quick_settings_focus;
     bloom_ui_focus_init(&favorites_focus, favorite_count);
-    bloom_ui_focus_init(&recent_focus, has_recent ? 1 : 0);
+    bloom_ui_focus_init(&recent_focus, recent_count);
     bloom_ui_focus_init(&settings_focus, bloom_shell_settings_count(&capabilities));
     bloom_ui_focus_init(&apps_focus, app_count);
     bloom_ui_focus_init(&quick_settings_focus,
@@ -605,12 +661,18 @@ int main(int argc, char **argv)
     BloomUiDialogFocus ra_sign_out_dialog = {0};
     int update_confirm_open = 0;
     BloomUiDialogFocus update_confirm_dialog = {0};
+    int recent_actions_open = 0;
+    BloomUiFocus recent_actions_focus;
+    bloom_ui_focus_init(&recent_actions_focus, 2);
+    int recent_remove_confirm_open = 0;
+    BloomUiDialogFocus recent_remove_dialog = {0};
     draw(screen, video, &layout, font, destination, &root, &games_browser, &favorites_focus,
-         &recent_focus, games, favorites, &recent, has_recent, &settings_focus, &apps_focus, apps, &status,
+         &recent_focus, games, favorites, recents, has_recent, &settings_focus, &apps_focus, apps, &status,
          &capabilities, &quick_values, settings_page, support_export_result, update_confirm_result,
          ra_form_result,
          quick_settings, ra_form_open, &ra_form, ra_sign_out_open, &ra_sign_out_dialog,
-         update_confirm_open, &update_confirm_dialog, &quick_settings_focus);
+         update_confirm_open, &update_confirm_dialog, &quick_settings_focus, recent_actions_open,
+         &recent_actions_focus, recent_remove_confirm_open, &recent_remove_dialog);
     int running = 1;
     int exit_code = 0;
     while (running) {
@@ -630,7 +692,53 @@ int main(int argc, char **argv)
         if (event.type != SDL_KEYDOWN)
             continue;
         BloomUiAction action = bloom_ui_normalize_input(bloom_ui_input_from_sdl_key(event.key.keysym.sym));
-        if (update_confirm_open && action == BLOOM_UI_ACTION_FOCUS_LEFT)
+        if (recent_remove_confirm_open && action == BLOOM_UI_ACTION_FOCUS_LEFT)
+            bloom_ui_dialog_step(&recent_remove_dialog, -1);
+        else if (recent_remove_confirm_open && action == BLOOM_UI_ACTION_FOCUS_RIGHT)
+            bloom_ui_dialog_step(&recent_remove_dialog, 1);
+        else if (recent_remove_confirm_open && action == BLOOM_UI_ACTION_BACK)
+            recent_remove_confirm_open = 0;
+        else if (recent_remove_confirm_open && action == BLOOM_UI_ACTION_CONFIRM) {
+            if (recent_remove_dialog.selected == 1 && recent_focus.item_count > 0 &&
+                gameswitcher_library_remove_recent(
+                    DATABASE_PATH, recents[recent_focus.selected].bloom_game_id) == 0) {
+                size_t removed = recent_focus.selected;
+                if (removed + 1 < recent_count)
+                    memmove(&recents[removed], &recents[removed + 1],
+                            (recent_count - removed - 1) * sizeof(recents[0]));
+                memset(&recents[recent_count - 1], 0, sizeof(recents[0]));
+                recent_count--;
+                bloom_ui_focus_set_count(&recent_focus, recent_count, layout.visible_rows);
+                has_recent = recent_count > 0;
+                root.has_continue = has_recent;
+                if (!has_recent)
+                    root.continue_focused = 0;
+                recent_actions_open = 0;
+            }
+            recent_remove_confirm_open = 0;
+        }
+        else if (recent_remove_confirm_open)
+            continue;
+        else if (recent_actions_open && action == BLOOM_UI_ACTION_FOCUS_UP)
+            bloom_ui_focus_step(&recent_actions_focus, -1, 2);
+        else if (recent_actions_open && action == BLOOM_UI_ACTION_FOCUS_DOWN)
+            bloom_ui_focus_step(&recent_actions_focus, 1, 2);
+        else if (recent_actions_open && action == BLOOM_UI_ACTION_BACK)
+            recent_actions_open = 0;
+        else if (recent_actions_open && action == BLOOM_UI_ACTION_CONFIRM) {
+            if (recent_actions_focus.selected == 0 && recent_focus.item_count > 0) {
+                if (stage_game(&recents[recent_focus.selected]) == 0) {
+                    exit_code = LAUNCH_READY_EXIT;
+                    running = 0;
+                }
+            }
+            else if (recent_actions_focus.selected == 1 && recent_focus.item_count > 0 &&
+                     bloom_ui_dialog_init(&recent_remove_dialog, 2, 0, 1) == 0)
+                recent_remove_confirm_open = 1;
+        }
+        else if (recent_actions_open)
+            continue;
+        else if (update_confirm_open && action == BLOOM_UI_ACTION_FOCUS_LEFT)
             bloom_ui_dialog_step(&update_confirm_dialog, -1);
         else if (update_confirm_open && action == BLOOM_UI_ACTION_FOCUS_RIGHT)
             bloom_ui_dialog_step(&update_confirm_dialog, 1);
@@ -746,7 +854,7 @@ int main(int argc, char **argv)
             bloom_shell_root_handle(&root, action);
         else if (action == BLOOM_UI_ACTION_CONFIRM && destination == BLOOM_UI_DESTINATION_ROOT) {
             if (root.continue_focused && has_recent) {
-                if (stage_game(&recent) == 0) {
+                if (stage_game(&recents[0]) == 0) {
                     exit_code = LAUNCH_READY_EXIT;
                     running = 0;
                 }
@@ -770,6 +878,17 @@ int main(int argc, char **argv)
         else if (action == BLOOM_UI_ACTION_FOCUS_DOWN &&
                  destination == BLOOM_UI_DESTINATION_FAVORITES)
             bloom_ui_focus_step(&favorites_focus, 1, layout.visible_rows);
+        else if (action == BLOOM_UI_ACTION_FOCUS_UP &&
+                 destination == BLOOM_UI_DESTINATION_RECENT)
+            bloom_ui_focus_step(&recent_focus, -1, layout.visible_rows);
+        else if (action == BLOOM_UI_ACTION_FOCUS_DOWN &&
+                 destination == BLOOM_UI_DESTINATION_RECENT)
+            bloom_ui_focus_step(&recent_focus, 1, layout.visible_rows);
+        else if (action == BLOOM_UI_ACTION_CONTEXT &&
+                 destination == BLOOM_UI_DESTINATION_RECENT && recent_focus.item_count > 0) {
+            bloom_ui_focus_init(&recent_actions_focus, 2);
+            recent_actions_open = 1;
+        }
         else if (action == BLOOM_UI_ACTION_FOCUS_UP &&
                  destination == BLOOM_UI_DESTINATION_SETTINGS)
             bloom_ui_focus_step(&settings_focus, -1, layout.visible_rows);
@@ -865,19 +984,20 @@ int main(int argc, char **argv)
         }
         else if (action == BLOOM_UI_ACTION_CONFIRM &&
                  destination == BLOOM_UI_DESTINATION_RECENT && recent_focus.item_count > 0) {
-            if (stage_game(&recent) == 0) {
+            if (stage_game(&recents[recent_focus.selected]) == 0) {
                 exit_code = LAUNCH_READY_EXIT;
                 running = 0;
             }
         }
         if (running)
             draw(screen, video, &layout, font, destination, &root, &games_browser, &favorites_focus,
-                 &recent_focus, games, favorites, &recent, has_recent, &settings_focus, &apps_focus,
+                 &recent_focus, games, favorites, recents, has_recent, &settings_focus, &apps_focus,
                  apps, &status, &capabilities, &quick_values, settings_page,
                  support_export_result, update_confirm_result, ra_form_result, quick_settings,
                  ra_form_open, &ra_form,
                  ra_sign_out_open, &ra_sign_out_dialog, update_confirm_open,
-                 &update_confirm_dialog, &quick_settings_focus);
+                 &update_confirm_dialog, &quick_settings_focus, recent_actions_open,
+                 &recent_actions_focus, recent_remove_confirm_open, &recent_remove_dialog);
     }
     TTF_CloseFont(font);
     bloom_shell_ra_form_clear(&ra_form);

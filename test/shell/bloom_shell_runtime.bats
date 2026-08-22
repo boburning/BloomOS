@@ -16,8 +16,12 @@
     grep -F 'bloom_library_query_favorites(database, NULL' "$source"
     grep -F 'stage_game_with_core(&games[system->game_offset + system->focus.selected]' "$source"
     grep -F 'stage_game(&favorites[favorites_focus.selected]' "$source"
-    grep -F 'stage_game(&recent)' "$source"
+    grep -F 'stage_game(&recents[recent_focus.selected])' "$source"
     grep -F 'bloom_shell_stage_executable(GAME_SWITCHER_BINARY' "$source"
+    grep -F 'destination == BLOOM_UI_DESTINATION_RECENT && recent_focus.item_count > 0' "$source"
+    grep -F 'recent_actions_open = 1;' "$source"
+    grep -F 'bloom_ui_dialog_init(&recent_remove_dialog, 2, 0, 1)' "$source"
+    grep -F 'gameswitcher_library_remove_recent(' "$source"
     ! grep -F 'navigation_open' "$source"
     ! grep -F 'MENU Navigate' "$source"
 }
