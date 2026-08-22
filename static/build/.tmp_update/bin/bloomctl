@@ -269,7 +269,7 @@ usage() {
     printf '       bloomctl controls {status|brightness VALUE|volume VALUE|mute true}\n' >&2
     printf '       bloomctl time status\n' >&2
     printf '       bloomctl lid status\n' >&2
-    printf '       bloomctl library {status|import-onion|import-legacy|scan --changed|--all|--system SYSTEM|games --limit N [--after GAME_ID]|games --system SYSTEM --limit N [--after GAME_ID]}\n' >&2
+    printf '       bloomctl library {status|import-onion|import-legacy|scan --changed|--all|--system SYSTEM|games --limit N [--after GAME_ID]|games --system SYSTEM --limit N [--after GAME_ID]|favorite set GAME_ID true|false|recent record GAME_ID}\n' >&2
     printf '       bloomctl test smoke SYSTEM ROM_PATH [DURATION_SECONDS]\n' >&2
     printf '       bloomctl test achievements --system SYSTEM --rom-base64 DATA --core CORE [--session-seconds N [--operator-unlock I_ACCEPT_PROFILE_CHANGES]]\n' >&2
     printf '       bloomctl achievements {status|game BLOOM_GAME_ID|collection|cores|account status|login|set FIELD VALUE|sign-out|proxy status|pending|cache-rom ROM_PATH|cache-system SYSTEM|scan --changed|--all|--system SYSTEM|--status|--cancel}\n' >&2
@@ -458,6 +458,10 @@ library_command() {
         favorite)
             [ "$#" -eq 4 ] && [ "$2" = set ] || { usage; return 2; }
             case "$4" in true|false) run_library "$@" ;; *) usage; return 2 ;; esac
+            ;;
+        recent)
+            [ "$#" -eq 3 ] && [ "$2" = record ] || { usage; return 2; }
+            run_library "$@"
             ;;
         *)
             usage

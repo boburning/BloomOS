@@ -142,6 +142,20 @@ static int favorite_command(sqlite3 *database, int argc, char **argv)
     return 0;
 }
 
+static int recent_command(sqlite3 *database, int argc, char **argv)
+{
+    if (argc != 4 || strcmp(argv[2], "record") != 0)
+        return 2;
+    int changed = 0;
+    int result = bloom_library_recent_record(database, argv[3], &changed);
+    if (result != SQLITE_OK)
+        return result == SQLITE_MISUSE ? 2 : 1;
+    printf("{\"schema\":1,\"service\":\"bloom-library\",\"recent_recorded\":true,"
+           "\"changed\":%s}\n",
+           changed ? "true" : "false");
+    return 0;
+}
+
 int main(int argc, char **argv)
 {
     int status_command = argc == 2 && strcmp(argv[1], "status") == 0;
@@ -153,12 +167,14 @@ int main(int argc, char **argv)
                       strcmp(argv[2], "--system") == 0;
     int query_games = argc >= 2 && strcmp(argv[1], "games") == 0;
     int mutate_favorite = argc >= 2 && strcmp(argv[1], "favorite") == 0;
+    int mutate_recent = argc >= 2 && strcmp(argv[1], "recent") == 0;
     if (!status_command && !import_command && !import_legacy && !scan_all && !scan_system &&
-        !query_games && !mutate_favorite) {
+        !query_games && !mutate_favorite && !mutate_recent) {
         fprintf(stderr,
                 "Usage: bloom-library status|import-onion|import-legacy|scan "
                 "--changed|--all|--system SYSTEM|games --limit N [--after GAME_ID]|games "
-                "--system SYSTEM --limit N [--after GAME_ID]|favorite set GAME_ID true|false\n");
+                "--system SYSTEM --limit N [--after GAME_ID]|favorite set GAME_ID true|false|"
+                "recent record GAME_ID\n");
         return 2;
     }
     if (ensure_directory(BLOOM_ROOT) != 0 || ensure_directory(LIBRARY_ROOT) != 0) {
@@ -235,6 +251,15 @@ int main(int argc, char **argv)
     }
     if (mutate_favorite) {
         int result = favorite_command(database, argc, argv);
+        sqlite3_close(database);
+        if (result == 2)
+            fprintf(stderr, "{\"schema\":1,\"error\":{\"code\":\"invalid_request\"}}\n");
+        else if (result != 0)
+            fprintf(stderr, "{\"schema\":1,\"error\":{\"code\":\"mutation_failed\"}}\n");
+        return result;
+    }
+    if (mutate_recent) {
+        int result = recent_command(database, argc, argv);
         sqlite3_close(database);
         if (result == 2)
             fprintf(stderr, "{\"schema\":1,\"error\":{\"code\":\"invalid_request\"}}\n");

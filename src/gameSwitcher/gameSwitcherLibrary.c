@@ -1,6 +1,7 @@
 #include "gameSwitcherLibrary.h"
 
 #include "../bloomLaunch/bloom_launch.h"
+#include "../bloomLibrary/bloom_library_mutation.h"
 #include "../bloomLibrary/bloom_library_query.h"
 
 #include <sqlite3/sqlite3.h>
@@ -76,36 +77,8 @@ static int promote_recent(const char *database_path, const char *game_id)
         return -1;
     }
     sqlite3_busy_timeout(database, 5000);
-    sqlite3_stmt *statement = NULL;
-    int sql = sqlite3_exec(database, "BEGIN IMMEDIATE", NULL, NULL, NULL);
-    if (sql == SQLITE_OK)
-        sql = sqlite3_prepare_v2(database,
-                                 "UPDATE recents SET position=-position-2 WHERE bloom_game_id<>?1;",
-                                 -1, &statement, NULL);
-    if (sql == SQLITE_OK)
-        sql = sqlite3_bind_text(statement, 1, game_id, -1, SQLITE_STATIC);
-    if (sql == SQLITE_OK)
-        sql = sqlite3_step(statement) == SQLITE_DONE ? SQLITE_OK : SQLITE_ERROR;
-    sqlite3_finalize(statement);
-    statement = NULL;
-    if (sql == SQLITE_OK)
-        sql = sqlite3_prepare_v2(database, "UPDATE recents SET position=0 WHERE bloom_game_id=?1;",
-                                 -1, &statement, NULL);
-    if (sql == SQLITE_OK)
-        sql = sqlite3_bind_text(statement, 1, game_id, -1, SQLITE_STATIC);
-    if (sql == SQLITE_OK)
-        sql = sqlite3_step(statement) == SQLITE_DONE && sqlite3_changes(database) == 1
-                  ? SQLITE_OK
-                  : SQLITE_NOTFOUND;
-    sqlite3_finalize(statement);
-    if (sql == SQLITE_OK)
-        sql = sqlite3_exec(database,
-                           "UPDATE recents SET position=-position-1 WHERE position<0;",
-                           NULL, NULL, NULL);
-    if (sql == SQLITE_OK)
-        sql = sqlite3_exec(database, "COMMIT", NULL, NULL, NULL);
-    else
-        sqlite3_exec(database, "ROLLBACK", NULL, NULL, NULL);
+    int changed = 0;
+    int sql = bloom_library_recent_record(database, game_id, &changed);
     sqlite3_close(database);
     return sql == SQLITE_OK ? 0 : -1;
 }

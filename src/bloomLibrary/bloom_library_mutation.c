@@ -86,3 +86,64 @@ int bloom_library_favorite_set(sqlite3 *database, const char *game_id, int favor
     }
     return result;
 }
+
+int bloom_library_recent_record(sqlite3 *database, const char *game_id, int *changed)
+{
+    if (database == NULL || game_id == NULL || changed == NULL || !bloom_game_id_valid(game_id))
+        return SQLITE_MISUSE;
+    *changed = 0;
+    int result = execute(database, "BEGIN IMMEDIATE");
+    sqlite3_stmt *statement = NULL;
+    if (result == SQLITE_OK)
+        result = sqlite3_prepare_v2(
+            database,
+            "SELECT COALESCE((SELECT position FROM recents WHERE bloom_game_id=?1),-1),"
+            "EXISTS(SELECT 1 FROM games WHERE bloom_game_id=?1 AND present=1)",
+            -1, &statement, NULL);
+    if (result == SQLITE_OK)
+        result = sqlite3_bind_text(statement, 1, game_id, -1, SQLITE_STATIC);
+    int position = -1;
+    if (result == SQLITE_OK && sqlite3_step(statement) == SQLITE_ROW) {
+        position = sqlite3_column_int(statement, 0);
+        result = sqlite3_column_int(statement, 1) == 1 ? SQLITE_OK : SQLITE_NOTFOUND;
+    }
+    else if (result == SQLITE_OK)
+        result = sqlite3_errcode(database);
+    sqlite3_finalize(statement);
+    statement = NULL;
+    if (result == SQLITE_OK && position != 0) {
+        result = sqlite3_prepare_v2(database, "DELETE FROM recents WHERE bloom_game_id=?1", -1,
+                                    &statement, NULL);
+        if (result == SQLITE_OK)
+            result = sqlite3_bind_text(statement, 1, game_id, -1, SQLITE_STATIC);
+        if (result == SQLITE_OK)
+            result = sqlite3_step(statement) == SQLITE_DONE ? SQLITE_OK : sqlite3_errcode(database);
+        sqlite3_finalize(statement);
+        statement = NULL;
+        if (result == SQLITE_OK)
+            result = execute(database, "UPDATE recents SET position=-position-2");
+        if (result == SQLITE_OK)
+            result = execute(database, "UPDATE recents SET position=-position-1");
+        if (result == SQLITE_OK)
+            result = sqlite3_prepare_v2(database,
+                                        "INSERT INTO recents(bloom_game_id,position) VALUES(?1,0)",
+                                        -1, &statement, NULL);
+        if (result == SQLITE_OK)
+            result = sqlite3_bind_text(statement, 1, game_id, -1, SQLITE_STATIC);
+        if (result == SQLITE_OK)
+            result = sqlite3_step(statement) == SQLITE_DONE ? SQLITE_OK : sqlite3_errcode(database);
+        sqlite3_finalize(statement);
+        statement = NULL;
+        if (result == SQLITE_OK)
+            result = execute(database, "DELETE FROM recents WHERE position>=100");
+        if (result == SQLITE_OK)
+            *changed = 1;
+    }
+    if (result == SQLITE_OK)
+        result = execute(database, "COMMIT");
+    if (result != SQLITE_OK) {
+        execute(database, "ROLLBACK");
+        *changed = 0;
+    }
+    return result;
+}

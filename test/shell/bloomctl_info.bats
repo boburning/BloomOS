@@ -569,6 +569,11 @@ SH
         sh /workspace/static/build/.tmp_update/bin/bloomctl library favorite set "$cursor" maybe
     [ "$status" -eq 2 ]
 
+    run env -u LD_LIBRARY_PATH BLOOM_LIBRARY_BIN="$service" \
+        sh /workspace/static/build/.tmp_update/bin/bloomctl library recent record "$cursor"
+    [ "$status" -eq 0 ]
+    [ "$output" = "{\"schema\":1,\"arguments\":\"recent record $cursor\",\"library_path\":\"$BLOOM_ROOT/mnt/SDCARD/.tmp_update/lib\"}" ]
+
     run env BLOOM_LIBRARY_BIN="$service" \
         sh /workspace/static/build/.tmp_update/bin/bloomctl library status extra
     [ "$status" -eq 2 ]

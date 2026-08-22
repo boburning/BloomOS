@@ -11,6 +11,7 @@ setup() {
     export BLOOM_LAUNCH_BIN="$MOCK_BIN/bloom-launch"
     export BLOOM_SEND_UDP_BIN="$MOCK_BIN/sendUDP"
     export BLOOM_SAVE_FLUSH_BIN="$MOCK_BIN/bloom-save-flush"
+    export BLOOM_LIBRARY_BIN="$MOCK_BIN/bloom-library"
     export BLOOM_SIGNAL_BIN="$MOCK_BIN/signal"
     export BLOOM_QUIT_WAIT_SECONDS=0
     export BLOOM_TERM_WAIT_SECONDS=0
@@ -23,7 +24,13 @@ cat >"$BLOOM_LAUNCH_BIN" <<'EOF'
 #!/bin/sh
 case "$1" in
     validate) [ -f "$2" ] ;;
-    get) [ "$3" = core ] && printf '%s\n' gambatte_libretro.so ;;
+    get)
+        case "$3" in
+            core) printf '%s\n' gambatte_libretro.so ;;
+            game_id) printf '%s\n' bloom-game-v1:1111111111111111111111111111111111111111111111111111111111111111 ;;
+            *) exit 1 ;;
+        esac
+        ;;
     *) exit 1 ;;
 esac
 EOF
@@ -38,6 +45,12 @@ EOF
 printf '{"schema":1,"core":"%s","corename":"Gambatte","files_flushed":2,"directories_flushed":4}\n' "$1"
 EOF
     chmod +x "$BLOOM_SAVE_FLUSH_BIN"
+    cat >"$BLOOM_LIBRARY_BIN" <<'EOF'
+#!/bin/sh
+printf '%s\n' "$*" >>"$MOCK_LOG"
+[ "$1:$2" = recent:record ]
+EOF
+    chmod +x "$BLOOM_LIBRARY_BIN"
 }
 
 start_running_session() {
@@ -75,9 +88,28 @@ teardown() { teardown_bloom_fixture; }
     printf '%s' "$output" | grep -F '"state":"STOPPED"'
     printf '%s' "$output" | grep -F '"pid":123'
     printf '%s' "$output" | grep -F '"duration_seconds":12'
+    printf '%s' "$output" | grep -F '"recent_status":"recorded"'
+    grep -Fx 'recent record bloom-game-v1:1111111111111111111111111111111111111111111111111111111111111111' "$MOCK_LOG"
     grep -Eq '^[0-9a-f]{64}$' "$BLOOM_SESSION_ROOT/request_sha256"
     [ ! -e "$BLOOM_SESSION_ROOT/ra.cfg" ]
     grep -Fx 'finish stopped 12' "$MOCK_LOG"
+}
+
+@test "recent recording failure does not block ordinary play" {
+    cat >"$BLOOM_LIBRARY_BIN" <<'EOF'
+#!/bin/sh
+exit 1
+EOF
+    chmod +x "$BLOOM_LIBRARY_BIN"
+
+    run start_running_session
+
+    [ "$status" -eq 0 ]
+    grep -Fx RUNNING "$BLOOM_SESSION_ROOT/state"
+    grep -Fx failed "$BLOOM_SESSION_ROOT/recent_status"
+    run "$SESSION" status --json
+    [ "$status" -eq 0 ]
+    printf '%s' "$output" | grep -F '"recent_status":"failed"'
 }
 
 @test "session prepares RA policy on its private request copy" {
@@ -121,7 +153,8 @@ EOF
     printf '%s' "$output" | grep -F '"shutdown_method":"natural_exit"'
     printf '%s' "$output" | grep -F '"duration_seconds":9'
     grep -Fx FLUSHING "$BLOOM_SESSION_ROOT/state"
-    [ ! -s "$MOCK_LOG" ]
+    [ "$(cat "$MOCK_LOG")" = \
+        'recent record bloom-game-v1:1111111111111111111111111111111111111111111111111111111111111111' ]
 }
 
 @test "a regressed monotonic clock fails the session without inventing play time" {
