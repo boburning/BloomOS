@@ -39,7 +39,7 @@
       "classification": "replace",
       "current_paths": ["src/keymon/menuButtonAction.h", "src/keymon/keymon.c"],
       "target_owner": "bloom-input and bloom-shell",
-      "stable_gate": "Stable control grammar and development crash fallback are proven"
+      "stable_gate": "Stable control grammar and Bloom Safe Mode crash recovery are proven"
     },
     {
       "id": "settings",

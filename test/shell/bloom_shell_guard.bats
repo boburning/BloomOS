@@ -106,7 +106,7 @@ setup() {
     cp "$GUARD" "$sysdir/bin/bloom-shell-guard"
     chmod +x "$sysdir/bin/bloom-shell-guard"
     ln -s /usr/bin/jq "$sysdir/bin/jq"
-    eval "$(sed -n '/^bloom_shell_safe_mode_pending() {/,/^launch_bloom_shell() {/p' \
+    eval "$(sed -n '/^mainui_development_fallback_enabled() {/,/^launch_bloom_shell() {/p' \
         /workspace/static/build/.tmp_update/runtime.sh | sed '$d')"
 
     run bloom_shell_safe_mode_pending
@@ -129,18 +129,19 @@ setup() {
 @test "runtime dynamically records crashes latches safe mode and clears structured handoff" {
     sysdir="$BATS_TEST_TMPDIR/system"
     miyoodir="$BATS_TEST_TMPDIR/miyoo"
-    mkdir -p "$sysdir/bin" "$miyoodir/lib"
+    mkdir -p "$sysdir/bin" "$sysdir/config" "$miyoodir/lib"
     cp "$GUARD" "$sysdir/bin/bloom-shell-guard"
     chmod +x "$sysdir/bin/bloom-shell-guard"
     ln -s /usr/bin/jq "$sysdir/bin/jq"
     export BLOOM_SHELL_READY_SECONDS=0
+    bloom_developer_marker="$BATS_TEST_TMPDIR/.bloom-dev"
     calls="$BATS_TEST_TMPDIR/calls"
 
     log() { :; }
     start_audioserver() { :; }
     launch_main_ui() { printf 'fallback\n' >> "$calls"; }
     set_prev_state() { printf '%s\n' "$1" > "$BATS_TEST_TMPDIR/prev-state"; }
-    eval "$(sed -n '/^bloom_shell_safe_mode_pending() {/,/^launch_bloom_shell() {/p' \
+    eval "$(sed -n '/^mainui_development_fallback_enabled() {/,/^launch_bloom_shell() {/p' \
         /workspace/static/build/.tmp_update/runtime.sh | sed '$d')"
     eval "$(sed -n '/^launch_bloom_shell() {/,/^launch_main_ui() {/p' \
         /workspace/static/build/.tmp_update/runtime.sh | sed '$d')"
@@ -155,8 +156,10 @@ SH
 
     run launch_bloom_shell
     [ "$status" -eq 0 ]
+    [ ! -e "$calls" ]
     run launch_bloom_shell
     [ "$status" -eq 0 ]
+    [ ! -e "$calls" ]
     run launch_bloom_shell
     [ "$status" -eq 0 ]
     [ "$("$GUARD" status | jq -er '.consecutive_failures')" -eq 3 ]
@@ -188,4 +191,14 @@ SH
     [ "$("$GUARD" status | jq -er '.phase')" = idle ]
     [ "$("$GUARD" status | jq -er '.consecutive_failures')" -eq 0 ]
     [ "$(cat "$BATS_TEST_TMPDIR/prev-state")" = bloom-shell ]
+
+    touch "$bloom_developer_marker" "$sysdir/config/.mainuiFallback"
+    cat > "$sysdir/bin/bloom-shell" <<'SH'
+#!/bin/sh
+exit 1
+SH
+    chmod +x "$sysdir/bin/bloom-shell"
+    run launch_bloom_shell
+    [ "$status" -eq 0 ]
+    grep -Fx fallback "$calls"
 }

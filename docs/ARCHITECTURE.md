@@ -424,6 +424,15 @@ session and scoped-save boundary. Ports remain hidden: arbitrary `.port`
 launchers need an explicit standalone lifecycle and durability policy rather
 than being mistaken for RetroArch or passed through unsupervised.
 
+Bloom Shell is the normal runtime frontend. Repeated unlaunched exits are fed
+back through the durable crash guard until Bloom Safe Mode latches; they do not
+silently change the user's launcher. Closed MainUI can run only when both the
+card Developer Mode marker and the explicit `.mainuiFallback` recovery flag are
+present. The obsolete MainUI startup-tab write is skipped outside that bounded
+development path, as are inherited startup-app selections for GameSwitcher,
+RetroArch, and AdvanceMENU. The firmware installer trigger remains a separate
+boot compatibility boundary.
+
 Miyoo's closed MainUI still requires `cmd_to_run.sh`. The `write-legacy`
 operation is the only supported compatibility adapter: it validates the full
 request, confines ROMs and launchers to their expected SD-card roots, rejects

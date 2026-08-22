@@ -1,7 +1,8 @@
 # MainUI Migration and Responsibility Map
 
-Status: implementation-derived transition map for BloomOS 1.0. MainUI remains a
-development recovery fallback until the corresponding Bloom owner is proven.
+Status: implementation-derived transition map for BloomOS 1.0. Bloom Shell is
+the normal runtime frontend. MainUI is available only as an explicit
+Developer-Mode recovery fallback while the remaining physical gates are open.
 
 The machine-readable source of this inventory is
 `build/mainui-responsibilities.json`. The shell gate validates that every entry
@@ -13,7 +14,7 @@ ownership boundary.
 
 | Responsibility | Current evidence | Target owner | Removal gate |
 |---|---|---|---|
-| Main menu and tab state | `src/setState`, `write_mainui_state` callers | Bloom Shell navigation | Native Home/GB navigation and supervised development fallback are implemented; interactive Plus/V2/Flip UI evidence remains |
+| Main menu and tab state | `src/setState`, `write_mainui_state` callers | Bloom Shell navigation | Converged root and explicit development-only fallback are implemented; physical Plus/V2/Flip UI evidence remains |
 | Favorites | `/mnt/SDCARD/Roms/favourite.json`, keymon change detection | `bloom-library` | Signed-update persistence and Bloom-owned read/write consumer cutover; read-only deterministic import, canonical IDs, and atomic publication are proven on Plus |
 | Recents and resume | MainUI recent list, GameSwitcher compatibility readers | Bloom activity/library | Direct resume and Bloom-owned consumer cutover; deterministic read-only import is proven on Plus |
 | Game launch handoff | `/tmp` or `.tmp_update/cmd_to_run.sh`, MainUI termination | Bloom launch/session | Bloom Shell stages only structured session-owned GB launches; direct launch and shell return still require hardware evidence |
