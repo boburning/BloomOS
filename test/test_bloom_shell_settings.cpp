@@ -43,7 +43,8 @@ TEST(BloomShellSettings, OriginalMiniHidesNetworkAndDeveloperControls)
         EXPECT_NE(BLOOM_SHELL_SETTINGS_NETWORK_SECTION, row.id);
         EXPECT_NE(BLOOM_SHELL_SETTINGS_DEVELOPER_SECTION, row.id);
     }
-    EXPECT_EQ((std::vector<std::string>{"Brightness", "Volume / Mute", "Battery"}),
+    EXPECT_EQ((std::vector<std::string>{"Brightness", "Volume / Mute", "Battery",
+                                        "Open Settings"}),
               quick(capabilities));
 }
 
@@ -53,7 +54,8 @@ TEST(BloomShellSettings, PlusShowsWifiWithoutFlipOrDeveloperControls)
     ASSERT_EQ(0, bloom_shell_capabilities_from_model(354, 0, &capabilities));
     EXPECT_TRUE(capabilities.wifi);
     EXPECT_FALSE(capabilities.flip);
-    EXPECT_EQ((std::vector<std::string>{"Brightness", "Volume / Mute", "Wi-Fi", "Battery"}),
+    EXPECT_EQ((std::vector<std::string>{"Brightness", "Volume / Mute", "Wi-Fi", "Battery",
+                                        "Open Settings"}),
               quick(capabilities));
     auto rows = settings(capabilities);
     ASSERT_EQ(19U, rows.size());
@@ -81,7 +83,7 @@ TEST(BloomShellSettings, UnknownModelsAndOutOfRangeRowsFailClosed)
     ASSERT_EQ(0, bloom_shell_capabilities_from_model(283, 0, &capabilities));
     BloomShellSettingsRow row{};
     EXPECT_NE(0, bloom_shell_settings_row(&capabilities, 17, &row));
-    EXPECT_EQ(nullptr, bloom_shell_quick_settings_label(&capabilities, 3));
+    EXPECT_EQ(nullptr, bloom_shell_quick_settings_label(&capabilities, 4));
 }
 
 TEST(BloomShellSettings, FlatRowsSkipSectionHeadersAndPreservePosition)
@@ -132,7 +134,7 @@ TEST(BloomShellSettings, UnavailableValuesAreExplicit)
     char label[64];
     ASSERT_EQ(0, bloom_shell_quick_settings_format(&capabilities, &values, 0, label, sizeof(label)));
     EXPECT_STREQ("Brightness: unavailable", label);
-    EXPECT_NE(0, bloom_shell_quick_settings_format(&capabilities, &values, 3, label, sizeof(label)));
+    EXPECT_NE(0, bloom_shell_quick_settings_format(&capabilities, &values, 4, label, sizeof(label)));
 }
 
 TEST(BloomShellSettings, LoadsCanonicalValuesWithoutUsingAShell)
@@ -229,6 +231,47 @@ TEST(BloomShellSettings, MuteToggleUsesFixedAdapterAndUpdatesOnlyAfterSuccess)
     ASSERT_EQ(0, bloom_shell_mute_toggle(&values, script.c_str()));
     EXPECT_FALSE(values.mute);
     std::filesystem::remove(script);
+}
+
+TEST(BloomShellSettings, QuickSettingsAActivatesTogglesAndOpensFullSettings)
+{
+    const auto directory = std::filesystem::temp_directory_path() /
+                           ("bloom-quick-activate-" + std::to_string(getpid()));
+    std::filesystem::create_directory(directory);
+    const auto script = directory / "adapter";
+    const auto arguments = directory / "arguments";
+    {
+        std::ofstream output(script);
+        output << "#!/bin/sh\nprintf '%s\\n' \"$*\" >>'" << arguments.string() << "'\n";
+    }
+    ASSERT_EQ(0, chmod(script.c_str(), 0700));
+    BloomShellCapabilities capabilities{};
+    ASSERT_EQ(0, bloom_shell_capabilities_from_model(354, 0, &capabilities));
+    BloomShellQuickValues values{1, 1, 7, 9, 0, 0};
+    int open_settings = 0;
+
+    ASSERT_EQ(0, bloom_shell_quick_settings_activate(&capabilities, &values, 1,
+                                                     script.c_str(), script.c_str(),
+                                                     &open_settings));
+    EXPECT_TRUE(values.mute);
+    EXPECT_FALSE(open_settings);
+    ASSERT_EQ(0, bloom_shell_quick_settings_activate(&capabilities, &values, 2,
+                                                     script.c_str(), script.c_str(),
+                                                     &open_settings));
+    EXPECT_TRUE(values.wifi_enabled);
+    EXPECT_FALSE(open_settings);
+    ASSERT_EQ(0, bloom_shell_quick_settings_activate(&capabilities, &values, 4,
+                                                     script.c_str(), script.c_str(),
+                                                     &open_settings));
+    EXPECT_TRUE(open_settings);
+
+    std::ifstream input(arguments);
+    std::string line;
+    ASSERT_TRUE(std::getline(input, line));
+    EXPECT_EQ("request mute true", line);
+    ASSERT_TRUE(std::getline(input, line));
+    EXPECT_EQ("request enable", line);
+    std::filesystem::remove_all(directory);
 }
 
 TEST(BloomShellSettings, FlatSchemaUsesInlineControlsAndCapabilityRows)

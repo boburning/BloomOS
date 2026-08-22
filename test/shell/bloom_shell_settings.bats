@@ -43,6 +43,8 @@
     grep -F 'action == BLOOM_UI_ACTION_QUICK_SETTINGS' "$shell"
     grep -F 'quick_settings = !quick_settings;' "$shell"
     grep -F 'bloom_shell_quick_settings_count(&capabilities)' "$shell"
+    grep -F 'bloom_shell_quick_settings_activate(' "$shell"
+    grep -F 'destination = BLOOM_UI_DESTINATION_SETTINGS;' "$shell"
     grep -F 'bloom_shell_quick_values_load(BLOOM_SETTINGS_BINARY, &quick_values);' "$shell"
     grep -F 'BLOOM_CONTROLS_BINARY' "$shell"
     grep -F 'BLOOM_NETWORK_BINARY' "$shell"
