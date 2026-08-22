@@ -2,19 +2,24 @@
 
 @test "Bloom Shell exposes capability-filtered settings without legacy Tweaks" {
     model=/workspace/src/bloomShell/bloom_shell_settings.c
-    grep -F '"Display", "Audio", "Controls", "Gameplay"' "$model"
-    grep -F 'return "Network";' "$model"
-    grep -F 'return capabilities->developer_mode && row == 0 ? "Advanced" : NULL;' "$model"
+    grep -F 'BLOOM_SHELL_SETTINGS_DISPLAY_SECTION' "$model"
+    grep -F 'BLOOM_SHELL_SETTINGS_NETWORK_SECTION' "$model"
+    grep -F 'BLOOM_SHELL_SETTINGS_DEVELOPER_SECTION' "$model"
+    grep -F 'requires_developer' "$model"
+    grep -F 'lstat(DEVELOPER_MODE_PATH, &status)' /workspace/src/bloomShell/main.c
+    grep -F 'S_ISREG(status.st_mode)' /workspace/src/bloomShell/main.c
     ! grep -F 'Tweaks' "$model"
 }
 
-@test "every Settings category opens a bounded detail page with canonical adapters" {
+@test "Settings is one flat sectioned surface with inline canonical adapters" {
     shell=/workspace/src/bloomShell/main.c
     model=/workspace/src/bloomShell/bloom_shell_settings.c
 
-    grep -F 'settings_page = bloom_shell_settings_page(&capabilities, settings_focus.selected);' "$shell"
-    grep -F 'bloom_shell_settings_page_count(settings_page)' "$shell"
-    grep -F 'settings_page = BLOOM_SHELL_SETTINGS_TOP;' "$shell"
+    grep -F 'bloom_shell_settings_first_selectable(&capabilities)' "$shell"
+    grep -F 'settings_focus_step(&settings_focus, &capabilities' "$shell"
+    grep -F '*held_repeats >= 6 ? 2 : 1' "$shell"
+    grep -F 'settings_held_repeats = 0;' "$shell"
+    grep -F 'BLOOM_SHELL_SETTINGS_ROW_SECTION ? sand' "$shell"
     grep -F 'settings_focus->window_start + row' "$shell"
     grep -F 'bloom_shell_quick_settings_adjust(' "$shell"
     grep -F 'BLOOM_CONTROLS_BINARY,' "$shell"
@@ -22,10 +27,11 @@
     grep -F 'bloom_shell_support_export(BLOOMCTL_BINARY)' "$shell"
     grep -F 'bloom_shell_mute_toggle(&quick_values, BLOOM_CONTROLS_BINARY);' "$shell"
     grep -F '"Health: Support export %s"' "$shell"
-    grep -F 'case BLOOM_SHELL_SETTINGS_SYSTEM:' "$model"
-    grep -F 'return 5;' "$model"
-    grep -F '"A: Confirm"' "$model"
-    grep -F '"MENU: GameSwitcher"' "$model"
+    grep -F 'BLOOM_SHELL_SETTINGS_ROW_SLIDER' "$model"
+    grep -F 'BLOOM_SHELL_SETTINGS_ROW_TOGGLE' "$model"
+    grep -F 'BLOOM_SHELL_SETTINGS_ROW_DETAIL' "$model"
+    ! grep -F 'settings_page' "$shell"
+    ! grep -F 'bloom_shell_settings_page' "$model"
 
     render=$(sed -n '/static void draw(/,/^}/p' "$shell")
     [[ "$render" != *'system('* ]]

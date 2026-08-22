@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #define DATABASE_PATH "/mnt/SDCARD/.bloom/library/catalog.sqlite3"
 #define REQUEST_PATH "/mnt/SDCARD/.tmp_update/bloom-shell-launch.json"
@@ -31,6 +32,7 @@
 #define BLOOM_RA_BINARY "/mnt/SDCARD/.tmp_update/bin/bloom-ra"
 #define GAME_SWITCHER_BINARY "/mnt/SDCARD/.tmp_update/bin/gameSwitcher"
 #define DEVICE_MODEL_PATH "/tmp/deviceModel"
+#define DEVELOPER_MODE_PATH "/mnt/SDCARD/.bloom-dev"
 #define GAME_PAGE_SIZE 100
 #define GAME_CAPACITY_MAX 4096
 #define FAVORITES_CAPACITY_MAX 100
@@ -48,6 +50,12 @@ static const char *screen_labels[BLOOM_UI_DESTINATION_COUNT] = {
 };
 
 static void fill_rect(SDL_Surface *screen, int x, int y, int width, int height, uint32_t rgb);
+
+static int developer_mode_enabled(void)
+{
+    struct stat status;
+    return lstat(DEVELOPER_MODE_PATH, &status) == 0 && S_ISREG(status.st_mode);
+}
 
 static int stage_game_with_core(const BloomLibraryGame *game, const char *core)
 {
@@ -68,6 +76,22 @@ static int stage_game(const BloomLibraryGame *game)
         snprintf(core, sizeof(core), "%s", default_core);
     }
     return stage_game_with_core(game, core);
+}
+
+static void settings_focus_step(BloomUiFocus *focus,
+                                const BloomShellCapabilities *capabilities, int direction,
+                                size_t visible_rows, int *held_repeats)
+{
+    int steps = held_repeats != NULL && *held_repeats >= 6 ? 2 : 1;
+    for (int step = 0; step < steps; ++step)
+        focus->selected =
+            bloom_shell_settings_next_selectable(capabilities, focus->selected, direction);
+    if (held_repeats != NULL && *held_repeats < 12)
+        (*held_repeats)++;
+    if (focus->selected < focus->window_start)
+        focus->window_start = focus->selected;
+    else if (visible_rows > 0 && focus->selected >= focus->window_start + visible_rows)
+        focus->window_start = focus->selected - visible_rows + 1;
 }
 
 static int load_catalog(BloomLibraryGame **games, size_t *game_count, BloomLibraryGame *recents,
@@ -163,57 +187,57 @@ static void render_label(SDL_Surface *screen, TTF_Font *font, const char *label,
     }
 }
 
-static int settings_detail_label(BloomShellSettingsPage page, const BloomShellQuickValues *values,
-                                 const BloomShellStatus *status, int support_export_result,
-                                 int update_confirm_result, int ra_form_result, size_t row,
-                                 char *label, size_t label_size)
+static int settings_flat_label(const BloomShellCapabilities *capabilities,
+                               const BloomShellQuickValues *values,
+                               const BloomShellStatus *status, int support_export_result,
+                               int update_confirm_result, int ra_form_result, size_t row,
+                               char *label, size_t label_size)
 {
-    if (page == BLOOM_SHELL_SETTINGS_SYSTEM) {
-        if (row == 0)
-            return bloom_shell_status_label(status, 1, label, label_size);
-        if (row == 1) {
-            return bloom_shell_storage_label(status, label, label_size);
-        }
-        if (row == 2 && support_export_result != 0) {
+    BloomShellSettingsRow settings_row;
+    if (bloom_shell_settings_row(capabilities, row, &settings_row) != 0)
+        return -1;
+    if (settings_row.id == BLOOM_SHELL_SETTINGS_UPDATE) {
+        int length = snprintf(
+            label, label_size, "Update       %s",
+            update_confirm_result > 0   ? "Confirmed"
+            : update_confirm_result < 0 ? "Confirmation failed"
+            : status->ready && status->update_healthy &&
+                    strcmp(status->update_phase, "testing") == 0
+                ? "Confirm tested update"
+                : "Up to date");
+        return length >= 0 && (size_t)length < label_size ? 0 : -1;
+    }
+    if (settings_row.id == BLOOM_SHELL_SETTINGS_STORAGE)
+        return bloom_shell_storage_label(status, label, label_size);
+    if (settings_row.id == BLOOM_SHELL_SETTINGS_HEALTH) {
+        if (support_export_result != 0) {
             int length = snprintf(label, label_size, "Health: Support export %s",
                                   support_export_result > 0 ? "complete" : "failed");
             return length >= 0 && (size_t)length < label_size ? 0 : -1;
         }
-        if (row == 2)
-            return bloom_shell_status_label(status, 0, label, label_size);
-        if (row == 3) {
-            int length = snprintf(
-                label, label_size, "Update action: %s",
-                update_confirm_result > 0   ? "confirmed"
-                : update_confirm_result < 0 ? "confirmation failed"
-                : status->ready && status->update_healthy &&
-                        strcmp(status->update_phase, "testing") == 0
-                    ? "Confirm tested update"
-                    : "No action available");
-            return length >= 0 && (size_t)length < label_size ? 0 : -1;
-        }
-        if (row == 4) {
-            int length = snprintf(label, label_size, "About: BloomOS %s", BLOOM_VERSION);
-            return length >= 0 && (size_t)length < label_size ? 0 : -1;
-        }
-        return -1;
+        return bloom_shell_status_label(status, 0, label, label_size);
     }
-    if (page == BLOOM_SHELL_SETTINGS_RETROACHIEVEMENTS) {
-        if (row == 0)
-            return bloom_shell_status_label(status, 2, label, label_size);
-        if (row == 1) {
-            const char *connection = ra_form_result == 1                   ? "Sign-in complete"
-                                     : ra_form_result == -1                ? "Sign-in failed"
-                                     : ra_form_result == 2                 ? "Signed out"
-                                     : ra_form_result == -2                ? "Sign-out failed"
-                                     : status->ready && status->ra_healthy ? "Ready"
-                                                                           : "Needs attention";
-            int length = snprintf(label, label_size, "Connection: %s", connection);
-            return length >= 0 && (size_t)length < label_size ? 0 : -1;
-        }
-        return -1;
+    if (settings_row.id == BLOOM_SHELL_SETTINGS_ABOUT) {
+        int length = snprintf(label, label_size, "About       BloomOS %s", BLOOM_VERSION);
+        return length >= 0 && (size_t)length < label_size ? 0 : -1;
     }
-    return bloom_shell_settings_page_format(page, values, row, label, label_size);
+    if (settings_row.id == BLOOM_SHELL_SETTINGS_RA_ACCOUNT)
+        return bloom_shell_status_label(status, 2, label, label_size);
+    if (settings_row.id == BLOOM_SHELL_SETTINGS_RA_CONNECTION) {
+        const char *connection = ra_form_result == 1                   ? "Sign-in complete"
+                                 : ra_form_result == -1                ? "Sign-in failed"
+                                 : ra_form_result == 2                 ? "Signed out"
+                                 : ra_form_result == -2                ? "Sign-out failed"
+                                 : status->ready && status->ra_healthy ? "Ready"
+                                                                       : "Needs attention";
+        int length = snprintf(label, label_size, "Connection       %s", connection);
+        return length >= 0 && (size_t)length < label_size ? 0 : -1;
+    }
+    if (settings_row.id == BLOOM_SHELL_SETTINGS_DIAGNOSTICS) {
+        int length = snprintf(label, label_size, "Diagnostics");
+        return length >= 0 && (size_t)length < label_size ? 0 : -1;
+    }
+    return bloom_shell_settings_row_format(capabilities, values, row, label, label_size);
 }
 
 static void draw_ra_form(SDL_Surface *screen, const BloomUiLayout *layout, TTF_Font *font,
@@ -401,9 +425,9 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
                  const BloomUiFocus *settings_focus, const BloomUiFocus *apps_focus,
                  const BloomLibraryApp *apps, const BloomShellStatus *status,
                  const BloomShellCapabilities *capabilities,
-                 const BloomShellQuickValues *quick_values, BloomShellSettingsPage settings_page,
-                 int support_export_result, int update_confirm_result, int ra_form_result,
-                 int quick_settings, int ra_form_open, const BloomShellRaForm *ra_form,
+                 const BloomShellQuickValues *quick_values, int support_export_result,
+                 int update_confirm_result, int ra_form_result, int quick_settings,
+                 int ra_form_open, const BloomShellRaForm *ra_form,
                  int ra_sign_out_open, const BloomUiDialogFocus *ra_sign_out_dialog,
                  int update_confirm_open, const BloomUiDialogFocus *update_confirm_dialog,
                  const BloomUiFocus *quick_settings_focus, int recent_actions_open,
@@ -489,19 +513,20 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
              ++row) {
             size_t item = settings_focus->window_start + row;
             char status_label[96];
-            const char *label = settings_page == BLOOM_SHELL_SETTINGS_TOP
-                                    ? bloom_shell_settings_label(capabilities, item)
-                                    : status_label;
-            if (settings_page != BLOOM_SHELL_SETTINGS_TOP &&
-                settings_detail_label(settings_page, quick_values, status, support_export_result,
-                                      update_confirm_result, ra_form_result, item, status_label,
-                                      sizeof(status_label)) != 0)
+            BloomShellSettingsRow settings_row;
+            const char *label = status_label;
+            if (settings_flat_label(capabilities, quick_values, status, support_export_result,
+                                    update_confirm_result, ra_form_result, item, status_label,
+                                    sizeof(status_label)) != 0 ||
+                bloom_shell_settings_row(capabilities, item, &settings_row) != 0)
                 label = NULL;
             if (label != NULL)
                 render_label(screen, font, label, layout->content.x + 20,
                              layout->content.y + (int)row * layout->row_height +
                                  layout->row_height / 3,
-                             layout->content.width - 40, cream);
+                             layout->content.width - 40,
+                             settings_row.kind == BLOOM_SHELL_SETTINGS_ROW_SECTION ? sand
+                                                                                   : cream);
         }
     }
     else if (destination == BLOOM_UI_DESTINATION_GAMES && games_focus->item_count == 0) {
@@ -571,7 +596,7 @@ int main(int argc, char **argv)
     }
     fclose(model_file);
     BloomShellCapabilities capabilities = {0};
-    if (bloom_shell_capabilities_from_model(model, 0, &capabilities) != 0)
+    if (bloom_shell_capabilities_from_model(model, developer_mode_enabled(), &capabilities) != 0)
         return 1;
     BloomShellStatus status = {0};
     bloom_shell_status_load(BLOOM_STATUS_BINARY, &status);
@@ -645,12 +670,12 @@ int main(int argc, char **argv)
     bloom_ui_focus_init(&favorites_focus, favorite_count);
     bloom_ui_focus_init(&recent_focus, recent_count);
     bloom_ui_focus_init(&settings_focus, bloom_shell_settings_count(&capabilities));
+    settings_focus.selected = bloom_shell_settings_first_selectable(&capabilities);
     bloom_ui_focus_init(&apps_focus, app_count);
     bloom_ui_focus_init(&quick_settings_focus,
                         bloom_shell_quick_settings_count(&capabilities));
     int quick_settings = 0;
-    BloomShellSettingsPage settings_page = BLOOM_SHELL_SETTINGS_TOP;
-    size_t settings_top_selected = 0;
+    int settings_held_repeats = 0;
     int support_export_result = 0;
     int update_confirm_result = 0;
     int ra_form_result = 0;
@@ -668,8 +693,7 @@ int main(int argc, char **argv)
     BloomUiDialogFocus recent_remove_dialog = {0};
     draw(screen, video, &layout, font, destination, &root, &games_browser, &favorites_focus,
          &recent_focus, games, favorites, recents, has_recent, &settings_focus, &apps_focus, apps, &status,
-         &capabilities, &quick_values, settings_page, support_export_result, update_confirm_result,
-         ra_form_result,
+         &capabilities, &quick_values, support_export_result, update_confirm_result, ra_form_result,
          quick_settings, ra_form_open, &ra_form, ra_sign_out_open, &ra_sign_out_dialog,
          update_confirm_open, &update_confirm_dialog, &quick_settings_focus, recent_actions_open,
          &recent_actions_focus, recent_remove_confirm_open, &recent_remove_dialog);
@@ -685,13 +709,20 @@ int main(int argc, char **argv)
         }
         if (event.type == SDL_KEYUP) {
             BloomUiInput released = bloom_ui_input_from_sdl_key(event.key.keysym.sym);
-            if (released == BLOOM_UI_INPUT_UP || released == BLOOM_UI_INPUT_DOWN)
+            if (released == BLOOM_UI_INPUT_UP || released == BLOOM_UI_INPUT_DOWN) {
                 bloom_shell_games_release(&games_browser);
+                settings_held_repeats = 0;
+            }
             continue;
         }
         if (event.type != SDL_KEYDOWN)
             continue;
         BloomUiAction action = bloom_ui_normalize_input(bloom_ui_input_from_sdl_key(event.key.keysym.sym));
+        BloomShellSettingsRow selected_settings = {0};
+        int selected_settings_valid =
+            destination == BLOOM_UI_DESTINATION_SETTINGS &&
+            bloom_shell_settings_row(&capabilities, settings_focus.selected,
+                                     &selected_settings) == 0;
         if (recent_remove_confirm_open && action == BLOOM_UI_ACTION_FOCUS_LEFT)
             bloom_ui_dialog_step(&recent_remove_dialog, -1);
         else if (recent_remove_confirm_open && action == BLOOM_UI_ACTION_FOCUS_RIGHT)
@@ -835,19 +866,9 @@ int main(int argc, char **argv)
         else if (quick_settings) {
             continue;
         }
-        else if (action == BLOOM_UI_ACTION_BACK && destination == BLOOM_UI_DESTINATION_SETTINGS &&
-                 settings_page != BLOOM_SHELL_SETTINGS_TOP) {
-            settings_page = BLOOM_SHELL_SETTINGS_TOP;
-            bloom_ui_focus_init(&settings_focus, bloom_shell_settings_count(&capabilities));
-            settings_focus.selected = settings_top_selected;
-            if (settings_focus.selected >= layout.visible_rows)
-                settings_focus.window_start = settings_focus.selected - layout.visible_rows + 1;
-        }
         else if (action == BLOOM_UI_ACTION_BACK) {
-            if (destination != BLOOM_UI_DESTINATION_ROOT) {
+            if (destination != BLOOM_UI_DESTINATION_ROOT)
                 destination = BLOOM_UI_DESTINATION_ROOT;
-                settings_page = BLOOM_SHELL_SETTINGS_TOP;
-            }
         }
         else if (destination == BLOOM_UI_DESTINATION_ROOT &&
                  action != BLOOM_UI_ACTION_CONFIRM)
@@ -891,29 +912,24 @@ int main(int argc, char **argv)
         }
         else if (action == BLOOM_UI_ACTION_FOCUS_UP &&
                  destination == BLOOM_UI_DESTINATION_SETTINGS)
-            bloom_ui_focus_step(&settings_focus, -1, layout.visible_rows);
+            settings_focus_step(&settings_focus, &capabilities, -1, layout.visible_rows,
+                                &settings_held_repeats);
         else if (action == BLOOM_UI_ACTION_FOCUS_DOWN &&
                  destination == BLOOM_UI_DESTINATION_SETTINGS)
-            bloom_ui_focus_step(&settings_focus, 1, layout.visible_rows);
+            settings_focus_step(&settings_focus, &capabilities, 1, layout.visible_rows,
+                                &settings_held_repeats);
         else if (action == BLOOM_UI_ACTION_FOCUS_UP && destination == BLOOM_UI_DESTINATION_APPS)
             bloom_ui_focus_step(&apps_focus, -1, layout.visible_rows);
         else if (action == BLOOM_UI_ACTION_FOCUS_DOWN && destination == BLOOM_UI_DESTINATION_APPS)
             bloom_ui_focus_step(&apps_focus, 1, layout.visible_rows);
-        else if (action == BLOOM_UI_ACTION_CONFIRM && destination == BLOOM_UI_DESTINATION_SETTINGS &&
-                 settings_page == BLOOM_SHELL_SETTINGS_TOP) {
-            settings_top_selected = settings_focus.selected;
-            settings_page = bloom_shell_settings_page(&capabilities, settings_focus.selected);
-            bloom_ui_focus_init(&settings_focus, bloom_shell_settings_page_count(settings_page));
-        }
-        else if (destination == BLOOM_UI_DESTINATION_SETTINGS &&
-                 settings_page != BLOOM_SHELL_SETTINGS_TOP &&
+        else if (selected_settings_valid && destination == BLOOM_UI_DESTINATION_SETTINGS &&
                  (action == BLOOM_UI_ACTION_FOCUS_LEFT || action == BLOOM_UI_ACTION_FOCUS_RIGHT)) {
             size_t quick_row = (size_t)-1;
-            if (settings_page == BLOOM_SHELL_SETTINGS_DISPLAY)
+            if (selected_settings.id == BLOOM_SHELL_SETTINGS_BRIGHTNESS)
                 quick_row = 0;
-            else if (settings_page == BLOOM_SHELL_SETTINGS_AUDIO && settings_focus.selected == 0)
+            else if (selected_settings.id == BLOOM_SHELL_SETTINGS_VOLUME)
                 quick_row = 1;
-            else if (settings_page == BLOOM_SHELL_SETTINGS_NETWORK)
+            else if (selected_settings.id == BLOOM_SHELL_SETTINGS_WIFI)
                 quick_row = 2;
             if (quick_row != (size_t)-1)
                 bloom_shell_quick_settings_adjust(
@@ -923,17 +939,24 @@ int main(int argc, char **argv)
         }
         else if (action == BLOOM_UI_ACTION_CONFIRM &&
                  destination == BLOOM_UI_DESTINATION_SETTINGS &&
-                 settings_page == BLOOM_SHELL_SETTINGS_AUDIO && settings_focus.selected == 1) {
+                 selected_settings_valid && selected_settings.id == BLOOM_SHELL_SETTINGS_MUTE) {
             bloom_shell_mute_toggle(&quick_values, BLOOM_CONTROLS_BINARY);
         }
         else if (action == BLOOM_UI_ACTION_CONFIRM &&
                  destination == BLOOM_UI_DESTINATION_SETTINGS &&
-                 settings_page == BLOOM_SHELL_SETTINGS_SYSTEM && settings_focus.selected == 2) {
+                 selected_settings_valid && selected_settings.id == BLOOM_SHELL_SETTINGS_WIFI) {
+            bloom_shell_quick_settings_adjust(&capabilities, &quick_values, 2,
+                                              quick_values.wifi_enabled ? -1 : 1,
+                                              BLOOM_CONTROLS_BINARY, BLOOM_NETWORK_BINARY);
+        }
+        else if (action == BLOOM_UI_ACTION_CONFIRM &&
+                 destination == BLOOM_UI_DESTINATION_SETTINGS && selected_settings_valid &&
+                 selected_settings.id == BLOOM_SHELL_SETTINGS_HEALTH) {
             support_export_result = bloom_shell_support_export(BLOOMCTL_BINARY) == 0 ? 1 : -1;
         }
         else if (action == BLOOM_UI_ACTION_CONFIRM &&
                  destination == BLOOM_UI_DESTINATION_SETTINGS &&
-                 settings_page == BLOOM_SHELL_SETTINGS_SYSTEM && settings_focus.selected == 3 &&
+                 selected_settings_valid && selected_settings.id == BLOOM_SHELL_SETTINGS_UPDATE &&
                  update_confirm_result == 0 && status.ready && status.update_healthy &&
                  strcmp(status.update_phase, "testing") == 0 &&
                  bloom_ui_dialog_init(&update_confirm_dialog, 2, 0, 1) == 0) {
@@ -942,16 +965,16 @@ int main(int argc, char **argv)
         }
         else if (action == BLOOM_UI_ACTION_CONFIRM &&
                  destination == BLOOM_UI_DESTINATION_SETTINGS &&
-                 settings_page == BLOOM_SHELL_SETTINGS_RETROACHIEVEMENTS &&
-                 settings_focus.selected == 0 && !status.ra_enabled) {
+                 selected_settings_valid &&
+                 selected_settings.id == BLOOM_SHELL_SETTINGS_RA_ACCOUNT && !status.ra_enabled) {
             bloom_shell_ra_form_init(&ra_form);
             ra_form_result = 0;
             ra_form_open = 1;
         }
         else if (action == BLOOM_UI_ACTION_CONFIRM &&
                  destination == BLOOM_UI_DESTINATION_SETTINGS &&
-                 settings_page == BLOOM_SHELL_SETTINGS_RETROACHIEVEMENTS &&
-                 settings_focus.selected == 0 && status.ra_enabled &&
+                 selected_settings_valid &&
+                 selected_settings.id == BLOOM_SHELL_SETTINGS_RA_ACCOUNT && status.ra_enabled &&
                  bloom_ui_dialog_init(&ra_sign_out_dialog, 2, 0, 1) == 0) {
             ra_form_result = 0;
             ra_sign_out_open = 1;
@@ -992,8 +1015,8 @@ int main(int argc, char **argv)
         if (running)
             draw(screen, video, &layout, font, destination, &root, &games_browser, &favorites_focus,
                  &recent_focus, games, favorites, recents, has_recent, &settings_focus, &apps_focus,
-                 apps, &status, &capabilities, &quick_values, settings_page,
-                 support_export_result, update_confirm_result, ra_form_result, quick_settings,
+                 apps, &status, &capabilities, &quick_values, support_export_result,
+                 update_confirm_result, ra_form_result, quick_settings,
                  ra_form_open, &ra_form,
                  ra_sign_out_open, &ra_sign_out_dialog, update_confirm_open,
                  &update_confirm_dialog, &quick_settings_focus, recent_actions_open,

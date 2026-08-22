@@ -12,11 +12,14 @@ extern "C" {
 #include "../src/bloomShell/bloom_shell_settings.h"
 }
 
-static std::vector<std::string> settings(const BloomShellCapabilities &capabilities)
+static std::vector<BloomShellSettingsRow> settings(const BloomShellCapabilities &capabilities)
 {
-    std::vector<std::string> result;
-    for (size_t row = 0; row < bloom_shell_settings_count(&capabilities); ++row)
-        result.emplace_back(bloom_shell_settings_label(&capabilities, row));
+    std::vector<BloomShellSettingsRow> result;
+    for (size_t row = 0; row < bloom_shell_settings_count(&capabilities); ++row) {
+        BloomShellSettingsRow settings_row{};
+        if (bloom_shell_settings_row(&capabilities, row, &settings_row) == 0)
+            result.push_back(settings_row);
+    }
     return result;
 }
 
@@ -32,9 +35,14 @@ TEST(BloomShellSettings, OriginalMiniHidesNetworkAndDeveloperControls)
 {
     BloomShellCapabilities capabilities{};
     ASSERT_EQ(0, bloom_shell_capabilities_from_model(283, 0, &capabilities));
-    EXPECT_EQ((std::vector<std::string>{"Display", "Audio", "Controls", "Gameplay",
-                                        "RetroAchievements", "Appearance", "System"}),
-              settings(capabilities));
+    auto rows = settings(capabilities);
+    ASSERT_EQ(17U, rows.size());
+    EXPECT_EQ(BLOOM_SHELL_SETTINGS_DISPLAY_SECTION, rows.front().id);
+    EXPECT_EQ(BLOOM_SHELL_SETTINGS_ABOUT, rows.back().id);
+    for (const auto &row : rows) {
+        EXPECT_NE(BLOOM_SHELL_SETTINGS_NETWORK_SECTION, row.id);
+        EXPECT_NE(BLOOM_SHELL_SETTINGS_DEVELOPER_SECTION, row.id);
+    }
     EXPECT_EQ((std::vector<std::string>{"Brightness", "Volume / Mute", "Battery"}),
               quick(capabilities));
 }
@@ -47,8 +55,10 @@ TEST(BloomShellSettings, PlusShowsWifiWithoutFlipOrDeveloperControls)
     EXPECT_FALSE(capabilities.flip);
     EXPECT_EQ((std::vector<std::string>{"Brightness", "Volume / Mute", "Wi-Fi", "Battery"}),
               quick(capabilities));
-    EXPECT_EQ("Network", std::string(bloom_shell_settings_label(&capabilities, 4)));
-    EXPECT_EQ(nullptr, bloom_shell_settings_label(&capabilities, 8));
+    auto rows = settings(capabilities);
+    ASSERT_EQ(19U, rows.size());
+    EXPECT_EQ(BLOOM_SHELL_SETTINGS_NETWORK_SECTION, rows[9].id);
+    EXPECT_EQ(BLOOM_SHELL_SETTINGS_WIFI, rows[10].id);
 }
 
 TEST(BloomShellSettings, FlipAndDeveloperModeExposeOnlyTheirCapabilities)
@@ -58,7 +68,10 @@ TEST(BloomShellSettings, FlipAndDeveloperModeExposeOnlyTheirCapabilities)
     EXPECT_TRUE(capabilities.wifi);
     EXPECT_TRUE(capabilities.flip);
     EXPECT_TRUE(capabilities.developer_mode);
-    EXPECT_EQ("Advanced", std::string(bloom_shell_settings_label(&capabilities, 8)));
+    auto rows = settings(capabilities);
+    ASSERT_EQ(22U, rows.size());
+    EXPECT_EQ(BLOOM_SHELL_SETTINGS_DEVELOPER_SECTION, rows[19].id);
+    EXPECT_EQ(BLOOM_SHELL_SETTINGS_DIAGNOSTICS, rows.back().id);
 }
 
 TEST(BloomShellSettings, UnknownModelsAndOutOfRangeRowsFailClosed)
@@ -66,13 +79,20 @@ TEST(BloomShellSettings, UnknownModelsAndOutOfRangeRowsFailClosed)
     BloomShellCapabilities capabilities{};
     EXPECT_NE(0, bloom_shell_capabilities_from_model(999, 0, &capabilities));
     ASSERT_EQ(0, bloom_shell_capabilities_from_model(283, 0, &capabilities));
-    EXPECT_EQ(nullptr, bloom_shell_settings_label(&capabilities, 7));
+    BloomShellSettingsRow row{};
+    EXPECT_NE(0, bloom_shell_settings_row(&capabilities, 17, &row));
     EXPECT_EQ(nullptr, bloom_shell_quick_settings_label(&capabilities, 3));
 }
 
-TEST(BloomShellSettings, SystemPageIncludesGuardedUpdateAction)
+TEST(BloomShellSettings, FlatRowsSkipSectionHeadersAndPreservePosition)
 {
-    EXPECT_EQ(5U, bloom_shell_settings_page_count(BLOOM_SHELL_SETTINGS_SYSTEM));
+    BloomShellCapabilities capabilities{};
+    ASSERT_EQ(0, bloom_shell_capabilities_from_model(354, 0, &capabilities));
+    EXPECT_EQ(1U, bloom_shell_settings_first_selectable(&capabilities));
+    EXPECT_FALSE(bloom_shell_settings_row_selectable(&capabilities, 3));
+    EXPECT_EQ(4U, bloom_shell_settings_next_selectable(&capabilities, 2, 1));
+    EXPECT_EQ(2U, bloom_shell_settings_next_selectable(&capabilities, 4, -1));
+    EXPECT_EQ(1U, bloom_shell_settings_next_selectable(&capabilities, 1, -1));
 }
 
 TEST(BloomShellSettings, ParsesAndFormatsBoundedCanonicalValues)
@@ -211,20 +231,38 @@ TEST(BloomShellSettings, MuteToggleUsesFixedAdapterAndUpdatesOnlyAfterSuccess)
     std::filesystem::remove(script);
 }
 
-TEST(BloomShellSettings, EveryVisibleCategoryMapsToABoundedDetailPage)
+TEST(BloomShellSettings, FlatSchemaUsesInlineControlsAndCapabilityRows)
 {
     BloomShellCapabilities capabilities{};
     ASSERT_EQ(0, bloom_shell_capabilities_from_model(354, 0, &capabilities));
+    bool brightness = false;
+    bool mute = false;
+    bool account = false;
     for (size_t row = 0; row < bloom_shell_settings_count(&capabilities); ++row) {
-        BloomShellSettingsPage page = bloom_shell_settings_page(&capabilities, row);
-        EXPECT_NE(BLOOM_SHELL_SETTINGS_TOP, page);
-        EXPECT_GT(bloom_shell_settings_page_count(page), 0U);
+        BloomShellSettingsRow settings_row{};
+        ASSERT_EQ(0, bloom_shell_settings_row(&capabilities, row, &settings_row));
+        if (settings_row.id == BLOOM_SHELL_SETTINGS_BRIGHTNESS) {
+            brightness = true;
+            EXPECT_EQ(BLOOM_SHELL_SETTINGS_ROW_SLIDER, settings_row.kind);
+        }
+        if (settings_row.id == BLOOM_SHELL_SETTINGS_MUTE) {
+            mute = true;
+            EXPECT_EQ(BLOOM_SHELL_SETTINGS_ROW_TOGGLE, settings_row.kind);
+        }
+        if (settings_row.id == BLOOM_SHELL_SETTINGS_RA_ACCOUNT) {
+            account = true;
+            EXPECT_EQ(BLOOM_SHELL_SETTINGS_ROW_DETAIL, settings_row.kind);
+        }
     }
-    EXPECT_EQ(BLOOM_SHELL_SETTINGS_TOP, bloom_shell_settings_page(&capabilities, 99));
+    EXPECT_TRUE(brightness);
+    EXPECT_TRUE(mute);
+    EXPECT_TRUE(account);
 }
 
-TEST(BloomShellSettings, DetailPagesUseCanonicalValuesAndStableControlGrammar)
+TEST(BloomShellSettings, FlatRowsFormatCanonicalValuesAndStableControlGrammar)
 {
+    BloomShellCapabilities capabilities{};
+    ASSERT_EQ(0, bloom_shell_capabilities_from_model(354, 0, &capabilities));
     BloomShellQuickValues values{};
     values.ready = 1;
     values.brightness = 6;
@@ -232,18 +270,15 @@ TEST(BloomShellSettings, DetailPagesUseCanonicalValuesAndStableControlGrammar)
     values.mute = 1;
     values.wifi_enabled = 1;
     char label[64];
-    ASSERT_EQ(0, bloom_shell_settings_page_format(BLOOM_SHELL_SETTINGS_DISPLAY, &values, 0,
-                                                  label, sizeof(label)));
-    EXPECT_STREQ("Brightness: 6", label);
-    ASSERT_EQ(0, bloom_shell_settings_page_format(BLOOM_SHELL_SETTINGS_AUDIO, &values, 1, label,
-                                                  sizeof(label)));
-    EXPECT_STREQ("Mute: On", label);
-    ASSERT_EQ(0, bloom_shell_settings_page_format(BLOOM_SHELL_SETTINGS_NETWORK, &values, 0, label,
-                                                  sizeof(label)));
-    EXPECT_STREQ("Wi-Fi: On", label);
-    ASSERT_EQ(0, bloom_shell_settings_page_format(BLOOM_SHELL_SETTINGS_CONTROLS, &values, 5, label,
-                                                  sizeof(label)));
-    EXPECT_STREQ("MENU: GameSwitcher", label);
-    EXPECT_NE(0, bloom_shell_settings_page_format(BLOOM_SHELL_SETTINGS_CONTROLS, &values, 6,
-                                                  label, sizeof(label)));
+    ASSERT_EQ(0, bloom_shell_settings_row_format(&capabilities, &values, 1, label, sizeof(label)));
+    EXPECT_NE(std::string::npos, std::string(label).find("Brightness"));
+    EXPECT_NE(std::string::npos, std::string(label).find("6"));
+    ASSERT_EQ(0, bloom_shell_settings_row_format(&capabilities, &values, 5, label, sizeof(label)));
+    EXPECT_NE(std::string::npos, std::string(label).find("On"));
+    ASSERT_EQ(0, bloom_shell_settings_row_format(&capabilities, &values, 10, label, sizeof(label)));
+    EXPECT_NE(std::string::npos, std::string(label).find("Wi-Fi"));
+    EXPECT_NE(std::string::npos, std::string(label).find("On"));
+    ASSERT_EQ(0, bloom_shell_settings_row_format(&capabilities, &values, 7, label, sizeof(label)));
+    EXPECT_NE(std::string::npos, std::string(label).find("A Confirm / B Back"));
+    EXPECT_NE(0, bloom_shell_settings_row_format(&capabilities, &values, 99, label, sizeof(label)));
 }
