@@ -1,0 +1,108 @@
+{
+  "schema": 1,
+  "date": "2026-08-22",
+  "operator": "Codex over maintainer-authorized SSH",
+  "device": "miyoo-mini-plus",
+  "model_id": 354,
+  "serial_redacted": true,
+  "signed_release": {
+    "version": "0.1.0-dev-33e0115f",
+    "commit": "33e0115f1be3f6f00abeafcb97f338588299c912",
+    "workflow_run": 32587725528,
+    "archive_size": 203121201,
+    "archive_sha256": "df4507197d95df8dfb86d2d447db41329f005318ee8e5ebbd16d5e0683788313",
+    "release_metadata_validated": true,
+    "ed25519_signature_verified": true,
+    "device_archive_size_and_sha256_matched": true,
+    "activation_snapshot": "20260822T174955Z-pre-update-1974",
+    "boot_attempts_before_confirmation": 1,
+    "installed_version": "v0.1.0-dev-33e0115f",
+    "confirmed_phase": "known_good",
+    "installed_sha256": {
+      "bloom_shell": "d76e34466c72e39221346004a1c6a2a963dbb2c0978da7e0eec039365c498525",
+      "sftp_gate": "127a84e42538199fcba3f31cc274e5009dc64d0495470ddad7a6e481b41f38e8",
+      "sftp_server": "67336792e85f9ef98843b606a4170a3ede4b8c013945fbcbc2fad4b4373f3c29"
+    }
+  },
+  "guarded_recovery": {
+    "rejected_candidate": "0.1.0-dev-40279946",
+    "rejected_reason": "real SFTP login exposed missing runtime library search path",
+    "candidate_was_confirmed": false,
+    "retained_known_good": "0.1.0-dev-4093ec3e",
+    "pre_update_snapshot": "20260822T170344Z-pre-update-2667",
+    "pre_rollback_snapshot": "20260822T174114Z-pre-rollback-893",
+    "bounded_attempts_triggered_automatic_rollback": true,
+    "rollback_confirmed_healthy": true,
+    "corrected_candidate_prepared_before_rollback": true
+  },
+  "list_paging": {
+    "page_down_button": "R1",
+    "page_up_button": "L1",
+    "settings_page_down_reached_network_rows": true,
+    "settings_page_up_returned_toward_network_rows": true,
+    "section_headers_remained_non_selectable": true,
+    "root_l1_r1_exact_noop": true,
+    "root_before_and_after_sha256": "7d94cc12fd2964847fa5aec0b13a2b902c42218790d2af3ca643fb8f694fccd5",
+    "settings_sftp_focus_sha256": "7ec22b85cfd7c0698b1b66017b7f7a873a4800fa83ee2b81043407da8ff4698b",
+    "settings_page_up_sha256": "24bc3503c3a776eb95433ab0b59a76ec4f3b8c8efc7259edf49b808e494d968e"
+  },
+  "network_services": {
+    "ssh": {
+      "available": true,
+      "enabled": true,
+      "key_only_connection_survived_updates_and_rollback": true
+    },
+    "sftp": {
+      "available": true,
+      "enabled_for_test": true,
+      "authenticated_real_session": true,
+      "remote_working_directory": "/home/root",
+      "read_only_listing_succeeded": true,
+      "disabled_through_settings_after_test": true,
+      "disabled_session_refused": true
+    },
+    "samba": {
+      "available": true,
+      "enabled_through_settings": true,
+      "tcp_445_open_while_enabled": true,
+      "disabled_through_settings_after_test": true,
+      "tcp_445_closed_after_disable": true
+    },
+    "final_state": {
+      "ssh": true,
+      "sftp": false,
+      "samba": false
+    }
+  },
+  "framebuffer": {
+    "physical": "640x480",
+    "framebuffer": "640x1440x32",
+    "orientation_correction": "rotate_180_for_inspection",
+    "page_count": 3,
+    "all_pages_equal": true,
+    "root_page_sha256": "683af25ae330b669d846de7d9e2658f7a241aa094ab9fe430949e09b9b0a2fb2"
+  },
+  "final_health": {
+    "aggregate": "healthy",
+    "update": "known_good",
+    "save_snapshots_total": 5,
+    "unverified_save_snapshots": 0,
+    "referenced_save_snapshots": 0
+  },
+  "host_and_ci": {
+    "feature_pr": 337,
+    "fix_pr": 338,
+    "focused_native_tests_passed": 29,
+    "focused_shell_tests_passed": 48,
+    "fix_focused_shell_tests_passed": 28,
+    "arm_shell_build_passed": true,
+    "all_feature_ci_checks_passed": true,
+    "fix_ci_check_passed": true
+  },
+  "limitations": [
+    "Framebuffer captures and injected Linux input events are remote evidence, not physical-button or tactile review.",
+    "The test proves discrete L1/R1 page movements, not the subjective feel of held shoulder repeats.",
+    "Samba evidence covers service reachability on TCP/445, not authenticated file transfer from every supported desktop client.",
+    "Mini V2 and Flip paging and network-service behavior remain untested."
+  ]
+}
