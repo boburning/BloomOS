@@ -1138,6 +1138,104 @@ failure:
     return -1;
 }
 
+static int first_run_marker_status(const char *marker_path, int *complete)
+{
+    char *raw = NULL;
+    size_t length = 0;
+    int read_result = read_regular_file(marker_path, &raw, &length, 1);
+    if (read_result == 1) {
+        *complete = 0;
+        return 0;
+    }
+    if (read_result != 0)
+        return -1;
+    cJSON *root = cJSON_ParseWithLength(raw, length);
+    const cJSON *schema =
+        root == NULL ? NULL : cJSON_GetObjectItemCaseSensitive(root, "schema");
+    const cJSON *complete_value =
+        root == NULL ? NULL : cJSON_GetObjectItemCaseSensitive(root, "complete");
+    int valid = cJSON_IsObject(root) && cJSON_GetArraySize(root) == 2 && cJSON_IsNumber(schema) &&
+                schema->valuedouble == 1.0 && cJSON_IsTrue(complete_value);
+    cJSON_Delete(root);
+    free(raw);
+    if (!valid)
+        return -1;
+    *complete = 1;
+    return 0;
+}
+
+int bloom_settings_first_run_status(const char *settings_path, const char *marker_path,
+                                    int *complete, char *error, size_t error_size)
+{
+    if (settings_path == NULL || marker_path == NULL || complete == NULL ||
+        strcmp(settings_path, marker_path) == 0) {
+        set_error(error, error_size, "invalid first-run status request");
+        return -1;
+    }
+    *complete = 0;
+    int lock = -1;
+    if (acquire_settings_lock(settings_path, &lock, error, error_size) != 0)
+        return -1;
+    cJSON *settings = load_settings_root(settings_path, error, error_size);
+    BloomSettingsValues values;
+    int result = -1;
+    if (settings == NULL || parse_settings_values(settings, &values, error, error_size) != 0)
+        goto done;
+    if (first_run_marker_status(marker_path, complete) != 0) {
+        set_error(error, error_size, "first-run marker is invalid");
+        goto done;
+    }
+    result = 0;
+
+done:
+    cJSON_Delete(settings);
+    release_settings_lock(lock);
+    return result;
+}
+
+int bloom_settings_complete_first_run(const char *settings_path, const char *marker_path,
+                                      int *changed, char *error, size_t error_size)
+{
+    static const char marker[] = "{\"schema\":1,\"complete\":true}\n";
+    if (settings_path == NULL || marker_path == NULL || changed == NULL ||
+        strcmp(settings_path, marker_path) == 0) {
+        set_error(error, error_size, "invalid first-run completion request");
+        return -1;
+    }
+    *changed = 0;
+    int lock = -1;
+    if (acquire_settings_lock(settings_path, &lock, error, error_size) != 0)
+        return -1;
+    cJSON *settings = load_settings_root(settings_path, error, error_size);
+    BloomSettingsValues values;
+    int complete = 0;
+    int result = -1;
+    if (settings == NULL || parse_settings_values(settings, &values, error, error_size) != 0)
+        goto done;
+    if (strcmp(values.authority, "bloom") != 0) {
+        set_error(error, error_size, "first-run completion requires Bloom authority");
+        goto done;
+    }
+    if (first_run_marker_status(marker_path, &complete) != 0) {
+        set_error(error, error_size, "first-run marker is invalid");
+        goto done;
+    }
+    if (!complete) {
+        if (!regular_or_missing(marker_path) ||
+            write_atomic(marker_path, marker, sizeof(marker) - 1) != 0) {
+            set_error(error, error_size, "first-run marker could not be published");
+            goto done;
+        }
+        *changed = 1;
+    }
+    result = 0;
+
+done:
+    cJSON_Delete(settings);
+    release_settings_lock(lock);
+    return result;
+}
+
 int bloom_settings_activate(const char *settings_path, const char *onion_system_path,
                             const char *onion_config_root, BloomSettingsAuthorityResult *result,
                             char *error, size_t error_size)

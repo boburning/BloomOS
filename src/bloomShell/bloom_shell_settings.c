@@ -315,6 +315,36 @@ int bloom_shell_quick_values_load(const char *settings_path, BloomShellQuickValu
                : -1;
 }
 
+int bloom_shell_first_run_parse(const char *json, BloomShellFirstRun *first_run)
+{
+    if (json == NULL || first_run == NULL)
+        return -1;
+    memset(first_run, 0, sizeof(*first_run));
+    cJSON *root = cJSON_Parse(json);
+    const cJSON *schema = root == NULL ? NULL : cJSON_GetObjectItemCaseSensitive(root, "schema");
+    const cJSON *service =
+        root == NULL ? NULL : cJSON_GetObjectItemCaseSensitive(root, "service");
+    const cJSON *complete =
+        root == NULL ? NULL : cJSON_GetObjectItemCaseSensitive(root, "first_run_complete");
+    int result = -1;
+    if (cJSON_IsNumber(schema) && schema->valuedouble == 1.0 && cJSON_IsString(service) &&
+        strcmp(service->valuestring, "bloom-settings") == 0 && cJSON_IsBool(complete)) {
+        first_run->ready = 1;
+        first_run->complete = cJSON_IsTrue(complete);
+        result = 0;
+    }
+    cJSON_Delete(root);
+    return result;
+}
+
+int bloom_shell_first_run_load(const char *settings_path, BloomShellFirstRun *first_run)
+{
+    char json[QUICK_OUTPUT_MAX + 1];
+    return load_output(settings_path, "first-run-status", NULL, json, sizeof(json)) == 0
+               ? bloom_shell_first_run_parse(json, first_run)
+               : -1;
+}
+
 int bloom_shell_quick_battery_parse(const char *json, BloomShellQuickValues *values)
 {
     if (json == NULL || values == NULL)
@@ -396,8 +426,10 @@ static int run_request(const char *path, const char *first, const char *second, 
         }
         if (third != NULL)
             execl(path, path, first, second, third, (char *)NULL);
-        else
+        else if (second != NULL)
             execl(path, path, first, second, (char *)NULL);
+        else
+            execl(path, path, first, (char *)NULL);
         _exit(127);
     }
     return wait_child(child);
@@ -467,5 +499,18 @@ int bloom_shell_mute_toggle(BloomShellQuickValues *values, const char *controls_
     if (run_request(controls_path, "request", "mute", "true") != 0)
         return -1;
     values->mute = 1;
+    return 0;
+}
+
+int bloom_shell_first_run_finish(const char *settings_path, BloomShellFirstRun *first_run,
+                                 BloomShellQuickValues *values)
+{
+    if (first_run == NULL || values == NULL || !first_run->ready || first_run->complete)
+        return -1;
+    if (run_request(settings_path, "activate-bloom", NULL, NULL) != 0 ||
+        run_request(settings_path, "complete-first-run", NULL, NULL) != 0 ||
+        bloom_shell_quick_values_load(settings_path, values) != 0)
+        return -1;
+    first_run->complete = 1;
     return 0;
 }
