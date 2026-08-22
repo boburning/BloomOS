@@ -1,0 +1,44 @@
+{
+  "schema": 1,
+  "date": "2026-08-22",
+  "operator": "Codex over maintainer-authorized SSH",
+  "device": "miyoo-mini-plus",
+  "model_id": 354,
+  "installed_version": "v0.1.0-dev-e98840d9",
+  "candidate": {
+    "commit": "651d4cd3",
+    "path_redacted": true,
+    "size": 5681,
+    "sha256": "05a789de397ff643ffd3568a1c25bc2c85a960e66d320411ce55646f94225c7b",
+    "transfer_sha256_matched": true
+  },
+  "isolated_probe": {
+    "durable_sd_state_untouched": true,
+    "failure_threshold": 3,
+    "final_failure_state": {
+      "phase": "failed",
+      "launch_id": 3,
+      "consecutive_failures": 3,
+      "safe_mode": true
+    },
+    "explicit_clear_state": {
+      "phase": "idle",
+      "launch_id": 3,
+      "consecutive_failures": 0,
+      "safe_mode": false
+    },
+    "candidate_removed": true,
+    "temporary_probe_state_removed": true
+  },
+  "post_probe": {
+    "aggregate_health": "healthy",
+    "live_process": "bloom-shell",
+    "mainui_running": false,
+    "update_phase": "known_good"
+  },
+  "limitations": [
+    "The script was exercised with an isolated temporary state root; runtime integration is host-tested but not installed by this probe.",
+    "No deliberate device boot loop or physical Safe Mode UI was exercised.",
+    "The Bloom-owned Safe Mode surface and optional-service suppression remain follow-up work."
+  ]
+}

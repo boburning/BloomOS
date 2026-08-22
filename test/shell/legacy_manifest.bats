@@ -6,7 +6,7 @@
         --manifest /workspace/build/legacy-manifest.json
 
     [ "$status" -eq 0 ]
-    [[ "$output" == "legacy manifest validate: 319 components" ]]
+    [[ "$output" == "legacy manifest validate: 320 components" ]]
     [ ! -e "/workspace/static/packages/RApp/SNK - Neo Geo (GnGeo)" ]
     [ ! -e "/workspace/static/packages/RApp/PICO-8 (PICO-8 standalone)" ]
     [ ! -e "/workspace/static/packages/RApp/SCUMM (ScummVM standalone)" ]
@@ -71,6 +71,7 @@ ids = {
     "runtime-tmp-update-etc",
     "runtime-tmp-update-onionversion",
     "runtime-tmp-update-runtime-sh",
+    "runtime-tmp-update-bin-bloom-shell-guard",
     "runtime-tmp-update-updater",
 }
 for component in data["components"]:
@@ -87,14 +88,14 @@ PY
         --repository /workspace --manifest "$manifest"
 
     [ "$status" -eq 0 ]
-    [[ "$output" == "legacy manifest annotated: 8 Bloom source replacements" ]]
+    [[ "$output" == "legacy manifest annotated: 9 Bloom source replacements" ]]
     python3 - "$manifest" <<'PY'
 import json
 import sys
 components = json.load(open(sys.argv[1], encoding="utf-8"))["components"]
 runtime = [item for item in components if item["id"].startswith("runtime-")]
 bloom = [item for item in runtime if item["source"] == "https://github.com/boburning/BloomOS"]
-assert len(bloom) == 42
+assert len(bloom) == 43
 assert all(item["resolution"] == "source-build" for item in bloom)
 assert all(item["source_revision"] == "release-commit" for item in bloom)
 PY
