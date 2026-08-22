@@ -14,7 +14,11 @@
     grep -F 'bloom_library_query_games(database, "gb"' "$source"
     grep -F 'bloom_library_query_recents(database, "gb"' "$source"
     grep -F 'bloom_library_query_favorites(database, "gb"' "$source"
-    grep -F 'bloom_shell_stage_game(&games[library_focus.selected]' "$source"
-    grep -F 'bloom_shell_stage_game(&favorites[collections_focus.selected]' "$source"
+    grep -F 'bloom_shell_stage_game(&games[games_focus.selected]' "$source"
+    grep -F 'bloom_shell_stage_game(&favorites[favorites_focus.selected]' "$source"
+    grep -F 'bloom_shell_stage_game(&recent' "$source"
     grep -F 'bloom_shell_stage_game(&recent, GB_CORE' "$source"
+    grep -F 'bloom_shell_stage_executable(GAME_SWITCHER_BINARY' "$source"
+    ! grep -F 'navigation_open' "$source"
+    ! grep -F 'MENU Navigate' "$source"
 }

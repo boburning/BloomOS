@@ -49,7 +49,7 @@ SDL_Surface *make_surface(int width, int height)
 BloomUiScene example_scene()
 {
     BloomUiScene scene{};
-    scene.destination = BLOOM_UI_DESTINATION_LIBRARY;
+    scene.destination = BLOOM_UI_DESTINATION_GAMES;
     scene.item_count = 12;
     scene.selected = 3;
     scene.window_start = 1;
@@ -87,8 +87,8 @@ TEST(BloomUiRenderer, MiniAndFlipScenesHaveStableGoldenHashes)
         int height;
         uint64_t expected_hash;
     } fixtures[] = {
-        {640, 480, UINT64_C(2753868655391038583)},
-        {752, 560, UINT64_C(7668221142765054867)},
+        {640, 480, UINT64_C(5939516835537904771)},
+        {752, 560, UINT64_C(14261943093710810603)},
     };
     for (const auto &fixture : fixtures) {
         BloomUiLayout layout{};

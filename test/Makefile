@@ -34,6 +34,7 @@ CFILES := $(CFILES) ../src/bloomShell/bloom_shell_launch.c
 CFILES := $(CFILES) ../src/bloomShell/bloom_shell_status.c
 CFILES := $(CFILES) ../src/bloomShell/bloom_shell_settings.c
 CFILES := $(CFILES) ../src/bloomShell/bloom_shell_ra_form.c
+CFILES := $(CFILES) ../src/bloomShell/bloom_shell_root.c
 CFILES := $(CFILES) ../src/bloomSettings/bloom_settings.c
 CFILES := $(CFILES) ../src/bloomLibrary/bloom_library_database.c
 CFILES := $(CFILES) ../src/bloomLibrary/bloom_library_import.c
