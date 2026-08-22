@@ -15,6 +15,9 @@
 #define POP_MENU_ACTION_SAVE 1
 #define POP_MENU_ACTION_LOAD 2
 #define POP_MENU_ACTION_EXIT 3
+#define POP_MENU_ACTION_REMOVE_RECENT 4
+
+void action_confirmRemove(void *context);
 
 typedef struct {
     int slots[10];
@@ -393,7 +396,7 @@ void popMenu_create(void)
 {
     if (!appState.pop_menu_list._created) {
         printf_debug("Creating pop menu for game %i\n", appState.current_game);
-        appState.pop_menu_list = list_create(4, LIST_SMALL);
+        appState.pop_menu_list = list_create(5, LIST_SMALL);
 
         list_addItemWithLang(&appState.pop_menu_list,
                              (ListItem){.label = LANG_FALLBACK_RESUME, .action = action_resumeGame, .action_id = POP_MENU_ACTION_RESUME},
@@ -413,6 +416,11 @@ void popMenu_create(void)
             // Load save states in a thread
             pthread_create(&g_scan_thread_pt, NULL, _scan_thread, NULL);
         }
+
+        list_addItem(&appState.pop_menu_list,
+                     (ListItem){.label = "Remove from Recent",
+                                .action = action_confirmRemove,
+                                .action_id = POP_MENU_ACTION_REMOVE_RECENT});
 
         list_addItemWithLang(&appState.pop_menu_list,
                              (ListItem){.label = LANG_FALLBACK_EXIT_TO_MENU, .action = action_exitToMenu, .action_id = POP_MENU_ACTION_EXIT},

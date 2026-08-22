@@ -228,31 +228,4 @@ void renderFooter(AppState *state)
     }
 }
 
-void renderLegend(AppState *state)
-{
-    if (state->show_legend && state->view_mode != VIEW_FULLSCREEN) {
-        SDL_Surface *legend = resource_getSurface(LEGEND_GAMESWITCHER);
-        if (legend) {
-            SDL_Rect legend_rect = {g_display.width - legend->w,
-                                    state->view_mode == VIEW_NORMAL ? state->header_height : 0};
-            SDL_BlitSurface(legend, NULL, screen, &legend_rect);
-        }
-    }
-}
-
-void renderBrightness(AppState *state)
-{
-    if (state->brightness_changed) {
-        // Display luminosity slider
-        SDL_Surface *brightness = resource_getBrightness(settings.brightness);
-        bool vertical = brightness->h > brightness->w;
-        SDL_Rect brightness_rect = {0, (double)(state->view_mode == VIEW_NORMAL ? 240 : 210) * g_scale - brightness->h / 2};
-        if (!vertical) {
-            brightness_rect.x = (g_display.width - brightness->w) / 2;
-            brightness_rect.y = state->view_mode == VIEW_NORMAL ? state->header_height : 0;
-        }
-        SDL_BlitSurface(brightness, NULL, screen, &brightness_rect);
-    }
-}
-
 #endif // GAME_SWITCHER_RENDER_H__

@@ -76,10 +76,10 @@ int main(int argc, char *argv[])
 
     mkdirs("/mnt/SDCARD/.tmp_update/config/gameSwitcher");
 
-    appState.show_time = config_flag_get("gameSwitcher/showTime");
-    appState.show_total = !config_flag_get("gameSwitcher/hideTotal");
-    appState.show_legend = !config_flag_get("gameSwitcher/hideLegend");
-    appState.view_mode = appState.view_restore = config_flag_get("gameSwitcher/minimal") ? VIEW_MINIMAL : VIEW_NORMAL;
+    appState.show_time = true;
+    appState.show_total = true;
+    appState.view_mode = VIEW_NORMAL;
+    quickSettings_init();
 
     appState.transparent_bg = SDL_CreateRGBSurface(0, g_display.width, g_display.height, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
     SDL_FillRect(appState.transparent_bg, NULL, 0xBE000000);
@@ -87,8 +87,6 @@ int main(int argc, char *argv[])
     int battery_percentage = battery_getPercentage();
 
     appState.last_ticks = SDL_GetTicks();
-    appState.legend_start = appState.last_ticks;
-    appState.brightness_start = appState.last_ticks;
 
     appState.custom_header = loadOptionalImage("extra/gs-top-bar");
     appState.custom_footer = loadOptionalImage("extra/gs-bottom-bar");
@@ -103,17 +101,6 @@ int main(int argc, char *argv[])
         appState.acc_ticks += ticks - appState.last_ticks;
         appState.last_ticks = ticks;
 
-        if (appState.show_legend && ticks - appState.legend_start > appState.legend_timeout) {
-            appState.show_legend = false;
-            config_flag_set("gameSwitcher/hideLegend", true);
-            appState.changed = true;
-        }
-
-        if (appState.brightness_changed && ticks - appState.brightness_start > appState.brightness_timeout) {
-            appState.brightness_changed = false;
-            appState.changed = true;
-        }
-
         handleKeystate(&appState);
 
         if (battery_hasChanged(ticks, &battery_percentage))
@@ -122,7 +109,9 @@ int main(int argc, char *argv[])
         if (appState.acc_ticks >= appState.time_step) {
             appState.acc_ticks -= appState.time_step;
 
-            if (!appState.changed && !appState.brightness_changed && (appState.surfaceGameName == NULL || appState.surfaceGameName->w <= appState.game_name_max_width))
+            if (!appState.changed &&
+                (appState.surfaceGameName == NULL ||
+                 appState.surfaceGameName->w <= appState.game_name_max_width))
                 continue;
 
             Game_s *game = &game_list[appState.current_game];
@@ -146,16 +135,18 @@ int main(int argc, char *argv[])
                 }
             }
 
-            if (appState.view_mode != VIEW_FULLSCREEN && game_list_len > 0 && !appState.pop_menu_open) {
+            if (appState.view_mode != VIEW_FULLSCREEN && game_list_len > 0 &&
+                !appState.pop_menu_open && !appState.quick_settings_open) {
                 renderGameName(&appState);
             }
 
-            if (!appState.changed && !appState.brightness_changed) {
+            if (!appState.changed) {
                 render();
                 continue;
             }
 
-            if (appState.view_mode == VIEW_NORMAL && !appState.pop_menu_open) {
+            if (appState.view_mode == VIEW_NORMAL && !appState.pop_menu_open &&
+                !appState.quick_settings_open) {
                 renderFooter(&appState);
             }
 
@@ -163,11 +154,9 @@ int main(int argc, char *argv[])
                 renderHeader(&appState, battery_percentage);
             }
 
-            renderLegend(&appState);
-            renderBrightness(&appState);
-
             if (!appState.first_render) {
                 renderPopMenu(&appState);
+                quickSettings_render(&appState);
             }
 
             render();
@@ -232,6 +221,9 @@ int main(int argc, char *argv[])
         SDL_FreeSurface(appState.surfaceGameName);
     if (appState.transparent_bg != NULL)
         SDL_FreeSurface(appState.transparent_bg);
+
+    popMenu_destroy();
+    quickSettings_destroy();
 
     resources_free();
 
