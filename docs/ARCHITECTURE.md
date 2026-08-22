@@ -163,7 +163,8 @@ exposes bounded health refresh, privacy-safe support export, confirmed
 signed-update rollback, and an explicit normal restart. The latch is cleared
 only when runtime receives that dedicated
 restart handoff. State publication is private, atomic, and symlink-refusing;
-malformed state fails closed rather than being silently reset. MainUI remains
+malformed state is preserved and runtime fails into Safe Mode rather than
+silently resetting it or resuming normal work. MainUI remains
 the development fallback until the default-shell transition and physical
 recovery validation are complete. A guarded settings-reset service and
 first-run recovery presentation remain separate work.

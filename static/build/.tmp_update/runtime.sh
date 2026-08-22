@@ -236,11 +236,13 @@ bloom_shell_safe_mode_pending() {
     pending_guard="$sysdir/bin/bloom-shell-guard"
     [ -x "$pending_guard" ] || return 1
     pending_threshold="${BLOOM_SHELL_FAILURE_THRESHOLD:-3}"
-    case "$pending_threshold" in ''|*[!0-9]*) return 1 ;; esac
-    pending_state="$($pending_guard status 2> /dev/null)" || return 1
-    printf '%s\n' "$pending_state" | "$sysdir/bin/jq" -e --argjson threshold "$pending_threshold" \
+    case "$pending_threshold" in ''|*[!0-9]*) return 0 ;; esac
+    pending_state="$($pending_guard status 2> /dev/null)" || return 0
+    pending_effective="$(printf '%s\n' "$pending_state" | \
+        "$sysdir/bin/jq" -r --argjson threshold "$pending_threshold" \
         '.safe_mode or (.phase == "starting" and (.consecutive_failures + 1) >= $threshold)' \
-        > /dev/null 2>&1
+        2> /dev/null)" || return 0
+    [ "$pending_effective" = true ]
 }
 
 launch_bloom_shell() {
@@ -252,8 +254,9 @@ launch_bloom_shell() {
     safe_mode=false
     if [ -x "$shell_guard" ]; then
         guard_state="$($shell_guard begin)" || {
-            log "Bloom Shell crash state is unavailable; using normal mode"
+            log "Bloom Shell crash state is unavailable; using Safe Mode"
             guard_state=""
+            safe_mode=true
         }
         if [ -n "$guard_state" ]; then
             launch_id="$(printf '%s\n' "$guard_state" | "$sysdir/bin/jq" -er '.launch_id')"
@@ -285,13 +288,14 @@ launch_bloom_shell() {
         kill "$ready_marker_pid" 2> /dev/null || true
         wait "$ready_marker_pid" 2> /dev/null || true
     fi
-    if [ "$shell_status" -eq 21 ] && [ -n "$launch_id" ]; then
-        if "$shell_guard" clear-safe-mode > /dev/null 2>&1; then
+    if [ "$shell_status" -eq 21 ]; then
+        if [ -n "$launch_id" ] && "$shell_guard" clear-safe-mode > /dev/null 2>&1; then
             unset BLOOM_RA_FORCE_DISABLED
             log "Bloom Safe Mode cleared; restarting normally"
             return 0
         fi
         log "Bloom Safe Mode could not be cleared"
+        return 0
     fi
     if [ "$shell_status" -eq 20 ] && [ -f "$sysdir/cmd_to_run.sh" ]; then
         [ -z "$launch_id" ] || "$shell_guard" complete "$launch_id" > /dev/null 2>&1 ||

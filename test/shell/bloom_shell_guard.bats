@@ -120,6 +120,10 @@ setup() {
     run bloom_shell_safe_mode_pending
     [ "$status" -eq 0 ]
     [ "$("$GUARD" status | jq -er '.safe_mode')" = false ]
+
+    printf 'malformed\n' > "$BLOOM_SHELL_GUARD_ROOT/shell-state.json"
+    run bloom_shell_safe_mode_pending
+    [ "$status" -eq 0 ]
 }
 
 @test "runtime dynamically records crashes latches safe mode and clears structured handoff" {
