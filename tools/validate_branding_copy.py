@@ -10,6 +10,9 @@ import sys
 
 
 SCOPES = (
+    "src/bloomShell",
+    "src/bloomUi",
+    "src/gameSwitcher",
     "src/tweaks",
     "src/installUI",
     "src/easter",
@@ -18,15 +21,16 @@ SCOPES = (
     "static/configs/Saves/CurrentProfile/saves/README.txt",
     "static/build/autorun.inf",
     "static/build/.tmp_update/onionVersion/acknowledgments.txt",
+    "static/packages/App/Quick Guide/App/Onion_Manual",
 )
-TEXT_SUFFIXES = {".c", ".cc", ".cpp", ".h", ".hpp", ".inf", ".sh", ".txt"}
+TEXT_SUFFIXES = {".c", ".cc", ".cpp", ".h", ".hpp", ".inf", ".json", ".sh", ".txt"}
 ONION = re.compile(r"onion", re.IGNORECASE)
 LEGACY_CREDENTIALS = {
     '"Username: onion\\n"',
     '"Password: onion\\n"',
     '"Password: onion\\n");',
 }
-INTERNAL_IDENTIFIERS = ("onionVersion",)
+INTERNAL_IDENTIFIERS = ("onion-compatible", "onionVersion", "Onion_Manual")
 LEGAL_ATTRIBUTIONS = ("UPSTREAM ONIONUI",)
 
 

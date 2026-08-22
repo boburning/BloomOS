@@ -65,13 +65,16 @@ Matches are classified as user-facing replacement, explicit compatibility or
 migration copy, retained legal attribution, internal identifier, or removal.
 The release gate fails on unclassified user-facing matches.
 
-The automated scope covers Bloom-owned Tweaks C/C++ source plus the canonical
-Bloom mark, boot identity, installer, SD-card label, and save-folder help copy.
+The automated copy scope covers the stable Bloom Shell, shared Bloom UI,
+GameSwitcher, Quick Guide, Bloom-owned Tweaks C/C++ source, installer,
+SD-card label, and save-folder help copy. The separate deterministic asset gate
+covers the canonical Bloom mark and boot identity.
 Four literal `onion` values remain classified as legacy network
 usernames/passwords; they are compatibility credentials, not product copy, and
 require a separate migration before they can be renamed. The internal
 `onionVersion` directory remains a classified migration boundary, while the
-About screen labels the retained upstream contributor list explicitly. Any
-other Onion match in those scopes or any pixel drift in the generated branding
-assets fails the shell gate. Later slices expand the scanner as each stable UI
-surface and asset tree moves under Bloom ownership.
+About screen labels the retained upstream contributor list explicitly. The
+internal `onion-compatible` app classification and the legacy `Onion_Manual`
+package directory are compatibility identifiers; neither is displayed as
+Bloom product identity. Any other Onion match in those scopes or any pixel
+drift in the generated branding assets fails the shell gate.
