@@ -1,0 +1,128 @@
+#!/bin/sh
+set -eu
+
+ROOT="${BLOOM_SHELL_GUARD_ROOT:-/mnt/SDCARD/.bloom/runtime}"
+STATE="$ROOT/shell-state.json"
+JQ="${BLOOM_JQ_BIN:-/mnt/SDCARD/.tmp_update/bin/jq}"
+THRESHOLD="${BLOOM_SHELL_FAILURE_THRESHOLD:-3}"
+
+fail() { printf 'bloom-shell-guard: %s\n' "$*" >&2; exit 1; }
+
+case "$THRESHOLD" in ''|*[!0-9]*) fail "failure threshold is invalid" ;; esac
+[ "$THRESHOLD" -ge 1 ] && [ "$THRESHOLD" -le 10 ] || fail "failure threshold is invalid"
+[ -x "$JQ" ] || fail "jq is unavailable"
+[ ! -L "$ROOT" ] || fail "runtime state root is unsafe"
+mkdir -p "$ROOT" || fail "cannot create runtime state root"
+[ -d "$ROOT" ] && [ ! -L "$ROOT" ] || fail "runtime state root is unsafe"
+[ ! -L "$STATE" ] || fail "runtime state is unsafe"
+
+default_state() {
+    printf '%s\n' '{"schema":1,"phase":"idle","launch_id":0,"consecutive_failures":0,"safe_mode":false}'
+}
+
+read_state() {
+    if [ ! -e "$STATE" ]; then
+        default_state
+        return
+    fi
+    [ -f "$STATE" ] && [ ! -L "$STATE" ] || fail "runtime state is unsafe"
+    "$JQ" -ec '
+        select(.schema == 1) |
+        select(.phase == "idle" or .phase == "starting" or .phase == "ready" or .phase == "failed") |
+        select((.launch_id | type) == "number" and .launch_id >= 0 and .launch_id <= 2147483647 and (.launch_id | floor) == .launch_id) |
+        select((.consecutive_failures | type) == "number" and .consecutive_failures >= 0 and .consecutive_failures <= 10 and (.consecutive_failures | floor) == .consecutive_failures) |
+        select((.safe_mode | type) == "boolean")
+    ' "$STATE" || fail "runtime state is invalid"
+}
+
+publish() {
+    temporary="$STATE.tmp.$$"
+    [ ! -e "$temporary" ] && [ ! -L "$temporary" ] || fail "temporary runtime state is unsafe"
+    umask 077
+    printf '%s\n' "$1" > "$temporary" || fail "cannot write runtime state"
+    "$JQ" -e . "$temporary" > /dev/null || { rm -f "$temporary"; fail "generated runtime state is invalid"; }
+    mv "$temporary" "$STATE" || { rm -f "$temporary"; fail "cannot publish runtime state"; }
+}
+
+require_launch_id() {
+    [ "$#" -eq 1 ] || fail "expected launch id"
+    case "$1" in ''|*[!0-9]*) fail "launch id is invalid" ;; esac
+    [ "$1" -le 2147483647 ] || fail "launch id is invalid"
+}
+
+command="${1:-}"
+case "$command" in
+    status)
+        [ "$#" -eq 1 ] || fail "status takes no arguments"
+        read_state
+        ;;
+    begin)
+        [ "$#" -eq 1 ] || fail "begin takes no arguments"
+        state="$(read_state)"
+        phase="$(printf '%s\n' "$state" | "$JQ" -er '.phase')"
+        failures="$(printf '%s\n' "$state" | "$JQ" -er '.consecutive_failures')"
+        if [ "$phase" = starting ]; then
+            failures=$((failures + 1))
+        fi
+        [ "$failures" -le 10 ] || failures=10
+        launch_id="$(printf '%s\n' "$state" | "$JQ" -er '.launch_id + 1')"
+        [ "$launch_id" -le 2147483647 ] || launch_id=1
+        safe_mode=false
+        if [ "$(printf '%s\n' "$state" | "$JQ" -er '.safe_mode')" = true ] ||
+            [ "$failures" -ge "$THRESHOLD" ]; then
+            safe_mode=true
+        fi
+        next="$(printf '%s\n' "$state" | "$JQ" -c \
+            --argjson launch_id "$launch_id" --argjson failures "$failures" \
+            --argjson safe_mode "$safe_mode" \
+            '.phase="starting" | .launch_id=$launch_id | .consecutive_failures=$failures | .safe_mode=$safe_mode')"
+        publish "$next"
+        printf '%s\n' "$next"
+        ;;
+    ready)
+        shift
+        require_launch_id "$@"
+        state="$(read_state)"
+        [ "$(printf '%s\n' "$state" | "$JQ" -er '.phase')" = starting ] || fail "launch is not starting"
+        [ "$(printf '%s\n' "$state" | "$JQ" -er '.launch_id')" = "$1" ] || fail "launch id does not match"
+        next="$(printf '%s\n' "$state" | "$JQ" -c '.phase="ready" | .consecutive_failures=0')"
+        publish "$next"
+        printf '%s\n' "$next"
+        ;;
+    failed)
+        shift
+        require_launch_id "$@"
+        state="$(read_state)"
+        phase="$(printf '%s\n' "$state" | "$JQ" -er '.phase')"
+        [ "$phase" = starting ] || [ "$phase" = ready ] || fail "launch is not active"
+        [ "$(printf '%s\n' "$state" | "$JQ" -er '.launch_id')" = "$1" ] || fail "launch id does not match"
+        failures="$(printf '%s\n' "$state" | "$JQ" -er '.consecutive_failures + 1')"
+        [ "$failures" -le 10 ] || failures=10
+        safe_mode="$(printf '%s\n' "$state" | "$JQ" -r '.safe_mode')"
+        [ "$failures" -ge "$THRESHOLD" ] && safe_mode=true
+        next="$(printf '%s\n' "$state" | "$JQ" -c \
+            --argjson failures "$failures" --argjson safe_mode "$safe_mode" \
+            '.phase="failed" | .consecutive_failures=$failures | .safe_mode=$safe_mode')"
+        publish "$next"
+        printf '%s\n' "$next"
+        ;;
+    complete)
+        shift
+        require_launch_id "$@"
+        state="$(read_state)"
+        phase="$(printf '%s\n' "$state" | "$JQ" -er '.phase')"
+        [ "$phase" = starting ] || [ "$phase" = ready ] || fail "launch is not active"
+        [ "$(printf '%s\n' "$state" | "$JQ" -er '.launch_id')" = "$1" ] || fail "launch id does not match"
+        next="$(printf '%s\n' "$state" | "$JQ" -c '.phase="idle" | .consecutive_failures=0')"
+        publish "$next"
+        printf '%s\n' "$next"
+        ;;
+    clear-safe-mode)
+        [ "$#" -eq 1 ] || fail "clear-safe-mode takes no arguments"
+        state="$(read_state)"
+        next="$(printf '%s\n' "$state" | "$JQ" -c '.phase="idle" | .consecutive_failures=0 | .safe_mode=false')"
+        publish "$next"
+        printf '%s\n' "$next"
+        ;;
+    *) fail "expected {status|begin|ready LAUNCH_ID|failed LAUNCH_ID|complete LAUNCH_ID|clear-safe-mode}" ;;
+esac

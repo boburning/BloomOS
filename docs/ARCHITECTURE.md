@@ -150,6 +150,17 @@ session before control returns to the runtime. Any other exit or crash removes i
 handoff files and immediately starts MainUI as the recovery fallback. This is
 not yet the stable default path.
 
+`bloom-shell-guard` persists only a bounded schema-1 launch phase, numeric
+launch ID, consecutive startup-failure count, and Safe Mode flag. Runtime marks
+each shell start before execution, marks it ready only while the same launch is
+still alive after the startup window, and clears the count after a structured
+launch handoff. Three consecutive early failures, including a start interrupted
+by power loss, latch Safe Mode for the next shell launch. State publication is
+private, atomic, and symlink-refusing; malformed state fails closed rather than
+being silently reset. MainUI remains the development
+fallback until the Bloom-owned Safe Mode surface and default-shell transition
+are complete.
+
 The public boundary exposes `bloomctl library status` and the explicit
 `bloomctl library import-onion` mutation. The importer reads a signed package
 catalog that maps Onion emulator folders to stable Bloom system IDs, validates
