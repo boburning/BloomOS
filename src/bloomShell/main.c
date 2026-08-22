@@ -803,6 +803,8 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
                              ? "Left/Right Choose   A Open   MENU Switcher   START Quick"
                          : destination == BLOOM_UI_DESTINATION_SETTINGS
                              ? "Left/Right Change   A Open/Toggle   B Home   START Quick"
+                         : destination == BLOOM_UI_DESTINATION_APPS
+                             ? "A Open   B Home   START Quick"
                              : "A Play   X Actions   Y Favorite   SELECT Search   B Home";
     render_label(screen, compact_font, footer, layout->footer.x + 56,
                  layout->footer.y + layout->footer.height / 3, layout->footer.width - 76, sand);

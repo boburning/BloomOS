@@ -1,0 +1,60 @@
+{
+  "schema": 1,
+  "date": "2026-08-22",
+  "operator": "Codex over maintainer-authorized SSH",
+  "device": "miyoo-mini-plus",
+  "model_id": 354,
+  "installed_version": "v0.1.0-dev-e98840d9",
+  "installed_update_phase": "known_good",
+  "finding": {
+    "catalog_generation_before": 2,
+    "apps_before": {
+      "mainui-dependent": 23
+    },
+    "cause": "The signed upgrade installed reviewed app declarations but did not reconcile existing schema-4 catalog rows before Bloom Shell loaded them."
+  },
+  "guarded_reconciliation": {
+    "backup_path_redacted": true,
+    "backup_sha256": "62a93395b197fc948c498bd8c45823187468acdcf8b654048c6768387eb1d9be",
+    "operation": "bloomctl library import-onion",
+    "changed": true,
+    "catalog_generation_after": 3,
+    "catalog_sha256_after": "ae93fc85f02ab8af921be8f42328067b974be92221898ad1f96eba623e18bf75",
+    "apps_after": {
+      "bloom-native": 2,
+      "development-only": 1,
+      "mainui-dependent": 20
+    },
+    "repeat_changed": false,
+    "repeat_generation": 3,
+    "aggregate_health_after": "healthy"
+  },
+  "supervised_launch": {
+    "application": "Quick Guide",
+    "compatibility": "bloom-native",
+    "processes_observed": ["launch.sh", "infoPanel"],
+    "rendered_identity": "BloomOS Quick Guide",
+    "launch_page_sha256": "aacc8e4858f3c7086d3869d94e0fa82a75d4fa4f73f83c31b90be7e62c966ab8",
+    "return_input": "B",
+    "return_process": "bloom-shell",
+    "return_page_sha256": "1cd87b46e20de5634e5353fcae6ff893970b4f276ac5096123b2e08353bf3343",
+    "return_matches_prior_root": true,
+    "mainui_observed": false,
+    "all_visible_pages_equal": true,
+    "aggregate_health_after_return": "healthy"
+  },
+  "regression": {
+    "native_tests": "232/232",
+    "focused_shell_tests": "4/4"
+  },
+  "follow_up": {
+    "boot_reconciliation_implemented": true,
+    "apps_footer_restricted_to_current_actions": true,
+    "new_runtime_not_installed_by_this_evidence": true
+  },
+  "limitations": [
+    "The installed signed release required one explicit guarded reconciliation; the automatic boot fix is host-tested but not installed by this run.",
+    "Framebuffer captures and injected Linux input events are remote evidence, not tactile or physical-panel review.",
+    "Only Quick Guide received a sustained launch/return check; other reviewed apps and malformed-theme fallback remain pending."
+  ]
+}
