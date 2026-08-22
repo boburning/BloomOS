@@ -449,9 +449,11 @@ Current frontend progress:
   shell through the guarded crash threshold and enter Bloom Safe Mode; MainUI
   requires both Developer Mode and a separate explicit fallback marker. Signed
   Plus evidence covers the default boot, recoverable first run, direct root,
-  system browsing, supervised app launch/return, and Bloom-owned recovery
-  surface with MainUI absent. Representative physical game launch/return and
-  boot-loop validation remain under the hardware/default-shell gates.
+  system browsing, supervised app launch/return, one real structured GB launch,
+  canonical Recent/GameSwitcher/Continue propagation, and the Bloom-owned
+  recovery surface with MainUI absent. Physical controls, semantic save/state
+  behavior, representative multi-system play, and boot-loop validation remain
+  under the hardware/default-shell gates.
 - [x] Stable theme isolation. Bloom-owned surfaces use the fixed Bloom design
   system and never invoke the legacy `themeSwitcher`; missing, malformed, and
   MainUI-specific theme state therefore cannot redirect stable shell styling.
