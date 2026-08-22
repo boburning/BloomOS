@@ -52,7 +52,7 @@ jobs:
           .git/modules/third-party/zlib
         key: test-submodules-${{ runner.os }}-${{ steps.submodules.outputs.sha }}
     - name: Checkout pinned test submodules
-      run: git submodule update --init --force --depth 1 -- third-party/rcheevos third-party/zlib
+      run: tools/checkout-submodules.sh third-party/rcheevos third-party/zlib
     - name: Test CI scope policy
       run: sh test/test_ci_scope.sh
     - name: Resolve static-analysis scope
