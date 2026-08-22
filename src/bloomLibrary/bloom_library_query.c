@@ -241,21 +241,25 @@ int bloom_library_query_favorites(sqlite3 *database, const char *system_id, size
     return query_ordered(database, "favorites", system_id, limit, games, games_capacity, count);
 }
 
-int bloom_library_query_apps(sqlite3 *database, size_t limit, BloomLibraryApp *apps,
-                             size_t apps_capacity, size_t *count)
+int bloom_library_query_apps(sqlite3 *database, int include_development, size_t limit,
+                             BloomLibraryApp *apps, size_t apps_capacity, size_t *count)
 {
-    if (database == NULL || limit == 0 || limit > BLOOM_LIBRARY_QUERY_LIMIT_MAX || apps == NULL ||
-        apps_capacity < limit || count == NULL)
+    if (database == NULL || (include_development != 0 && include_development != 1) || limit == 0 ||
+        limit > BLOOM_LIBRARY_QUERY_LIMIT_MAX || apps == NULL || apps_capacity < limit ||
+        count == NULL)
         return SQLITE_MISUSE;
     *count = 0;
     sqlite3_stmt *statement = NULL;
     int sql = sqlite3_prepare_v2(
         database,
-        "SELECT app_id,label,launch_path,icon_path,compatibility FROM apps WHERE present=1 "
-        "ORDER BY label,app_id LIMIT ?1",
+        "SELECT app_id,label,launch_path,icon_path,compatibility FROM apps WHERE present=1 AND "
+        "(compatibility IN('bloom-native','onion-compatible') OR "
+        "(?1=1 AND compatibility='development-only')) ORDER BY label,app_id LIMIT ?2",
         -1, &statement, NULL);
     if (sql == SQLITE_OK)
-        sql = sqlite3_bind_int(statement, 1, (int)limit);
+        sql = sqlite3_bind_int(statement, 1, include_development);
+    if (sql == SQLITE_OK)
+        sql = sqlite3_bind_int(statement, 2, (int)limit);
     int step = SQLITE_DONE;
     while (sql == SQLITE_OK && (step = sqlite3_step(statement)) == SQLITE_ROW) {
         BloomLibraryApp *app = &apps[*count];

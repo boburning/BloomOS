@@ -51,7 +51,7 @@ int bloom_library_query_recents(sqlite3 *database, const char *system_id, size_t
 int bloom_library_query_favorites(sqlite3 *database, const char *system_id, size_t limit,
                                   BloomLibraryGame *games, size_t games_capacity, size_t *count);
 
-int bloom_library_query_apps(sqlite3 *database, size_t limit, BloomLibraryApp *apps,
-                             size_t apps_capacity, size_t *count);
+int bloom_library_query_apps(sqlite3 *database, int include_development, size_t limit,
+                             BloomLibraryApp *apps, size_t apps_capacity, size_t *count);
 
 #endif

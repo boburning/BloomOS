@@ -96,7 +96,7 @@ static void settings_focus_step(BloomUiFocus *focus,
 
 static int load_catalog(BloomLibraryGame **games, size_t *game_count, BloomLibraryGame *recents,
                         size_t *recent_count, BloomLibraryGame *favorites, size_t *favorite_count,
-                        BloomLibraryApp *apps, size_t *app_count,
+                        BloomLibraryApp *apps, size_t *app_count, int include_development,
                         BloomShellGamesBrowser *browser)
 {
     sqlite3 *database = NULL;
@@ -121,8 +121,8 @@ static int load_catalog(BloomLibraryGame **games, size_t *game_count, BloomLibra
         result = bloom_library_query_favorites(database, NULL, FAVORITES_CAPACITY_MAX, favorites,
                                                FAVORITES_CAPACITY_MAX, favorite_count);
     if (result == SQLITE_OK)
-        result = bloom_library_query_apps(database, APPS_CAPACITY_MAX, apps, APPS_CAPACITY_MAX,
-                                          app_count);
+        result = bloom_library_query_apps(database, include_development, APPS_CAPACITY_MAX, apps,
+                                          APPS_CAPACITY_MAX, app_count);
     BloomLibrarySystem systems[BLOOM_SHELL_SYSTEM_CAPACITY] = {0};
     size_t system_count = 0;
     if (result == SQLITE_OK)
@@ -595,8 +595,9 @@ int main(int argc, char **argv)
         return 1;
     }
     fclose(model_file);
+    int developer_mode = developer_mode_enabled();
     BloomShellCapabilities capabilities = {0};
-    if (bloom_shell_capabilities_from_model(model, developer_mode_enabled(), &capabilities) != 0)
+    if (bloom_shell_capabilities_from_model(model, developer_mode, &capabilities) != 0)
         return 1;
     BloomShellStatus status = {0};
     bloom_shell_status_load(BLOOM_STATUS_BINARY, &status);
@@ -613,7 +614,7 @@ int main(int argc, char **argv)
     size_t favorite_count = 0;
     size_t app_count = 0;
     if (load_catalog(&games, &game_count, recents, &recent_count, favorites, &favorite_count, apps,
-                     &app_count, &games_browser) != 0)
+                     &app_count, developer_mode, &games_browser) != 0)
         return 1;
     int has_recent = recent_count > 0;
     if (argc == 2 && strcmp(argv[1], "--probe") == 0) {
@@ -991,8 +992,8 @@ int main(int argc, char **argv)
         else if (action == BLOOM_UI_ACTION_CONFIRM && destination == BLOOM_UI_DESTINATION_APPS &&
                  apps_focus.item_count > 0) {
             char error[256] = {0};
-            if (bloom_shell_stage_app(&apps[apps_focus.selected], "/mnt/SDCARD", COMMAND_PATH,
-                                      error, sizeof(error)) == 0) {
+            if (bloom_shell_stage_app(&apps[apps_focus.selected], developer_mode, "/mnt/SDCARD",
+                                      COMMAND_PATH, error, sizeof(error)) == 0) {
                 exit_code = LAUNCH_READY_EXIT;
                 running = 0;
             }
