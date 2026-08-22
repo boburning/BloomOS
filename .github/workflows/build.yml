@@ -13,6 +13,8 @@ on:
       - 'src/**/*.hpp'
       - 'third-party/**'
       - 'tools/checkout-submodules.sh'
+      - 'tools/ci-scope.sh'
+      - 'test/test_ci_scope.sh'
 
 permissions:
   contents: read
