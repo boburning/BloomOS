@@ -32,8 +32,21 @@ while IFS= read -r path; do
                 add_target src/bloomShell
             fi
             ;;
+        src/bloomShell/bloom_shell_launch.c|src/bloomShell/bloom_shell_launch.h|\
+        src/bloomShell/bloom_shell_settings.c|src/bloomShell/bloom_shell_settings.h)
+            if [ "$mode" = build ]; then
+                add_target bloomShell
+                add_target gameSwitcher
+            else
+                add_target src/bloomShell
+                add_target src/gameSwitcher
+            fi
+            ;;
         src/bloomShell/*)
             if [ "$mode" = build ]; then add_target bloomShell; else add_target src/bloomShell; fi
+            ;;
+        src/gameSwitcher/*)
+            if [ "$mode" = build ]; then add_target gameSwitcher; else add_target src/gameSwitcher; fi
             ;;
         src/bloomRa/*)
             if [ "$mode" = build ]; then add_target bloomRa; else add_target src/bloomRa; fi
@@ -49,9 +62,11 @@ while IFS= read -r path; do
             if [ "$mode" = build ]; then
                 add_target bloomLibrary
                 add_target bloomShell
+                add_target gameSwitcher
             else
                 add_target src/bloomLibrary
                 add_target src/bloomShell
+                add_target src/gameSwitcher
             fi
             ;;
         src/bloomLaunch/*|src/bloomGameId/*)
@@ -59,9 +74,20 @@ while IFS= read -r path; do
             if [ "$mode" = build ]; then
                 add_target "$component"
                 add_target bloomShell
+                add_target gameSwitcher
             else
                 add_target "src/$component"
                 add_target src/bloomShell
+                add_target src/gameSwitcher
+            fi
+            ;;
+        src/playActivity/*)
+            if [ "$mode" = build ]; then
+                add_target playActivity
+                add_target gameSwitcher
+            else
+                add_target src/playActivity
+                add_target src/gameSwitcher
             fi
             ;;
         src/*)
