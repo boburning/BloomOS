@@ -397,11 +397,12 @@ Current frontend progress:
   backends, Flip Wi-Fi lifecycle ownership, and replacement of the remaining
   inherited auxiliary network services remain pending.
 - [ ] Bloom Shell vertical slice and supervised MainUI fallback. The native
-  development shell now renders Home and a cursor-paged Game Boy library from
+  development shell prototype renders Home and a cursor-paged Game Boy library from
   in-memory Bloom catalog rows. Home consumes the canonical recent order and
   offers one-press resume for the latest present GB game without reparsing the
-  MainUI list. Collections consumes canonical GB favorites, with L1/R1 navigation
-  limited to the three destinations that have real models. Library, favorite, and
+  MainUI list. The 1.0 UX convergence tracked by #301 supersedes its
+  Home/Library/Collections destinations, MENU picker, and shoulder navigation
+  with one Continue plus Games/Favorites/Recent/Apps/Settings root. Library, favorite, and
   Home resume selections stage through the structured launch and session services,
   and return through the runtime loop. Apps are classified explicitly; only
   `bloom-native` and reviewed `onion-compatible` launchers can cross the
@@ -424,10 +425,12 @@ Current frontend progress:
   catalog and found one GB game without opening the display. Interactive
   browse/launch/return and crash-fallback hardware validation remain pending.
 - [ ] Unified Bloom Settings and Quick Settings. Bloom Shell now exposes the
-  agreed top-level settings categories with capability-filtered Network and
+  safe prototype settings categories with capability-filtered Network and
   Developer controls, preserves the plain-language System health/update/RA
   summary as a nested destination, and opens a bounded START Quick Settings
-  model on every normal shell screen. It now loads the bounded canonical values
+  model on every normal shell screen. #301 retains those safe adapters while
+  replacing category-first navigation with one flat sectioned Settings surface
+  and at most one focused detail layer. It now loads the bounded canonical values
   once before rendering, shows actual brightness/volume/mute/Wi-Fi state, and
   routes left/right changes through fixed Bloom control and network adapters;
   failed reads are explicit and failed requests do not change the displayed
