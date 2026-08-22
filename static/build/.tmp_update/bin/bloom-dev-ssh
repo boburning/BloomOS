@@ -5,6 +5,7 @@ ROOT="${BLOOM_ROOT:-}"
 SD_ROOT="$ROOT/mnt/SDCARD"
 SYS_DIR="$SD_ROOT/.tmp_update"
 DEV_FLAG="$SD_ROOT/.bloom-dev"
+SERVICE_STATE_DIR="$SD_ROOT/.bloom/network-services"
 AUTHORIZED_KEYS="$SD_ROOT/.bloom/authorized_keys"
 ROOT_SSH_DIR="$ROOT/home/root/.ssh"
 DEV_HOME="$ROOT/tmp/bloom-dev-home"
@@ -80,8 +81,13 @@ supports_ssh() {
     [ "$model" = "354" ] || [ "$model" = "285" ]
 }
 
+ssh_requested() {
+    [ -f "$SERVICE_STATE_DIR/ssh.enabled" ] ||
+        { [ -f "$DEV_FLAG" ] && [ ! -f "$SERVICE_STATE_DIR/ssh.disabled" ]; }
+}
+
 start_ssh() {
-    if [ ! -f "$DEV_FLAG" ]; then
+    if ! ssh_requested; then
         state disabled
         return 0
     fi

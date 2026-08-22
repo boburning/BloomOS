@@ -40,12 +40,14 @@ list of destinations whose purpose is to open more destination lists.
 | SELECT | Search or filter on searchable game surfaces |
 | START | Quick Settings |
 | MENU | GameSwitcher |
-| L1/L2/R1/R2 | No Bloom-owned UI navigation |
+| L1 / R1 | Optional page up / page down on long vertical lists |
+| L2 / R2 | No Bloom-owned UI navigation |
 
-Shoulder inputs remain available to emulators and compatibility software, but
-Bloom Shell, GameSwitcher, Settings, dialogs, search, and Safe Mode assign them
-no navigation responsibility and never show shoulder hints. Essential behavior
-must not depend on long presses, chords, or undocumented timing.
+L1/R1 are optional list accelerators only: they move by one visible page with a
+one-row overlap. They never change root destinations, systems, tabs, values, or
+dialog choices, and no task requires them. L2/R2 remain unassigned. All shoulder
+inputs remain available to emulators and compatibility software. Essential
+behavior must not depend on long presses, chords, or undocumented timing.
 
 Safe Mode uses one flat recovery list rather than a second launcher hierarchy.
 It removes Continue and automatic resume, retains Games browsing, and exposes
@@ -53,8 +55,8 @@ only bounded recovery actions: health refresh, privacy-safe support export,
 confirmed signed-version restore, confirmed Settings reset, and explicit normal
 restart. Settings reset preserves an exact private pre-reset copy and does not
 touch games, saves, states, play history, library data, or account credentials.
-`B` at the Safe Mode root is safe, `START` still owns Quick Settings, `MENU`
-still owns GameSwitcher, and shoulders remain unassigned.
+`B` at the Safe Mode root is safe, `START` still owns Quick Settings, and `MENU`
+still owns GameSwitcher. Its short recovery list does not use shoulder paging.
 
 First launch uses one welcome surface, not a wizard. It reports the locally
 indexed game count and explains that games, saves, and imported settings stay
@@ -125,6 +127,12 @@ changes sliders/enums; `A` toggles or opens one focused detail sheet; `B`
 returns root. Simple values do not require a detail page. Capability predicates
 omit unsupported rows rather than disabling them.
 
+On Wi-Fi-capable hardware, Network includes Wi-Fi plus explicit SSH, SFTP, and
+Samba toggles. SSH is key-only and fails closed until a valid local public key
+is provisioned. SFTP uses the same encrypted listener but has its own gate;
+Samba remains behind Bloom's bounded compatibility adapter. All three services
+are off by default for normal installations and survive reboot when selected.
+
 Detail rows may open Wi-Fi selection, RA account entry, Update, Storage, Health
 and support export, About, or Developer diagnostics. `B` returns directly to
 Settings. Details do not become category trees or recreate Tweaks.
@@ -141,7 +149,8 @@ tools do not belong here.
 
 The header shows the current screen or system plus concise battery and
 capability-gated Wi-Fi state; it is not navigation. The footer shows only
-currently useful actions and never shoulders. Focus uses fill or contrast
+currently useful actions; long list footers may show optional `L/R Page`.
+Focus uses fill or contrast
 inversion in addition to the Bloom orange accent.
 
 Bloom uses the existing radial mark and warm brown/cream/orange/gold tokens,
@@ -166,11 +175,11 @@ not starve rendering. A 30-minute shell soak, 500 open/back/action cycles, and a
 
 The UX contract is complete only when one root exposes Continue plus the five
 fixed destinations; MENU is only GameSwitcher; START is only Quick Settings;
-shoulders have no Bloom navigation role; Games is the persistent two-axis
+L1/R1 only accelerate long vertical lists and L2/R2 remain unassigned; Games is the persistent two-axis
 browser; Favorites and Recent are direct; Settings is flat with at most one
 detail layer; Tweaks is not normally required or visible; GameSwitcher has no
 inherited special controls; footers teach the stable grammar; and all core tasks
-pass with D-pad plus A/B/X/Y/SELECT/START/MENU.
+pass without requiring L1/R1, using D-pad plus A/B/X/Y/SELECT/START/MENU.
 
 Physical review is required on Mini V2, Plus, and Flip for legibility, focus,
 root recognition, Continue and two-axis discoverability, long-list behavior,

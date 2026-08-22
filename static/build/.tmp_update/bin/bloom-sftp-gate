@@ -1,0 +1,10 @@
+#!/bin/sh
+set -eu
+
+ROOT=${BLOOM_ROOT:-}
+STATE_DIR="$ROOT/mnt/SDCARD/.bloom/network-services"
+SERVER=${BLOOM_SFTP_SERVER:-$ROOT/mnt/SDCARD/.tmp_update/bin/bloom-sftp-server}
+
+[ -f "$STATE_DIR/sftp.enabled" ] || exit 1
+[ -x "$SERVER" ] || exit 1
+exec "$SERVER"

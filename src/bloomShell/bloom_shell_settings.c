@@ -52,6 +52,9 @@ static const BloomShellSettingsDefinition settings_rows[] = {
      0},
     {{BLOOM_SHELL_SETTINGS_NETWORK_SECTION, BLOOM_SHELL_SETTINGS_ROW_SECTION, "NETWORK"}, 1, 0},
     {{BLOOM_SHELL_SETTINGS_WIFI, BLOOM_SHELL_SETTINGS_ROW_TOGGLE, "Wi-Fi"}, 1, 0},
+    {{BLOOM_SHELL_SETTINGS_SSH, BLOOM_SHELL_SETTINGS_ROW_TOGGLE, "SSH"}, 1, 0},
+    {{BLOOM_SHELL_SETTINGS_SFTP, BLOOM_SHELL_SETTINGS_ROW_TOGGLE, "SFTP"}, 1, 0},
+    {{BLOOM_SHELL_SETTINGS_SAMBA, BLOOM_SHELL_SETTINGS_ROW_TOGGLE, "Samba"}, 1, 0},
     {{BLOOM_SHELL_SETTINGS_RA_SECTION, BLOOM_SHELL_SETTINGS_ROW_SECTION, "RETROACHIEVEMENTS"},
      0,
      0},
@@ -163,6 +166,26 @@ int bloom_shell_settings_row_format(const BloomShellCapabilities *capabilities,
     case BLOOM_SHELL_SETTINGS_WIFI:
         length = values->ready ? snprintf(label, label_size, "Wi-Fi                  %s", values->wifi_enabled ? "On" : "Off")
                                : snprintf(label, label_size, "Wi-Fi            unavailable");
+        break;
+    case BLOOM_SHELL_SETTINGS_SSH:
+        length = !values->network_services_ready || !values->ssh_available
+                     ? snprintf(label, label_size, "SSH              needs public key")
+                     : snprintf(label, label_size, "SSH                       %s",
+                                values->ssh_enabled ? "On" : "Off");
+        break;
+    case BLOOM_SHELL_SETTINGS_SFTP:
+        length = !values->network_services_ready || !values->sftp_available
+                     ? snprintf(label, label_size, "SFTP               unavailable")
+                 : !values->ssh_enabled
+                     ? snprintf(label, label_size, "SFTP              requires SSH")
+                     : snprintf(label, label_size, "SFTP                      %s",
+                                values->sftp_enabled ? "On" : "Off");
+        break;
+    case BLOOM_SHELL_SETTINGS_SAMBA:
+        length = !values->network_services_ready || !values->samba_available
+                     ? snprintf(label, label_size, "Samba              unavailable")
+                     : snprintf(label, label_size, "Samba                     %s",
+                                values->samba_enabled ? "On" : "Off");
         break;
     case BLOOM_SHELL_SETTINGS_THEME:
         length = snprintf(label, label_size, "Theme                 Bloom");
@@ -317,6 +340,49 @@ int bloom_shell_quick_values_load(const char *settings_path, BloomShellQuickValu
     char json[QUICK_OUTPUT_MAX + 1];
     return load_output(settings_path, "values", NULL, json, sizeof(json)) == 0
                ? bloom_shell_quick_values_parse(json, values)
+               : -1;
+}
+
+int bloom_shell_network_services_parse(const char *json, BloomShellQuickValues *values)
+{
+    if (json == NULL || values == NULL)
+        return -1;
+    cJSON *root = cJSON_Parse(json);
+    const cJSON *schema = root == NULL ? NULL : cJSON_GetObjectItemCaseSensitive(root, "schema");
+    const cJSON *service = root == NULL ? NULL : cJSON_GetObjectItemCaseSensitive(root, "service");
+    const cJSON *ssh = root == NULL ? NULL : cJSON_GetObjectItemCaseSensitive(root, "ssh");
+    const cJSON *sftp = root == NULL ? NULL : cJSON_GetObjectItemCaseSensitive(root, "sftp");
+    const cJSON *samba = root == NULL ? NULL : cJSON_GetObjectItemCaseSensitive(root, "samba");
+    const cJSON *ssh_available = cJSON_GetObjectItemCaseSensitive(ssh, "available");
+    const cJSON *ssh_enabled = cJSON_GetObjectItemCaseSensitive(ssh, "enabled");
+    const cJSON *sftp_available = cJSON_GetObjectItemCaseSensitive(sftp, "available");
+    const cJSON *sftp_enabled = cJSON_GetObjectItemCaseSensitive(sftp, "enabled");
+    const cJSON *samba_available = cJSON_GetObjectItemCaseSensitive(samba, "available");
+    const cJSON *samba_enabled = cJSON_GetObjectItemCaseSensitive(samba, "enabled");
+    int result = -1;
+    if (cJSON_IsNumber(schema) && schema->valuedouble == 1.0 && cJSON_IsString(service) &&
+        strcmp(service->valuestring, "bloom-network-services") == 0 && cJSON_IsObject(ssh) &&
+        cJSON_IsObject(sftp) && cJSON_IsObject(samba) && cJSON_IsBool(ssh_available) &&
+        cJSON_IsBool(ssh_enabled) && cJSON_IsBool(sftp_available) && cJSON_IsBool(sftp_enabled) &&
+        cJSON_IsBool(samba_available) && cJSON_IsBool(samba_enabled)) {
+        values->ssh_available = cJSON_IsTrue(ssh_available);
+        values->ssh_enabled = cJSON_IsTrue(ssh_enabled);
+        values->sftp_available = cJSON_IsTrue(sftp_available);
+        values->sftp_enabled = cJSON_IsTrue(sftp_enabled);
+        values->samba_available = cJSON_IsTrue(samba_available);
+        values->samba_enabled = cJSON_IsTrue(samba_enabled);
+        values->network_services_ready = 1;
+        result = 0;
+    }
+    cJSON_Delete(root);
+    return result;
+}
+
+int bloom_shell_network_services_load(const char *services_path, BloomShellQuickValues *values)
+{
+    char json[QUICK_OUTPUT_MAX + 1];
+    return load_output(services_path, "status", NULL, json, sizeof(json)) == 0
+               ? bloom_shell_network_services_parse(json, values)
                : -1;
 }
 
@@ -548,6 +614,44 @@ static int run_request(const char *path, const char *first, const char *second, 
         _exit(127);
     }
     return wait_child(child);
+}
+
+int bloom_shell_network_service_change(BloomShellQuickValues *values,
+                                       BloomShellSettingsRowId id, int enabled,
+                                       const char *services_path)
+{
+    if (values == NULL || !values->network_services_ready ||
+        (enabled != 0 && enabled != 1))
+        return -1;
+    const char *service = NULL;
+    int *current = NULL;
+    int available = 0;
+    if (id == BLOOM_SHELL_SETTINGS_SSH) {
+        service = "ssh";
+        current = &values->ssh_enabled;
+        available = values->ssh_available;
+    }
+    else if (id == BLOOM_SHELL_SETTINGS_SFTP) {
+        service = "sftp";
+        current = &values->sftp_enabled;
+        available = values->sftp_available && values->ssh_enabled;
+    }
+    else if (id == BLOOM_SHELL_SETTINGS_SAMBA) {
+        service = "samba";
+        current = &values->samba_enabled;
+        available = values->samba_available;
+    }
+    if (service == NULL || current == NULL || !available)
+        return -1;
+    if (*current == enabled)
+        return 0;
+    if (run_request(services_path, "request", service, enabled ? "enable" : "disable") != 0)
+        return -1;
+    *current = enabled;
+    if (id == BLOOM_SHELL_SETTINGS_SSH && !enabled) {
+        values->sftp_enabled = 0;
+    }
+    return 0;
 }
 
 int bloom_shell_quick_settings_adjust(const BloomShellCapabilities *capabilities,

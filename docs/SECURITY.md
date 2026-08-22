@@ -2,11 +2,13 @@
 
 BloomOS is offline-first and collects no telemetry by default. Diagnostics remain local unless a user explicitly exports them.
 
-Production SSH is off by default. Automatic developer SSH is limited to
-Wi-Fi-capable hardware and requires both `/mnt/SDCARD/.bloom-dev` and a valid
-public-key file under `.bloom/authorized_keys`. Password and
-blank-password authentication are disabled. Private keys, device addresses,
-and accepted host fingerprints remain on the developer workstation.
+Production SSH and SFTP are off by default. Existing developer installations
+retain automatic SSH until explicitly disabled; otherwise the Network settings
+toggle is required. Both services are limited to Wi-Fi-capable hardware and a
+valid public-key file under `.bloom/authorized_keys`. Password and blank-password
+authentication are disabled. SFTP is separately gated behind its own explicit
+toggle. Private keys, device addresses, and accepted host fingerprints remain
+on the developer workstation.
 BloomOS bundles a dedicated Dropbear server with public-key authentication and
 modern SSH algorithms. `bloom-device` pins the configured identity, permits
 public-key authentication only, and refuses unknown or changed host keys.

@@ -1,0 +1,118 @@
+#!/bin/sh
+set -eu
+
+ROOT=${BLOOM_NETWORK_SERVICES_ROOT:-}
+SD_ROOT="$ROOT/mnt/SDCARD"
+SYS_DIR="$SD_ROOT/.tmp_update"
+STATE_DIR="$SD_ROOT/.bloom/network-services"
+DEV_FLAG="$SD_ROOT/.bloom-dev"
+AUTHORIZED_KEYS="$SD_ROOT/.bloom/authorized_keys"
+SSH_HELPER=${BLOOM_SSH_HELPER_BIN:-$SYS_DIR/bin/bloom-dev-ssh}
+SFTP_SERVER=${BLOOM_SFTP_SERVER_BIN:-$SYS_DIR/bin/bloom-sftp-server}
+SAMBA_SERVER=${BLOOM_SAMBA_SERVER_BIN:-$SYS_DIR/bin/samba/sbin/smbd}
+SAMBA_FLAG=${BLOOM_SAMBA_FLAG_PATH:-$SYS_DIR/config/.smbdState}
+COMPAT=${BLOOM_NETWORK_COMPAT_BIN:-$SYS_DIR/script/network/update_networking.sh}
+PLATFORM=${BLOOM_PLATFORM_BIN:-$SYS_DIR/bin/bloom-platform}
+
+enabled() { [ -f "$STATE_DIR/$1.enabled" ]; }
+ssh_enabled() {
+    enabled ssh || { [ -f "$DEV_FLAG" ] && [ ! -f "$STATE_DIR/ssh.disabled" ]; }
+}
+available_key() {
+    [ -s "$AUTHORIZED_KEYS" ] && awk '
+        /^[[:space:]]*($|#)/ { next }
+        $1 !~ /^(ssh-ed25519|ssh-rsa|ecdsa-sha2-nistp(256|384|521))$/ { bad=1; next }
+        $2 !~ /^[A-Za-z0-9+\/=]+$/ { bad=1; next }
+        { keys++ }
+        END { exit bad || keys == 0 }
+    ' "$AUTHORIZED_KEYS"
+}
+wifi_capable() {
+    [ -x "$PLATFORM" ] && [ "$("$PLATFORM" capability wifi 2>/dev/null || true)" = true ]
+}
+boolean() { "$@" >/dev/null 2>&1 && printf true || printf false; }
+
+status() {
+    wifi=$(boolean wifi_capable)
+    if wifi_capable && [ -x "$SSH_HELPER" ] && available_key; then
+        ssh_available=true
+    else
+        ssh_available=false
+    fi
+    sftp_available=$(boolean sh -c '[ -x "$1" ]' sh "$SFTP_SERVER")
+    samba_available=$(boolean sh -c '[ -x "$1" ]' sh "$SAMBA_SERVER")
+    ssh=$(boolean ssh_enabled)
+    sftp=$(boolean enabled sftp)
+    samba=$(boolean sh -c '[ -f "$1" ]' sh "$SAMBA_FLAG")
+    printf '{"schema":1,"service":"bloom-network-services","wifi_capable":%s,' "$wifi"
+    printf '"ssh":{"available":%s,"enabled":%s},' "$ssh_available" "$ssh"
+    printf '"sftp":{"available":%s,"enabled":%s},' "$sftp_available" "$sftp"
+    printf '"samba":{"available":%s,"enabled":%s}}\n' "$samba_available" "$samba"
+}
+
+set_marker() {
+    service=$1
+    desired=$2
+    mkdir -p "$STATE_DIR"
+    if [ "$desired" = enable ]; then
+        rm -f "$STATE_DIR/$service.disabled"
+        : >"$STATE_DIR/$service.enabled"
+    else
+        rm -f "$STATE_DIR/$service.enabled"
+        : >"$STATE_DIR/$service.disabled"
+    fi
+    sync
+}
+
+request_ssh() {
+    desired=$1
+    [ -x "$SSH_HELPER" ] || return 1
+    if [ "$desired" = enable ]; then
+        wifi_capable && available_key || return 1
+        set_marker ssh enable
+        "$SSH_HELPER" start >/dev/null || { set_marker ssh disable; return 1; }
+    else
+        set_marker ssh disable
+        set_marker sftp disable
+        "$SSH_HELPER" stop >/dev/null
+    fi
+}
+
+request_sftp() {
+    desired=$1
+    if [ "$desired" = enable ]; then
+        ssh_enabled && [ -x "$SFTP_SERVER" ] || return 1
+        set_marker sftp enable
+    else
+        set_marker sftp disable
+    fi
+}
+
+request_samba() {
+    desired=$1
+    wifi_capable && [ -x "$SAMBA_SERVER" ] && [ -x "$COMPAT" ] || return 1
+    mkdir -p "$(dirname -- "$SAMBA_FLAG")"
+    if [ "$desired" = enable ]; then : >"$SAMBA_FLAG"; else rm -f "$SAMBA_FLAG"; fi
+    sync
+    "$COMPAT" services >/dev/null
+}
+
+request() {
+    service=$1
+    desired=$2
+    case "$desired" in enable|disable) ;; *) return 2 ;; esac
+    case "$service" in
+        ssh) request_ssh "$desired" ;;
+        sftp) request_sftp "$desired" ;;
+        samba) request_samba "$desired" ;;
+        *) return 2 ;;
+    esac
+    printf '{"schema":1,"service":"bloom-network-services","operation":"%s","enabled":%s}\n' \
+        "$service" "$([ "$desired" = enable ] && printf true || printf false)"
+}
+
+case "$#:${1:-}:${2:-}:${3:-}" in
+    1:status::) status ;;
+    3:request:*) request "$2" "$3" ;;
+    *) printf '{"schema":1,"error":{"code":"invalid_arguments"}}\n' >&2; exit 2 ;;
+esac

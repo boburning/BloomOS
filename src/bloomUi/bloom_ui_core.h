@@ -39,6 +39,8 @@ typedef enum {
     BLOOM_UI_INPUT_SEARCH,
     BLOOM_UI_INPUT_QUICK_SETTINGS,
     BLOOM_UI_INPUT_GAME_SWITCHER,
+    BLOOM_UI_INPUT_PAGE_UP,
+    BLOOM_UI_INPUT_PAGE_DOWN,
 } BloomUiInput;
 
 typedef enum {
@@ -54,6 +56,8 @@ typedef enum {
     BLOOM_UI_ACTION_SEARCH,
     BLOOM_UI_ACTION_QUICK_SETTINGS,
     BLOOM_UI_ACTION_GAME_SWITCHER,
+    BLOOM_UI_ACTION_PAGE_UP,
+    BLOOM_UI_ACTION_PAGE_DOWN,
 } BloomUiAction;
 
 typedef enum {
@@ -96,6 +100,7 @@ BloomUiAction bloom_ui_normalize_input(BloomUiInput input);
 void bloom_ui_focus_init(BloomUiFocus *focus, size_t item_count);
 void bloom_ui_focus_set_count(BloomUiFocus *focus, size_t item_count, size_t visible_rows);
 int bloom_ui_focus_step(BloomUiFocus *focus, int direction, size_t visible_rows);
+int bloom_ui_focus_page(BloomUiFocus *focus, int direction, size_t visible_rows);
 int bloom_ui_dialog_init(BloomUiDialogFocus *dialog, size_t button_count, size_t default_button,
                          size_t destructive_button);
 int bloom_ui_dialog_step(BloomUiDialogFocus *dialog, int direction);
