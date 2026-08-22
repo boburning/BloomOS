@@ -183,7 +183,7 @@ int bloom_shell_settings_row_format(const BloomShellCapabilities *capabilities,
 
 size_t bloom_shell_quick_settings_count(const BloomShellCapabilities *capabilities)
 {
-    return capabilities == NULL ? 0 : 3 + (size_t)capabilities->wifi;
+    return capabilities == NULL ? 0 : 4 + (size_t)capabilities->wifi;
 }
 
 const char *bloom_shell_quick_settings_label(const BloomShellCapabilities *capabilities, size_t row)
@@ -199,7 +199,9 @@ const char *bloom_shell_quick_settings_label(const BloomShellCapabilities *capab
             return "Wi-Fi";
         row--;
     }
-    return row == 0 ? "Battery" : NULL;
+    if (row == 0)
+        return "Battery";
+    return row == 1 ? "Open Settings" : NULL;
 }
 
 int bloom_shell_quick_values_parse(const char *json, BloomShellQuickValues *values)
@@ -390,7 +392,10 @@ int bloom_shell_quick_settings_format(const BloomShellCapabilities *capabilities
         return -1;
     int length;
     size_t battery_row = capabilities->wifi ? 3 : 2;
-    if (row == battery_row && !values->battery_available)
+    size_t open_settings_row = battery_row + 1;
+    if (row == open_settings_row)
+        length = snprintf(label, label_size, "Open Settings                 >");
+    else if (row == battery_row && !values->battery_available)
         length = snprintf(label, label_size, "Battery: unavailable");
     else if (row == battery_row && values->battery_charging &&
              !values->battery_capacity_available)
@@ -500,6 +505,28 @@ int bloom_shell_mute_toggle(BloomShellQuickValues *values, const char *controls_
         return -1;
     values->mute = 1;
     return 0;
+}
+
+int bloom_shell_quick_settings_activate(const BloomShellCapabilities *capabilities,
+                                        BloomShellQuickValues *values, size_t row,
+                                        const char *controls_path, const char *network_path,
+                                        int *open_settings)
+{
+    if (capabilities == NULL || values == NULL || open_settings == NULL)
+        return -1;
+    *open_settings = 0;
+    if (row == 1)
+        return bloom_shell_mute_toggle(values, controls_path);
+    if (capabilities->wifi && row == 2)
+        return bloom_shell_quick_settings_adjust(capabilities, values, row,
+                                                 values->wifi_enabled ? -1 : 1, controls_path,
+                                                 network_path);
+    size_t battery_row = capabilities->wifi ? 3 : 2;
+    if (row == battery_row + 1) {
+        *open_settings = 1;
+        return 0;
+    }
+    return row == 0 || row == battery_row ? 0 : -1;
 }
 
 int bloom_shell_first_run_finish(const char *settings_path, BloomShellFirstRun *first_run,

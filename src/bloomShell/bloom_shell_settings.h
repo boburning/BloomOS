@@ -92,6 +92,10 @@ int bloom_shell_quick_settings_adjust(const BloomShellCapabilities *capabilities
                                       BloomShellQuickValues *values, size_t row, int direction,
                                       const char *controls_path, const char *network_path);
 int bloom_shell_mute_toggle(BloomShellQuickValues *values, const char *controls_path);
+int bloom_shell_quick_settings_activate(const BloomShellCapabilities *capabilities,
+                                        BloomShellQuickValues *values, size_t row,
+                                        const char *controls_path, const char *network_path,
+                                        int *open_settings);
 int bloom_shell_first_run_parse(const char *json, BloomShellFirstRun *first_run);
 int bloom_shell_first_run_load(const char *settings_path, BloomShellFirstRun *first_run);
 int bloom_shell_first_run_finish(const char *settings_path, BloomShellFirstRun *first_run,

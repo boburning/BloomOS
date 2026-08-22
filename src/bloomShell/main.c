@@ -931,7 +931,7 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
     if (game_destination)
         draw_game_preview(screen, layout, font, preview_game, achievement_index);
     const char *footer = quick_settings
-                             ? "Left/Right Change   A Toggle   B/START Close"
+                             ? "Left/Right Change   A Toggle/Open   B/START Close"
                          : first_run_open
                              ? "A Finish Setup   MENU Switcher   START Quick"
                          : safe_mode_root
@@ -1375,6 +1375,16 @@ int main(int argc, char **argv)
                 &capabilities, &quick_values, quick_settings_focus.selected,
                 action == BLOOM_UI_ACTION_FOCUS_RIGHT ? 1 : -1, BLOOM_CONTROLS_BINARY,
                 BLOOM_NETWORK_BINARY);
+        }
+        else if (quick_settings && action == BLOOM_UI_ACTION_CONFIRM) {
+            int open_settings = 0;
+            if (bloom_shell_quick_settings_activate(
+                    &capabilities, &quick_values, quick_settings_focus.selected,
+                    BLOOM_CONTROLS_BINARY, BLOOM_NETWORK_BINARY, &open_settings) == 0 &&
+                open_settings) {
+                quick_settings = 0;
+                destination = BLOOM_UI_DESTINATION_SETTINGS;
+            }
         }
         else if (quick_settings) {
             continue;
