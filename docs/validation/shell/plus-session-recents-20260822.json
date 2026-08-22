@@ -1,0 +1,78 @@
+{
+  "schema": 1,
+  "date": "2026-08-22",
+  "operator": "Codex over maintainer-authorized SSH",
+  "device": "miyoo-mini-plus",
+  "model_id": 354,
+  "serial_redacted": true,
+  "signed_release": {
+    "version": "0.1.0-dev-4093ec3e",
+    "commit": "4093ec3eb265714c499a82b38bc9b93a5ee49ddd",
+    "workflow_run": 32573127003,
+    "archive_size": 203082203,
+    "archive_sha256": "64282d6a4ef04263793cf4f2b8d90a96eece507e6c6dd248fe1b45ad646018a3",
+    "release_metadata_validated": true,
+    "ed25519_signature_verified": true,
+    "device_archive_size_and_sha256_matched": true,
+    "activation_snapshot": "20260822T124901Z-pre-update-3735",
+    "boot_attempts_before_confirmation": 1,
+    "update_phase_after_confirmation": "known_good",
+    "aggregate_health_after_confirmation": "healthy"
+  },
+  "installed_sha256": {
+    "bloom_library": "db9cc586f011a6f0a78827be5cb2c7759c40d6e54ec99cfb6c3a4f34df82d0bc",
+    "bloom_session": "5058c66ce3f6e2ee83f7dafe55033d1f52fb5489e163823a2bc5f5755e0208ec",
+    "bloom_shell": "64e93b13fea33349e5762d26292765dae78e2751e1fcc9291fff6bf1a88129e8",
+    "game_switcher": "8ca7f5107d41377291e69f875901e1b29c335f56683fca9370d1032c0a97bd9e"
+  },
+  "game": {
+    "display_title": "Dino's Offline Adventure (World) (Aftermarket) (Homebrew)",
+    "system": "gb",
+    "core": "gambatte_libretro.so",
+    "game_id": "bloom-game-v1:f4cdd6496532ebdf493d2036f4ec94c60428292004f1f41cf66d90b1315c7880",
+    "session_request_sha256": "e41b4e3a9a47369657837fe3703116afbff422a556859ec209c1ced35ef7f12e",
+    "running_session_observed": true,
+    "retroarch_process_observed": true,
+    "mainui_running": false,
+    "recent_status_while_running": "recorded",
+    "canonical_recents_before": 0,
+    "canonical_recents_while_running": 1,
+    "canonical_recents_after_stop": 1,
+    "final_session_state": "STOPPED",
+    "duration_seconds": 231,
+    "active_sessions_after_stop": 0
+  },
+  "remote_ux": {
+    "all_recorded_framebuffer_pages_equal": true,
+    "orientation_correction": "rotate_180_for_inspection",
+    "root_page_sha256": "1cd87b46e20de5634e5353fcae6ff893970b4f276ac5096123b2e08353bf3343",
+    "games_page_sha256": "3f8bfd18d6fe2fbec0fbbe1e2e23e1b5220cd2256586356c02caed7bf7808d38",
+    "running_game_page_sha256": "db03fb273ae05d683554ca25cdb10cc8b05c97e1b10ae4d55cbb44270418051d",
+    "game_switcher_page_sha256": "c8b4edb93056990523e7c81b2ae408533dce9ab54c4d2127043e0d33b1f45fde",
+    "continue_root_page_sha256": "87180b7177c328e5ea4c92d91798d46c4923da1c3d49181f08fd89716a57ff03",
+    "game_switcher_showed_canonical_recent": true,
+    "game_switcher_position": "1 / 1",
+    "continue_hero_focused_after_stop": true,
+    "direct_shell_return_observed": true
+  },
+  "host_regression": {
+    "native_tests": "248/248",
+    "recent_history_limit": 100,
+    "recent_history_positions": "0..99",
+    "recent_recording_failure_blocks_play": false,
+    "ci": {
+      "format_seconds": 39,
+      "shell_seconds": 108,
+      "arm_build_seconds": 355,
+      "native_static_asan_seconds": 386,
+      "all_required_checks_passed": true
+    }
+  },
+  "limitations": [
+    "Framebuffer captures and injected Linux input events are remote evidence, not a physical-button or tactile review.",
+    "Synthetic MENU, X, and START events did not traverse RetroArch or GameSwitcher input ownership; those physical control paths remain unclaimed.",
+    "The exact underlying GameSwitcher overlay action was invoked after pausing RetroArch and displayed the canonical recent, but this does not prove the physical MENU path.",
+    "The existing game screenshot PNGs emitted CRC errors, so GameSwitcher used its safe black artwork background while title and actions remained readable.",
+    "SRAM, save-state create/load, audio, physical controls, Mini V2, and Flip remain unverified by this run."
+  ]
+}
