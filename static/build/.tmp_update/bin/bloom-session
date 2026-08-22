@@ -8,6 +8,7 @@ BLOOM_LAUNCH="${BLOOM_LAUNCH_BIN:-/mnt/SDCARD/.tmp_update/bin/bloom-launch}"
 BLOOM_RA_PREPARE="${BLOOM_RA_PREPARE_BIN:-/mnt/SDCARD/.tmp_update/bin/bloom-ra-session-prepare}"
 BLOOM_RA_LOG="${BLOOM_RA_LOG_BIN:-/mnt/SDCARD/.tmp_update/bin/bloom-ra-log}"
 BLOOM_SAVE_FLUSH="${BLOOM_SAVE_FLUSH_BIN:-/mnt/SDCARD/.tmp_update/bin/bloom-save-flush}"
+BLOOM_LIBRARY="${BLOOM_LIBRARY_BIN:-/mnt/SDCARD/.tmp_update/bin/bloom-library}"
 SEND_UDP="${BLOOM_SEND_UDP_BIN:-/mnt/SDCARD/.tmp_update/bin/sendUDP}"
 SIGNAL_BIN="${BLOOM_SIGNAL_BIN:-}"
 QUIT_WAIT="${BLOOM_QUIT_WAIT_SECONDS:-5}"
@@ -20,6 +21,7 @@ REQUEST_FILE="$SESSION_ROOT/request.json"
 CORE_FILE="$SESSION_ROOT/core"
 FLUSH_RESULT_FILE="$SESSION_ROOT/save_flush.json"
 REASON_FILE="$SESSION_ROOT/failure_reason"
+RECENT_STATUS_FILE="$SESSION_ROOT/recent_status"
 MONOTONIC_START_FILE="$SESSION_ROOT/monotonic_start_seconds"
 DURATION_FILE="$SESSION_ROOT/duration_seconds"
 LOCK_DIR="$SESSION_ROOT/.lock"
@@ -126,7 +128,7 @@ command_start() {
     case "$request_hash" in ''|*[!0-9a-f]*) fail "cannot hash launch request" ;; esac
     atomic_line "$HASH_FILE" "$request_hash"
     atomic_line "$CORE_FILE" "$core"
-    rm -f "$PID_FILE" "$REASON_FILE" "$FLUSH_RESULT_FILE" "$MONOTONIC_START_FILE" "$DURATION_FILE"
+    rm -f "$PID_FILE" "$REASON_FILE" "$FLUSH_RESULT_FILE" "$MONOTONIC_START_FILE" "$DURATION_FILE" "$RECENT_STATUS_FILE"
     atomic_line "$STATE_FILE" PREPARING
 }
 
@@ -196,6 +198,13 @@ command_attach() {
     monotonic_start="$(monotonic_seconds)" || fail "monotonic clock is unavailable"
     atomic_line "$PID_FILE" "$pid"
     atomic_line "$MONOTONIC_START_FILE" "$monotonic_start"
+    game_id="$("$BLOOM_LAUNCH" get "$REQUEST_FILE" game_id 2>/dev/null || true)"
+    if [ -x "$BLOOM_LIBRARY" ] &&
+        "$BLOOM_LIBRARY" recent record "$game_id" >/dev/null 2>&1; then
+        atomic_line "$RECENT_STATUS_FILE" recorded
+    else
+        atomic_line "$RECENT_STATUS_FILE" failed
+    fi
     transition_locked STARTING RUNNING
 }
 
@@ -315,8 +324,9 @@ command_status() {
     request_hash="$(read_value "$HASH_FILE")"
     reason="$(read_value "$REASON_FILE")"
     duration="$(read_value "$DURATION_FILE")"
-    printf '{"schema":1,"state":"%s","pid":%s,"request_sha256":"%s","failure_reason":"%s","duration_seconds":%s}\n' \
-        "$state" "${pid:-null}" "${request_hash:-}" "${reason:-}" "${duration:-null}"
+    recent_status="$(read_value "$RECENT_STATUS_FILE")"
+    printf '{"schema":1,"state":"%s","pid":%s,"request_sha256":"%s","failure_reason":"%s","duration_seconds":%s,"recent_status":"%s"}\n' \
+        "$state" "${pid:-null}" "${request_hash:-}" "${reason:-}" "${duration:-null}" "${recent_status:-pending}"
 }
 
 usage() {
