@@ -34,6 +34,14 @@
 #define APPS_CAPACITY_MAX 100
 #define LAUNCH_READY_EXIT 20
 
+static const char *destination_labels[BLOOM_UI_DESTINATION_COUNT] = {
+    "Home",
+    "Library",
+    "Collections",
+    "Apps",
+    "Settings",
+};
+
 static int load_catalog(BloomLibraryGame **games, size_t *game_count, BloomLibraryGame *recent,
                         int *has_recent, BloomLibraryGame *favorites, size_t *favorite_count,
                         BloomLibraryApp *apps, size_t *app_count)
@@ -256,27 +264,34 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
                  const BloomShellRaForm *ra_form, int ra_sign_out_open,
                  const BloomUiDialogFocus *ra_sign_out_dialog,
                  int update_confirm_open, const BloomUiDialogFocus *update_confirm_dialog,
+                 int navigation_open, const BloomUiFocus *navigation_focus,
                  const BloomUiFocus *quick_settings_focus)
 {
     const BloomUiFocus *focus = destination == BLOOM_UI_DESTINATION_COLLECTIONS
                                     ? collections_focus
                                     : library_focus;
     const BloomLibraryGame *rows = destination == BLOOM_UI_DESTINATION_COLLECTIONS ? favorites : games;
-    size_t item_count = quick_settings
+    size_t item_count = navigation_open
+                            ? navigation_focus->item_count
+                        : quick_settings
                             ? quick_settings_focus->item_count
                         : destination == BLOOM_UI_DESTINATION_HOME ? (has_recent ? 2 : 1)
                         : destination == BLOOM_UI_DESTINATION_APPS ? apps_focus->item_count
                         : destination == BLOOM_UI_DESTINATION_SETTINGS
                             ? settings_focus->item_count
                             : focus->item_count;
-    size_t selected = quick_settings
+    size_t selected = navigation_open
+                          ? navigation_focus->selected
+                      : quick_settings
                           ? quick_settings_focus->selected
                       : destination == BLOOM_UI_DESTINATION_HOME ? home_selected
                       : destination == BLOOM_UI_DESTINATION_APPS ? apps_focus->selected
                       : destination == BLOOM_UI_DESTINATION_SETTINGS
                           ? settings_focus->selected
                           : focus->selected;
-    size_t window_start = quick_settings
+    size_t window_start = navigation_open
+                              ? navigation_focus->window_start
+                          : quick_settings
                               ? quick_settings_focus->window_start
                           : destination == BLOOM_UI_DESTINATION_HOME ? 0
                           : destination == BLOOM_UI_DESTINATION_APPS
@@ -293,7 +308,26 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
     };
     bloom_ui_render_shell(screen, layout, &scene);
     SDL_Color cream = {243, 226, 189, 0};
-    if (quick_settings) {
+    SDL_Color sand = {205, 175, 123, 0};
+    int mark_width = layout->header.height;
+    int navigation_x = mark_width + layout->margin;
+    int navigation_width = layout->viewport_width - navigation_x - layout->margin;
+    int tab_width = navigation_width / BLOOM_UI_DESTINATION_COUNT;
+    for (int index = 0; index < BLOOM_UI_DESTINATION_COUNT; ++index)
+        render_label(screen, font, destination_labels[index],
+                     navigation_x + index * tab_width + 8, layout->header.y + 18,
+                     tab_width - 16, index == (int)destination ? cream : sand);
+    if (navigation_open) {
+        for (size_t row = 0; row < navigation_focus->item_count; ++row)
+            render_label(screen, font, destination_labels[row], layout->content.x + 20,
+                         layout->content.y + (int)row * layout->row_height +
+                             layout->row_height / 3,
+                         layout->content.width - 40, cream);
+        render_label(screen, font, "A Open   B Close", layout->footer.x + 56,
+                     layout->footer.y + layout->footer.height / 3,
+                     layout->footer.width - 76, cream);
+    }
+    else if (quick_settings) {
         for (size_t row = 0; row < quick_settings_focus->item_count; ++row) {
             char label[96];
             if (bloom_shell_quick_settings_format(capabilities, quick_values, row, label,
@@ -360,6 +394,10 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
                          layout->content.x + 20,
                          layout->content.y + (int)row * layout->row_height + layout->row_height / 3,
                          layout->content.width - 40, cream);
+    if (!navigation_open)
+        render_label(screen, font, "MENU Navigate   START Quick Settings", layout->footer.x + 56,
+                     layout->footer.y + layout->footer.height / 3,
+                     layout->footer.width - 76, sand);
     if (ra_form_open)
         draw_ra_form(screen, layout, font, ra_form);
     if (ra_sign_out_open)
@@ -451,12 +489,14 @@ int main(int argc, char **argv)
     BloomUiFocus settings_focus;
     BloomUiFocus apps_focus;
     BloomUiFocus quick_settings_focus;
+    BloomUiFocus navigation_focus;
     bloom_ui_focus_init(&library_focus, game_count);
     bloom_ui_focus_init(&collections_focus, favorite_count);
     bloom_ui_focus_init(&settings_focus, bloom_shell_settings_count(&capabilities));
     bloom_ui_focus_init(&apps_focus, app_count);
     bloom_ui_focus_init(&quick_settings_focus,
                         bloom_shell_quick_settings_count(&capabilities));
+    bloom_ui_focus_init(&navigation_focus, BLOOM_UI_DESTINATION_COUNT);
     int quick_settings = 0;
     BloomShellSettingsPage settings_page = BLOOM_SHELL_SETTINGS_TOP;
     size_t settings_top_selected = 0;
@@ -470,12 +510,14 @@ int main(int argc, char **argv)
     BloomUiDialogFocus ra_sign_out_dialog = {0};
     int update_confirm_open = 0;
     BloomUiDialogFocus update_confirm_dialog = {0};
+    int navigation_open = 0;
     draw(screen, video, &layout, font, destination, &library_focus, &collections_focus, games,
          favorites, &recent, has_recent, home_selected, &settings_focus, &apps_focus, apps, &status,
          &capabilities, &quick_values, settings_page, support_export_result, update_confirm_result,
          ra_form_result,
          quick_settings, ra_form_open, &ra_form, ra_sign_out_open, &ra_sign_out_dialog,
          update_confirm_open, &update_confirm_dialog,
+         navigation_open, &navigation_focus,
          &quick_settings_focus);
     int running = 1;
     int exit_code = 0;
@@ -490,7 +532,20 @@ int main(int argc, char **argv)
         if (event.type != SDL_KEYDOWN)
             continue;
         BloomUiAction action = bloom_ui_normalize_input(bloom_ui_input_from_sdl_key(event.key.keysym.sym));
-        if (update_confirm_open && action == BLOOM_UI_ACTION_FOCUS_LEFT)
+        if (navigation_open && action == BLOOM_UI_ACTION_FOCUS_UP)
+            bloom_ui_focus_step(&navigation_focus, -1, layout.visible_rows);
+        else if (navigation_open && action == BLOOM_UI_ACTION_FOCUS_DOWN)
+            bloom_ui_focus_step(&navigation_focus, 1, layout.visible_rows);
+        else if (navigation_open && action == BLOOM_UI_ACTION_CONFIRM) {
+            destination = (BloomUiDestination)navigation_focus.selected;
+            navigation_open = 0;
+        }
+        else if (navigation_open &&
+                 (action == BLOOM_UI_ACTION_BACK || action == BLOOM_UI_ACTION_GAME_SWITCHER))
+            navigation_open = 0;
+        else if (navigation_open)
+            continue;
+        else if (update_confirm_open && action == BLOOM_UI_ACTION_FOCUS_LEFT)
             bloom_ui_dialog_step(&update_confirm_dialog, -1);
         else if (update_confirm_open && action == BLOOM_UI_ACTION_FOCUS_RIGHT)
             bloom_ui_dialog_step(&update_confirm_dialog, 1);
@@ -556,6 +611,12 @@ int main(int argc, char **argv)
         }
         else if (ra_form_open)
             continue;
+        else if (action == BLOOM_UI_ACTION_GAME_SWITCHER) {
+            quick_settings = 0;
+            navigation_focus.selected = (size_t)destination;
+            navigation_focus.window_start = 0;
+            navigation_open = 1;
+        }
         else if (action == BLOOM_UI_ACTION_QUICK_SETTINGS) {
             quick_settings = !quick_settings;
         }
@@ -726,7 +787,8 @@ int main(int argc, char **argv)
                  support_export_result, update_confirm_result, ra_form_result, quick_settings,
                  ra_form_open, &ra_form,
                  ra_sign_out_open, &ra_sign_out_dialog, update_confirm_open,
-                 &update_confirm_dialog, &quick_settings_focus);
+                 &update_confirm_dialog, navigation_open, &navigation_focus,
+                 &quick_settings_focus);
     }
     TTF_CloseFont(font);
     bloom_shell_ra_form_clear(&ra_form);
