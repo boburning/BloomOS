@@ -1,0 +1,81 @@
+{
+  "schema": 1,
+  "date": "2026-08-22",
+  "operator": "Codex over maintainer-authorized SSH",
+  "device": "miyoo-mini-plus",
+  "model_id": 354,
+  "serial_redacted": true,
+  "signed_release": {
+    "version": "0.1.0-dev-1a8b42d1",
+    "commit": "1a8b42d14300807b5f82f01086ac0f8aeb4fda76",
+    "workflow_run": 32564774299,
+    "archive_size": 203081607,
+    "archive_sha256": "bfdc4bfa544d731195d294ce72b3bee349d5de0b3068bc0f326f5d0182989751",
+    "release_metadata_validated": true,
+    "ed25519_signature_verified": true,
+    "device_archive_size_and_sha256_matched": true,
+    "activation_snapshot": "20260822T093857Z-pre-update-2921",
+    "boot_attempts_before_confirmation": 1,
+    "installed_version": "v0.1.0-dev-1a8b42d1",
+    "confirmed_phase": "known_good",
+    "installed_sha256": {
+      "runtime": "369e850f96c8f39cc35169893e78a365a614910f6a8e6250fb070b91c09eb42f",
+      "bloom_shell": "a8cd48444e2e451aa2c9b5febaa4b50c689a5a025adcdaae1228f005ae8141e8",
+      "bloomctl": "2e775ed7a4a9a4fe228d16091959fecc73caa5ede8045c212c2015f123956183",
+      "sendkeys": "c244bff7f442a5e8e44b97b2db4a4b634d404ad116b45dfd80a2329b20098677"
+    }
+  },
+  "default_shell": {
+    "bloom_shell_running": true,
+    "mainui_running": false,
+    "developer_marker_regular": true,
+    "legacy_bloom_shell_marker_regular_but_not_required": true,
+    "explicit_mainui_fallback_marker_absent": true,
+    "runtime_default_branch_present": true,
+    "runtime_guarded_retry_branch_present": true
+  },
+  "first_run": {
+    "welcome_rendered": true,
+    "reported_local_games": 19,
+    "completion_input": "injected A",
+    "completion_marker_regular": true,
+    "completion_marker": {"schema": 1, "complete": true},
+    "settings_state": "ready",
+    "settings_authority": "bloom"
+  },
+  "framebuffer": {
+    "physical": "640x480",
+    "framebuffer": "640x1440x32",
+    "orientation_correction": "rotate_180_for_inspection",
+    "page_count": 3,
+    "all_pages_equal": true,
+    "welcome_page_sha256": "55cdb6face46208bf68381516915c9e8cd3d1780337debfe55fa5dfba13f5062",
+    "root_page_sha256": "b99feae0e2a550813910e0dd0124de77caf47491f871872d05b35440272153f0",
+    "root_destinations_visible": ["Games", "Favorites", "Recent", "Apps", "Settings"],
+    "shoulder_hints_visible": false,
+    "menu_hint": "Switcher",
+    "start_hint": "Quick"
+  },
+  "post_confirmation": {
+    "aggregate_health": "healthy",
+    "update_health": "known_good",
+    "bloom_shell_running": true,
+    "mainui_running": false,
+    "library": {
+      "schema": 4,
+      "generation": 4,
+      "systems": 53,
+      "games": 22,
+      "apps": 23,
+      "favorites": 0,
+      "recents": 0
+    },
+    "save_snapshots": {"total": 5, "unverified": 0, "referenced": 0}
+  },
+  "limitations": [
+    "Framebuffer captures and injected input are remote evidence, not a physical UX or tactile pass.",
+    "The retained explicit Developer Mode MainUI fallback was not enabled or exercised.",
+    "This run proves the Plus default boot and first-run-to-root path, not every boot, launch, power, update-failure, or recovery task required by issue 225.",
+    "Mini V2, Flip, and external V1/V3/V4 were not exercised by this run."
+  ]
+}
