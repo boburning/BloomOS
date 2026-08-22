@@ -28,3 +28,15 @@
     ! grep -F 'MENU Navigate' "$source"
     ! grep -F 'draw_recent_actions' "$source"
 }
+
+@test "Bloom Shell visual system uses native Mini and Flip geometry without fake text" {
+    shell=/workspace/src/bloomShell/main.c
+    renderer=/workspace/src/bloomUi/bloom_ui_renderer.c
+    grep -F 'draw_root_icon(screen' "$shell"
+    grep -F 'draw_game_preview(screen' "$shell"
+    grep -F '.row_width_percent = game_destination ? 58 : 100' "$shell"
+    grep -F 'battery_capacity_available' "$shell"
+    grep -F 'compact_font' "$shell"
+    ! grep -F 'Deterministic text placeholders' "$renderer"
+    ! grep -E 'L1|L2|R1|R2' "$shell"
+}

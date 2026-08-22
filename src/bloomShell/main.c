@@ -491,6 +491,75 @@ static void fill_rect(SDL_Surface *screen, int x, int y, int width, int height, 
                  SDL_MapRGB(screen->format, (Uint8)(rgb >> 16), (Uint8)(rgb >> 8), (Uint8)rgb));
 }
 
+static void draw_root_icon(SDL_Surface *screen, BloomShellRootDestination destination, int x, int y,
+                           int size, int selected)
+{
+    uint32_t foreground = selected ? 0x211711 : 0xF3E2BD;
+    uint32_t accent = 0xD86A2C;
+    int unit = size / 7;
+    if (destination == BLOOM_SHELL_ROOT_GAMES) {
+        fill_rect(screen, x + unit, y + unit * 2, unit * 5, unit * 3, foreground);
+        fill_rect(screen, x, y + unit * 3, unit, unit, foreground);
+        fill_rect(screen, x + unit * 6, y + unit * 3, unit, unit, foreground);
+        fill_rect(screen, x + unit * 2, y + unit * 3, unit, unit, accent);
+        fill_rect(screen, x + unit * 4, y + unit * 2, unit, unit, accent);
+    }
+    else if (destination == BLOOM_SHELL_ROOT_FAVORITES) {
+        fill_rect(screen, x + unit * 3, y, unit, unit * 7, foreground);
+        fill_rect(screen, x, y + unit * 3, unit * 7, unit, foreground);
+        fill_rect(screen, x + unit, y + unit, unit * 5, unit * 5, foreground);
+        fill_rect(screen, x + unit * 2, y + unit * 2, unit * 3, unit * 3, accent);
+    }
+    else if (destination == BLOOM_SHELL_ROOT_RECENT) {
+        fill_rect(screen, x + unit, y + unit, unit * 5, unit, foreground);
+        fill_rect(screen, x + unit, y + unit * 5, unit * 5, unit, foreground);
+        fill_rect(screen, x, y + unit * 2, unit, unit * 3, foreground);
+        fill_rect(screen, x + unit * 6, y + unit * 2, unit, unit * 3, foreground);
+        fill_rect(screen, x + unit * 3, y + unit * 2, unit, unit * 3, accent);
+        fill_rect(screen, x + unit * 3, y + unit * 4, unit * 2, unit, accent);
+    }
+    else if (destination == BLOOM_SHELL_ROOT_APPS) {
+        for (int row = 0; row < 2; ++row)
+            for (int column = 0; column < 2; ++column)
+                fill_rect(screen, x + column * unit * 4, y + row * unit * 4, unit * 3, unit * 3,
+                          row == 1 && column == 1 ? accent : foreground);
+    }
+    else {
+        for (int row = 0; row < 3; ++row) {
+            fill_rect(screen, x, y + row * unit * 3, unit * 7, unit, foreground);
+            fill_rect(screen, x + (row == 1 ? unit * 4 : unit * 2), y + row * unit * 3 - unit,
+                      unit, unit * 3, accent);
+        }
+    }
+}
+
+static void draw_game_preview(SDL_Surface *screen, const BloomUiLayout *layout, TTF_Font *font,
+                              const BloomLibraryGame *game)
+{
+    if (game == NULL)
+        return;
+    SDL_Color cream = {243, 226, 189, 0};
+    SDL_Color sand = {205, 175, 123, 0};
+    int list_width = layout->content.width * 58 / 100;
+    int x = layout->content.x + list_width + 16;
+    int width = layout->content.width - list_width - 16;
+    int cover_height = layout->content.height * 2 / 3;
+    fill_rect(screen, x, layout->content.y + 4, width, cover_height, 0x352319);
+    fill_rect(screen, x + 5, layout->content.y + 9, width - 10, cover_height - 10, 0x493025);
+    int mark = layout->viewport_height >= 540 ? 10 : 8;
+    int center_x = x + width / 2;
+    int center_y = layout->content.y + cover_height / 2;
+    fill_rect(screen, center_x - mark / 2, center_y - mark * 2, mark, mark, 0xD86A2C);
+    fill_rect(screen, center_x - mark / 2, center_y + mark, mark, mark, 0xD86A2C);
+    fill_rect(screen, center_x - mark * 2, center_y - mark / 2, mark, mark, 0xE2A93B);
+    fill_rect(screen, center_x + mark, center_y - mark / 2, mark, mark, 0xE2A93B);
+    fill_rect(screen, center_x - mark / 2, center_y - mark / 2, mark, mark, 0xF3E2BD);
+    render_label(screen, font, game->display_title, x, layout->content.y + cover_height + 14,
+                 width, cream);
+    render_label(screen, font, game->system_id, x,
+                 layout->content.y + cover_height + layout->row_height, width, sand);
+}
+
 static void draw_root(SDL_Surface *screen, const BloomUiLayout *layout, TTF_Font *font,
                       const BloomShellRootState *root, const BloomLibraryGame *recent)
 {
@@ -507,10 +576,22 @@ static void draw_root(SDL_Surface *screen, const BloomUiLayout *layout, TTF_Font
                   root->continue_focused ? 0x493025 : 0x352319);
         if (root->continue_focused)
             fill_rect(screen, content_x, hero_y, 6, hero_height - layout->row_height, 0xD86A2C);
-        render_label(screen, font, recent->display_title, content_x + 24,
+        int preview_width = content_width / 3;
+        int preview_height = hero_height - layout->row_height - 24;
+        fill_rect(screen, content_x + 20, hero_y + 12, preview_width, preview_height, 0x211711);
+        fill_rect(screen, content_x + 25, hero_y + 17, preview_width - 10, preview_height - 10,
+                  0x352319);
+        int icon_size = preview_height > 42 ? 35 : 28;
+        draw_root_icon(screen, BLOOM_SHELL_ROOT_GAMES,
+                       content_x + 20 + (preview_width - icon_size) / 2,
+                       hero_y + 12 + (preview_height - icon_size) / 2, icon_size, 0);
+        int text_x = content_x + preview_width + 44;
+        render_label(screen, font, recent->display_title, text_x,
                      hero_y + layout->row_height / 2, content_width - 48, cream);
-        render_label(screen, font, "A Resume", content_x + 24,
-                     hero_y + layout->row_height * 3 / 2, content_width - 48, sand);
+        render_label(screen, font, recent->system_id, text_x, hero_y + layout->row_height * 3 / 2,
+                     content_width - preview_width - 64, sand);
+        render_label(screen, font, "A Resume", text_x, hero_y + layout->row_height * 2,
+                     content_width - preview_width - 64, sand);
     }
     int rail_y = layout->content.y + hero_height + (root->has_continue ? 8 : layout->row_height);
     int gap = 6;
@@ -523,13 +604,17 @@ static void draw_root(SDL_Surface *screen, const BloomUiLayout *layout, TTF_Font
         fill_rect(screen, x, rail_y, item_width, item_height, selected ? 0xF3E2BD : 0x352319);
         if (selected)
             fill_rect(screen, x, rail_y + item_height - 5, item_width, 5, 0xD86A2C);
+        int icon_size = layout->viewport_height >= 540 ? 35 : 28;
+        draw_root_icon(screen, (BloomShellRootDestination)item, x + (item_width - icon_size) / 2,
+                       rail_y + 8, icon_size, selected);
         render_label(screen, font, bloom_shell_root_label((BloomShellRootDestination)item), x + 8,
-                     rail_y + item_height / 3, item_width - 16,
+                     rail_y + item_height - layout->row_height / 2, item_width - 16,
                      selected ? (SDL_Color){33, 23, 17, 0} : cream);
     }
 }
 
 static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *layout, TTF_Font *font,
+                 TTF_Font *compact_font,
                  BloomUiDestination destination, const BloomShellRootState *root,
                  const BloomShellGamesBrowser *games_browser, const BloomUiFocus *favorites_focus,
                  const BloomUiFocus *recent_focus, const BloomLibraryGame *games,
@@ -564,6 +649,12 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
     if (search->active) {
         focus = &search->focus;
     }
+    int game_destination = destination == BLOOM_UI_DESTINATION_GAMES ||
+                           destination == BLOOM_UI_DESTINATION_FAVORITES ||
+                           destination == BLOOM_UI_DESTINATION_RECENT;
+    const BloomLibraryGame *preview_game = NULL;
+    if (game_destination && focus->item_count > 0)
+        preview_game = search->active ? search->results[focus->selected] : &rows[focus->selected];
     size_t item_count = quick_settings
                             ? quick_settings_focus->item_count
                         : destination == BLOOM_UI_DESTINATION_ROOT     ? 0
@@ -588,6 +679,7 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
         .item_count = item_count,
         .selected = selected,
         .window_start = window_start,
+        .row_width_percent = game_destination ? 58 : 100,
         .healthy = status->ready && status->healthy,
     };
     bloom_ui_render_shell(screen, layout, &scene);
@@ -601,7 +693,21 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
     }
     render_label(screen, font, header,
                  layout->header.height + layout->margin, layout->header.y + 18,
-                 layout->header.width - layout->header.height - layout->margin * 2, cream);
+                 layout->viewport_width * 3 / 4 - layout->header.height - layout->margin * 2,
+                 cream);
+    char device_status[80] = {0};
+    if (quick_values->battery_capacity_available)
+        snprintf(device_status, sizeof(device_status), "%s%s%d%%",
+                 capabilities->wifi
+                     ? (quick_values->wifi_enabled ? "Wi-Fi  " : "Wi-Fi off  ")
+                     : "",
+                 quick_values->battery_charging ? "+" : "", quick_values->battery_capacity);
+    else if (capabilities->wifi)
+        snprintf(device_status, sizeof(device_status), "%s",
+                 quick_values->wifi_enabled ? "Wi-Fi" : "Wi-Fi off");
+    if (device_status[0] != '\0')
+        render_label(screen, compact_font, device_status, layout->viewport_width * 3 / 4,
+                     layout->header.y + 18, layout->viewport_width / 4 - layout->margin, sand);
     if (quick_settings) {
         for (size_t row = 0; row < quick_settings_focus->item_count; ++row) {
             char label[96];
@@ -644,6 +750,11 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
                              layout->content.width - 40,
                              settings_row.kind == BLOOM_SHELL_SETTINGS_ROW_SECTION ? sand
                                                                                    : cream);
+            if (label != NULL && settings_row.kind == BLOOM_SHELL_SETTINGS_ROW_SECTION)
+                fill_rect(screen, layout->content.x + layout->content.width * 45 / 100,
+                          layout->content.y + (int)row * layout->row_height +
+                              layout->row_height / 2,
+                          layout->content.width * 55 / 100 - 20, 2, 0xE2A93B);
         }
     }
     else if (search->active && search->focus.item_count == 0) {
@@ -680,7 +791,12 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
                              : rows[focus->window_start + row].display_title,
                          layout->content.x + 20,
                          layout->content.y + (int)row * layout->row_height + layout->row_height / 3,
-                         layout->content.width - 40, cream);
+                         (game_destination ? layout->content.width * 58 / 100
+                                           : layout->content.width) -
+                             40,
+                         cream);
+    if (game_destination)
+        draw_game_preview(screen, layout, font, preview_game);
     const char *footer = quick_settings
                              ? "Left/Right Change   A Toggle   B/START Close"
                          : destination == BLOOM_UI_DESTINATION_ROOT
@@ -688,7 +804,7 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
                          : destination == BLOOM_UI_DESTINATION_SETTINGS
                              ? "Left/Right Change   A Open/Toggle   B Home   START Quick"
                              : "A Play   X Actions   Y Favorite   SELECT Search   B Home";
-    render_label(screen, font, footer, layout->footer.x + 56,
+    render_label(screen, compact_font, footer, layout->footer.x + 56,
                  layout->footer.y + layout->footer.height / 3, layout->footer.width - 76, sand);
     if (ra_form_open)
         draw_ra_form(screen, layout, font, ra_form);
@@ -780,7 +896,13 @@ int main(int argc, char **argv)
     SDL_Surface *video = SDL_SetVideoMode(width, height, 32, SDL_HWSURFACE);
     SDL_Surface *screen = SDL_CreateRGBSurface(SDL_SWSURFACE, width, height, 32, 0, 0, 0, 0);
     TTF_Font *font = TTF_OpenFont("/customer/app/wqy-microhei.ttc", height >= 540 ? 26 : 22);
-    if (video == NULL || screen == NULL || font == NULL) {
+    TTF_Font *compact_font =
+        TTF_OpenFont("/customer/app/wqy-microhei.ttc", height >= 540 ? 20 : 17);
+    if (video == NULL || screen == NULL || font == NULL || compact_font == NULL) {
+        if (compact_font != NULL)
+            TTF_CloseFont(compact_font);
+        if (font != NULL)
+            TTF_CloseFont(font);
         if (screen != NULL)
             SDL_FreeSurface(screen);
         free(games);
@@ -807,6 +929,7 @@ int main(int argc, char **argv)
     BloomShellSearch search;
     if (bloom_shell_search_init(&search, GAME_CAPACITY_MAX) != 0) {
         TTF_CloseFont(font);
+        TTF_CloseFont(compact_font);
         SDL_FreeSurface(screen);
         TTF_Quit();
         SDL_Quit();
@@ -832,7 +955,7 @@ int main(int argc, char **argv)
     bloom_ui_focus_init(&game_actions_focus, 2);
     int recent_remove_confirm_open = 0;
     BloomUiDialogFocus recent_remove_dialog = {0};
-    draw(screen, video, &layout, font, destination, &root, &games_browser, &favorites_focus,
+    draw(screen, video, &layout, font, compact_font, destination, &root, &games_browser, &favorites_focus,
          &recent_focus, games, favorites, recents, has_recent, &search, &settings_focus, &apps_focus, apps, &status,
          &capabilities, &quick_values, support_export_result, update_confirm_result, ra_form_result,
          quick_settings, ra_form_open, &ra_form, ra_sign_out_open, &ra_sign_out_dialog,
@@ -1261,7 +1384,7 @@ int main(int argc, char **argv)
             }
         }
         if (running)
-            draw(screen, video, &layout, font, destination, &root, &games_browser, &favorites_focus,
+            draw(screen, video, &layout, font, compact_font, destination, &root, &games_browser, &favorites_focus,
                  &recent_focus, games, favorites, recents, has_recent, &search, &settings_focus, &apps_focus,
                  apps, &status, &capabilities, &quick_values, support_export_result,
                  update_confirm_result, ra_form_result, quick_settings,
@@ -1273,6 +1396,7 @@ int main(int argc, char **argv)
                  action_game_recent, recent_remove_confirm_open, &recent_remove_dialog);
     }
     TTF_CloseFont(font);
+    TTF_CloseFont(compact_font);
     bloom_shell_ra_form_clear(&ra_form);
     bloom_shell_search_destroy(&search);
     SDL_FreeSurface(screen);

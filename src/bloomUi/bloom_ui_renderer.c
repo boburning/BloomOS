@@ -68,6 +68,9 @@ static void draw_header(SDL_Surface *surface, const BloomUiLayout *layout)
 static void draw_rows(SDL_Surface *surface, const BloomUiLayout *layout,
                       const BloomUiScene *scene)
 {
+    int row_width = scene->row_width_percent > 0
+                        ? layout->content.width * scene->row_width_percent / 100
+                        : layout->content.width;
     size_t available = 0;
     if (scene->window_start < scene->item_count) {
         available = scene->item_count - scene->window_start;
@@ -78,17 +81,11 @@ static void draw_rows(SDL_Surface *surface, const BloomUiLayout *layout,
         int y = layout->content.y + (int)row * layout->row_height + 4;
         int height = layout->row_height - 8;
         int selected = item == scene->selected;
-        fill(surface, layout->content.x, y, layout->content.width, height,
+        fill(surface, layout->content.x, y, row_width, height,
              selected ? BLOOM_UI_COLOR_SURFACE_RAISED : BLOOM_UI_COLOR_SURFACE);
         if (selected) {
             fill(surface, layout->content.x, y, 5, height, BLOOM_UI_COLOR_ORANGE);
         }
-        /* Deterministic text placeholders; the font adapter overlays real labels. */
-        int primary_width = layout->content.width * (int)(55 + (item % 4) * 7) / 100;
-        fill(surface, layout->content.x + 20, y + height / 3, primary_width, 4,
-             BLOOM_UI_COLOR_CREAM);
-        fill(surface, layout->content.x + 20, y + height * 2 / 3, primary_width * 2 / 3, 3,
-             BLOOM_UI_COLOR_SAND);
     }
 }
 
@@ -120,7 +117,8 @@ int bloom_ui_render_shell(SDL_Surface *surface, const BloomUiLayout *layout,
         scene->destination >= BLOOM_UI_DESTINATION_COUNT ||
         (scene->item_count > 0 && scene->selected >= scene->item_count) ||
         scene->window_start > scene->item_count || scene->progress_value > UINT32_MAX ||
-        scene->progress_maximum > UINT32_MAX) {
+        scene->progress_maximum > UINT32_MAX || scene->row_width_percent < 0 ||
+        scene->row_width_percent > 100) {
         return -1;
     }
 
