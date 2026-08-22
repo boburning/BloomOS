@@ -417,6 +417,13 @@ writes. ROM and launcher paths, emulator type, core, automatic-state intent,
 temporary configs, requested resolution, and environment are data fields; new
 Bloom components must not construct executable shell text from them.
 
+Bloom Shell exposes a system only when it can resolve a reviewed structured
+launch. PICO-8 and ScummVM use their shipped `fake08_libretro.so` and
+`scummvm_libretro.so` launchers and therefore share the existing RetroArch
+session and scoped-save boundary. Ports remain hidden: arbitrary `.port`
+launchers need an explicit standalone lifecycle and durability policy rather
+than being mistaken for RetroArch or passed through unsupervised.
+
 Miyoo's closed MainUI still requires `cmd_to_run.sh`. The `write-legacy`
 operation is the only supported compatibility adapter: it validates the full
 request, confines ROMs and launchers to their expected SD-card roots, rejects

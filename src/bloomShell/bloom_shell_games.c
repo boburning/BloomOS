@@ -90,6 +90,8 @@ const char *bloom_shell_games_default_core(const char *system_id)
         {"nes", "fceumm_libretro.so"},
         {"snes", "snes9x_libretro.so"},
         {"psx", "pcsx_rearmed_libretro.so"},
+        {"pico8", "fake08_libretro.so"},
+        {"scummvm", "scummvm_libretro.so"},
         {"sg1000", "genesis_plus_gx_libretro.so"},
     };
     if (system_id == NULL)

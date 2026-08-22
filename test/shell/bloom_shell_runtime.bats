@@ -52,3 +52,15 @@
     ! grep -F 'Deterministic text placeholders' "$renderer"
     ! grep -E 'L1|L2|R1|R2' "$shell"
 }
+
+@test "reviewed PICO-8 and ScummVM systems use shipped structured RetroArch cores" {
+    games=/workspace/src/bloomShell/bloom_shell_games.c
+    cores=/workspace/static/build/RetroArch/.retroarch/cores
+
+    grep -F '{"pico8", "fake08_libretro.so"}' "$games"
+    grep -F '{"scummvm", "scummvm_libretro.so"}' "$games"
+    [ -f "$cores/fake08_libretro.so" ]
+    [ -f "$cores/scummvm_libretro.so" ]
+    grep -F 'EXPECT_EQ(nullptr, bloom_shell_games_default_core("ports"));' \
+        /workspace/test/test_bloom_shell_games.cpp
+}

@@ -59,6 +59,8 @@ TEST(BloomShellGames, DefaultCoresCoverTheProvenStructuredSystemsOnly)
     EXPECT_STREQ("gambatte_libretro.so", bloom_shell_games_default_core("gb"));
     EXPECT_STREQ("gpsp_libretro.so", bloom_shell_games_default_core("gba"));
     EXPECT_STREQ("fceumm_libretro.so", bloom_shell_games_default_core("nes"));
+    EXPECT_STREQ("fake08_libretro.so", bloom_shell_games_default_core("pico8"));
+    EXPECT_STREQ("scummvm_libretro.so", bloom_shell_games_default_core("scummvm"));
     EXPECT_EQ(nullptr, bloom_shell_games_default_core("ports"));
     EXPECT_EQ(nullptr, bloom_shell_games_default_core(nullptr));
 }

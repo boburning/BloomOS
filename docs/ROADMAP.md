@@ -414,15 +414,14 @@ Current frontend progress:
   process IDs, carrier, and SSH. Suspend mutation, non-Plus public volume
   backends, Flip Wi-Fi lifecycle ownership, and replacement of the remaining
   inherited auxiliary network services remain pending.
-- [ ] Bloom Shell vertical slice and supervised MainUI fallback. The native
-  development shell prototype renders Home and a cursor-paged Game Boy library from
-  in-memory Bloom catalog rows. Home consumes the canonical recent order and
-  offers one-press resume for the latest present GB game without reparsing the
-  MainUI list. The 1.0 UX convergence tracked by #301 supersedes its
-  Home/Library/Collections destinations, MENU picker, and shoulder navigation
-  with one Continue plus Games/Favorites/Recent/Apps/Settings root. Library, favorite, and
-  Home resume selections stage through the structured launch and session services,
-  and return through the runtime loop. Apps are classified explicitly; only
+- [x] Bloom Shell vertical slice and supervised MainUI fallback. The native
+  shell renders one Continue plus Games/Favorites/Recent/Apps/Settings root
+  from bounded in-memory catalog rows without reparsing MainUI state. Library,
+  favorite, recent, and Continue selections stage through the structured launch
+  and session services and return through the runtime loop. The reviewed Plus
+  PICO-8 and ScummVM wrappers are RetroArch-backed, so their systems use the
+  existing structured core/session/save boundary; arbitrary Ports remain hidden
+  pending a standalone durability contract. Apps are classified explicitly; only
   `bloom-native` and reviewed `onion-compatible` launchers can cross the
   supervised, atomic `App/` command boundary, while MainUI-dependent and
   development-only rows are refused. Render-time
@@ -437,11 +436,11 @@ Current frontend progress:
   and standard input, clears it immediately, and reports success or failure.
   Signed-in accounts use the shared safe-default confirmation dialog before a
   fixed-argument sign-out request can remove credentials.
-  Any
-  non-launch exit or crash removes incomplete handoff state
-  and falls back to MainUI. An exact-hash Plus probe loaded the live read-only
-  catalog and found one GB game without opening the display. Interactive
-  browse/launch/return and crash-fallback hardware validation remain pending.
+  Any non-launch exit or crash removes incomplete handoff state and falls back
+  to MainUI. Signed Plus evidence covers the direct root, system browsing,
+  supervised app launch/return, and Bloom-owned recovery surface. Representative
+  physical game launch/return and crash-fallback validation remain under the
+  hardware/default-shell gates.
 - [x] Unified Bloom Settings and Quick Settings. Bloom Shell exposes one flat,
   sectioned Settings surface with capability-filtered Network and Developer
   rows, focused overlays only where needed, and a bounded START Quick Settings
