@@ -32,6 +32,7 @@ typedef struct {
     size_t window_start;
     size_t progress_value;
     size_t progress_maximum;
+    int row_width_percent;
     int healthy;
 } BloomUiScene;
 

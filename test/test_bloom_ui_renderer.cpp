@@ -87,8 +87,8 @@ TEST(BloomUiRenderer, MiniAndFlipScenesHaveStableGoldenHashes)
         int height;
         uint64_t expected_hash;
     } fixtures[] = {
-        {640, 480, UINT64_C(5939516835537904771)},
-        {752, 560, UINT64_C(14261943093710810603)},
+        {640, 480, UINT64_C(18082805113807211106)},
+        {752, 560, UINT64_C(6591053936195333355)},
     };
     for (const auto &fixture : fixtures) {
         BloomUiLayout layout{};
@@ -130,6 +130,30 @@ TEST(BloomUiRenderer, FocusUsesBothRaisedFillAndAccentStripe)
     SDL_FreeSurface(surface);
 }
 
+TEST(BloomUiRenderer, GameListWidthLeavesANativePreviewPane)
+{
+    BloomUiLayout layout{};
+    ASSERT_EQ(0, bloom_ui_layout_init(752, 560, 0, &layout));
+    SDL_Surface *surface = make_surface(752, 560);
+    ASSERT_NE(nullptr, surface);
+    BloomUiScene scene = example_scene();
+    scene.row_width_percent = 58;
+    ASSERT_EQ(0, bloom_ui_render_shell(surface, &layout, &scene));
+
+    const int selected_row = static_cast<int>(scene.selected - scene.window_start);
+    const int y = layout.content.y + selected_row * layout.row_height + 8;
+    const int list_end = layout.content.x + layout.content.width * 58 / 100;
+    auto *pixels = static_cast<Uint32 *>(surface->pixels);
+    Uint8 red = 0, green = 0, blue = 0;
+    SDL_GetRGB(pixels[y * surface->pitch / 4 + list_end - 2], surface->format, &red, &green,
+               &blue);
+    EXPECT_EQ(0x49, red);
+    SDL_GetRGB(pixels[y * surface->pitch / 4 + list_end + 2], surface->format, &red, &green,
+               &blue);
+    EXPECT_EQ(0x21, red);
+    SDL_FreeSurface(surface);
+}
+
 TEST(BloomUiRenderer, RejectsInvalidStateAndSurfaceShape)
 {
     BloomUiLayout layout{};
@@ -146,6 +170,9 @@ TEST(BloomUiRenderer, RejectsInvalidStateAndSurfaceShape)
     EXPECT_NE(0, bloom_ui_render_shell(surface, &layout, &scene));
     scene.selected = 0;
     scene.progress_maximum = static_cast<size_t>(UINT32_MAX) + 1;
+    EXPECT_NE(0, bloom_ui_render_shell(surface, &layout, &scene));
+    scene.progress_maximum = 0;
+    scene.row_width_percent = 101;
     EXPECT_NE(0, bloom_ui_render_shell(surface, &layout, &scene));
     EXPECT_NE(0, bloom_ui_render_shell(nullptr, &layout, &scene));
     SDL_FreeSurface(surface);
