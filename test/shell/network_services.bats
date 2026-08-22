@@ -15,8 +15,11 @@ setup() {
     printf '#!/bin/sh\n[ "$*" = "capability wifi" ] && printf true\n' >"$MOCK/platform"
     printf '#!/bin/sh\nprintf "%%s\\n" "$*" >>"$MOCK_LOG"\n' >"$MOCK/ssh-helper"
     printf '#!/bin/sh\nprintf "%%s\\n" "$*" >>"$MOCK_LOG"\n' >"$MOCK/compat"
+    printf '#!/bin/sh\nprintf "%%s\\n" "$LD_LIBRARY_PATH" >"$MOCK_SFTP_ENV"\n' \
+        >"$MOCK/sftp-server"
     chmod +x "$MOCK/platform" "$MOCK/ssh-helper" "$MOCK/compat"
     export MOCK_LOG="$BATS_TEST_TMPDIR/calls"
+    export MOCK_SFTP_ENV="$BATS_TEST_TMPDIR/sftp-library-path"
     export BLOOM_PLATFORM_BIN="$MOCK/platform"
     export BLOOM_SSH_HELPER_BIN="$MOCK/ssh-helper"
     export BLOOM_SFTP_SERVER_BIN="$MOCK/sftp-server"
@@ -78,4 +81,5 @@ setup() {
     run env BLOOM_ROOT="$BLOOM_NETWORK_SERVICES_ROOT" BLOOM_SFTP_SERVER="$MOCK/sftp-server" \
         sh "$gate"
     [ "$status" -eq 0 ]
+    grep -Fx "$SDCARD/.tmp_update/lib" "$MOCK_SFTP_ENV"
 }
