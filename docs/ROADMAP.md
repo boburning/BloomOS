@@ -343,9 +343,13 @@ atomically publishing and materializing defaults; game, save, state, library,
 history, and credential data remain outside its boundary. The single-screen
 first-run presentation now reconciles preserved settings before atomically
 publishing a private completion marker, remains retryable after interruption,
-and bypasses safely in recovery. Default-shell transition and physical
-boot-loop validation remain before MainUI can be removed as the development
-fallback.
+and bypasses safely in recovery. Bloom Shell is now the unflagged runtime
+default; only the conjunction of regular Developer Mode and explicit MainUI
+fallback markers selects the retained recovery frontend. A signed Plus update
+booted this default, completed first run, reached the root with MainUI absent,
+and was promoted to known-good with aggregate health green. Physical boot-loop
+validation and the remaining device matrix still precede removal of the
+development fallback from the payload.
 
 Current frontend progress:
 
@@ -414,7 +418,7 @@ Current frontend progress:
   process IDs, carrier, and SSH. Suspend mutation, non-Plus public volume
   backends, Flip Wi-Fi lifecycle ownership, and replacement of the remaining
   inherited auxiliary network services remain pending.
-- [x] Bloom Shell vertical slice and supervised MainUI fallback. The native
+- [x] Bloom Shell vertical slice and explicit Developer MainUI fallback. The native
   shell renders one Continue plus Games/Favorites/Recent/Apps/Settings root
   from bounded in-memory catalog rows without reparsing MainUI state. Library,
   favorite, recent, and Continue selections stage through the structured launch
@@ -436,11 +440,13 @@ Current frontend progress:
   and standard input, clears it immediately, and reports success or failure.
   Signed-in accounts use the shared safe-default confirmation dialog before a
   fixed-argument sign-out request can remove credentials.
-  Any non-launch exit or crash removes incomplete handoff state and falls back
-  to MainUI. Signed Plus evidence covers the direct root, system browsing,
-  supervised app launch/return, and Bloom-owned recovery surface. Representative
-  physical game launch/return and crash-fallback validation remain under the
-  hardware/default-shell gates.
+  Bloom Shell is the normal unflagged frontend. Repeated early exits retry the
+  shell through the guarded crash threshold and enter Bloom Safe Mode; MainUI
+  requires both Developer Mode and a separate explicit fallback marker. Signed
+  Plus evidence covers the default boot, recoverable first run, direct root,
+  system browsing, supervised app launch/return, and Bloom-owned recovery
+  surface with MainUI absent. Representative physical game launch/return and
+  boot-loop validation remain under the hardware/default-shell gates.
 - [x] Unified Bloom Settings and Quick Settings. Bloom Shell exposes one flat,
   sectioned Settings surface with capability-filtered Network and Developer
   rows, focused overlays only where needed, and a bounded START Quick Settings
