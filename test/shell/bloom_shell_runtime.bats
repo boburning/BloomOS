@@ -141,6 +141,15 @@
     ! grep -F 'draw_recent_actions' "$source"
 }
 
+@test "Bloom Shell snapshots local RA badges before rendering" {
+    source=/workspace/src/bloomShell/main.c
+
+    grep -F 'bloom_shell_achievements_load(&achievement_index, RA_DATABASE_PATH' "$source"
+    grep -F '\"ra_supported\":%zu' "$source"
+    grep -F 'bloom_shell_achievements_contains(achievement_index' "$source"
+    ! grep -F 'bloom-ra game' "$source"
+}
+
 @test "Bloom Shell visual system uses native Mini and Flip geometry without fake text" {
     shell=/workspace/src/bloomShell/main.c
     renderer=/workspace/src/bloomUi/bloom_ui_renderer.c

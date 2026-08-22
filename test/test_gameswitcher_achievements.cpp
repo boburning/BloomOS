@@ -29,9 +29,9 @@ TEST(GameSwitcherAchievements, ReadsOnlyExactOfficialGameBadgeMetadata)
     ASSERT_EQ(SQLITE_OK, sqlite3_open(path, &database));
     exec(database,
          "CREATE TABLE library_games(bloom_game_id TEXT PRIMARY KEY,ra_game_id INTEGER,official_set INTEGER,"
-         "achievement_count INTEGER);"
+         "achievement_count INTEGER,status TEXT);"
          "INSERT INTO library_games VALUES('bloom-game-v1:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',"
-         "1234,1,42);");
+         "1234,1,42,'identified');");
     sqlite3_close(database);
 
     GameSwitcherAchievements achievements = {};
