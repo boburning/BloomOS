@@ -219,6 +219,15 @@ mute, and network adapters; the in-memory value changes only after the adapter s
 No settings subprocess runs while rendering, and arbitrary fields or commands
 cannot cross this boundary.
 
+First-run presentation is intentionally separate from settings ownership. The
+shell reads a bounded status before rendering. Confirm invokes only the fixed
+`activate-bloom` operation, which reconciles the preserved Onion snapshot and
+materializes compatibility state, followed by fixed `complete-first-run`. The
+latter requires Bloom authority and atomically writes a private schema-1 marker.
+A missing marker is incomplete; malformed or symlinked markers fail closed.
+Publishing completion last makes an interrupted attempt idempotently retryable,
+while Safe Mode bypasses presentation without changing the marker.
+
 Battery state remains outside canonical settings. `bloom-platform battery
 --json` normalizes sysfs, batmon, and AXP cache/live readings into a bounded
 capacity/charging response and rejects malformed or out-of-range values. Bloom

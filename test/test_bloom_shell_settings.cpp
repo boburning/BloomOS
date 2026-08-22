@@ -282,3 +282,62 @@ TEST(BloomShellSettings, FlatRowsFormatCanonicalValuesAndStableControlGrammar)
     EXPECT_NE(std::string::npos, std::string(label).find("A Confirm / B Back"));
     EXPECT_NE(0, bloom_shell_settings_row_format(&capabilities, &values, 99, label, sizeof(label)));
 }
+
+TEST(BloomShellSettings, FirstRunStatusIsBoundedAndExplicit)
+{
+    BloomShellFirstRun first_run{};
+    ASSERT_EQ(0, bloom_shell_first_run_parse(
+                     R"({"schema":1,"service":"bloom-settings","first_run_complete":false})",
+                     &first_run));
+    EXPECT_EQ(1, first_run.ready);
+    EXPECT_EQ(0, first_run.complete);
+    ASSERT_EQ(0, bloom_shell_first_run_parse(
+                     R"({"schema":1,"service":"bloom-settings","first_run_complete":true})",
+                     &first_run));
+    EXPECT_EQ(1, first_run.complete);
+    EXPECT_NE(0, bloom_shell_first_run_parse(
+                     R"({"schema":1,"service":"other","first_run_complete":false})",
+                     &first_run));
+    EXPECT_EQ(0, first_run.ready);
+    EXPECT_NE(0, bloom_shell_first_run_parse(
+                     R"({"schema":1,"service":"bloom-settings","first_run_complete":"no"})",
+                     &first_run));
+}
+
+TEST(BloomShellSettings, FirstRunFinishUsesFixedOrderedSettingsOperations)
+{
+    const auto directory = std::filesystem::temp_directory_path() /
+                           ("bloom-first-run-" + std::to_string(getpid()));
+    std::filesystem::create_directory(directory);
+    const auto script = directory / "bloom-settings";
+    const auto arguments = directory / "arguments";
+    {
+        std::ofstream output(script);
+        output << "#!/bin/sh\n"
+                  "printf '%s\\n' \"$*\" >>\"$(dirname \"$0\")/arguments\"\n"
+                  "case \"$1\" in\n"
+                  "  activate-bloom|complete-first-run) exit 0 ;;\n"
+                  "  values) printf '%s\\n' '{\"schema\":1,\"service\":\"bloom-settings\","
+                  "\"generation\":2,\"authority\":\"bloom\",\"device\":{"
+                  "\"brightness\":7,\"volume\":20,\"mute\":false,"
+                  "\"wifi_enabled\":false}}' ;;\n"
+                  "  *) exit 2 ;;\n"
+                  "esac\n";
+    }
+    ASSERT_EQ(0, chmod(script.c_str(), 0700));
+    BloomShellFirstRun first_run{1, 0};
+    BloomShellQuickValues values{};
+    ASSERT_EQ(0, bloom_shell_first_run_finish(script.c_str(), &first_run, &values));
+    EXPECT_EQ(1, first_run.complete);
+    EXPECT_EQ(1, values.ready);
+    std::ifstream input(arguments);
+    std::string line;
+    ASSERT_TRUE(std::getline(input, line));
+    EXPECT_EQ("activate-bloom", line);
+    ASSERT_TRUE(std::getline(input, line));
+    EXPECT_EQ("complete-first-run", line);
+    ASSERT_TRUE(std::getline(input, line));
+    EXPECT_EQ("values", line);
+    EXPECT_NE(0, bloom_shell_first_run_finish(script.c_str(), &first_run, &values));
+    std::filesystem::remove_all(directory);
+}

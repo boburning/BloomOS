@@ -340,8 +340,10 @@ remain browsable, while health refresh, support export, confirmed signed
 rollback, confirmed Settings reset, and explicit normal restart use fixed
 service boundaries. Settings reset preserves a private exact backup before
 atomically publishing and materializing defaults; game, save, state, library,
-history, and credential data remain outside its boundary. First-run/migration
-presentation, default-shell transition, and physical
+history, and credential data remain outside its boundary. The single-screen
+first-run presentation now reconciles preserved settings before atomically
+publishing a private completion marker, remains retryable after interruption,
+and bypasses safely in recovery. Default-shell transition and physical
 boot-loop validation remain before MainUI can be removed as the development
 fallback.
 
@@ -440,28 +442,24 @@ Current frontend progress:
   and falls back to MainUI. An exact-hash Plus probe loaded the live read-only
   catalog and found one GB game without opening the display. Interactive
   browse/launch/return and crash-fallback hardware validation remain pending.
-- [ ] Unified Bloom Settings and Quick Settings. Bloom Shell now exposes the
-  safe prototype settings categories with capability-filtered Network and
-  Developer controls, preserves the plain-language System health/update/RA
-  summary as a nested destination, and opens a bounded START Quick Settings
-  model on every normal shell screen. #301 retains those safe adapters while
-  replacing category-first navigation with one flat sectioned Settings surface
-  and at most one focused detail layer. It now loads the bounded canonical values
+- [x] Unified Bloom Settings and Quick Settings. Bloom Shell exposes one flat,
+  sectioned Settings surface with capability-filtered Network and Developer
+  rows, focused overlays only where needed, and a bounded START Quick Settings
+  model on every normal shell screen. It loads the bounded canonical values
   once before rendering, shows actual brightness/volume/mute/Wi-Fi state, and
   routes left/right changes through fixed Bloom control and network adapters;
   failed reads are explicit and failed requests do not change the displayed
-  value. Battery now comes from a separate bounded platform adapter that
+  value. Battery comes from a separate bounded platform adapter that
   normalizes sysfs, batmon, and AXP paths without moving hardware heuristics
-  into the shell. Every category now opens a bounded detail page, with
-  Display, Audio, and Network reusing the fixed adapters and the remaining
-  pages exposing stable policy or status summaries without render-time work.
+  into the shell. Display, Audio, and Network reuse the fixed adapters; Update
+  and RetroAchievements use focused overlays that return directly to Settings.
   Audio mute is actionable through the canonical control adapter and restores
   the persisted volume when unmuted.
   System shows bounded free storage from the existing health probe, and System
   Health offers a fixed, timeout-bounded support export with explicit completion
-  or failure feedback. Guarded update actions, RetroAchievements account interaction,
-  reusable keyboard flows, and physical readability/input and
-  adjustment-latency validation remain pending. The bounded `settings
+  or failure feedback. Guarded update actions, RetroAchievements account
+  interaction, and reusable keyboard flows are implemented; physical
+  readability/input and adjustment-latency validation remain pending. The bounded `settings
   values` response exposes only the four high-frequency device controls plus
   generation/authority, without leaking unrelated canonical or legacy state.
 

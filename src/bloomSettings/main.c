@@ -9,6 +9,7 @@
 #define SETTINGS_PATH SETTINGS_ROOT "/settings.json"
 #define SNAPSHOT_PATH SETTINGS_ROOT "/onion-system.snapshot.json"
 #define RESET_BACKUP_PATH SETTINGS_ROOT "/settings.pre-reset.json"
+#define FIRST_RUN_MARKER_PATH SETTINGS_ROOT "/first-run.json"
 #define ONION_SYSTEM_PATH "/mnt/SDCARD/system.json"
 #define ONION_CONFIG_ROOT "/mnt/SDCARD/.tmp_update/config"
 
@@ -27,7 +28,8 @@ static int usage(void)
 {
     fprintf(stderr,
             "Usage: bloom-settings status|import-onion|sync-onion|reconcile-onion|"
-            "materialize-onion|activate-bloom|rollback-authority|reset-defaults|values\n"
+            "materialize-onion|activate-bloom|rollback-authority|reset-defaults|"
+            "first-run-status|complete-first-run|values\n"
             "       bloom-settings set FIELD VALUE\n");
     return 2;
 }
@@ -160,6 +162,32 @@ int main(int argc, char **argv)
                "\"generation\":%d,\"backup_written\":%s,\"materialized\":%s}\n",
                result.generation, result.backup_written ? "true" : "false",
                result.materialized ? "true" : "false");
+        return 0;
+    }
+    if (strcmp(argv[1], "first-run-status") == 0) {
+        int complete = 0;
+        if (bloom_settings_first_run_status(SETTINGS_PATH, FIRST_RUN_MARKER_PATH, &complete,
+                                            error, sizeof(error)) != 0) {
+            fprintf(stderr,
+                    "{\"schema\":1,\"error\":{\"code\":\"first_run_unavailable\"}}\n");
+            return 1;
+        }
+        printf("{\"schema\":1,\"service\":\"bloom-settings\","
+               "\"first_run_complete\":%s}\n",
+               complete ? "true" : "false");
+        return 0;
+    }
+    if (strcmp(argv[1], "complete-first-run") == 0) {
+        int changed = 0;
+        if (bloom_settings_complete_first_run(SETTINGS_PATH, FIRST_RUN_MARKER_PATH, &changed,
+                                              error, sizeof(error)) != 0) {
+            fprintf(stderr,
+                    "{\"schema\":1,\"error\":{\"code\":\"first_run_rejected\"}}\n");
+            return 1;
+        }
+        printf("{\"schema\":1,\"service\":\"bloom-settings\","
+               "\"first_run_complete\":true,\"changed\":%s}\n",
+               changed ? "true" : "false");
         return 0;
     }
     if (strcmp(argv[1], "import-onion") != 0)

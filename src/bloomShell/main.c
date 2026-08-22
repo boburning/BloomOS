@@ -665,6 +665,27 @@ static void draw_root(SDL_Surface *screen, const BloomUiLayout *layout, TTF_Font
     }
 }
 
+static void draw_first_run(SDL_Surface *screen, const BloomUiLayout *layout, TTF_Font *font,
+                           size_t game_count, int result)
+{
+    SDL_Color cream = {243, 226, 189, 0};
+    SDL_Color sand = {205, 175, 123, 0};
+    char games_ready[80];
+    snprintf(games_ready, sizeof(games_ready), "%zu game%s ready", game_count,
+             game_count == 1 ? "" : "s");
+    int x = layout->content.x + layout->margin * 2;
+    int width = layout->content.width - layout->margin * 4;
+    int y = layout->content.y + layout->row_height;
+    render_label(screen, font, "Your library is ready.", x, y, width, cream);
+    render_label(screen, font, games_ready, x, y + layout->row_height, width, sand);
+    render_label(screen, font, "Games, saves, and settings stay in place.", x,
+                 y + layout->row_height * 2, width, cream);
+    render_label(screen, font,
+                 result < 0 ? "Setup needs attention. Press A to try again."
+                            : "Press A to finish setup.",
+                 x, y + layout->row_height * 4, width, result < 0 ? sand : cream);
+}
+
 static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *layout, TTF_Font *font,
                  TTF_Font *compact_font,
                  BloomUiDestination destination, const BloomShellRootState *root,
@@ -687,7 +708,8 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
                  const BloomUiFocus *safe_mode_focus, int rollback_result,
                  int rollback_confirm_open, const BloomUiDialogFocus *rollback_dialog,
                  int reset_result, int reset_confirm_open,
-                 const BloomUiDialogFocus *reset_dialog)
+                 const BloomUiDialogFocus *reset_dialog, int first_run_open,
+                 int first_run_result, size_t game_count)
 {
     const BloomShellGamesSystem *games_system = bloom_shell_games_current(games_browser);
     const BloomUiFocus empty_focus = {0};
@@ -748,6 +770,7 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
     SDL_Color sand = {205, 175, 123, 0};
     char games_header[640];
     const char *header = quick_settings   ? "Quick Settings"
+                         : first_run_open ? "Welcome to BloomOS"
                          : safe_mode_root ? "Safe Mode"
                                           : screen_labels[destination];
     if (!quick_settings && destination == BLOOM_UI_DESTINATION_GAMES && games_system != NULL) {
@@ -810,6 +833,8 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
                          layout->content.width - 40, cream);
         }
     }
+    else if (first_run_open)
+        draw_first_run(screen, layout, font, game_count, first_run_result);
     else if (destination == BLOOM_UI_DESTINATION_ROOT)
         draw_root(screen, layout, font, root, recent);
     else if (destination == BLOOM_UI_DESTINATION_APPS)
@@ -890,6 +915,8 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
         draw_game_preview(screen, layout, font, preview_game);
     const char *footer = quick_settings
                              ? "Left/Right Change   A Toggle   B/START Close"
+                         : first_run_open
+                             ? "A Finish Setup   MENU Switcher   START Quick"
                          : safe_mode_root
                              ? "A Open   MENU Switcher   START Quick"
                          : safe_mode && destination == BLOOM_UI_DESTINATION_GAMES
@@ -948,6 +975,8 @@ int main(int argc, char **argv)
         return 1;
     BloomShellStatus status = {0};
     bloom_shell_status_load(BLOOM_STATUS_BINARY, &status);
+    BloomShellFirstRun first_run = {0};
+    bloom_shell_first_run_load(BLOOM_SETTINGS_BINARY, &first_run);
     BloomShellQuickValues quick_values = {0};
     bloom_shell_quick_values_load(BLOOM_SETTINGS_BINARY, &quick_values);
     bloom_shell_quick_battery_load(BLOOM_PLATFORM_BINARY, &quick_values);
@@ -1065,6 +1094,8 @@ int main(int argc, char **argv)
     int reset_result = 0;
     int reset_confirm_open = 0;
     BloomUiDialogFocus reset_dialog = {0};
+    int first_run_open = !safe_mode && !first_run.complete;
+    int first_run_result = first_run.ready ? 0 : -1;
     draw(screen, video, &layout, font, compact_font, destination, &root, &games_browser, &favorites_focus,
          &recent_focus, games, favorites, recents, has_recent, &search, &settings_focus, &apps_focus, apps, &status,
          &capabilities, &quick_values, support_export_result, update_confirm_result, ra_form_result,
@@ -1074,7 +1105,7 @@ int main(int argc, char **argv)
          favorite_index(favorites, favorite_count, action_game.bloom_game_id) >= 0,
          action_game_recent, recent_remove_confirm_open, &recent_remove_dialog, safe_mode,
          &safe_mode_focus, rollback_result, rollback_confirm_open, &rollback_dialog, reset_result,
-         reset_confirm_open, &reset_dialog);
+         reset_confirm_open, &reset_dialog, first_run_open, first_run_result, game_count);
     int running = 1;
     int exit_code = 0;
     while (running) {
@@ -1319,6 +1350,20 @@ int main(int argc, char **argv)
         else if (quick_settings) {
             continue;
         }
+        else if (first_run_open && action == BLOOM_UI_ACTION_CONFIRM) {
+            if (!first_run.ready)
+                bloom_shell_first_run_load(BLOOM_SETTINGS_BINARY, &first_run);
+            first_run_result =
+                first_run.ready &&
+                        bloom_shell_first_run_finish(BLOOM_SETTINGS_BINARY, &first_run,
+                                                     &quick_values) == 0
+                    ? 1
+                    : -1;
+            if (first_run_result > 0)
+                first_run_open = 0;
+        }
+        else if (first_run_open)
+            continue;
         else if (action == BLOOM_UI_ACTION_BACK) {
             bloom_shell_search_clear(&search);
             if (destination != BLOOM_UI_DESTINATION_ROOT)
@@ -1560,7 +1605,8 @@ int main(int argc, char **argv)
                  favorite_index(favorites, favorite_count, action_game.bloom_game_id) >= 0,
                  action_game_recent, recent_remove_confirm_open, &recent_remove_dialog, safe_mode,
                  &safe_mode_focus, rollback_result, rollback_confirm_open, &rollback_dialog,
-                 reset_result, reset_confirm_open, &reset_dialog);
+                 reset_result, reset_confirm_open, &reset_dialog, first_run_open,
+                 first_run_result, game_count);
             if (rollback_result == 2) {
                 rollback_result = bloom_shell_update_rollback(BLOOMCTL_BINARY) == 0 ? 1 : -1;
                 bloom_shell_status_load(BLOOM_STATUS_BINARY, &status);
@@ -1574,7 +1620,8 @@ int main(int argc, char **argv)
                      favorite_index(favorites, favorite_count, action_game.bloom_game_id) >= 0,
                      action_game_recent, recent_remove_confirm_open, &recent_remove_dialog,
                      safe_mode, &safe_mode_focus, rollback_result, rollback_confirm_open,
-                     &rollback_dialog, reset_result, reset_confirm_open, &reset_dialog);
+                     &rollback_dialog, reset_result, reset_confirm_open, &reset_dialog,
+                     first_run_open, first_run_result, game_count);
             }
             if (reset_result == 2) {
                 reset_result = bloom_shell_settings_reset(BLOOMCTL_BINARY) == 0 ? 1 : -1;
@@ -1588,7 +1635,8 @@ int main(int argc, char **argv)
                      favorite_index(favorites, favorite_count, action_game.bloom_game_id) >= 0,
                      action_game_recent, recent_remove_confirm_open, &recent_remove_dialog,
                      safe_mode, &safe_mode_focus, rollback_result, rollback_confirm_open,
-                     &rollback_dialog, reset_result, reset_confirm_open, &reset_dialog);
+                     &rollback_dialog, reset_result, reset_confirm_open, &reset_dialog,
+                     first_run_open, first_run_result, game_count);
             }
         }
     }

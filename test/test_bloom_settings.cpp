@@ -940,3 +940,77 @@ TEST_F(BloomSettingsTest, ResetDefaultsRejectsSymlinkedBackupWithoutMutation)
                                     std::istreambuf_iterator<char>());
     EXPECT_EQ("outside", outside_after);
 }
+
+TEST_F(BloomSettingsTest, FirstRunCompletionRequiresBloomAuthorityAndIsIdempotent)
+{
+    write(system, R"({"vol":9,"brightness":4})");
+    BloomSettingsImportResult imported{};
+    char error[160] = {};
+    ASSERT_EQ(0, bloom_settings_import_onion(system.c_str(), config.c_str(), settings.c_str(),
+                                             snapshot.c_str(), &imported, error, sizeof(error)));
+    const auto marker = root / "first-run.json";
+    int complete = -1;
+    ASSERT_EQ(0, bloom_settings_first_run_status(settings.c_str(), marker.c_str(), &complete,
+                                                 error, sizeof(error)));
+    EXPECT_EQ(0, complete);
+    int changed = -1;
+    EXPECT_NE(0, bloom_settings_complete_first_run(settings.c_str(), marker.c_str(), &changed,
+                                                   error, sizeof(error)));
+    EXPECT_EQ(0, changed);
+    EXPECT_FALSE(std::filesystem::exists(marker));
+
+    BloomSettingsAuthorityResult activated{};
+    ASSERT_EQ(0, bloom_settings_activate(settings.c_str(), system.c_str(), config.c_str(),
+                                         &activated, error, sizeof(error)));
+    ASSERT_EQ(0, bloom_settings_complete_first_run(settings.c_str(), marker.c_str(), &changed,
+                                                   error, sizeof(error)));
+    EXPECT_EQ(1, changed);
+    std::ifstream marker_stream(marker, std::ios::binary);
+    const std::string marker_content((std::istreambuf_iterator<char>(marker_stream)),
+                                     std::istreambuf_iterator<char>());
+    EXPECT_EQ("{\"schema\":1,\"complete\":true}\n", marker_content);
+    ASSERT_EQ(0, bloom_settings_first_run_status(settings.c_str(), marker.c_str(), &complete,
+                                                 error, sizeof(error)));
+    EXPECT_EQ(1, complete);
+    ASSERT_EQ(0, bloom_settings_complete_first_run(settings.c_str(), marker.c_str(), &changed,
+                                                   error, sizeof(error)));
+    EXPECT_EQ(0, changed);
+}
+
+TEST_F(BloomSettingsTest, FirstRunStatusPreservesMalformedMarker)
+{
+    write(system, R"({"vol":9})");
+    BloomSettingsImportResult imported{};
+    char error[160] = {};
+    ASSERT_EQ(0, bloom_settings_import_onion(system.c_str(), config.c_str(), settings.c_str(),
+                                             snapshot.c_str(), &imported, error, sizeof(error)));
+    set_bloom_authority();
+    const auto marker = root / "first-run.json";
+    write(marker, "malformed");
+    int complete = 0;
+    EXPECT_NE(0, bloom_settings_first_run_status(settings.c_str(), marker.c_str(), &complete,
+                                                 error, sizeof(error)));
+    int changed = 0;
+    EXPECT_NE(0, bloom_settings_complete_first_run(settings.c_str(), marker.c_str(), &changed,
+                                                   error, sizeof(error)));
+    std::ifstream marker_stream(marker, std::ios::binary);
+    const std::string marker_content((std::istreambuf_iterator<char>(marker_stream)),
+                                     std::istreambuf_iterator<char>());
+    EXPECT_EQ("malformed", marker_content);
+}
+
+TEST_F(BloomSettingsTest, FirstRunStatusRejectsSymlinkedMarker)
+{
+    write(system, R"({"vol":9})");
+    BloomSettingsImportResult imported{};
+    char error[160] = {};
+    ASSERT_EQ(0, bloom_settings_import_onion(system.c_str(), config.c_str(), settings.c_str(),
+                                             snapshot.c_str(), &imported, error, sizeof(error)));
+    const auto outside = root / "outside-first-run";
+    const auto marker = root / "first-run.json";
+    write(outside, "{\"schema\":1,\"complete\":true}\n");
+    std::filesystem::create_symlink(outside, marker);
+    int complete = 0;
+    EXPECT_NE(0, bloom_settings_first_run_status(settings.c_str(), marker.c_str(), &complete,
+                                                 error, sizeof(error)));
+}

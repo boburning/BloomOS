@@ -469,6 +469,16 @@ SH
     [ "$output" = '{"schema":1,"arguments":"reset-defaults"}' ]
 
     run env BLOOM_SETTINGS_BIN="$service" \
+        sh /workspace/static/build/.tmp_update/bin/bloomctl settings first-run-status
+    [ "$status" -eq 0 ]
+    [ "$output" = '{"schema":1,"arguments":"first-run-status"}' ]
+
+    run env BLOOM_SETTINGS_BIN="$service" \
+        sh /workspace/static/build/.tmp_update/bin/bloomctl settings complete-first-run
+    [ "$status" -eq 0 ]
+    [ "$output" = '{"schema":1,"arguments":"complete-first-run"}' ]
+
+    run env BLOOM_SETTINGS_BIN="$service" \
         sh /workspace/static/build/.tmp_update/bin/bloomctl settings set interface.theme '/Themes/Bloom OS/'
     [ "$status" -eq 0 ]
     [ "$output" = '{"schema":1,"arguments":"set interface.theme /Themes/Bloom OS/"}' ]

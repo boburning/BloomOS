@@ -56,6 +56,16 @@ touch games, saves, states, play history, library data, or account credentials.
 `B` at the Safe Mode root is safe, `START` still owns Quick Settings, `MENU`
 still owns GameSwitcher, and shoulders remain unassigned.
 
+First launch uses one welcome surface, not a wizard. It reports the locally
+indexed game count and explains that games, saves, and imported settings stay
+in place. `A` finishes setup by reconciling the preserved Onion settings into
+canonical Bloom authority and then publishing a separate private completion
+marker. If either operation is interrupted or rejected, the welcome surface
+reappears with a retry state; malformed or symlinked marker data is never
+trusted. `B` is a no-op, while MENU and START retain their global meanings.
+Safe Mode intentionally bypasses this presentation so recovery remains
+reachable.
+
 `src/bloomUi/bloom_ui_core` owns semantic input and focus behavior. Device
 adapters translate physical input without inventing hidden shortcuts. Lists
 clamp at their ends, keep selection visible, and use bounded repeat with smooth

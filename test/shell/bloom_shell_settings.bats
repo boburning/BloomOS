@@ -54,3 +54,19 @@
     [[ "$render" != *'fork('* ]]
     [[ "$render" != *'exec'* ]]
 }
+
+@test "first run is one recoverable welcome surface with fixed migration operations" {
+    shell=/workspace/src/bloomShell/main.c
+    adapter=/workspace/src/bloomShell/bloom_shell_settings.c
+
+    grep -F 'bloom_shell_first_run_load(BLOOM_SETTINGS_BINARY, &first_run);' "$shell"
+    grep -F 'int first_run_open = !safe_mode && !first_run.complete;' "$shell"
+    grep -F 'int first_run_result = first_run.ready ? 0 : -1;' "$shell"
+    grep -F 'if (!first_run.ready)' "$shell"
+    grep -F '"Your library is ready."' "$shell"
+    grep -F '"Games, saves, and settings stay in place."' "$shell"
+    grep -F '"A Finish Setup   MENU Switcher   START Quick"' "$shell"
+    grep -F 'else if (first_run_open)' "$shell"
+    grep -F 'run_request(settings_path, "activate-bloom", NULL, NULL)' "$adapter"
+    grep -F 'run_request(settings_path, "complete-first-run", NULL, NULL)' "$adapter"
+}

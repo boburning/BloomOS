@@ -126,6 +126,10 @@ int bloom_settings_reset_defaults(const char *settings_path, const char *backup_
                                   const char *onion_config_root,
                                   BloomSettingsResetResult *result, char *error,
                                   size_t error_size);
+int bloom_settings_first_run_status(const char *settings_path, const char *marker_path,
+                                    int *complete, char *error, size_t error_size);
+int bloom_settings_complete_first_run(const char *settings_path, const char *marker_path,
+                                      int *changed, char *error, size_t error_size);
 
 #ifdef __cplusplus
 }
