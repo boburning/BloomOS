@@ -50,23 +50,11 @@ TEST(BloomUiInput, NormalizesTheStableControlGrammar)
     EXPECT_EQ(BLOOM_UI_ACTION_FOCUS_UP, bloom_ui_normalize_input(BLOOM_UI_INPUT_UP));
     EXPECT_EQ(BLOOM_UI_ACTION_CONFIRM, bloom_ui_normalize_input(BLOOM_UI_INPUT_CONFIRM));
     EXPECT_EQ(BLOOM_UI_ACTION_BACK, bloom_ui_normalize_input(BLOOM_UI_INPUT_BACK));
-    EXPECT_EQ(BLOOM_UI_ACTION_PREVIOUS_DESTINATION,
-              bloom_ui_normalize_input(BLOOM_UI_INPUT_PREVIOUS_DESTINATION));
-    EXPECT_EQ(BLOOM_UI_ACTION_NEXT_DESTINATION,
-              bloom_ui_normalize_input(BLOOM_UI_INPUT_NEXT_DESTINATION));
     EXPECT_EQ(BLOOM_UI_ACTION_TOGGLE_FAVORITE, bloom_ui_normalize_input(BLOOM_UI_INPUT_FAVORITE));
     EXPECT_EQ(BLOOM_UI_ACTION_SEARCH, bloom_ui_normalize_input(BLOOM_UI_INPUT_SEARCH));
     EXPECT_EQ(BLOOM_UI_ACTION_QUICK_SETTINGS, bloom_ui_normalize_input(BLOOM_UI_INPUT_QUICK_SETTINGS));
     EXPECT_EQ(BLOOM_UI_ACTION_GAME_SWITCHER, bloom_ui_normalize_input(BLOOM_UI_INPUT_GAME_SWITCHER));
     EXPECT_EQ(BLOOM_UI_ACTION_NONE, bloom_ui_normalize_input((BloomUiInput)999));
-}
-
-TEST(BloomUiNavigation, TopLevelDestinationsWrapInBothDirections)
-{
-    EXPECT_EQ(BLOOM_UI_DESTINATION_LIBRARY, bloom_ui_destination_step(BLOOM_UI_DESTINATION_HOME, 1));
-    EXPECT_EQ(BLOOM_UI_DESTINATION_HOME, bloom_ui_destination_step(BLOOM_UI_DESTINATION_SETTINGS, 1));
-    EXPECT_EQ(BLOOM_UI_DESTINATION_SETTINGS, bloom_ui_destination_step(BLOOM_UI_DESTINATION_HOME, -1));
-    EXPECT_EQ(BLOOM_UI_DESTINATION_HOME, bloom_ui_destination_step((BloomUiDestination)99, 1));
 }
 
 TEST(BloomUiFocus, ClampsAndScrollsAListWithoutWrapping)

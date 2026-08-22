@@ -13,8 +13,6 @@ TEST(BloomUiInput, MapsMiyooKeysToSemanticInput)
     EXPECT_EQ(BLOOM_UI_INPUT_RIGHT, bloom_ui_input_from_sdl_key(SW_BTN_RIGHT));
     EXPECT_EQ(BLOOM_UI_INPUT_CONFIRM, bloom_ui_input_from_sdl_key(SW_BTN_A));
     EXPECT_EQ(BLOOM_UI_INPUT_BACK, bloom_ui_input_from_sdl_key(SW_BTN_B));
-    EXPECT_EQ(BLOOM_UI_INPUT_PREVIOUS_DESTINATION, bloom_ui_input_from_sdl_key(SW_BTN_L1));
-    EXPECT_EQ(BLOOM_UI_INPUT_NEXT_DESTINATION, bloom_ui_input_from_sdl_key(SW_BTN_R1));
     EXPECT_EQ(BLOOM_UI_INPUT_CONTEXT, bloom_ui_input_from_sdl_key(SW_BTN_X));
     EXPECT_EQ(BLOOM_UI_INPUT_FAVORITE, bloom_ui_input_from_sdl_key(SW_BTN_Y));
     EXPECT_EQ(BLOOM_UI_INPUT_SEARCH, bloom_ui_input_from_sdl_key(SW_BTN_SELECT));
@@ -24,8 +22,19 @@ TEST(BloomUiInput, MapsMiyooKeysToSemanticInput)
 
 TEST(BloomUiInput, LeavesUnassignedAndUnknownKeysUnbound)
 {
+    EXPECT_EQ(BLOOM_UI_INPUT_NONE, bloom_ui_input_from_sdl_key(SW_BTN_L1));
+    EXPECT_EQ(BLOOM_UI_INPUT_NONE, bloom_ui_input_from_sdl_key(SW_BTN_R1));
     EXPECT_EQ(BLOOM_UI_INPUT_NONE, bloom_ui_input_from_sdl_key(SW_BTN_L2));
     EXPECT_EQ(BLOOM_UI_INPUT_NONE, bloom_ui_input_from_sdl_key(SW_BTN_R2));
     EXPECT_EQ(BLOOM_UI_INPUT_NONE, bloom_ui_input_from_sdl_key(SDLK_UNKNOWN));
     EXPECT_EQ(BLOOM_UI_INPUT_NONE, bloom_ui_input_from_sdl_key(SDLK_a));
+}
+
+TEST(BloomUiInput, ShoulderPressesCannotProduceBloomNavigationActions)
+{
+    for (SDLKey key : {SW_BTN_L1, SW_BTN_L2, SW_BTN_R1, SW_BTN_R2}) {
+        BloomUiInput input = bloom_ui_input_from_sdl_key(key);
+        EXPECT_EQ(BLOOM_UI_INPUT_NONE, input);
+        EXPECT_EQ(BLOOM_UI_ACTION_NONE, bloom_ui_normalize_input(input));
+    }
 }
