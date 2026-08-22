@@ -329,6 +329,15 @@ MainUI remains a development recovery fallback during this sequence. It is not
 the stable 1.0 frontend, and no responsibility is removed before its Bloom-owned
 replacement passes the relevant recovery and device tests.
 
+The first Safe Mode foundation is implemented behind the development shell:
+each start has a durable bounded launch ID and phase, an interrupted or early
+failed start increments a consecutive counter, a sustained live shell clears
+the counter, and three failures latch Safe Mode for the next launch. The state
+service refuses malformed or symlinked data and publishes atomically. The
+Bloom-owned recovery surface, optional-service suppression, explicit normal
+restart, and physical boot-loop validation remain before MainUI can be removed
+as the development fallback.
+
 Current frontend progress:
 
 - [x] Shared resolution-safe navigation, focus, dialog, and text-entry state.

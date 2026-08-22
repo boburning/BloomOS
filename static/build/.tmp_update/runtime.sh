@@ -228,18 +228,49 @@ launch_bloom_shell() {
     log "\n:: Launch Bloom Shell"
     start_audioserver
     cd "$sysdir"
-    if PATH="$sysdir/bin:$PATH" \
-        LD_LIBRARY_PATH="$sysdir/lib:$miyoodir/lib:/config/lib:/lib:/customer/lib" \
-        LD_PRELOAD="$miyoodir/lib/libpadsp.so" \
-        "$sysdir/bin/bloom-shell" >/dev/null 2>&1; then
-        shell_status=0
-    else
-        shell_status=$?
+    shell_guard="$sysdir/bin/bloom-shell-guard"
+    launch_id=""
+    safe_mode=false
+    if [ -x "$shell_guard" ]; then
+        guard_state="$($shell_guard begin)" || {
+            log "Bloom Shell crash state is unavailable; using normal mode"
+            guard_state=""
+        }
+        if [ -n "$guard_state" ]; then
+            launch_id="$(printf '%s\n' "$guard_state" | "$sysdir/bin/jq" -er '.launch_id')"
+            safe_mode="$(printf '%s\n' "$guard_state" | "$sysdir/bin/jq" -er '.safe_mode')"
+        fi
+    fi
+
+    PATH="$sysdir/bin:$PATH" \
+    LD_LIBRARY_PATH="$sysdir/lib:$miyoodir/lib:/config/lib:/lib:/customer/lib" \
+    LD_PRELOAD="$miyoodir/lib/libpadsp.so" \
+    BLOOM_SAFE_MODE="$safe_mode" \
+        "$sysdir/bin/bloom-shell" >/dev/null 2>&1 &
+    shell_pid=$!
+    ready_marker_pid=""
+    if [ -n "$launch_id" ]; then
+        (
+            sleep "${BLOOM_SHELL_READY_SECONDS:-10}"
+            if kill -0 "$shell_pid" 2> /dev/null; then
+                "$shell_guard" ready "$launch_id" > /dev/null 2>&1 || true
+            fi
+        ) &
+        ready_marker_pid=$!
+    fi
+    if wait "$shell_pid"; then shell_status=0; else shell_status=$?; fi
+    if [ -n "$ready_marker_pid" ]; then
+        kill "$ready_marker_pid" 2> /dev/null || true
+        wait "$ready_marker_pid" 2> /dev/null || true
     fi
     if [ "$shell_status" -eq 20 ] && [ -f "$sysdir/cmd_to_run.sh" ]; then
+        [ -z "$launch_id" ] || "$shell_guard" complete "$launch_id" > /dev/null 2>&1 ||
+            log "Bloom Shell successful launch state could not be cleared"
         set_prev_state "bloom-shell"
         return 0
     fi
+    [ -z "$launch_id" ] || "$shell_guard" failed "$launch_id" > /dev/null 2>&1 ||
+        log "Bloom Shell failure state could not be recorded"
     log "Bloom Shell exited without a launch (status $shell_status); falling back to MainUI"
     rm -f "$sysdir/cmd_to_run.sh" "$sysdir/bloom-shell-launch.json"
     launch_main_ui
