@@ -125,6 +125,31 @@ TEST_F(BloomLibraryQueryTest, SystemFilterAndMetadataAreBounded)
     EXPECT_EQ(8, games[0].file_mtime);
 }
 
+TEST_F(BloomLibraryQueryTest, SystemsAreSortedAndEmptySystemsAreSkipped)
+{
+    execute("INSERT INTO systems VALUES('empty','Empty','Empty',NULL,'launch','zip',1,2,1)");
+    add_game("gba", "GBA/Alpha.gba", "Alpha", "alpha");
+    add_game("gb", "GB/Mono.gb", "Mono", "mono");
+    BloomLibrarySystem systems[3]{};
+    size_t count = 0;
+    ASSERT_EQ(SQLITE_OK, bloom_library_query_systems(database_, 3, systems, 3, &count));
+    ASSERT_EQ(2U, count);
+    EXPECT_STREQ("gb", systems[0].system_id);
+    EXPECT_STREQ("GB", systems[0].label);
+    EXPECT_EQ(1U, systems[0].game_count);
+    EXPECT_STREQ("gba", systems[1].system_id);
+    EXPECT_STREQ("GBA", systems[1].label);
+    EXPECT_EQ(1U, systems[1].game_count);
+}
+
+TEST_F(BloomLibraryQueryTest, SystemsRejectUnboundedRequests)
+{
+    BloomLibrarySystem system{};
+    size_t count = 7;
+    EXPECT_EQ(SQLITE_MISUSE, bloom_library_query_systems(database_, 0, &system, 1, &count));
+    EXPECT_EQ(SQLITE_MISUSE, bloom_library_query_systems(database_, 101, &system, 101, &count));
+}
+
 TEST_F(BloomLibraryQueryTest, InvalidAndStaleCursorsFailClosed)
 {
     std::string stale = add_game("gba", "GBA/Gone.gba", "Gone", "gone", 0);

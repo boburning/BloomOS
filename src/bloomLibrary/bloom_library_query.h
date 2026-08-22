@@ -32,6 +32,15 @@ typedef struct {
     char compatibility[32];
 } BloomLibraryApp;
 
+typedef struct {
+    char system_id[64];
+    char label[BLOOM_LIBRARY_TEXT_SIZE];
+    size_t game_count;
+} BloomLibrarySystem;
+
+int bloom_library_query_systems(sqlite3 *database, size_t limit, BloomLibrarySystem *systems,
+                                size_t systems_capacity, size_t *count);
+
 int bloom_library_query_games(sqlite3 *database, const char *system_id, const char *after_game_id,
                               size_t limit, BloomLibraryGame *games, size_t games_capacity,
                               BloomLibraryGamePage *page);

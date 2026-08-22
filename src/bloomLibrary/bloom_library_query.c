@@ -2,6 +2,7 @@
 
 #include "../bloomGameId/bloom_game_id.h"
 
+#include <stdint.h>
 #include <string.h>
 
 static int valid_system_id(const char *value)
@@ -30,6 +31,45 @@ static int copy_column(sqlite3_stmt *statement, int column, char *output, size_t
         return SQLITE_CORRUPT;
     memcpy(output, value, length + 1);
     return SQLITE_OK;
+}
+
+int bloom_library_query_systems(sqlite3 *database, size_t limit, BloomLibrarySystem *systems,
+                                size_t systems_capacity, size_t *count)
+{
+    if (database == NULL || limit == 0 || limit > BLOOM_LIBRARY_QUERY_LIMIT_MAX ||
+        systems == NULL || systems_capacity < limit || count == NULL)
+        return SQLITE_MISUSE;
+    *count = 0;
+    sqlite3_stmt *statement = NULL;
+    int sql = sqlite3_prepare_v2(
+        database,
+        "SELECT systems.system_id,systems.label,COUNT(games.bloom_game_id) "
+        "FROM systems JOIN games USING(system_id) WHERE systems.present=1 AND games.present=1 "
+        "GROUP BY systems.system_id,systems.label HAVING COUNT(games.bloom_game_id)>0 "
+        "ORDER BY systems.label,systems.system_id LIMIT ?1",
+        -1, &statement, NULL);
+    if (sql == SQLITE_OK)
+        sql = sqlite3_bind_int(statement, 1, (int)limit);
+    int step = SQLITE_DONE;
+    while (sql == SQLITE_OK && (step = sqlite3_step(statement)) == SQLITE_ROW) {
+        BloomLibrarySystem *system = &systems[*count];
+        memset(system, 0, sizeof(*system));
+        if ((sql = copy_column(statement, 0, system->system_id, sizeof(system->system_id), 0)) !=
+                SQLITE_OK ||
+            (sql = copy_column(statement, 1, system->label, sizeof(system->label), 0)) != SQLITE_OK)
+            break;
+        sqlite3_int64 game_count = sqlite3_column_int64(statement, 2);
+        if (game_count <= 0 || (uint64_t)game_count > SIZE_MAX) {
+            sql = SQLITE_CORRUPT;
+            break;
+        }
+        system->game_count = (size_t)game_count;
+        ++*count;
+    }
+    if (sql == SQLITE_OK && step != SQLITE_DONE)
+        sql = step;
+    sqlite3_finalize(statement);
+    return sql;
 }
 
 static int cursor_exists(sqlite3 *database, const char *system_id, const char *cursor)

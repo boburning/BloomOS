@@ -28,6 +28,64 @@ static int safe_relative(const char *value)
            strcmp(value, "..") != 0 && strstr(value, "/..") == NULL;
 }
 
+int bloom_shell_detect_core(const char *sd_root, const char *launch_path, char *core,
+                            size_t core_size)
+{
+    if (sd_root == NULL || sd_root[0] != '/' || launch_path == NULL ||
+        strncmp(launch_path, "Emu/", 4) != 0 || !safe_relative(launch_path) || core == NULL ||
+        core_size < 16)
+        return -1;
+    char path[1024];
+    if (snprintf(path, sizeof(path), "%s/%s", sd_root, launch_path) >= (int)sizeof(path))
+        return -1;
+    struct stat metadata;
+    if (lstat(path, &metadata) != 0 || !S_ISREG(metadata.st_mode) || S_ISLNK(metadata.st_mode) ||
+        metadata.st_size <= 0 || metadata.st_size > 65536)
+        return -1;
+    int descriptor = open(path, O_RDONLY | O_NOFOLLOW);
+    if (descriptor < 0)
+        return -1;
+    struct stat opened;
+    if (fstat(descriptor, &opened) != 0 || !S_ISREG(opened.st_mode) ||
+        opened.st_dev != metadata.st_dev || opened.st_ino != metadata.st_ino ||
+        opened.st_size != metadata.st_size) {
+        close(descriptor);
+        return -1;
+    }
+    char script[65537];
+    size_t length = 0;
+    int failed = 0;
+    while (!failed && length < (size_t)opened.st_size) {
+        ssize_t chunk = read(descriptor, script + length, (size_t)opened.st_size - length);
+        if (chunk > 0)
+            length += (size_t)chunk;
+        else if (chunk == 0)
+            failed = 1;
+        else if (errno != EINTR)
+            failed = 1;
+    }
+    failed = close(descriptor) != 0 || failed || length == 0 || length != (size_t)opened.st_size;
+    if (failed)
+        return -1;
+    script[length] = '\0';
+    const char suffix[] = "_libretro.so";
+    char *suffix_start = strstr(script, suffix);
+    if (suffix_start == NULL)
+        return -1;
+    char *end = suffix_start + sizeof(suffix) - 1;
+    char *start = suffix_start;
+    while (start > script &&
+           ((start[-1] >= 'a' && start[-1] <= 'z') || (start[-1] >= 'A' && start[-1] <= 'Z') ||
+            (start[-1] >= '0' && start[-1] <= '9') || start[-1] == '_' || start[-1] == '-'))
+        --start;
+    size_t core_length = (size_t)(end - start);
+    if (start == suffix_start || core_length >= core_size)
+        return -1;
+    memcpy(core, start, core_length);
+    core[core_length] = '\0';
+    return 0;
+}
+
 static int write_quoted(int descriptor, const char *value)
 {
     if (dprintf(descriptor, "'") < 0)
