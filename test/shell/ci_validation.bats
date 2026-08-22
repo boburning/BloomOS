@@ -24,6 +24,14 @@
     [ "$status" -eq 0 ]
 }
 
+@test "hardware builds reuse the pinned recursive submodule cache" {
+    workflow=/workspace/.github/workflows/hardware-test-build.yml
+    grep -F "actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57" "$workflow"
+    grep -F 'key: submodules-${{ runner.os }}-${{ steps.submodules.outputs.sha }}' "$workflow"
+    grep -F 'run: tools/checkout-submodules.sh' "$workflow"
+    ! grep -F 'submodules: recursive' "$workflow"
+}
+
 @test "RA release contracts remain part of the complete shell gate" {
     [ ! -e /workspace/.github/workflows/ra-gate.yml ]
     run grep -F 'tools/validate_ra_release_gate.py' /workspace/test/shell/ra_release_gate.bats

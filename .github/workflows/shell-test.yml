@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - '.github/workflows/shell-test.yml'
+      - '.github/workflows/hardware-test-build.yml'
       - 'Makefile'
       - 'src/**/*.sh'
       - 'src/bloomLaunch/**'
