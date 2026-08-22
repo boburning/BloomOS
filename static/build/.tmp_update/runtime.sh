@@ -825,6 +825,7 @@ init_system() {
 
     create_swap
     load_settings
+    reconcile_bloom_library
 
     # init_lcd
     cat /proc/ls
@@ -860,6 +861,17 @@ init_system() {
     echo 1 > /sys/class/pwm/pwmchip0/pwm0/enable
 
     get_screen_resolution
+}
+
+reconcile_bloom_library() {
+    # Package updates may add reviewed compatibility declarations to existing
+    # application configs. Re-import the bounded system/application metadata
+    # before Bloom Shell reads its catalog so an upgrade cannot leave safe apps
+    # hidden behind the conservative mainui-dependent migration default.
+    if [ -x "$sysdir/bin/bloom-library" ] && [ -x "$sysdir/bin/bloomctl" ]; then
+        "$sysdir/bin/bloomctl" library import-onion > /dev/null 2>&1 ||
+            log "Bloom library package reconciliation failed; retaining the prior catalog"
+    fi
 }
 
 device_uuid=$(read_uuid)

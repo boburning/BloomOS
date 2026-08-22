@@ -8,6 +8,17 @@
     grep -F 'launch_main_ui' "$runtime"
 }
 
+@test "boot reconciles signed application declarations before Bloom Shell reads the catalog" {
+    runtime=/workspace/static/build/.tmp_update/runtime.sh
+    grep -F 'load_settings' "$runtime"
+    grep -F 'reconcile_bloom_library' "$runtime"
+    grep -F '"$sysdir/bin/bloomctl" library import-onion > /dev/null 2>&1' "$runtime"
+
+    load_line="$(grep -n '^[[:space:]]*load_settings$' "$runtime" | cut -d: -f1)"
+    library_line="$(grep -n '^[[:space:]]*reconcile_bloom_library$' "$runtime" | cut -d: -f1)"
+    [ "$load_line" -lt "$library_line" ]
+}
+
 @test "Bloom Shell render loop does not spawn command-line consumers" {
     source=/workspace/src/bloomShell/main.c
     ! grep -E '\b(system|popen|fork|exec[a-z]*)[[:space:]]*\(' "$source"
@@ -37,6 +48,7 @@
     grep -F '.row_width_percent = game_destination ? 58 : 100' "$shell"
     grep -F 'battery_capacity_available' "$shell"
     grep -F 'compact_font' "$shell"
+    grep -F '"A Open   B Home   START Quick"' "$shell"
     ! grep -F 'Deterministic text placeholders' "$renderer"
     ! grep -E 'L1|L2|R1|R2' "$shell"
 }

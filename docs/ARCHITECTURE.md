@@ -160,6 +160,12 @@ prior known-good catalog. The signed mapping distinguishes compatibility quirks
 such as the `PSX` emulator folder using `Roms/PS` without relaxing the path
 boundary.
 
+Boot repeats the bounded system/application import before Bloom Shell opens the
+catalog. This is normally a generation-preserving no-op, but it applies newly
+signed compatibility declarations to existing upgrade installations. A failed
+or malformed import retains the prior transactional catalog and does not block
+boot.
+
 Application rows carry one explicit compatibility class: `bloom-native`,
 `onion-compatible`, `mainui-dependent`, or `development-only`. Schema 4
 conservatively migrates every existing row to `mainui-dependent`. Onion app
