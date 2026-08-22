@@ -6,8 +6,6 @@
 
 #include "gs_model.h"
 
-#define VIEW_NORMAL 0
-#define VIEW_MINIMAL 1
 #define VIEW_FULLSCREEN -1
 
 typedef struct {
@@ -19,29 +17,13 @@ typedef struct {
     bool current_game_changed;
     bool pop_menu_open;
     bool quick_settings_open;
-    bool show_time;
-    bool show_total;
     bool is_overlay;
-    int view_mode;
-    int pop_menu_game_index;
     uint32_t acc_ticks;
     uint32_t last_ticks;
     uint32_t time_step;
-    SDL_Surface *custom_header;
-    SDL_Surface *custom_footer;
-    int header_height;
-    int footer_height;
     SDL_Surface *current_bg;
-    SDL_Surface *transparent_bg;
     bool first_render;
     int current_game;
-    SDL_Surface *surfaceGameName;
-    SDL_Rect game_name_size;
-    int game_name_max_width;
-    int gameNameScrollX;
-    int gameNameScrollSpeed;
-    int gameNameScrollStart;
-    int gameNameScrollEnd;
 } AppState;
 
 static AppState appState = {
@@ -53,29 +35,13 @@ static AppState appState = {
     .current_game_changed = true,
     .pop_menu_open = false,
     .quick_settings_open = false,
-    .show_time = false,
-    .show_total = true,
     .is_overlay = false,
-    .view_mode = VIEW_NORMAL,
-    .pop_menu_game_index = 0,
     .acc_ticks = 0,
     .last_ticks = 0,
     .time_step = 1000 / 30,
-    .custom_header = NULL,
-    .custom_footer = NULL,
-    .header_height = 0,
-    .footer_height = 0,
     .current_bg = NULL,
-    .transparent_bg = NULL,
     .first_render = true,
-    .current_game = 0,
-    .surfaceGameName = NULL,
-    .game_name_size = {0, 0},
-    .game_name_max_width = 0,
-    .gameNameScrollX = 0,
-    .gameNameScrollSpeed = 10,
-    .gameNameScrollStart = 20,
-    .gameNameScrollEnd = 20};
+    .current_game = 0};
 
 static void sigHandler(int sig)
 {
@@ -89,8 +55,6 @@ static void sigHandler(int sig)
         break;
     }
 }
-
-static char sTotalTimePlayed[50] = "";
 
 Game_s *currentGame(void)
 {

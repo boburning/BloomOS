@@ -74,10 +74,7 @@ int checkQuitAction(void)
 void action_confirmRemove(void *_)
 {
     AppState *state = &appState;
-    theme_renderDialog(
-        screen, "Remove from history",
-        "Are you sure you want to\nremove game from history?",
-        true);
+    bloomGsRenderDialog("Remove from Recent", "Remove this game from your recent history?", 1);
     render();
 
     KeyState *keystate = _gs_keystate.keystate;
@@ -203,7 +200,7 @@ void handleKeystate(AppState *state)
 
     if (_updateKeystate(keystate, &state->quit, true, &_gs_keystate.changed_key)) {
         if (keystate[SW_BTN_MENU] == PRESSED) {
-            if (game_list_len == 0)
+            if (!state->is_overlay || game_list_len == 0)
                 state->exit_to_menu = true;
             state->quit = true;
             return;

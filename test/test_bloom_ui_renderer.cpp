@@ -337,3 +337,42 @@ TEST(BloomUiRenderer, PublishesEveryFramebufferPage)
     std::filesystem::remove(path);
     SDL_FreeSurface(surface);
 }
+
+TEST(BloomUiRenderer, FiveHundredOpenBackActionCyclesRemainDeterministic)
+{
+    BloomUiLayout layout{};
+    ASSERT_EQ(0, bloom_ui_layout_init(640, 480, 0, &layout));
+    SDL_Surface *surface = make_surface(640, 480);
+    ASSERT_NE(nullptr, surface);
+
+    BloomUiScene root{};
+    root.destination = BLOOM_UI_DESTINATION_ROOT;
+    root.item_count = 5;
+    root.healthy = 1;
+    BloomUiScene games = example_scene();
+    BloomUiDialogFocus actions{};
+
+    for (size_t cycle = 0; cycle < 500; ++cycle) {
+        root.selected = cycle % root.item_count;
+        ASSERT_EQ(0, bloom_ui_render_shell(surface, &layout, &root));
+
+        games.selected = cycle % games.item_count;
+        games.window_start = games.selected < layout.visible_rows
+                                 ? 0
+                                 : games.selected - layout.visible_rows + 1;
+        ASSERT_EQ(0, bloom_ui_render_shell(surface, &layout, &games));
+        ASSERT_EQ(0, bloom_ui_dialog_init(&actions, 2, 0, 1));
+        if ((cycle & 1U) != 0) {
+            ASSERT_EQ(1, bloom_ui_dialog_step(&actions, 1));
+        }
+        ASSERT_EQ(0, bloom_ui_render_dialog(surface, &layout, &actions));
+
+        ASSERT_EQ(0, bloom_ui_render_shell(surface, &layout, &root));
+    }
+
+    const uint64_t final_hash = surface_hash(surface);
+    ASSERT_NE(0U, final_hash);
+    ASSERT_EQ(0, bloom_ui_render_shell(surface, &layout, &root));
+    EXPECT_EQ(final_hash, surface_hash(surface));
+    SDL_FreeSurface(surface);
+}
