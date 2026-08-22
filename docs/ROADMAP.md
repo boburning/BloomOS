@@ -428,10 +428,15 @@ Current frontend progress:
   pending a standalone durability contract. Apps are classified explicitly; only
   `bloom-native` and reviewed `onion-compatible` launchers can cross the
   supervised, atomic `App/` command boundary, while MainUI-dependent and
-  development-only rows are refused. Render-time
-  subprocesses are prohibited by a shell gate. A fixed development flag enables
-  the path. The shared renderer now provides a bounded one-to-three-button
-  confirmation layer with safe focus and distinct destructive treatment,
+  development-only rows are refused. A signed Plus launch found that the legacy
+  Activity Tracker exits with status 139; Bloom recovered directly without
+  MainUI and remained healthy. The package is therefore no longer exposed as
+  stable; its carried declaration explicitly revokes the prior classification
+  without deleting rollback-compatible upgrade files. Richer activity UX stays
+  assigned to Bloom-owned Recent/game detail. Render-time
+  subprocesses are prohibited by a shell gate. Developer Mode exposes only the
+  separately classified development rows. The shared renderer now provides a
+  bounded one-to-three-button confirmation layer with safe focus and distinct destructive treatment,
   ready for guarded update actions without exposing those mutations yet. The
   same shared layer now renders the bounded on-screen keyboard modes needed by
   account entry while keeping credential text and glyph drawing outside the
@@ -447,6 +452,13 @@ Current frontend progress:
   system browsing, supervised app launch/return, and Bloom-owned recovery
   surface with MainUI absent. Representative physical game launch/return and
   boot-loop validation remain under the hardware/default-shell gates.
+- [x] Stable theme isolation. Bloom-owned surfaces use the fixed Bloom design
+  system and never invoke the legacy `themeSwitcher`; missing, malformed, and
+  MainUI-specific theme state therefore cannot redirect stable shell styling.
+  Legacy reapply remains only inside the explicit two-marker Developer MainUI
+  fallback. Auxiliary filebrowser branding is BloomOS. Host regression covers
+  malformed state and gate combinations; signed deployment and physical boot
+  appearance remain pending.
 - [x] Unified Bloom Settings and Quick Settings. Bloom Shell exposes one flat,
   sectioned Settings surface with capability-filtered Network and Developer
   rows, focused overlays only where needed, and a bounded START Quick Settings

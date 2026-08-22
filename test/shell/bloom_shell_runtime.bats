@@ -23,6 +23,8 @@
     launch_bloom_shell() { printf 'bloom\n' >> "$calls"; }
     launch_main_ui() { printf 'mainui\n' >> "$calls"; }
     check_off_order() { :; }
+    eval "$(sed -n '/^mainui_development_fallback_enabled() {/,/^reconcile_runtime_theme() {/p' \
+        "$runtime" | sed '$d')"
     eval "$(sed -n '/^check_main_ui() {/,/^bloom_shell_safe_mode_pending() {/p' "$runtime" | sed '$d')"
 
     check_main_ui
@@ -42,6 +44,69 @@
     touch "$sysdir/config/.mainuiFallback"
     check_main_ui
     [ "$(tail -n 1 "$calls")" = mainui ]
+}
+
+@test "stable Bloom boot never invokes the legacy theme installer" {
+    runtime=/workspace/static/build/.tmp_update/runtime.sh
+    sysdir="$BATS_TEST_TMPDIR/system"
+    bloom_developer_marker="$BATS_TEST_TMPDIR/.bloom-dev"
+    calls="$BATS_TEST_TMPDIR/calls"
+    mkdir -p "$sysdir/config"
+    printf 'not a theme path\n' > "$sysdir/config/active_theme"
+    theme_reader="$BATS_TEST_TMPDIR/theme-reader"
+    theme_switcher="$BATS_TEST_TMPDIR/theme-switcher"
+    printf '#!/bin/sh\nprintf "reader\\n" >> "%s"\nprintf "malformed\\n"\n' "$calls" > "$theme_reader"
+    printf '#!/bin/sh\nprintf "switcher %%s\\n" "$*" >> "%s"\n' "$calls" > "$theme_switcher"
+    chmod +x "$theme_reader" "$theme_switcher"
+    BLOOM_LEGACY_THEME_READER="$theme_reader"
+    BLOOM_LEGACY_THEME_SWITCHER="$theme_switcher"
+    log() { :; }
+    eval "$(sed -n '/^mainui_development_fallback_enabled() {/,/^bloom_shell_safe_mode_pending() {/p' \
+        "$runtime" | sed '$d')"
+
+    reconcile_runtime_theme
+
+    [ ! -e "$calls" ]
+    [ "$BLOOM_FIXED_THEME" = 1 ]
+}
+
+@test "legacy theme reapply is confined to the explicit two-marker fallback" {
+    runtime=/workspace/static/build/.tmp_update/runtime.sh
+    sysdir="$BATS_TEST_TMPDIR/system"
+    bloom_developer_marker="$BATS_TEST_TMPDIR/.bloom-dev"
+    calls="$BATS_TEST_TMPDIR/calls"
+    mkdir -p "$sysdir/config"
+    touch "$bloom_developer_marker" "$sysdir/config/.mainuiFallback"
+    theme_reader="$BATS_TEST_TMPDIR/theme-reader"
+    theme_switcher="$BATS_TEST_TMPDIR/theme-switcher"
+    printf '#!/bin/sh\nprintf "missing legacy theme\\n"\n' > "$theme_reader"
+    printf '#!/bin/sh\nprintf "%%s\\n" "$*" >> "%s"\n' "$calls" > "$theme_switcher"
+    chmod +x "$theme_reader" "$theme_switcher"
+    BLOOM_LEGACY_THEME_READER="$theme_reader"
+    BLOOM_LEGACY_THEME_SWITCHER="$theme_switcher"
+    log() { :; }
+    eval "$(sed -n '/^mainui_development_fallback_enabled() {/,/^bloom_shell_safe_mode_pending() {/p' \
+        "$runtime" | sed '$d')"
+
+    reconcile_runtime_theme
+
+    [ "$(cat "$calls")" = "--reapply_icons" ]
+    [ -z "${BLOOM_FIXED_THEME:-}" ]
+}
+
+@test "fixed Bloom theme bypasses user theme config and overrides" {
+    source=/workspace/src/common/theme/load.h
+
+    grep -F 'const char *value = getenv("BLOOM_FIXED_THEME");' "$source"
+    grep -F 'snprintf(image_path, sizeof(image_path), "%s%s.png", SYSTEM_RESOURCES, name + 6);' "$source"
+    grep -F 'strcpy(theme_path, FALLBACK_THEME_PATH);' "$source"
+}
+
+@test "auxiliary filebrowser uses BloomOS branding" {
+    runtime=/workspace/static/build/.tmp_update/runtime.sh
+
+    grep -F 'config set --branding.name "BloomOS"' "$runtime"
+    ! grep -F 'config set --branding.name "Onion"' "$runtime"
 }
 
 @test "boot reconciles signed application declarations before Bloom Shell reads the catalog" {

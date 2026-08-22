@@ -11,7 +11,7 @@ migration.
 
 | Application payload | Disposition | Stable Apps | 1.0 ownership |
 |---|---|---:|---|
-| Activity Tracker | `KEEP_IN_APPS` | Yes | Reviewed Bloom-native play-history viewer; Recent remains the primary history surface. |
+| Activity Tracker | `MIGRATE_TO_CONTEXT_ACTION` | No | The legacy UI crashed on the signed Plus default-shell path. Recent remains the primary history surface; richer totals belong in a Bloom-owned game/activity detail. |
 | Quick Guide | `KEEP_IN_APPS` | Yes | Reviewed Bloom-native offline help. |
 | Ebook Reader (PixelReader) | `KEEP_IN_APPS` | After compatibility review | Optional content app; no settings responsibility. |
 | Gallery (Screenshot viewer) | `KEEP_IN_APPS` | After compatibility review | Optional screenshot viewer. |
@@ -33,10 +33,13 @@ migration.
 
 ## Stable staging policy
 
-New stable images preinstall only Activity Tracker and Quick Guide. Upgrade cards may still contain
-older or optional app directories; catalog compatibility filtering prevents Tweaks, Themes,
-RetroArch shortcuts, Package Manager, and other unreviewed MainUI-dependent utilities from leaking
-back into Bloom Shell. No package is deleted by this policy, preserving rollback and user data.
+Stable Apps exposes only Quick Guide from the current carried set. Activity Tracker remains packaged
+temporarily so an update can overwrite its former `bloom-native` declaration with the reviewed
+`mainui-dependent` revocation without deleting rollback-compatible files. Upgrade cards may still
+contain older or optional app directories; catalog compatibility filtering prevents Tweaks, Themes,
+RetroArch shortcuts, Package Manager, Activity Tracker, and other MainUI-dependent utilities from
+leaking back into Bloom Shell. No installed package is deleted by this policy, preserving rollback
+and user data.
 
 Tweaks parity is deliberately semantic rather than menu-for-menu. Display/audio/network controls,
 RetroAchievements account handling, signed updates, health/support export, and developer gating are

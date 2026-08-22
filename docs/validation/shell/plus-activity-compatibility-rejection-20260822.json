@@ -1,0 +1,46 @@
+{
+  "schema": 1,
+  "date": "2026-08-22",
+  "operator": "Codex over maintainer-authorized SSH",
+  "device": "miyoo-mini-plus",
+  "model_id": 354,
+  "installed_version": "v0.1.0-dev-1a8b42d1",
+  "update_phase": "known_good",
+  "test": {
+    "surface": "Bloom Shell Apps",
+    "application": "Activity Tracker",
+    "compatibility_before_test": "bloom-native",
+    "launch_boundary": "supervised App launch",
+    "runtime_command": "redacted fixed launcher path",
+    "exit_status": 139,
+    "activity_tracker_remained_running": false,
+    "bloom_shell_relaunched": true,
+    "mainui_running": false,
+    "temporary_logging_restored_absent": true
+  },
+  "framebuffer": {
+    "physical": "640x480",
+    "framebuffer": "640x1440x32",
+    "orientation_correction": "rotate_180_for_inspection",
+    "apps_page_sha256": "34547c6134f6f0d9cac37bc6a16b54eaa724667c27685512a198f22858e8833e",
+    "returned_root_page_sha256": "1cd87b46e20de5634e5353fcae6ff893970b4f276ac5096123b2e08353bf3343",
+    "all_pages_equal_at_recorded_captures": true
+  },
+  "post_failure": {
+    "aggregate_health": "healthy",
+    "update_health": "known_good",
+    "active_sessions": 0,
+    "save_snapshots_unverified": 0
+  },
+  "product_disposition": {
+    "new_classification": "mainui-dependent",
+    "stable_apps_visible": false,
+    "installed_upgrade_data_deleted": false,
+    "replacement_direction": "Bloom-owned Recent or game/activity detail"
+  },
+  "limitations": [
+    "The status-139 result rejects Activity Tracker compatibility; it is not a successful app validation.",
+    "Framebuffer capture and injected input are remote evidence, not a physical UX pass.",
+    "The host-side classification and theme-runtime correction were not installed by this evidence."
+  ]
+}
