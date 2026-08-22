@@ -1,0 +1,116 @@
+{
+  "schema": 1,
+  "date": "2026-08-22",
+  "operator": "Codex over maintainer-authorized SSH",
+  "device": "miyoo-mini-plus",
+  "model_id": 354,
+  "serial_redacted": true,
+  "display": {
+    "physical": "640x480",
+    "framebuffer": "640x1440x32",
+    "visible_page_bytes": 1228800,
+    "page_count": 3,
+    "orientation_correction": "rotate_180_for_inspection",
+    "all_visible_pages_equal_at_every_recorded_capture": true
+  },
+  "signed_release": {
+    "version": "0.1.0-dev-e98840d9",
+    "commit": "e98840d9de5c63861c9eb8dc2c886ca6409df0ec",
+    "workflow_run": 32556360485,
+    "archive_size": 203077320,
+    "archive_sha256": "3fcd4a347564572811900f928d71d74734ad2454e4511375fd61d262fa52fa8c",
+    "release_metadata_validated": true,
+    "ed25519_signature_verified": true,
+    "device_archive_size_and_sha256_matched": true,
+    "activation_snapshot": "20260822T062909Z-pre-update-3994",
+    "installed_version": "v0.1.0-dev-e98840d9",
+    "update_phase": "known_good",
+    "boot_attempts_before_confirmation": 1,
+    "mainui_installer_trigger_absent": true,
+    "installed_sha256": {
+      "bloom_shell": "3dcc4e18e25f9f8aad33c23254055f3de522df5e1932f1252ea88824d7b864da",
+      "game_switcher": "df80e51789437db9e23c004e6d7b31c20943c856e8dc7aa0b7ea6818c1d99e4c",
+      "sendkeys": "c244bff7f442a5e8e44b97b2db4a4b634d404ad116b45dfd80a2329b20098677",
+      "health_adapter": "76fd70506bb791bd031b3b0302498a12d70200e44c6662cf5c7d308fdccd747a"
+    }
+  },
+  "runtime": {
+    "live_process": "bloom-shell",
+    "mainui_running": false,
+    "aggregate_health": "healthy",
+    "update_health": "known_good",
+    "library": {
+      "schema": 4,
+      "generation": 2,
+      "systems": 53,
+      "games": 22,
+      "apps": 23,
+      "favorites": 0,
+      "recents": 0
+    },
+    "settings": {
+      "state": "ready",
+      "authority": "bloom"
+    }
+  },
+  "soak": {
+    "version": "0.1.0-dev-29a3e7f7",
+    "duration_minutes": 30,
+    "samples": 61,
+    "sample_interval_seconds": 30,
+    "same_pid": true,
+    "rss_kib_initial": 6900,
+    "rss_kib_final": 6900,
+    "vmsize_kib_initial": 22564,
+    "vmsize_kib_final": 22564,
+    "file_descriptors_initial": 9,
+    "file_descriptors_final": 9,
+    "restart_observed": false
+  },
+  "host_regression": {
+    "native_tests": "232/232",
+    "shell_tests": "392/392",
+    "root_open_action_back_cycles": 500,
+    "cycle_test_duration_ms": 171,
+    "ci": {
+      "format_seconds": 47,
+      "shell_seconds": 104,
+      "arm_build_seconds": 457,
+      "native_static_asan_seconds": 676,
+      "all_required_checks_passed": true
+    }
+  },
+  "remote_ux": {
+    "root_page_sha256": "1cd87b46e20de5634e5353fcae6ff893970b4f276ac5096123b2e08353bf3343",
+    "favorites_focus_page_sha256": "98ea105239ba037f56d5b695adf7f1dab8cb5af0be83677dfef76c6ddd587ad0",
+    "recent_focus_page_sha256": "125f385a67015ea0a0d7a9b5e9e7ed7d6a1d04172c7c9a01904c36936fa12652",
+    "apps_focus_page_sha256": "0d046d001f166cfc23aeb13e799031eedf14ec16ebaa2d1ddd2baa05d67af9a9",
+    "settings_focus_page_sha256": "d849e9e649c9c60e25934e4fa7056752771a90083e287954b42139fbd806b807",
+    "flat_settings_page_sha256": "2769c8d3d31118671cae844f01ced3063b9c97459a8495fdc8001f28eebd1d45",
+    "games_gb_page_sha256": "3f8bfd18d6fe2fbec0fbbe1e2e23e1b5220cd2256586356c02caed7bf7808d38",
+    "games_gba_page_sha256": "09bbc0b7922ca5558feae95f89974cd99cbb67d71acebba32ad9ffb70109aab7",
+    "shell_quick_settings_page_sha256": "750e559a7fa90f9f003dc1416c7c201577b1840a5b1b16bee390b12f8bf4f178",
+    "game_switcher_page_sha256": "e0ff16c667cb70902c477ea24ea0c43a9589d127c8de32fc392e488aaee8f4cb",
+    "game_switcher_quick_settings_page_sha256": "8dcb15a5be33f3cb2761664562d179418495dcb56408ec4e193938b77e401200",
+    "root_restored_after_menu_sha256": "1cd87b46e20de5634e5353fcae6ff893970b4f276ac5096123b2e08353bf3343",
+    "root_restored_after_b_sha256": "1cd87b46e20de5634e5353fcae6ff893970b4f276ac5096123b2e08353bf3343",
+    "root_b_exact_noop": true,
+    "root_rail_destinations_reached": ["Games", "Favorites", "Recent", "Apps", "Settings"],
+    "games_system_switch_observed": "GB to GBA",
+    "menu_opened_bloom_game_switcher": true,
+    "menu_closed_to_exact_prior_root": true,
+    "b_returned_to_exact_root": true,
+    "start_opened_quick_settings_in_shell_and_game_switcher": true,
+    "start_closed_game_switcher_quick_settings_to_exact_prior_frame": true,
+    "shoulder_exact_noop_surfaces": ["root", "games", "settings", "game-switcher"],
+    "shoulder_inputs": ["L1", "R1", "L2", "R2"],
+    "onion_branding_visible_in_game_switcher": false
+  },
+  "limitations": [
+    "Framebuffer captures and injected Linux input events are remote evidence, not a physical-button or tactile review.",
+    "Captured page equality does not prove the physical LCD scanout between samples.",
+    "No canonical recent existed, so GameSwitcher resume, favorite, removal, save-state, and ordering actions were not exercised on-device.",
+    "Physical readability, audio, held-scroll feel, and representative game save/state behavior remain unverified.",
+    "Mini V2 and Flip UX convergence were not exercised by this run."
+  ]
+}
