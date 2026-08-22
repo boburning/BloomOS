@@ -27,10 +27,20 @@ typedef struct {
     int complete;
 } BloomShellFirstRun;
 
+typedef struct {
+    int ready;
+    int configured;
+    int enabled;
+    int authenticated;
+    int hardcore;
+    int offline_casual;
+} BloomShellRaValues;
+
 typedef enum {
     BLOOM_SHELL_SETTINGS_ROW_SECTION,
     BLOOM_SHELL_SETTINGS_ROW_SLIDER,
     BLOOM_SHELL_SETTINGS_ROW_TOGGLE,
+    BLOOM_SHELL_SETTINGS_ROW_ENUM,
     BLOOM_SHELL_SETTINGS_ROW_DETAIL,
     BLOOM_SHELL_SETTINGS_ROW_ACTION,
     BLOOM_SHELL_SETTINGS_ROW_READ_ONLY,
@@ -49,7 +59,10 @@ typedef enum {
     BLOOM_SHELL_SETTINGS_NETWORK_SECTION,
     BLOOM_SHELL_SETTINGS_WIFI,
     BLOOM_SHELL_SETTINGS_RA_SECTION,
+    BLOOM_SHELL_SETTINGS_RA_ENABLED,
     BLOOM_SHELL_SETTINGS_RA_ACCOUNT,
+    BLOOM_SHELL_SETTINGS_RA_MODE,
+    BLOOM_SHELL_SETTINGS_RA_OFFLINE,
     BLOOM_SHELL_SETTINGS_RA_CONNECTION,
     BLOOM_SHELL_SETTINGS_SYSTEM_SECTION,
     BLOOM_SHELL_SETTINGS_UPDATE,
@@ -100,5 +113,13 @@ int bloom_shell_first_run_parse(const char *json, BloomShellFirstRun *first_run)
 int bloom_shell_first_run_load(const char *settings_path, BloomShellFirstRun *first_run);
 int bloom_shell_first_run_finish(const char *settings_path, BloomShellFirstRun *first_run,
                                  BloomShellQuickValues *values);
+int bloom_shell_ra_values_parse(const char *json, BloomShellRaValues *values);
+int bloom_shell_ra_values_load(const char *ra_path, BloomShellRaValues *values);
+int bloom_shell_ra_settings_format(const BloomShellRaValues *values,
+                                   BloomShellSettingsRowId id, char *label,
+                                   size_t label_size);
+int bloom_shell_ra_settings_change(BloomShellRaValues *values,
+                                   BloomShellSettingsRowId id, int direction,
+                                   const char *ra_path);
 
 #endif

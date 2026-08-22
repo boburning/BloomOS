@@ -36,7 +36,7 @@ TEST(BloomShellSettings, OriginalMiniHidesNetworkAndDeveloperControls)
     BloomShellCapabilities capabilities{};
     ASSERT_EQ(0, bloom_shell_capabilities_from_model(283, 0, &capabilities));
     auto rows = settings(capabilities);
-    ASSERT_EQ(17U, rows.size());
+    ASSERT_EQ(20U, rows.size());
     EXPECT_EQ(BLOOM_SHELL_SETTINGS_DISPLAY_SECTION, rows.front().id);
     EXPECT_EQ(BLOOM_SHELL_SETTINGS_ABOUT, rows.back().id);
     for (const auto &row : rows) {
@@ -58,7 +58,7 @@ TEST(BloomShellSettings, PlusShowsWifiWithoutFlipOrDeveloperControls)
                                         "Open Settings"}),
               quick(capabilities));
     auto rows = settings(capabilities);
-    ASSERT_EQ(19U, rows.size());
+    ASSERT_EQ(22U, rows.size());
     EXPECT_EQ(BLOOM_SHELL_SETTINGS_NETWORK_SECTION, rows[9].id);
     EXPECT_EQ(BLOOM_SHELL_SETTINGS_WIFI, rows[10].id);
 }
@@ -71,8 +71,8 @@ TEST(BloomShellSettings, FlipAndDeveloperModeExposeOnlyTheirCapabilities)
     EXPECT_TRUE(capabilities.flip);
     EXPECT_TRUE(capabilities.developer_mode);
     auto rows = settings(capabilities);
-    ASSERT_EQ(22U, rows.size());
-    EXPECT_EQ(BLOOM_SHELL_SETTINGS_DEVELOPER_SECTION, rows[19].id);
+    ASSERT_EQ(25U, rows.size());
+    EXPECT_EQ(BLOOM_SHELL_SETTINGS_DEVELOPER_SECTION, rows[22].id);
     EXPECT_EQ(BLOOM_SHELL_SETTINGS_DIAGNOSTICS, rows.back().id);
 }
 
@@ -82,7 +82,7 @@ TEST(BloomShellSettings, UnknownModelsAndOutOfRangeRowsFailClosed)
     EXPECT_NE(0, bloom_shell_capabilities_from_model(999, 0, &capabilities));
     ASSERT_EQ(0, bloom_shell_capabilities_from_model(283, 0, &capabilities));
     BloomShellSettingsRow row{};
-    EXPECT_NE(0, bloom_shell_settings_row(&capabilities, 17, &row));
+    EXPECT_NE(0, bloom_shell_settings_row(&capabilities, 20, &row));
     EXPECT_EQ(nullptr, bloom_shell_quick_settings_label(&capabilities, 4));
 }
 
@@ -281,6 +281,9 @@ TEST(BloomShellSettings, FlatSchemaUsesInlineControlsAndCapabilityRows)
     bool brightness = false;
     bool mute = false;
     bool account = false;
+    bool achievements = false;
+    bool mode = false;
+    bool offline = false;
     for (size_t row = 0; row < bloom_shell_settings_count(&capabilities); ++row) {
         BloomShellSettingsRow settings_row{};
         ASSERT_EQ(0, bloom_shell_settings_row(&capabilities, row, &settings_row));
@@ -296,10 +299,101 @@ TEST(BloomShellSettings, FlatSchemaUsesInlineControlsAndCapabilityRows)
             account = true;
             EXPECT_EQ(BLOOM_SHELL_SETTINGS_ROW_DETAIL, settings_row.kind);
         }
+        if (settings_row.id == BLOOM_SHELL_SETTINGS_RA_ENABLED) {
+            achievements = true;
+            EXPECT_EQ(BLOOM_SHELL_SETTINGS_ROW_TOGGLE, settings_row.kind);
+        }
+        if (settings_row.id == BLOOM_SHELL_SETTINGS_RA_MODE) {
+            mode = true;
+            EXPECT_EQ(BLOOM_SHELL_SETTINGS_ROW_ENUM, settings_row.kind);
+        }
+        if (settings_row.id == BLOOM_SHELL_SETTINGS_RA_OFFLINE) {
+            offline = true;
+            EXPECT_EQ(BLOOM_SHELL_SETTINGS_ROW_ENUM, settings_row.kind);
+        }
     }
     EXPECT_TRUE(brightness);
     EXPECT_TRUE(mute);
     EXPECT_TRUE(account);
+    EXPECT_TRUE(achievements);
+    EXPECT_TRUE(mode);
+    EXPECT_TRUE(offline);
+}
+
+TEST(BloomShellSettings, ParsesAndFormatsRetroAchievementsValues)
+{
+    BloomShellRaValues values{};
+    ASSERT_EQ(0, bloom_shell_ra_values_parse(
+                     R"({"schema":1,"configured":true,"enabled":true,"authenticated":true,"mode":"softcore","offline_casual":false})",
+                     &values));
+    EXPECT_TRUE(values.ready);
+    EXPECT_TRUE(values.configured);
+    EXPECT_TRUE(values.enabled);
+    EXPECT_TRUE(values.authenticated);
+    EXPECT_FALSE(values.hardcore);
+    EXPECT_FALSE(values.offline_casual);
+
+    char label[64];
+    ASSERT_EQ(0, bloom_shell_ra_settings_format(
+                     &values, BLOOM_SHELL_SETTINGS_RA_ENABLED, label, sizeof(label)));
+    EXPECT_NE(std::string::npos, std::string(label).find("On"));
+    ASSERT_EQ(0, bloom_shell_ra_settings_format(
+                     &values, BLOOM_SHELL_SETTINGS_RA_MODE, label, sizeof(label)));
+    EXPECT_NE(std::string::npos, std::string(label).find("Softcore"));
+    ASSERT_EQ(0, bloom_shell_ra_settings_format(
+                     &values, BLOOM_SHELL_SETTINGS_RA_OFFLINE, label, sizeof(label)));
+    EXPECT_NE(std::string::npos, std::string(label).find("Off"));
+
+    EXPECT_NE(0, bloom_shell_ra_values_parse("{}", &values));
+    EXPECT_FALSE(values.ready);
+    EXPECT_NE(0, bloom_shell_ra_values_parse(
+                     R"({"schema":1,"configured":true,"enabled":true,"authenticated":true,"mode":"unknown","offline_casual":false})",
+                     &values));
+    EXPECT_FALSE(values.ready);
+}
+
+TEST(BloomShellSettings, RetroAchievementsChangesUseFixedArgumentsAndCommitAfterSuccess)
+{
+    const auto directory = std::filesystem::temp_directory_path() /
+                           ("bloom-ra-settings-" + std::to_string(getpid()));
+    std::filesystem::create_directory(directory);
+    const auto script = directory / "bloom-ra";
+    const auto arguments = directory / "arguments";
+    {
+        std::ofstream output(script);
+        output << "#!/bin/sh\nprintf '%s\\n' \"$*\" >>\"$(dirname \"$0\")/arguments\"\n";
+    }
+    ASSERT_EQ(0, chmod(script.c_str(), 0700));
+    BloomShellRaValues values{1, 1, 0, 1, 0, 0};
+
+    ASSERT_EQ(0, bloom_shell_ra_settings_change(
+                     &values, BLOOM_SHELL_SETTINGS_RA_ENABLED, 1, script.c_str()));
+    EXPECT_TRUE(values.enabled);
+    ASSERT_EQ(0, bloom_shell_ra_settings_change(
+                     &values, BLOOM_SHELL_SETTINGS_RA_OFFLINE, 1, script.c_str()));
+    EXPECT_TRUE(values.offline_casual);
+    ASSERT_EQ(0, bloom_shell_ra_settings_change(
+                     &values, BLOOM_SHELL_SETTINGS_RA_MODE, 1, script.c_str()));
+    EXPECT_TRUE(values.hardcore);
+
+    std::ifstream input(arguments);
+    std::string line;
+    ASSERT_TRUE(std::getline(input, line));
+    EXPECT_EQ("account set enabled true", line);
+    ASSERT_TRUE(std::getline(input, line));
+    EXPECT_EQ("account set offline-casual automatic", line);
+    ASSERT_TRUE(std::getline(input, line));
+    EXPECT_EQ("account set mode hardcore", line);
+
+    {
+        std::ofstream output(script);
+        output << "#!/bin/sh\nexit 1\n";
+    }
+    ASSERT_EQ(0, chmod(script.c_str(), 0700));
+    EXPECT_NE(0, bloom_shell_ra_settings_change(
+                     &values, BLOOM_SHELL_SETTINGS_RA_ENABLED, -1, script.c_str()));
+    EXPECT_TRUE(values.enabled);
+    std::filesystem::remove_all(directory);
 }
 
 TEST(BloomShellSettings, FlatRowsFormatCanonicalValuesAndStableControlGrammar)
