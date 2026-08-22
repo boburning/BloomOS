@@ -4,10 +4,12 @@ Status: normative for the stable handheld UI.
 
 ## Information architecture
 
-The top level is Home, Library, Collections, Apps, and Settings. `L1` and `R1`
-move between destinations. Each screen has a title, visible focus, content, and
-a consistent footer. Unsupported capabilities are omitted rather than shown as
-disabled controls.
+The top level is Home, Library, Collections, Apps, and Settings. `MENU` opens a
+visible destination picker operated with the D-pad, `A`, and `B`; `L1` and `R1`
+are optional previous/next shortcuts. Primary navigation must remain usable
+while the handheld rests on a table. Each screen has a title, visible focus,
+content, and a consistent footer. Unsupported capabilities are omitted rather
+than shown as disabled controls.
 
 Home leads with the last resumable game, then recent games, favorites, and
 shortcuts. Library opens cached data immediately and scans in the background.
@@ -27,7 +29,7 @@ setting and contains System, Health, Updates, and About.
 | Y | Toggle favorite on a game row |
 | SELECT | Search when shown in the footer |
 | START | Quick Settings or selected GameSwitcher actions |
-| MENU | GameSwitcher during play |
+| MENU | Destination picker in Bloom Shell; GameSwitcher during play |
 
 Common actions must not depend only on long presses or undocumented chords.
 
@@ -35,8 +37,9 @@ The platform-independent authority for these actions, top-level destination
 order, list focus, and supported 640x480/752x560 layout regions is
 `src/bloomUi/bloom_ui_core`. Device/SDL adapters translate physical keys into
 this semantic input contract; renderers do not own navigation state. Lists
-clamp at their ends and keep selection visible without implicit wrap, while
-`L1`/`R1` wrap only across the five top-level destinations.
+clamp at their ends and keep selection visible without implicit wrap. The
+destination picker starts on the current destination; `L1`/`R1` optionally
+wrap across the same five destinations without replacing the picker.
 
 Shared dialogs support one to three explicitly ordered actions, identify any
 destructive action separately, and begin on a caller-selected safe default.
