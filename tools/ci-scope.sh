@@ -38,6 +38,13 @@ while IFS= read -r path; do
         src/bloomRa/*)
             if [ "$mode" = build ]; then add_target bloomRa; else add_target src/bloomRa; fi
             ;;
+        src/bloomSettings/*)
+            if [ "$mode" = build ]; then
+                add_target bloomSettings
+            else
+                add_target src/bloomSettings
+            fi
+            ;;
         src/bloomLibrary/*)
             if [ "$mode" = build ]; then
                 add_target bloomLibrary
