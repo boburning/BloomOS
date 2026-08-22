@@ -8,14 +8,18 @@
 #include "utils/retroarch_cmd.h"
 
 #include "gs_appState.h"
+#include "gs_bloomRender.h"
 #include "gs_model.h"
 #include "gs_retroarch.h"
+
+#include "../bloomLibrary/bloom_library_mutation.h"
 
 #define POP_MENU_ACTION_RESUME 0
 #define POP_MENU_ACTION_SAVE 1
 #define POP_MENU_ACTION_LOAD 2
 #define POP_MENU_ACTION_EXIT 3
 #define POP_MENU_ACTION_REMOVE_RECENT 4
+#define POP_MENU_ACTION_FAVORITE 5
 
 void action_confirmRemove(void *context);
 
@@ -288,12 +292,12 @@ void action_saveGame(void *_)
 
     while (g_save_thread_running) {
         SDL_BlitSurface(bg, NULL, screen, NULL);
-        theme_renderDialogProgress(screen, "Saving", " ", false);
+        bloomGsRenderMessage("Saving state...");
         render();
     }
 
     SDL_BlitSurface(bg, NULL, screen, NULL);
-    theme_renderDialog(screen, "Saving", g_save_thread_success ? "State saved" : "Save failed", false);
+    bloomGsRenderDialog("Save State", g_save_thread_success ? "State saved." : "Save failed.", 0);
     render();
 
     SDL_FreeSurface(bg);
@@ -346,10 +350,7 @@ void popMenu_deleteSaveState(void)
     char imageFilePath[2056];
 
     if (createSaveStatePath(game, real_slot, stateFilePath, sizeof(stateFilePath))) {
-        theme_renderDialog(
-            screen, "Delete save state",
-            "Are you sure you want to\ndelete this save state?",
-            true);
+        bloomGsRenderDialog("Delete Save State", "Delete this save state permanently?", 1);
         render();
 
         KeyState keystate[320] = {0};
@@ -392,11 +393,47 @@ void action_exitToMenu(void *_)
     appState.pop_menu_open = false;
 }
 
+static int currentGameIsFavorite(void)
+{
+    sqlite3 *database = NULL;
+    sqlite3_stmt *statement = NULL;
+    int favorite = 0;
+    if (sqlite3_open_v2(BLOOM_LIBRARY_DATABASE_PATH, &database, SQLITE_OPEN_READONLY, NULL) ==
+            SQLITE_OK &&
+        sqlite3_prepare_v2(database,
+                           "SELECT EXISTS(SELECT 1 FROM favorites WHERE bloom_game_id=?1)", -1,
+                           &statement, NULL) == SQLITE_OK &&
+        sqlite3_bind_text(statement, 1, currentGame()->game_id, -1, SQLITE_TRANSIENT) ==
+            SQLITE_OK &&
+        sqlite3_step(statement) == SQLITE_ROW)
+        favorite = sqlite3_column_int(statement, 0) == 1;
+    if (statement != NULL)
+        sqlite3_finalize(statement);
+    if (database != NULL)
+        sqlite3_close(database);
+    return favorite;
+}
+
+static void action_toggleFavorite(void *_)
+{
+    sqlite3 *database = NULL;
+    int changed = 0;
+    int favorite = currentGameIsFavorite();
+    if (sqlite3_open_v2(BLOOM_LIBRARY_DATABASE_PATH, &database, SQLITE_OPEN_READWRITE, NULL) ==
+        SQLITE_OK)
+        bloom_library_favorite_set(database, currentGame()->game_id, !favorite, &changed);
+    if (database != NULL)
+        sqlite3_close(database);
+    popMenu_destroy();
+    appState.pop_menu_open = false;
+    appState.changed = true;
+}
+
 void popMenu_create(void)
 {
     if (!appState.pop_menu_list._created) {
         printf_debug("Creating pop menu for game %i\n", appState.current_game);
-        appState.pop_menu_list = list_create(5, LIST_SMALL);
+        appState.pop_menu_list = list_create(7, LIST_SMALL);
 
         list_addItemWithLang(&appState.pop_menu_list,
                              (ListItem){.label = LANG_FALLBACK_RESUME, .action = action_resumeGame, .action_id = POP_MENU_ACTION_RESUME},
@@ -417,14 +454,21 @@ void popMenu_create(void)
             pthread_create(&g_scan_thread_pt, NULL, _scan_thread, NULL);
         }
 
+        ListItem favorite_item = {.action = action_toggleFavorite,
+                                  .action_id = POP_MENU_ACTION_FAVORITE};
+        snprintf(favorite_item.label, sizeof(favorite_item.label), "%s",
+                 currentGameIsFavorite() ? "Unfavorite" : "Favorite");
+        list_addItem(&appState.pop_menu_list, favorite_item);
+
         list_addItem(&appState.pop_menu_list,
                      (ListItem){.label = "Remove from Recent",
                                 .action = action_confirmRemove,
                                 .action_id = POP_MENU_ACTION_REMOVE_RECENT});
 
-        list_addItemWithLang(&appState.pop_menu_list,
-                             (ListItem){.label = LANG_FALLBACK_EXIT_TO_MENU, .action = action_exitToMenu, .action_id = POP_MENU_ACTION_EXIT},
-                             LANG_EXIT_TO_MENU);
+        list_addItem(&appState.pop_menu_list,
+                     (ListItem){.label = "Quit to Home",
+                                .action = action_exitToMenu,
+                                .action_id = POP_MENU_ACTION_EXIT});
 
         appState.pop_menu_list.scroll_height = appState.pop_menu_list.item_count;
     }
@@ -438,17 +482,14 @@ void renderPopMenu(AppState *state)
         }
 
         ListItem *item = list_currentItem(&appState.pop_menu_list);
-        SDL_Surface *transparent_bg = NULL;
-
-        if (item != NULL && item->action_id == POP_MENU_ACTION_LOAD) {
-            transparent_bg = appState.transparent_bg;
+        if (item != NULL && item->action_id == POP_MENU_ACTION_LOAD)
             pthread_join(g_scan_thread_pt, NULL);
-        }
-
-        theme_renderPopMenu(screen, state->view_mode == VIEW_NORMAL ? state->header_height : 0, &appState.pop_menu_list, transparent_bg);
+        bloomGsRenderList("Actions", &appState.pop_menu_list);
+        bloomGsRenderOverlayFooter(0);
 
         if (item != NULL && item->action_id == POP_MENU_ACTION_LOAD) {
-            theme_renderFooterStatus(screen, g_save_state_info.selected_slot + 1, g_save_state_info.slot_count);
+            bloomGsRenderSlotStatus(&appState.pop_menu_list, g_save_state_info.selected_slot + 1,
+                                    g_save_state_info.slot_count);
         }
     }
 }

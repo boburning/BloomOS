@@ -39,7 +39,29 @@
     ! grep -F 'button_y_repeat' "$keys"
     ! grep -F 'action_toggleHeader' "$keys"
     ! grep -F 'action_confirmRemove(state)' "$keys"
-    grep -F 'appState.view_mode = VIEW_NORMAL;' "$main"
+    ! grep -F 'appState.view_mode' "$main"
     ! grep -F 'gameSwitcher/minimal' "$main"
     ! grep -F 'renderLegend(&appState)' "$main"
+}
+
+@test "GameSwitcher owns its Bloom presentation and validated shell return" {
+    main=/workspace/src/gameSwitcher/gameSwitcher.c
+    render=/workspace/src/gameSwitcher/gs_bloomRender.h
+    keys=/workspace/src/gameSwitcher/gs_keystate.h
+
+    grep -F 'bloomGsRenderEmpty();' "$main"
+    grep -F 'bloomGsRenderHeader(battery_percentage);' "$main"
+    grep -F 'bloomGsRenderFooter(game_list_len > 0);' "$main"
+    grep -F 'Nothing played yet' "$render"
+    grep -F 'B Home   MENU Close   START Quick' "$render"
+    grep -F 'A Toggle   B/START Close' "$render"
+    grep -F 'bloom_shell_stage_executable(BLOOM_SHELL_BINARY' "$main"
+    grep -F 'if (!state->is_overlay || game_list_len == 0)' "$keys"
+    ! grep -F 'resource_getSurface(EMPTY_BG)' "$main"
+    ! grep -F 'theme_renderHeader(' "$main"
+    ! grep -F 'theme_renderFooter(' "$main"
+    ! grep -R -F 'theme_renderDialog' /workspace/src/gameSwitcher
+    ! grep -R -F 'theme_renderFooterStatus' /workspace/src/gameSwitcher
+    grep -F '.label = "Quit to Home"' /workspace/src/gameSwitcher/gs_popMenu.h
+    grep -F 'action_toggleFavorite' /workspace/src/gameSwitcher/gs_popMenu.h
 }

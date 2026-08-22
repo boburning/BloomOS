@@ -6,6 +6,7 @@
 
 #include "../bloomShell/bloom_shell_settings.h"
 #include "gs_appState.h"
+#include "gs_bloomRender.h"
 
 #define BLOOM_CONTROLS_BINARY "/mnt/SDCARD/.tmp_update/bin/bloom-controls"
 #define BLOOM_NETWORK_BINARY "/mnt/SDCARD/.tmp_update/bin/bloom-network"
@@ -116,8 +117,10 @@ static void quickSettings_handle(KeyState *keystate)
 
 static void quickSettings_render(AppState *state)
 {
-    if (state->quick_settings_open)
-        theme_renderPopMenu(screen, state->header_height, &state->quick_settings_list, NULL);
+    if (state->quick_settings_open) {
+        bloomGsRenderList("Quick Settings", &state->quick_settings_list);
+        bloomGsRenderOverlayFooter(1);
+    }
 }
 
 static void quickSettings_destroy(void)

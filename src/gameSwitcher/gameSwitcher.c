@@ -36,6 +36,10 @@
 #include "gs_overlay.h"
 #include "gs_render.h"
 
+#include "../bloomShell/bloom_shell_launch.h"
+
+#define BLOOM_SHELL_BINARY "/mnt/SDCARD/.tmp_update/bin/bloom-shell"
+
 int main(int argc, char *argv[])
 {
     if (argc == 2 && strcmp(argv[1], "--bloom-recents-probe") == 0) {
@@ -76,23 +80,11 @@ int main(int argc, char *argv[])
 
     mkdirs("/mnt/SDCARD/.tmp_update/config/gameSwitcher");
 
-    appState.show_time = true;
-    appState.show_total = true;
-    appState.view_mode = VIEW_NORMAL;
     quickSettings_init();
-
-    appState.transparent_bg = SDL_CreateRGBSurface(0, g_display.width, g_display.height, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
-    SDL_FillRect(appState.transparent_bg, NULL, 0xBE000000);
 
     int battery_percentage = battery_getPercentage();
 
     appState.last_ticks = SDL_GetTicks();
-
-    appState.custom_header = loadOptionalImage("extra/gs-top-bar");
-    appState.custom_footer = loadOptionalImage("extra/gs-bottom-bar");
-
-    appState.header_height = getHeightOrDefault(appState.custom_header, 60.0 * g_scale);
-    appState.footer_height = getHeightOrDefault(appState.custom_footer, 60.0 * g_scale);
 
     print_debug("gameSwitcher started\n");
 
@@ -109,9 +101,7 @@ int main(int argc, char *argv[])
         if (appState.acc_ticks >= appState.time_step) {
             appState.acc_ticks -= appState.time_step;
 
-            if (!appState.changed &&
-                (appState.surfaceGameName == NULL ||
-                 appState.surfaceGameName->w <= appState.game_name_max_width))
+            if (!appState.changed)
                 continue;
 
             Game_s *game = &game_list[appState.current_game];
@@ -122,37 +112,22 @@ int main(int argc, char *argv[])
 
                 if (game_list_len == 0) {
                     appState.current_bg = NULL;
-                    SDL_Surface *empty = resource_getSurface(EMPTY_BG);
-                    SDL_Rect empty_rect = {(g_display.width - empty->w) / 2, (g_display.height - empty->h) / 2};
-                    SDL_BlitSurface(empty, NULL, screen, &empty_rect);
+                    bloomGsRenderEmpty();
                 }
                 else {
                     appState.current_bg = loadRomScreen(appState.current_game);
 
                     if (appState.current_bg != NULL) {
-                        renderCentered(appState.current_bg, appState.view_mode, NULL, NULL);
+                        renderCentered(appState.current_bg, VIEW_FULLSCREEN, NULL, NULL);
                     }
                 }
             }
 
-            if (appState.view_mode != VIEW_FULLSCREEN && game_list_len > 0 &&
-                !appState.pop_menu_open && !appState.quick_settings_open) {
-                renderGameName(&appState);
-            }
+            if (game_list_len > 0 && !appState.pop_menu_open && !appState.quick_settings_open)
+                bloomGsRenderGameTitle(game->shortname, appState.current_game + 1, game_list_len);
 
-            if (!appState.changed) {
-                render();
-                continue;
-            }
-
-            if (appState.view_mode == VIEW_NORMAL && !appState.pop_menu_open &&
-                !appState.quick_settings_open) {
-                renderFooter(&appState);
-            }
-
-            if (appState.view_mode == VIEW_NORMAL) {
-                renderHeader(&appState, battery_percentage);
-            }
+            bloomGsRenderFooter(game_list_len > 0);
+            bloomGsRenderHeader(battery_percentage);
 
             if (!appState.first_render) {
                 renderPopMenu(&appState);
@@ -168,14 +143,18 @@ int main(int argc, char *argv[])
             }
             else {
                 appState.changed = false;
+                appState.current_game_changed = false;
             }
         }
     }
 
     if (appState.exit_to_menu) {
-        print_debug("Exiting to menu");
+        char error[256] = {0};
+        print_debug("Returning to Bloom Shell");
         remove("/mnt/SDCARD/.tmp_update/.runGameSwitcher");
-        remove("/mnt/SDCARD/.tmp_update/cmd_to_run.sh");
+        if (bloom_shell_stage_executable(BLOOM_SHELL_BINARY, CMD_TO_RUN_PATH, error,
+                                         sizeof(error)) != 0)
+            printf_debug("Unable to stage Bloom Shell: %s\n", error);
         overlay_exit();
         SDL_FillRect(screen, NULL, 0);
         render();
@@ -213,15 +192,6 @@ int main(int argc, char *argv[])
     msleep(200);
 #endif
 
-    if (appState.custom_header != NULL)
-        SDL_FreeSurface(appState.custom_header);
-    if (appState.custom_footer != NULL)
-        SDL_FreeSurface(appState.custom_footer);
-    if (appState.surfaceGameName != NULL)
-        SDL_FreeSurface(appState.surfaceGameName);
-    if (appState.transparent_bg != NULL)
-        SDL_FreeSurface(appState.transparent_bg);
-
     popMenu_destroy();
     quickSettings_destroy();
 
@@ -230,6 +200,7 @@ int main(int argc, char *argv[])
     freeRomScreens();
     ra_freeHistory();
     gameswitcher_achievements_close();
+    bloomGsFontsDestroy();
 
     deinit();
 
