@@ -17,10 +17,6 @@ BloomUiInput bloom_ui_input_from_sdl_key(SDLKey key)
         return BLOOM_UI_INPUT_CONFIRM;
     case SW_BTN_B:
         return BLOOM_UI_INPUT_BACK;
-    case SW_BTN_L1:
-        return BLOOM_UI_INPUT_PREVIOUS_DESTINATION;
-    case SW_BTN_R1:
-        return BLOOM_UI_INPUT_NEXT_DESTINATION;
     case SW_BTN_X:
         return BLOOM_UI_INPUT_CONTEXT;
     case SW_BTN_Y:

@@ -75,8 +75,6 @@ BloomUiAction bloom_ui_normalize_input(BloomUiInput input)
         BLOOM_UI_ACTION_FOCUS_RIGHT,
         BLOOM_UI_ACTION_CONFIRM,
         BLOOM_UI_ACTION_BACK,
-        BLOOM_UI_ACTION_PREVIOUS_DESTINATION,
-        BLOOM_UI_ACTION_NEXT_DESTINATION,
         BLOOM_UI_ACTION_CONTEXT,
         BLOOM_UI_ACTION_TOGGLE_FAVORITE,
         BLOOM_UI_ACTION_SEARCH,
@@ -87,22 +85,6 @@ BloomUiAction bloom_ui_normalize_input(BloomUiInput input)
         return BLOOM_UI_ACTION_NONE;
     }
     return actions[input];
-}
-
-BloomUiDestination bloom_ui_destination_step(BloomUiDestination current, int direction)
-{
-    if (current < BLOOM_UI_DESTINATION_HOME || current >= BLOOM_UI_DESTINATION_COUNT) {
-        return BLOOM_UI_DESTINATION_HOME;
-    }
-    if (direction < 0) {
-        return current == BLOOM_UI_DESTINATION_HOME ? BLOOM_UI_DESTINATION_SETTINGS
-                                                    : (BloomUiDestination)(current - 1);
-    }
-    if (direction > 0) {
-        return current == BLOOM_UI_DESTINATION_SETTINGS ? BLOOM_UI_DESTINATION_HOME
-                                                        : (BloomUiDestination)(current + 1);
-    }
-    return current;
 }
 
 void bloom_ui_focus_init(BloomUiFocus *focus, size_t item_count)

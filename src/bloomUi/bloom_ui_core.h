@@ -34,8 +34,6 @@ typedef enum {
     BLOOM_UI_INPUT_RIGHT,
     BLOOM_UI_INPUT_CONFIRM,
     BLOOM_UI_INPUT_BACK,
-    BLOOM_UI_INPUT_PREVIOUS_DESTINATION,
-    BLOOM_UI_INPUT_NEXT_DESTINATION,
     BLOOM_UI_INPUT_CONTEXT,
     BLOOM_UI_INPUT_FAVORITE,
     BLOOM_UI_INPUT_SEARCH,
@@ -51,8 +49,6 @@ typedef enum {
     BLOOM_UI_ACTION_FOCUS_RIGHT,
     BLOOM_UI_ACTION_CONFIRM,
     BLOOM_UI_ACTION_BACK,
-    BLOOM_UI_ACTION_PREVIOUS_DESTINATION,
-    BLOOM_UI_ACTION_NEXT_DESTINATION,
     BLOOM_UI_ACTION_CONTEXT,
     BLOOM_UI_ACTION_TOGGLE_FAVORITE,
     BLOOM_UI_ACTION_SEARCH,
@@ -96,7 +92,6 @@ typedef struct {
 
 int bloom_ui_layout_init(int width, int height, int large_text, BloomUiLayout *layout);
 BloomUiAction bloom_ui_normalize_input(BloomUiInput input);
-BloomUiDestination bloom_ui_destination_step(BloomUiDestination current, int direction);
 void bloom_ui_focus_init(BloomUiFocus *focus, size_t item_count);
 void bloom_ui_focus_set_count(BloomUiFocus *focus, size_t item_count, size_t visible_rows);
 int bloom_ui_focus_step(BloomUiFocus *focus, int direction, size_t visible_rows);

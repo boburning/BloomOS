@@ -653,10 +653,6 @@ int main(int argc, char **argv)
             else
                 running = 0;
         }
-        else if (action == BLOOM_UI_ACTION_NEXT_DESTINATION)
-            destination = bloom_ui_destination_step(destination, 1);
-        else if (action == BLOOM_UI_ACTION_PREVIOUS_DESTINATION)
-            destination = bloom_ui_destination_step(destination, -1);
         else if ((action == BLOOM_UI_ACTION_FOCUS_UP || action == BLOOM_UI_ACTION_FOCUS_DOWN) &&
                  destination == BLOOM_UI_DESTINATION_HOME && has_recent)
             home_selected = home_selected == 0 ? 1 : 0;
