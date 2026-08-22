@@ -2,94 +2,159 @@
 
 Status: normative for the stable handheld UI.
 
-## Information architecture
+## Product model
 
-The top level is Home, Library, Collections, Apps, and Settings. `MENU` opens a
-visible destination picker operated with the D-pad, `A`, and `B`; `L1` and `R1`
-are optional previous/next shortcuts. Primary navigation must remain usable
-while the handheld rests on a table. Each screen has a title, visible focus,
-content, and a consistent footer. Unsupported capabilities are omitted rather
-than shown as disabled controls.
+BloomOS has one root launcher, not a set of tabs or a destination picker. The
+root shows a contextual **Continue Playing** target when a resumable game is
+available and a fixed rail containing **Games**, **Favorites**, **Recent**,
+**Apps**, and **Settings**. Collections is not a required 1.0 root concept.
 
-Home leads with the last resumable game, then recent games, favorites, and
-shortcuts. Library opens cached data immediately and scans in the background.
-Collections contains favorites, recent, and user collections. Apps launches
-compatible tools through a supervised adapter. Settings owns every user-facing
-setting and contains System, Health, Updates, and About.
+If Continue is available after cold boot it receives initial focus and `A`
+resumes immediately; Down moves to the rail. Otherwise Games receives focus.
+Left/Right chooses a rail destination, `A` opens it, and Up returns to Continue
+when present. A child remembers its own selection and `B` returns to the prior
+root selection. `B` at root is a safe no-op and never terminates Bloom Shell or
+powers off.
 
-## Control grammar
+The maximum normal hierarchy is:
+
+```text
+Root
+└── Primary screen
+    └── Optional detail or action sheet
+```
+
+A keyboard, confirmation, search/filter, or focused picker may temporarily
+overlay its invoking screen. A detail screen must not primarily contain another
+list of destinations whose purpose is to open more destination lists.
+
+## Stable control grammar
 
 | Input | Meaning |
 |---|---|
-| D-pad | Move focus |
-| A | Confirm, launch, or resume |
-| B | Back |
-| L1/R1 | Previous/next top-level destination |
-| X | Context actions |
-| Y | Toggle favorite on a game row |
-| SELECT | Search when shown in the footer |
-| START | Quick Settings or selected GameSwitcher actions |
-| MENU | Destination picker in Bloom Shell; GameSwitcher during play |
+| D-pad | Move focus or adjust a clearly indicated value |
+| A | Confirm, open, launch, resume, or toggle |
+| B | Back or close |
+| X | Actions for the focused object |
+| Y | Favorite on games; otherwise only a labeled secondary action |
+| SELECT | Search or filter on searchable game surfaces |
+| START | Quick Settings |
+| MENU | GameSwitcher |
+| L1/L2/R1/R2 | No Bloom-owned UI navigation |
 
-Common actions must not depend only on long presses or undocumented chords.
+Shoulder inputs remain available to emulators and compatibility software, but
+Bloom Shell, GameSwitcher, Settings, dialogs, search, and Safe Mode assign them
+no navigation responsibility and never show shoulder hints. Essential behavior
+must not depend on long presses, chords, or undocumented timing.
 
-The platform-independent authority for these actions, top-level destination
-order, list focus, and supported 640x480/752x560 layout regions is
-`src/bloomUi/bloom_ui_core`. Device/SDL adapters translate physical keys into
-this semantic input contract; renderers do not own navigation state. Lists
-clamp at their ends and keep selection visible without implicit wrap. The
-destination picker starts on the current destination; `L1`/`R1` optionally
-wrap across the same five destinations without replacing the picker.
+`src/bloomUi/bloom_ui_core` owns semantic input and focus behavior. Device
+adapters translate physical input without inventing hidden shortcuts. Lists
+clamp at their ends, keep selection visible, and use bounded repeat with smooth
+acceleration for deliberate Up/Down holds.
 
-Shared dialogs support one to three explicitly ordered actions, identify any
-destructive action separately, and begin on a caller-selected safe default.
-The shared text-entry model exposes lowercase, uppercase, digits, and printable
-ASCII symbols with bounded append/backspace operations; a feature may mask the
-rendered value, but it must not remove access to uppercase or symbols.
+## Games, Favorites, and Recent
 
-`src/bloomUi/bloom_ui_renderer` owns only deterministic, pixel-aligned drawing
-onto a caller-owned SDL surface. It consumes the shared layout and navigation
-state without performing file or network I/O. The initial geometry layer draws
-canonical shell chrome, destination focus, visible list focus, status, and
-progress at both supported resolutions; font and image adapters overlay actual
-content without becoming navigation authorities.
+Games is one shallow two-axis browser: Left/Right selects the previous or next
+non-empty system and Up/Down selects a game. Each system preserves its own
+selection and scroll position; switching systems never resets another system to
+row zero. `A` launches, `X` opens a flat action sheet, `Y` toggles favorite,
+SELECT opens local search/filter, and `B` returns to root. Cached data opens
+immediately; scanning, hashing, networking, and image decoding do not run per
+keypress or on the render path.
 
-`src/bloomUi/bloom_ui_input` is the device-facing adapter for the established
-Miyoo SDL key contract. It is shared by ordinary SDL events and Bloom's existing
-direct-framebuffer Linux-input translation, and leaves unassigned controls
-unbound rather than inventing hidden chords.
+Favorites and Recent are direct root destinations using the shared game-list
+presentation. Empty states teach the next action. Recent is browsable history;
+GameSwitcher is immediate session resume. Removing history is available only
+through `X` -> Remove from Recent -> safe-default confirmation, never a direct
+destructive button binding.
 
-## Performance behavior
+## GameSwitcher
 
-The renderer never waits for network, hashing, scanning, scraping, or update
-checks. Cached lists target a 150 ms open, loaded modals 50 ms, and visible focus
-response p95 below 50 ms. Images decode off the render path and use a byte-bounded
-cache. Shell resources that games do not need are released before launch.
+MENU opens or predictably toggles GameSwitcher. Left/Right chooses a game, `A`
+resumes, `X` opens valid actions, `Y` toggles favorite when shown, START opens
+Quick Settings, and `B` goes Home. Version 1.0 ships one polished presentation.
 
-## Copy and errors
+Inherited one-off behavior is forbidden: no Up/Down brightness, SELECT
+header/time cycling, Y short/long view modes, direct X deletion, GameSwitcher-
+specific START menu, shoulder navigation, or hidden combos. Brightness belongs
+in Quick Settings and history deletion belongs in Actions.
 
-Copy is concise, calm, and plainspoken. Normal screens do not expose internal
-terms such as candidate, arm, schema, proxy transport, service names, or paths.
-Errors contain a plain title, one-sentence explanation, safest next action, and
-optional technical details. RetroAchievements failure is non-blocking status,
-not a launch-stopping modal.
+## Apps and contextual actions
 
-## Accessibility
+Apps contains only reviewed, supervised product apps. Every shipped app has one
+disposition: keep in Apps, migrate to Settings, migrate to a contextual action,
+migrate to Developer, replace with native Bloom, or remove from stable. Tweaks
+is migration/reference code, not a stable UI to expand; normal BloomOS use must
+not require it. Settings owns configuration, deterministic ordering replaces
+app sorting, and maintenance utilities live in context or Developer surfaces.
 
-Focus uses shape or fill as well as color. No essential status uses color alone.
-Default type is readable at 640x480 and 752x560, truncation is deterministic,
-motion is brief and optional, and there is no rapid flashing or permanent
-marquee. Layouts allow localized strings and a larger-text option where it can
-be implemented without clipping core actions.
+X consistently opens a flat, object-specific action sheet. A focused picker may
+follow one action and returns directly to its invoking screen. Search is a
+SELECT overlay on Games, Favorites, and Recent, uses local indexes, and is not a
+separate app.
 
-## Acceptance tasks
+## Flat Settings
 
-A new user can resume the latest game with one confirmation from Home, open the
-Library immediately, favorite a selected game with one button, find Search from
-the visible footer, reach Quick Settings with `START`, inspect network status on
-capable devices, reach Settings > System > Updates, export a support bundle from
-Health, and enter Safe Mode without editing the SD card on a computer.
+Settings is one vertically scrolling, sectioned surface. Normal sections are
+Display, Audio, Controls & Gameplay, Network where supported,
+RetroAchievements, Appearance, and System. Developer appears only when
+Developer Mode is active; there is no normal Advanced junk drawer.
 
-Physical review remains required for display legibility, palette, animation,
-audio, controls, save semantics, and state restoration. SSH evidence must not be
-reported as proof of those properties.
+Rows have an explicit type: non-selectable section header, toggle, enum, slider,
+detail, action, or read-only. Up/Down moves through selectable rows; Left/Right
+changes sliders/enums; `A` toggles or opens one focused detail sheet; `B`
+returns root. Simple values do not require a detail page. Capability predicates
+omit unsupported rows rather than disabling them.
+
+Detail rows may open Wi-Fi selection, RA account entry, Update, Storage, Health
+and support export, About, or Developer diagnostics. `B` returns directly to
+Settings. Details do not become category trees or recreate Tweaks.
+
+## Quick Settings
+
+START toggles Quick Settings from every normal Bloom surface. It contains
+brightness, volume, mute, capability-gated Wi-Fi, read-only battery, and Open
+Settings. Up/Down selects, Left/Right adjusts, `A` toggles or opens, and B or
+START closes. Resets, update channels, full RA configuration, and developer
+tools do not belong here.
+
+## Presentation
+
+The header shows the current screen or system plus concise battery and
+capability-gated Wi-Fi state; it is not navigation. The footer shows only
+currently useful actions and never shoulders. Focus uses fill or contrast
+inversion in addition to the Bloom orange accent.
+
+Bloom uses the existing radial mark and warm brown/cream/orange/gold tokens,
+crisp pixel-aligned geometry, strong silhouettes, limited radii, and no blur,
+card-heavy dashboard, animated wallpaper, bounce, or input-delaying motion.
+Useful transitions target 100-150 ms and are dropped rather than missing frames.
+Both 640x480 and native 752x560 layouts are first-class.
+
+Empty and error copy is calm and instructional. Normal UI never exposes
+`mainui-dependent`, update-state internals, schemas, proxy terms, or private
+paths. RetroAchievements failure never blocks ordinary play.
+
+## Performance contract
+
+Visible focus response targets p95 below 50 ms. Cached root destinations open
+within roughly 100-150 ms, Quick Settings and GameSwitcher feel immediate,
+system switching does not visibly reload cached lists, and held scrolling does
+not starve rendering. A 30-minute shell soak, 500 open/back/action cycles, and a
+10k-game fixture remain bounded and responsive.
+
+## Completion gate
+
+The UX contract is complete only when one root exposes Continue plus the five
+fixed destinations; MENU is only GameSwitcher; START is only Quick Settings;
+shoulders have no Bloom navigation role; Games is the persistent two-axis
+browser; Favorites and Recent are direct; Settings is flat with at most one
+detail layer; Tweaks is not normally required or visible; GameSwitcher has no
+inherited special controls; footers teach the stable grammar; and all core tasks
+pass with D-pad plus A/B/X/Y/SELECT/START/MENU.
+
+Physical review is required on Mini V2, Plus, and Flip for legibility, focus,
+root recognition, Continue and two-axis discoverability, long-list behavior,
+footer density, tabletop use, GameSwitcher semantics, Settings flatness, audio,
+controls, saves, and state restoration. SSH and framebuffer evidence never
+substitute for those physical claims.
