@@ -22,7 +22,7 @@ ownership boundary.
 | Network settings | Tweaks network menu, firmware setting reader, and inherited service script | `bloom-network` and Bloom network UI | Read-only status, canonical preference mutation, and Bloom-owned Wi-Fi lifecycle are proven on an already-associated Plus; disconnected/disabled, Flip, and inherited auxiliary-service replacement still require capability-gated tests |
 | Power, suspend, shutdown | keymon, charging state, and the low-level clean shutdown helper | `bloom-power` | All current shutdown/reboot callers are behind the versioned power adapter; suspend migration plus clean FAT, reboot, lid, and recovery evidence remain |
 | Theme installation | themeSwitcher plus MainUI-specific resources | Bloom theme adapter | malformed-theme fallback and UI parity |
-| Health payload check | `bloom-health-system` currently requires MainUI | Bloom runtime health | green health with MainUI absent |
+| Health payload check | `bloom-health-system` requires the installed Bloom Shell, not the consumed MainUI installer trigger | Bloom runtime health | Host regression and exact-hash Plus probe are green with MainUI absent; signed confirmation remains required |
 | Update activation | updater publishes a MainUI boot trigger/bind mount | Bloom boot/update trigger | signed activate/confirm/rollback without MainUI |
 | App return | package launchers assume MainUI command handling | supervised app adapter | supported app matrix and direct shell return |
 

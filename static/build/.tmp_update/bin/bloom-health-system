@@ -19,9 +19,9 @@ for required in \
     "$SD_ROOT/.tmp_update/runtime.sh" \
     "$SD_ROOT/.tmp_update/bin/bloomctl" \
     "$SD_ROOT/.tmp_update/bin/bloom-platform" \
+    "$SD_ROOT/.tmp_update/bin/bloom-shell" \
     "$SD_ROOT/.tmp_update/onionVersion/version.txt" \
-    "$SD_ROOT/RetroArch/retroarch" \
-    "$SD_ROOT/miyoo/app/MainUI"; do
+    "$SD_ROOT/RetroArch/retroarch"; do
     [ -f "$required" ] || runtime=false
 done
 

@@ -654,10 +654,12 @@ and retained signed payload still available for diagnosis.
 
 `bloom-health-system` supplies the non-database half of the structured health
 gate. It fails closed unless platform discovery identifies a supported device
-family, required runtime/RetroArch/MainUI payloads exist, the SD card accepts a
-mode-restricted write-and-sync probe, and at least 16 MiB remains free. The
-probe is removed immediately. `bloomctl health` combines this result with Play
-Activity integrity, so update confirmation cannot promote a release that only
-passes its database check.
+family, the installed Bloom runtime, Bloom Shell, and RetroArch payloads exist,
+the SD card accepts a mode-restricted write-and-sync probe, and at least 16 MiB
+remains free. The firmware-compatible MainUI path is a consumed one-shot update
+trigger rather than a stable runtime requirement. The probe is removed
+immediately. `bloomctl health` combines this result with Play Activity
+integrity, so update confirmation cannot promote a release that only passes its
+database check.
 
 Architectural decisions will be recorded as the corresponding subsystem work begins.
