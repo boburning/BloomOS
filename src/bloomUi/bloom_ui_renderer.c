@@ -59,23 +59,8 @@ static void draw_bloom_mark(SDL_Surface *surface, int center_x, int center_y, in
     fill(surface, center_x - scale, center_y - scale, petal, petal, BLOOM_UI_COLOR_CREAM);
 }
 
-static void draw_navigation(SDL_Surface *surface, const BloomUiLayout *layout,
-                            BloomUiDestination destination)
+static void draw_header(SDL_Surface *surface, const BloomUiLayout *layout)
 {
-    const int mark_width = layout->header.height;
-    const int navigation_x = mark_width + layout->margin;
-    const int navigation_width = layout->viewport_width - navigation_x - layout->margin;
-    const int tab_width = navigation_width / BLOOM_UI_DESTINATION_COUNT;
-    for (int index = 0; index < BLOOM_UI_DESTINATION_COUNT; ++index) {
-        int x = navigation_x + index * tab_width;
-        BloomUiColor color = index == (int)destination ? BLOOM_UI_COLOR_SURFACE_RAISED
-                                                       : BLOOM_UI_COLOR_SURFACE;
-        fill(surface, x + 2, 8, tab_width - 4, layout->header.height - 16, color);
-        if (index == (int)destination) {
-            fill(surface, x + 2, layout->header.height - 6, tab_width - 4, 4,
-                 BLOOM_UI_COLOR_ORANGE);
-        }
-    }
     draw_bloom_mark(surface, layout->header.height / 2, layout->header.height / 2,
                     layout->viewport_height >= 540 ? 4 : 3);
 }
@@ -131,7 +116,7 @@ int bloom_ui_render_shell(SDL_Surface *surface, const BloomUiLayout *layout,
 {
     if (surface == NULL || surface->format == NULL || surface->format->BitsPerPixel != 32 ||
         layout == NULL || scene == NULL || surface->w != layout->viewport_width ||
-        surface->h != layout->viewport_height || scene->destination < BLOOM_UI_DESTINATION_HOME ||
+        surface->h != layout->viewport_height || scene->destination < BLOOM_UI_DESTINATION_ROOT ||
         scene->destination >= BLOOM_UI_DESTINATION_COUNT ||
         (scene->item_count > 0 && scene->selected >= scene->item_count) ||
         scene->window_start > scene->item_count || scene->progress_value > UINT32_MAX ||
@@ -144,7 +129,7 @@ int bloom_ui_render_shell(SDL_Surface *surface, const BloomUiLayout *layout,
          BLOOM_UI_COLOR_SURFACE);
     fill(surface, layout->footer.x, layout->footer.y, layout->footer.width, layout->footer.height,
          BLOOM_UI_COLOR_SURFACE);
-    draw_navigation(surface, layout, scene->destination);
+    draw_header(surface, layout);
     draw_rows(surface, layout, scene);
     draw_footer(surface, layout, scene);
     return 0;

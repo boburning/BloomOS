@@ -59,6 +59,55 @@ static int sync_parent(const char *path)
     return result;
 }
 
+int bloom_shell_stage_executable(const char *executable, const char *command_path,
+                                 char *error, size_t error_size)
+{
+    if (executable == NULL || executable[0] != '/' || command_path == NULL ||
+        command_path[0] != '/') {
+        set_error(error, error_size, "executable launch arguments are invalid");
+        return -1;
+    }
+    char temporary[1100];
+    struct stat metadata;
+    if (snprintf(temporary, sizeof(temporary), "%s.tmp.%ld", command_path, (long)getpid()) >=
+            (int)sizeof(temporary) ||
+        lstat(command_path, &metadata) == 0 || lstat(temporary, &metadata) == 0 ||
+        lstat(executable, &metadata) != 0 || !S_ISREG(metadata.st_mode) ||
+        S_ISLNK(metadata.st_mode) || access(executable, X_OK) != 0) {
+        set_error(error, error_size, "executable launch boundary is unavailable");
+        return -1;
+    }
+    int descriptor = open(temporary, O_WRONLY | O_CREAT | O_EXCL, 0700);
+    int failed = descriptor < 0;
+    int published = 0;
+    if (!failed) {
+        failed = dprintf(descriptor, "#!/bin/sh\nexec ") < 0 ||
+                 write_quoted(descriptor, executable) != 0 || dprintf(descriptor, "\n") < 0 ||
+                 fsync(descriptor) != 0;
+        if (close(descriptor) != 0)
+            failed = 1;
+        descriptor = -1;
+    }
+    if (!failed) {
+        failed = rename(temporary, command_path) != 0;
+        published = !failed;
+    }
+    if (!failed)
+        failed = sync_parent(command_path) != 0;
+    if (failed) {
+        if (descriptor >= 0)
+            close(descriptor);
+        unlink(temporary);
+        if (published) {
+            unlink(command_path);
+            sync_parent(command_path);
+        }
+        set_error(error, error_size, "executable launch staging failed");
+        return -1;
+    }
+    return 0;
+}
+
 int bloom_shell_stage_app(const BloomLibraryApp *app, const char *sd_root,
                           const char *command_path, char *error, size_t error_size)
 {

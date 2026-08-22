@@ -101,6 +101,17 @@ TEST_F(BloomShellLaunchTest, StagesCompatibleAppWithShellSafeAtomicCommand)
     EXPECT_NE(0, metadata.st_mode & S_IXUSR);
 }
 
+TEST_F(BloomShellLaunchTest, StagesGameSwitcherAsAValidatedExecutable)
+{
+    char error[256] = {};
+    ASSERT_EQ(0, bloom_shell_stage_executable(session_.c_str(), command_.c_str(), error,
+                                              sizeof(error)))
+        << error;
+    std::ifstream stream(command_);
+    std::string command((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
+    EXPECT_EQ("#!/bin/sh\nexec '" + session_.string() + "'\n", command);
+}
+
 TEST_F(BloomShellLaunchTest, AllowsOnionCompatibleApps)
 {
     snprintf(app_.compatibility, sizeof(app_.compatibility), "onion-compatible");
