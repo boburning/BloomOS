@@ -825,3 +825,118 @@ TEST_F(BloomSettingsTest, MaterializationFailureKeepsCanonicalMutationAuthoritat
                                 std::istreambuf_iterator<char>());
     EXPECT_EQ("outside", outside_content);
 }
+
+TEST_F(BloomSettingsTest, ResetDefaultsBacksUpCanonicalStateAndMaterializesDefaults)
+{
+    write(system,
+          R"({"vol":13,"brightness":3,"wifi":1,"theme":"/Themes/Custom/","unknown":{"kept":true}})");
+    write(config / ".showExpert", "");
+    BloomSettingsImportResult imported{};
+    char error[160] = {};
+    ASSERT_EQ(0, bloom_settings_import_onion(system.c_str(), config.c_str(), settings.c_str(),
+                                             snapshot.c_str(), &imported, error, sizeof(error)));
+    BloomSettingsAuthorityResult activated{};
+    ASSERT_EQ(0, bloom_settings_activate(settings.c_str(), system.c_str(), config.c_str(),
+                                         &activated, error, sizeof(error)));
+    std::ifstream before_stream(settings, std::ios::binary);
+    const std::string before((std::istreambuf_iterator<char>(before_stream)),
+                             std::istreambuf_iterator<char>());
+    const auto backup = root / "settings.pre-reset.json";
+
+    BloomSettingsResetResult reset{};
+    ASSERT_EQ(0, bloom_settings_reset_defaults(settings.c_str(), backup.c_str(), system.c_str(),
+                                               config.c_str(), &reset, error, sizeof(error)))
+        << error;
+    EXPECT_EQ(1, reset.changed);
+    EXPECT_EQ(activated.generation + 1, reset.generation);
+    EXPECT_EQ(1, reset.backup_written);
+    EXPECT_EQ(1, reset.materialized);
+
+    std::ifstream backup_stream(backup, std::ios::binary);
+    const std::string backup_content((std::istreambuf_iterator<char>(backup_stream)),
+                                     std::istreambuf_iterator<char>());
+    EXPECT_EQ(before, backup_content);
+    BloomSettingsValues values{};
+    ASSERT_EQ(0, bloom_settings_read_values(settings.c_str(), &values, error, sizeof(error)));
+    EXPECT_STREQ("bloom", values.authority);
+    EXPECT_EQ(20, values.volume);
+    EXPECT_EQ(7, values.brightness);
+    EXPECT_EQ(0, values.wifi_enabled);
+    EXPECT_EQ(1, values.startup_auto_resume);
+    cJSON *canonical = load_settings();
+    ASSERT_TRUE(cJSON_IsObject(canonical));
+    EXPECT_STREQ("defaults",
+                 cJSON_GetObjectItem(cJSON_GetObjectItem(canonical, "source"), "kind")
+                     ->valuestring);
+    EXPECT_FALSE(cJSON_HasObjectItem(
+        cJSON_GetObjectItem(cJSON_GetObjectItem(canonical, "compatibility"), "onion_system"),
+        "unknown"));
+    cJSON_Delete(canonical);
+
+    std::ifstream system_stream(system);
+    const std::string system_content((std::istreambuf_iterator<char>(system_stream)),
+                                     std::istreambuf_iterator<char>());
+    cJSON *legacy = cJSON_Parse(system_content.c_str());
+    ASSERT_TRUE(cJSON_IsObject(legacy));
+    EXPECT_EQ(20, cJSON_GetObjectItem(legacy, "vol")->valueint);
+    EXPECT_EQ(7, cJSON_GetObjectItem(legacy, "brightness")->valueint);
+    EXPECT_EQ(0, cJSON_GetObjectItem(legacy, "wifi")->valueint);
+    EXPECT_FALSE(cJSON_HasObjectItem(legacy, "unknown"));
+    cJSON_Delete(legacy);
+    EXPECT_FALSE(std::filesystem::exists(config / ".showExpert"));
+}
+
+TEST_F(BloomSettingsTest, ResetDefaultsRejectsLegacyAuthorityWithoutMutation)
+{
+    write(system, R"({"vol":9})");
+    BloomSettingsImportResult imported{};
+    char error[160] = {};
+    ASSERT_EQ(0, bloom_settings_import_onion(system.c_str(), config.c_str(), settings.c_str(),
+                                             snapshot.c_str(), &imported, error, sizeof(error)));
+    std::ifstream before_stream(settings, std::ios::binary);
+    const std::string before((std::istreambuf_iterator<char>(before_stream)),
+                             std::istreambuf_iterator<char>());
+    const auto backup = root / "settings.pre-reset.json";
+
+    BloomSettingsResetResult reset{};
+    EXPECT_NE(0, bloom_settings_reset_defaults(settings.c_str(), backup.c_str(), system.c_str(),
+                                               config.c_str(), &reset, error, sizeof(error)));
+    EXPECT_EQ(0, reset.changed);
+    EXPECT_EQ(0, reset.backup_written);
+    EXPECT_FALSE(std::filesystem::exists(backup));
+    std::ifstream after_stream(settings, std::ios::binary);
+    const std::string after((std::istreambuf_iterator<char>(after_stream)),
+                            std::istreambuf_iterator<char>());
+    EXPECT_EQ(before, after);
+}
+
+TEST_F(BloomSettingsTest, ResetDefaultsRejectsSymlinkedBackupWithoutMutation)
+{
+    write(system, R"({"vol":9})");
+    BloomSettingsImportResult imported{};
+    char error[160] = {};
+    ASSERT_EQ(0, bloom_settings_import_onion(system.c_str(), config.c_str(), settings.c_str(),
+                                             snapshot.c_str(), &imported, error, sizeof(error)));
+    set_bloom_authority();
+    std::ifstream before_stream(settings, std::ios::binary);
+    const std::string before((std::istreambuf_iterator<char>(before_stream)),
+                             std::istreambuf_iterator<char>());
+    const auto outside = root / "outside-backup";
+    const auto backup = root / "settings.pre-reset.json";
+    write(outside, "outside");
+    std::filesystem::create_symlink(outside, backup);
+
+    BloomSettingsResetResult reset{};
+    EXPECT_NE(0, bloom_settings_reset_defaults(settings.c_str(), backup.c_str(), system.c_str(),
+                                               config.c_str(), &reset, error, sizeof(error)));
+    EXPECT_EQ(0, reset.changed);
+    EXPECT_EQ(0, reset.backup_written);
+    std::ifstream after_stream(settings, std::ios::binary);
+    const std::string after((std::istreambuf_iterator<char>(after_stream)),
+                            std::istreambuf_iterator<char>());
+    EXPECT_EQ(before, after);
+    std::ifstream outside_stream(outside, std::ios::binary);
+    const std::string outside_after((std::istreambuf_iterator<char>(outside_stream)),
+                                    std::istreambuf_iterator<char>());
+    EXPECT_EQ("outside", outside_after);
+}

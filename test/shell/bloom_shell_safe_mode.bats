@@ -9,8 +9,10 @@
     grep -F 'BLOOM_SHELL_SAFE_MODE_GAMES' "$shell"
     grep -F 'bloom_shell_support_export(BLOOMCTL_BINARY)' "$shell"
     grep -F 'bloom_shell_update_rollback(BLOOMCTL_BINARY)' "$shell"
+    grep -F 'bloom_shell_settings_reset(BLOOMCTL_BINARY)' "$shell"
     grep -F 'RESTART_NORMAL_EXIT' "$shell"
     grep -F '"Browse Games"' "$model"
+    grep -F '"Reset Settings"' "$model"
     grep -F '"Restart Normally"' "$model"
 }
 
@@ -20,7 +22,9 @@
 
     grep -F '"A Open   MENU Switcher   START Quick"' "$shell"
     grep -F 'bloom_ui_dialog_init(&rollback_dialog, 2, 0, 1)' "$shell"
+    grep -F 'bloom_ui_dialog_init(&reset_dialog, 2, 0, 1)' "$shell"
     grep -F 'execl(bloomctl_path, bloomctl_path, "update", "rollback"' "$status"
+    grep -F 'execl(bloomctl_path, bloomctl_path, "settings", "reset-defaults"' "$status"
     ! grep -F 'system(' "$status"
 }
 

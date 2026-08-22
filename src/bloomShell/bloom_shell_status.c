@@ -240,6 +240,29 @@ int bloom_shell_update_rollback(const char *bloomctl_path)
     return WIFEXITED(status) && WEXITSTATUS(status) == 0 ? 0 : -1;
 }
 
+int bloom_shell_settings_reset(const char *bloomctl_path)
+{
+    if (bloomctl_path == NULL || bloomctl_path[0] != '/')
+        return -1;
+    pid_t child = fork();
+    if (child < 0)
+        return -1;
+    if (child == 0) {
+        int null_output = open("/dev/null", O_WRONLY);
+        if (null_output < 0 || dup2(null_output, STDOUT_FILENO) < 0 ||
+            dup2(null_output, STDERR_FILENO) < 0)
+            _exit(127);
+        close(null_output);
+        execl(bloomctl_path, bloomctl_path, "settings", "reset-defaults", (char *)NULL);
+        _exit(127);
+    }
+    int status = 0;
+    while (waitpid(child, &status, 0) < 0)
+        if (errno != EINTR)
+            return -1;
+    return WIFEXITED(status) && WEXITSTATUS(status) == 0 ? 0 : -1;
+}
+
 static const char *update_label(const BloomShellStatus *status)
 {
     if (!status->ready || !status->update_healthy)

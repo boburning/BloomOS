@@ -21,6 +21,8 @@ TEST(BloomShellSafeMode, ExposesOneFlatRecoveryList)
                  bloom_shell_safe_mode_label(BLOOM_SHELL_SAFE_MODE_EXPORT_SUPPORT));
     EXPECT_STREQ("Restore Previous Version",
                  bloom_shell_safe_mode_label(BLOOM_SHELL_SAFE_MODE_ROLLBACK));
+    EXPECT_STREQ("Reset Settings",
+                 bloom_shell_safe_mode_label(BLOOM_SHELL_SAFE_MODE_RESET_SETTINGS));
     EXPECT_STREQ("Restart Normally",
                  bloom_shell_safe_mode_label(BLOOM_SHELL_SAFE_MODE_RESTART_NORMAL));
     EXPECT_EQ(nullptr,

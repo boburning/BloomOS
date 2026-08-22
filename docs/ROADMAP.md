@@ -337,8 +337,11 @@ and publishes atomically. Runtime suppresses automatic resume and custom
 startup scripts, disables RetroAchievements session work, and relaunches into
 one Bloom-owned recovery list instead of expanding the MainUI fallback. Games
 remain browsable, while health refresh, support export, confirmed signed
-rollback, and explicit normal restart use fixed service boundaries. A guarded settings-reset operation,
-first-run/migration presentation, default-shell transition, and physical
+rollback, confirmed Settings reset, and explicit normal restart use fixed
+service boundaries. Settings reset preserves a private exact backup before
+atomically publishing and materializing defaults; game, save, state, library,
+history, and credential data remain outside its boundary. First-run/migration
+presentation, default-shell transition, and physical
 boot-loop validation remain before MainUI can be removed as the development
 fallback.
 

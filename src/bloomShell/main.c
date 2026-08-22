@@ -487,6 +487,31 @@ static void draw_rollback_confirm(SDL_Surface *screen, const BloomUiLayout *layo
                  dialog->selected == 1 ? canvas : cream);
 }
 
+static void draw_reset_confirm(SDL_Surface *screen, const BloomUiLayout *layout, TTF_Font *font,
+                               const BloomUiDialogFocus *dialog)
+{
+    if (bloom_ui_render_dialog(screen, layout, dialog) != 0)
+        return;
+    SDL_Color cream = {243, 226, 189, 0};
+    SDL_Color canvas = {33, 23, 17, 0};
+    int width = layout->content.width * 4 / 5;
+    int height = layout->viewport_height / 3;
+    int x = (layout->viewport_width - width) / 2;
+    int y = (layout->viewport_height - height) / 2;
+    int gap = 12;
+    int button_width = (width - 48 - gap) / 2;
+    int button_height = layout->row_height * 2 / 3;
+    int button_y = y + height - button_height - 20;
+    render_label(screen, font, "Reset BloomOS settings to defaults?", x + 24, y + 18,
+                 width - 48, cream);
+    render_label(screen, font, "Cancel", x + 24 + button_width / 3,
+                 button_y + button_height / 4, button_width * 2 / 3,
+                 dialog->selected == 0 ? canvas : cream);
+    render_label(screen, font, "Reset", x + 24 + button_width + gap + button_width / 4,
+                 button_y + button_height / 4, button_width * 3 / 4,
+                 dialog->selected == 1 ? canvas : cream);
+}
+
 static void draw_game_actions(SDL_Surface *screen, const BloomUiLayout *layout, TTF_Font *font,
                               const BloomUiFocus *focus, int favorite, int recent)
 {
@@ -660,7 +685,9 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
                  int action_game_recent, int recent_remove_confirm_open,
                  const BloomUiDialogFocus *recent_remove_dialog, int safe_mode,
                  const BloomUiFocus *safe_mode_focus, int rollback_result,
-                 int rollback_confirm_open, const BloomUiDialogFocus *rollback_dialog)
+                 int rollback_confirm_open, const BloomUiDialogFocus *rollback_dialog,
+                 int reset_result, int reset_confirm_open,
+                 const BloomUiDialogFocus *reset_dialog)
 {
     const BloomShellGamesSystem *games_system = bloom_shell_games_current(games_browser);
     const BloomUiFocus empty_focus = {0};
@@ -770,6 +797,11 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
                          rollback_result == 2  ? "Restoring..."
                          : rollback_result > 0 ? "Restart required"
                                                : "Unavailable");
+            else if (row == BLOOM_SHELL_SAFE_MODE_RESET_SETTINGS && reset_result != 0)
+                snprintf(label, sizeof(label), "%s       %s", base,
+                         reset_result == 2  ? "Resetting..."
+                         : reset_result > 0 ? "Complete"
+                                            : "Failed");
             else
                 snprintf(label, sizeof(label), "%s", base == NULL ? "" : base);
             render_label(screen, font, label, layout->content.x + 20,
@@ -886,6 +918,8 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
         draw_recent_remove_confirm(screen, layout, font, recent_remove_dialog);
     if (rollback_confirm_open)
         draw_rollback_confirm(screen, layout, font, rollback_dialog);
+    if (reset_confirm_open)
+        draw_reset_confirm(screen, layout, font, reset_dialog);
 #ifdef PLATFORM_MIYOOMINI
     bloom_ui_rotate_180(screen);
     SDL_BlitSurface(screen, NULL, video, NULL);
@@ -1028,6 +1062,9 @@ int main(int argc, char **argv)
     int rollback_result = 0;
     int rollback_confirm_open = 0;
     BloomUiDialogFocus rollback_dialog = {0};
+    int reset_result = 0;
+    int reset_confirm_open = 0;
+    BloomUiDialogFocus reset_dialog = {0};
     draw(screen, video, &layout, font, compact_font, destination, &root, &games_browser, &favorites_focus,
          &recent_focus, games, favorites, recents, has_recent, &search, &settings_focus, &apps_focus, apps, &status,
          &capabilities, &quick_values, support_export_result, update_confirm_result, ra_form_result,
@@ -1036,7 +1073,8 @@ int main(int argc, char **argv)
          &game_actions_focus,
          favorite_index(favorites, favorite_count, action_game.bloom_game_id) >= 0,
          action_game_recent, recent_remove_confirm_open, &recent_remove_dialog, safe_mode,
-         &safe_mode_focus, rollback_result, rollback_confirm_open, &rollback_dialog);
+         &safe_mode_focus, rollback_result, rollback_confirm_open, &rollback_dialog, reset_result,
+         reset_confirm_open, &reset_dialog);
     int running = 1;
     int exit_code = 0;
     while (running) {
@@ -1063,7 +1101,20 @@ int main(int argc, char **argv)
             destination == BLOOM_UI_DESTINATION_SETTINGS &&
             bloom_shell_settings_row(&capabilities, settings_focus.selected,
                                      &selected_settings) == 0;
-        if (rollback_confirm_open && action == BLOOM_UI_ACTION_FOCUS_LEFT)
+        if (reset_confirm_open && action == BLOOM_UI_ACTION_FOCUS_LEFT)
+            bloom_ui_dialog_step(&reset_dialog, -1);
+        else if (reset_confirm_open && action == BLOOM_UI_ACTION_FOCUS_RIGHT)
+            bloom_ui_dialog_step(&reset_dialog, 1);
+        else if (reset_confirm_open && action == BLOOM_UI_ACTION_BACK)
+            reset_confirm_open = 0;
+        else if (reset_confirm_open && action == BLOOM_UI_ACTION_CONFIRM) {
+            if (reset_dialog.selected == 1)
+                reset_result = 2;
+            reset_confirm_open = 0;
+        }
+        else if (reset_confirm_open)
+            continue;
+        else if (rollback_confirm_open && action == BLOOM_UI_ACTION_FOCUS_LEFT)
             bloom_ui_dialog_step(&rollback_dialog, -1);
         else if (rollback_confirm_open && action == BLOOM_UI_ACTION_FOCUS_RIGHT)
             bloom_ui_dialog_step(&rollback_dialog, 1);
@@ -1291,6 +1342,9 @@ int main(int argc, char **argv)
                      rollback_result <= 0 &&
                      bloom_ui_dialog_init(&rollback_dialog, 2, 0, 1) == 0)
                 rollback_confirm_open = 1;
+            else if (safe_mode_focus.selected == BLOOM_SHELL_SAFE_MODE_RESET_SETTINGS &&
+                     reset_result <= 0 && bloom_ui_dialog_init(&reset_dialog, 2, 0, 1) == 0)
+                reset_confirm_open = 1;
             else if (safe_mode_focus.selected == BLOOM_SHELL_SAFE_MODE_RESTART_NORMAL) {
                 exit_code = RESTART_NORMAL_EXIT;
                 running = 0;
@@ -1505,7 +1559,8 @@ int main(int argc, char **argv)
                  &game_actions_focus,
                  favorite_index(favorites, favorite_count, action_game.bloom_game_id) >= 0,
                  action_game_recent, recent_remove_confirm_open, &recent_remove_dialog, safe_mode,
-                 &safe_mode_focus, rollback_result, rollback_confirm_open, &rollback_dialog);
+                 &safe_mode_focus, rollback_result, rollback_confirm_open, &rollback_dialog,
+                 reset_result, reset_confirm_open, &reset_dialog);
             if (rollback_result == 2) {
                 rollback_result = bloom_shell_update_rollback(BLOOMCTL_BINARY) == 0 ? 1 : -1;
                 bloom_shell_status_load(BLOOM_STATUS_BINARY, &status);
@@ -1519,7 +1574,21 @@ int main(int argc, char **argv)
                      favorite_index(favorites, favorite_count, action_game.bloom_game_id) >= 0,
                      action_game_recent, recent_remove_confirm_open, &recent_remove_dialog,
                      safe_mode, &safe_mode_focus, rollback_result, rollback_confirm_open,
-                     &rollback_dialog);
+                     &rollback_dialog, reset_result, reset_confirm_open, &reset_dialog);
+            }
+            if (reset_result == 2) {
+                reset_result = bloom_shell_settings_reset(BLOOMCTL_BINARY) == 0 ? 1 : -1;
+                draw(screen, video, &layout, font, compact_font, destination, &root,
+                     &games_browser, &favorites_focus, &recent_focus, games, favorites, recents,
+                     has_recent, &search, &settings_focus, &apps_focus, apps, &status,
+                     &capabilities, &quick_values, support_export_result, update_confirm_result,
+                     ra_form_result, quick_settings, ra_form_open, &ra_form, ra_sign_out_open,
+                     &ra_sign_out_dialog, update_confirm_open, &update_confirm_dialog,
+                     &quick_settings_focus, game_actions_open, &game_actions_focus,
+                     favorite_index(favorites, favorite_count, action_game.bloom_game_id) >= 0,
+                     action_game_recent, recent_remove_confirm_open, &recent_remove_dialog,
+                     safe_mode, &safe_mode_focus, rollback_result, rollback_confirm_open,
+                     &rollback_dialog, reset_result, reset_confirm_open, &reset_dialog);
             }
         }
     }

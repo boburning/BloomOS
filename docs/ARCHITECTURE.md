@@ -160,14 +160,18 @@ automatic resume and custom startup scripts before that launch, forces
 RetroAchievements session work off, and presents a Bloom-owned flat recovery
 surface using the compiled Bloom palette. The surface keeps Games available and
 exposes bounded health refresh, privacy-safe support export, confirmed
-signed-update rollback, and an explicit normal restart. The latch is cleared
-only when runtime receives that dedicated
+signed-update rollback, confirmed Settings reset, and an explicit normal
+restart. Reset requires Bloom settings authority, writes the exact prior
+canonical file to a private symlink-refusing backup, atomically publishes a new
+default generation, and materializes the compatibility view. It does not touch
+games, saves, states, library/history data, or account credentials. The latch is
+cleared only when runtime receives that dedicated
 restart handoff. State publication is private, atomic, and symlink-refusing;
 malformed state is preserved and runtime fails into Safe Mode rather than
 silently resetting it or resuming normal work. MainUI remains
 the development fallback until the default-shell transition and physical
-recovery validation are complete. A guarded settings-reset service and
-first-run recovery presentation remain separate work.
+recovery validation are complete. First-run recovery presentation remains
+separate work.
 
 The public boundary exposes `bloomctl library status` and the explicit
 `bloomctl library import-onion` mutation. The importer reads a signed package
