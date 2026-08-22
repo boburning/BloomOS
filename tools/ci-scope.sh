@@ -60,7 +60,7 @@ while IFS= read -r path; do
         src/*)
             full=1
             ;;
-        test/*|docs/*)
+        build/dependencies.lock|build/legacy-manifest.json|static/*|test/*|docs/*)
             ;;
         *)
             full=1
