@@ -1,0 +1,68 @@
+{
+  "schema": 1,
+  "date": "2026-08-22",
+  "operator": "Codex over maintainer-authorized SSH",
+  "device": "miyoo-mini-plus",
+  "model_id": 354,
+  "serial_redacted": true,
+  "signed_release": {
+    "version": "0.1.0-dev-4093ec3e",
+    "commit": "4093ec3eb265714c499a82b38bc9b93a5ee49ddd",
+    "workflow_run": 32573127003,
+    "archive_sha256": "64282d6a4ef04263793cf4f2b8d90a96eece507e6c6dd248fe1b45ad646018a3",
+    "update_phase": "known_good"
+  },
+  "game": {
+    "display_title": "Dino's Offline Adventure (World) (Aftermarket) (Homebrew)",
+    "system": "gb",
+    "core": "gambatte_libretro.so",
+    "game_id": "bloom-game-v1:f4cdd6496532ebdf493d2036f4ec94c60428292004f1f41cf66d90b1315c7880"
+  },
+  "soak": {
+    "requested_minutes": 30,
+    "samples": 61,
+    "sample_interval_seconds": 30,
+    "same_pid": true,
+    "pid": 2385,
+    "state_at_every_sample": "RUNNING",
+    "rss_kib_min": 10804,
+    "rss_kib_max": 10804,
+    "vmsize_kib_min": 56616,
+    "vmsize_kib_max": 56616,
+    "file_descriptors_min": 13,
+    "file_descriptors_max": 13,
+    "restart_observed": false,
+    "growth_observed": false
+  },
+  "cleanup": {
+    "path": "GameSwitcher overlay TERM cleanup",
+    "final_session_state": "STOPPED",
+    "recorded_duration_seconds": 1915,
+    "recent_status": "recorded",
+    "canonical_recents": 1,
+    "save_flush": {
+      "core": "gambatte_libretro.so",
+      "corename": "Gambatte",
+      "files_flushed": 6,
+      "directories_flushed": 4
+    },
+    "active_play_sessions": 0,
+    "aggregate_health": "healthy",
+    "continue_page_sha256": "87180b7177c328e5ea4c92d91798d46c4923da1c3d49181f08fd89716a57ff03",
+    "all_three_framebuffer_pages_equal": true,
+    "mainui_running": false
+  },
+  "related_regression": {
+    "shell_soak_minutes": 30,
+    "shell_soak_samples": 61,
+    "shell_soak_growth_observed": false,
+    "root_open_action_back_cycles": 500,
+    "root_open_action_back_duration_ms": 171,
+    "ten_thousand_game_fixture": "passed"
+  },
+  "limitations": [
+    "This is remote process, service, and framebuffer evidence rather than physical gameplay review.",
+    "Synthetic input does not prove physical input-to-display latency or tactile held-scroll behavior.",
+    "Audio, controls, SRAM semantics, save-state create/load, Mini V2, Flip, and external revisions remain unverified by this run."
+  ]
+}

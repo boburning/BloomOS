@@ -454,6 +454,9 @@ Current frontend progress:
   recovery surface with MainUI absent. Physical controls, semantic save/state
   behavior, representative multi-system play, and boot-loop validation remain
   under the hardware/default-shell gates.
+  A separate 30-minute signed Plus game soak held one RetroArch PID, 10,804 KiB
+  RSS, 56,616 KiB VmSize, and 13 file descriptors constant across 61 samples;
+  cleanup completed the scoped save flush and retained green aggregate health.
 - [x] Stable theme isolation. Bloom-owned surfaces use the fixed Bloom design
   system and never invoke the legacy `themeSwitcher`; missing, malformed, and
   MainUI-specific theme state therefore cannot redirect stable shell styling.
