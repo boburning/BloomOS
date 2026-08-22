@@ -3,36 +3,25 @@
 
 #include "components/list.h"
 #include "system/keymap_sw.h"
-#include "system/settings.h"
 #include "theme/render/dialog.h"
-#include "utils/config.h"
 #include "utils/keystate.h"
 
 #include "gs_appState.h"
 #include "gs_model.h"
 #include "gs_popMenu.h"
+#include "gs_quickSettings.h"
 #include "gs_romscreen.h"
 
 typedef struct {
     KeyState keystate[320];
     bool btn_a_pressed;
-    bool menu_pressed;
-    bool combo_key;
-    bool select_pressed;
-    bool select_combo_key;
     SDLKey changed_key;
-    int button_y_repeat;
 } AppKeyState_s;
 
 static AppKeyState_s _gs_keystate = {
     .keystate = {RELEASED},
     .btn_a_pressed = false,
-    .menu_pressed = false,
-    .combo_key = false,
-    .select_pressed = false,
-    .select_combo_key = false,
     .changed_key = SDLK_UNKNOWN,
-    .button_y_repeat = 0,
 };
 
 void removeCurrentItem()
@@ -54,7 +43,8 @@ void removeCurrentItem()
     if (!game->recentItem.bloom_owned)
         file_delete_line(getMiyooRecentFilePath(), game->recentItem.lineNo);
 
-    if (strlen(game->recentItem.imgpath) > 0 && is_file(game->recentItem.imgpath)) {
+    if (!game->recentItem.bloom_owned && strlen(game->recentItem.imgpath) > 0 &&
+        is_file(game->recentItem.imgpath)) {
         if (strncmp(game->recentItem.imgpath, ROM_SCREENS_DIR, strlen(ROM_SCREENS_DIR)) == 0) {
             remove(game->recentItem.imgpath);
         }
@@ -81,8 +71,9 @@ int checkQuitAction(void)
     return 0;
 }
 
-void action_confirmRemove(AppState *state)
+void action_confirmRemove(void *_)
 {
+    AppState *state = &appState;
     theme_renderDialog(
         screen, "Remove from history",
         "Are you sure you want to\nremove game from history?",
@@ -95,8 +86,15 @@ void action_confirmRemove(AppState *state)
         if (_updateKeystate(keystate, &state->quit, true, NULL)) {
             if (keystate[SW_BTN_A] == PRESSED) {
                 removeCurrentItem();
-                if (state->current_game > 0)
-                    state->current_game--;
+                state->pop_menu_open = false;
+                popMenu_destroy();
+                if (game_list_len == 0) {
+                    state->exit_to_menu = true;
+                    state->quit = true;
+                    break;
+                }
+                if (state->current_game >= game_list_len)
+                    state->current_game = game_list_len - 1;
                 state->current_game_changed = true;
                 loadRomScreen(state->current_game);
                 state->changed = true;
@@ -108,24 +106,6 @@ void action_confirmRemove(AppState *state)
             }
         }
     }
-}
-
-void action_toggleHeader(AppState *state)
-{
-    state->show_legend = true;
-    state->legend_start = state->last_ticks;
-
-    if (!state->show_time && !state->show_total)
-        state->show_time = true, state->show_total = false;
-    else if (state->show_time && !state->show_total)
-        state->show_time = true, state->show_total = true;
-    else
-        state->show_time = false, state->show_total = false;
-
-    config_flag_set("gameSwitcher/showTime", state->show_time);
-    config_flag_set("gameSwitcher/hideTotal", !state->show_total);
-
-    state->changed = true;
 }
 
 void handleUpdateKeystateMain(AppState *state)
@@ -148,7 +128,7 @@ void handleUpdateKeystateMain(AppState *state)
         }
     }
 
-    if (keystate[SW_BTN_A] == PRESSED) {
+    if (keystate[SW_BTN_A] == PRESSED && game_list_len > 0) {
         _gs_keystate.btn_a_pressed = true;
     }
     else if (keystate[SW_BTN_A] == RELEASED && _gs_keystate.btn_a_pressed) {
@@ -161,54 +141,6 @@ void handleUpdateKeystateMain(AppState *state)
         state->exit_to_menu = true;
         state->quit = true;
         return;
-    }
-
-    if (keystate[_gs_keystate.changed_key] == PRESSED && _gs_keystate.changed_key != SW_BTN_UP && _gs_keystate.changed_key != SW_BTN_DOWN)
-        state->brightness_changed = false;
-
-    if (_gs_keystate.keystate[SW_BTN_UP] >= PRESSED) {
-        // Change brightness
-        if (settings.brightness < 10) {
-            settings_setBrightness(settings.brightness + 1, true, true);
-        }
-        state->brightness_changed = true;
-        state->brightness_start = state->last_ticks;
-        state->changed = true;
-    }
-
-    if (_gs_keystate.keystate[SW_BTN_DOWN] >= PRESSED) {
-        // Change brightness
-        if (settings.brightness > 0) {
-            settings_setBrightness(settings.brightness - 1, true, true);
-        }
-        state->brightness_changed = true;
-        state->brightness_start = state->last_ticks;
-        state->changed = true;
-    }
-
-    if (_gs_keystate.combo_key ||
-        (_gs_keystate.select_pressed && ((_gs_keystate.changed_key == SW_BTN_L2 &&
-                                          keystate[SW_BTN_L2] == RELEASED) ||
-                                         (_gs_keystate.changed_key == SW_BTN_R2 &&
-                                          keystate[SW_BTN_R2] == RELEASED)))) {
-        settings_load();
-        state->brightness_changed = false;
-        state->changed = true;
-    }
-
-    if (_gs_keystate.changed_key == SW_BTN_Y && keystate[SW_BTN_Y] == RELEASED) {
-        if (_gs_keystate.button_y_repeat < 75) {
-            state->view_mode = state->view_mode == VIEW_FULLSCREEN ? state->view_restore : !state->view_mode;
-            config_flag_set("gameSwitcher/minimal", state->view_mode == VIEW_MINIMAL);
-            state->changed = true;
-        }
-        _gs_keystate.button_y_repeat = 0;
-    }
-
-    if (keystate[SW_BTN_X] == PRESSED) {
-        if (game_list_len != 0) {
-            action_confirmRemove(state);
-        }
     }
 
     if (state->current_game_changed) {
@@ -270,55 +202,34 @@ void handleKeystate(AppState *state)
     KeyState *keystate = _gs_keystate.keystate;
 
     if (_updateKeystate(keystate, &state->quit, true, &_gs_keystate.changed_key)) {
-        if (_gs_keystate.menu_pressed && _gs_keystate.changed_key != SW_BTN_MENU)
-            _gs_keystate.combo_key = true;
-        if (_gs_keystate.select_pressed && _gs_keystate.changed_key != SW_BTN_SELECT)
-            _gs_keystate.select_combo_key = true;
-
-        if (keystate[SW_BTN_MENU] == PRESSED)
-            _gs_keystate.menu_pressed = true;
-
-        if (_gs_keystate.menu_pressed && keystate[SW_BTN_MENU] == RELEASED) {
-            if (!_gs_keystate.combo_key) {
-                state->quit = true;
-                return;
-            }
-            _gs_keystate.menu_pressed = false;
-            _gs_keystate.combo_key = false;
-        }
-
-        if (_gs_keystate.changed_key == SW_BTN_SELECT) {
-            if (keystate[SW_BTN_SELECT] == PRESSED)
-                _gs_keystate.select_pressed = true;
-            if (keystate[SW_BTN_SELECT] == RELEASED) {
-                if (!_gs_keystate.select_combo_key) {
-                    action_toggleHeader(state);
-                }
-                _gs_keystate.select_pressed = false;
-                _gs_keystate.select_combo_key = false;
-            }
+        if (keystate[SW_BTN_MENU] == PRESSED) {
+            if (game_list_len == 0)
+                state->exit_to_menu = true;
+            state->quit = true;
+            return;
         }
 
         if (keystate[SW_BTN_START] == PRESSED) {
+            if (state->quick_settings_open)
+                quickSettings_close();
+            else {
+                state->pop_menu_open = false;
+                popMenu_destroy();
+                quickSettings_open();
+            }
+            return;
+        }
+
+        if (state->quick_settings_open)
+            quickSettings_handle(keystate);
+        else if (keystate[SW_BTN_X] == PRESSED && game_list_len != 0) {
             state->pop_menu_open = !state->pop_menu_open;
             state->changed = true;
         }
-
-        if (state->pop_menu_open) {
+        else if (state->pop_menu_open)
             handleUpdateKeystatePopMenu(state);
-        }
-        else {
+        else
             handleUpdateKeystateMain(state);
-        }
-    }
-
-    if (keystate[SW_BTN_Y] == PRESSED && state->view_mode != VIEW_FULLSCREEN && !state->pop_menu_open) {
-        _gs_keystate.button_y_repeat++;
-        if (_gs_keystate.button_y_repeat >= 75) {
-            state->view_restore = state->view_mode;
-            state->view_mode = VIEW_FULLSCREEN;
-            state->changed = true;
-        }
     }
 }
 

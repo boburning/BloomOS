@@ -12,26 +12,21 @@
 
 typedef struct {
     List pop_menu_list;
+    List quick_settings_list;
     bool quit;
     bool exit_to_menu;
     bool changed;
     bool current_game_changed;
-    bool brightness_changed;
     bool pop_menu_open;
+    bool quick_settings_open;
     bool show_time;
     bool show_total;
-    bool show_legend;
     bool is_overlay;
     int view_mode;
-    int view_restore;
     int pop_menu_game_index;
     uint32_t acc_ticks;
     uint32_t last_ticks;
     uint32_t time_step;
-    uint32_t legend_start;
-    uint32_t legend_timeout;
-    uint32_t brightness_start;
-    uint32_t brightness_timeout;
     SDL_Surface *custom_header;
     SDL_Surface *custom_footer;
     int header_height;
@@ -51,26 +46,21 @@ typedef struct {
 
 static AppState appState = {
     .pop_menu_list = {{0}},
+    .quick_settings_list = {{0}},
     .quit = false,
     .exit_to_menu = false,
     .changed = true,
     .current_game_changed = true,
-    .brightness_changed = false,
     .pop_menu_open = false,
+    .quick_settings_open = false,
     .show_time = false,
     .show_total = true,
-    .show_legend = true,
     .is_overlay = false,
     .view_mode = VIEW_NORMAL,
-    .view_restore = VIEW_NORMAL,
     .pop_menu_game_index = 0,
     .acc_ticks = 0,
     .last_ticks = 0,
     .time_step = 1000 / 30,
-    .legend_start = 0,
-    .legend_timeout = 5000,
-    .brightness_start = 0,
-    .brightness_timeout = 2000,
     .custom_header = NULL,
     .custom_footer = NULL,
     .header_height = 0,
