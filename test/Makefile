@@ -36,12 +36,14 @@ CFILES := $(CFILES) ../src/bloomShell/bloom_shell_settings.c
 CFILES := $(CFILES) ../src/bloomShell/bloom_shell_ra_form.c
 CFILES := $(CFILES) ../src/bloomShell/bloom_shell_root.c
 CFILES := $(CFILES) ../src/bloomShell/bloom_shell_games.c
+CFILES := $(CFILES) ../src/bloomShell/bloom_shell_search.c
 CFILES := $(CFILES) ../src/bloomSettings/bloom_settings.c
 CFILES := $(CFILES) ../src/bloomLibrary/bloom_library_database.c
 CFILES := $(CFILES) ../src/bloomLibrary/bloom_library_import.c
 CFILES := $(CFILES) ../src/bloomLibrary/bloom_library_scan.c
 CFILES := $(CFILES) ../src/bloomLibrary/bloom_library_query.c
 CFILES := $(CFILES) ../src/bloomLibrary/bloom_library_legacy.c
+CFILES := $(CFILES) ../src/bloomLibrary/bloom_library_mutation.c
 CFILES := $(CFILES) ../src/common/utils/udp.c
 include ../src/common/config.mk
 CFLAGS += -I. -DBLOOM_TEST=1 -I../third-party/rcheevos/include -I../third-party/rcheevos/src \

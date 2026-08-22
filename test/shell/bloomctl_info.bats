@@ -544,6 +544,15 @@ SH
         sh /workspace/static/build/.tmp_update/bin/bloomctl library games --system '../gba' --limit 10
     [ "$status" -eq 2 ]
 
+    run env -u LD_LIBRARY_PATH BLOOM_LIBRARY_BIN="$service" \
+        sh /workspace/static/build/.tmp_update/bin/bloomctl library favorite set "$cursor" true
+    [ "$status" -eq 0 ]
+    [ "$output" = "{\"schema\":1,\"arguments\":\"favorite set $cursor true\",\"library_path\":\"$BLOOM_ROOT/mnt/SDCARD/.tmp_update/lib\"}" ]
+
+    run env BLOOM_LIBRARY_BIN="$service" \
+        sh /workspace/static/build/.tmp_update/bin/bloomctl library favorite set "$cursor" maybe
+    [ "$status" -eq 2 ]
+
     run env BLOOM_LIBRARY_BIN="$service" \
         sh /workspace/static/build/.tmp_update/bin/bloomctl library status extra
     [ "$status" -eq 2 ]

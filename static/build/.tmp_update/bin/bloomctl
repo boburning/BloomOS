@@ -455,6 +455,10 @@ library_command() {
                 *) usage; return 2 ;;
             esac
             ;;
+        favorite)
+            [ "$#" -eq 4 ] && [ "$2" = set ] || { usage; return 2; }
+            case "$4" in true|false) run_library "$@" ;; *) usage; return 2 ;; esac
+            ;;
         *)
             usage
             return 2
