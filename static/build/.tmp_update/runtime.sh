@@ -48,13 +48,7 @@ main() {
     # Start the battery monitor
     batmon &
 
-    # Reapply theme
-    system_theme="$(/customer/app/jsonval theme)"
-    active_theme="$(cat $sysdir/config/active_theme)"
-
-    if [ "$system_theme" == "./" ] || [ "$system_theme" != "$active_theme" ] || [ ! -d "$system_theme" ]; then
-        themeSwitcher --reapply_icons
-    fi
+    reconcile_runtime_theme
 
     # Check is charging
     if [ $DEVICE_ID -eq $MODEL_MM ]; then
@@ -95,9 +89,10 @@ main() {
     cd $sysdir
     bootScreen "Boot"
 
-    # Set filebrowser branding to "Onion" and apply custom theme
+    # Filebrowser is an auxiliary compatibility service, but its visible name
+    # is still part of BloomOS.
     if [ -f "$sysdir/config/filebrowser/first.run" ]; then
-        $sysdir/bin/filebrowser config set --branding.name "Onion" -d $sysdir/config/filebrowser/filebrowser.db
+        $sysdir/bin/filebrowser config set --branding.name "BloomOS" -d $sysdir/config/filebrowser/filebrowser.db
         $sysdir/bin/filebrowser config set --branding.files "$sysdir/config/filebrowser/theme" -d $sysdir/config/filebrowser/filebrowser.db
 
         rm "$sysdir/config/filebrowser/first.run"
@@ -239,6 +234,34 @@ check_main_ui() {
 mainui_development_fallback_enabled() {
     [ -f "$bloom_developer_marker" ] && [ ! -L "$bloom_developer_marker" ] &&
         [ -f "$sysdir/config/.mainuiFallback" ] && [ ! -L "$sysdir/config/.mainuiFallback" ]
+}
+
+reconcile_runtime_theme() {
+    # Bloom-owned surfaces use the fixed Bloom design system and must not run
+    # the legacy MainUI theme installer. This also makes missing, malformed, or
+    # MainUI-specific theme state harmless on the stable shell path.
+    if ! mainui_development_fallback_enabled; then
+        export BLOOM_FIXED_THEME=1
+        log "Bloom Shell uses the fixed Bloom theme; skipping legacy theme reapply"
+        return 0
+    fi
+
+    unset BLOOM_FIXED_THEME
+
+    theme_reader="${BLOOM_LEGACY_THEME_READER:-/customer/app/jsonval}"
+    theme_switcher="${BLOOM_LEGACY_THEME_SWITCHER:-themeSwitcher}"
+    if ! system_theme="$("$theme_reader" theme 2> /dev/null)"; then
+        system_theme="./"
+    fi
+    active_theme=""
+    if [ -f "$sysdir/config/active_theme" ] && [ ! -L "$sysdir/config/active_theme" ]; then
+        IFS= read -r active_theme < "$sysdir/config/active_theme" || active_theme=""
+    fi
+
+    if [ "$system_theme" = "./" ] || [ "$system_theme" != "$active_theme" ] ||
+        [ ! -d "$system_theme" ] || [ -L "$system_theme" ]; then
+        "$theme_switcher" --reapply_icons
+    fi
 }
 
 bloom_shell_safe_mode_pending() {

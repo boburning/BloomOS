@@ -4,6 +4,7 @@
 #include <SDL/SDL.h>
 #include <SDL/SDL_image.h>
 #include <SDL/SDL_ttf.h>
+#include <stdlib.h>
 
 #include "utils/file.h"
 #include "utils/json.h"
@@ -20,6 +21,12 @@ typedef SDL_Surface *(*ScaleSurfaceFunc)(SDL_Surface *surface, double xScale, do
 
 static ScaleSurfaceFunc scaleSurfaceFunc = NULL;
 static double g_scale = 1.0;
+
+bool theme_usesFixedBloomResources(void)
+{
+    const char *value = getenv("BLOOM_FIXED_THEME");
+    return value != NULL && strcmp(value, "1") == 0;
+}
 
 void theme_initScaling(double scale, ScaleSurfaceFunc scaleSurface)
 {
@@ -43,6 +50,16 @@ int theme_getImagePath(const char *theme_path, const char *name, char *out_path)
     int load_mode = 2;
     char rel_path[STR_MAX], image_path[STR_MAX * 2];
     sprintf(rel_path, "skin/%s.png", name);
+
+    if (theme_usesFixedBloomResources()) {
+        if (strncmp(name, "extra/", 6) == 0)
+            snprintf(image_path, sizeof(image_path), "%s%s.png", SYSTEM_RESOURCES, name + 6);
+        else
+            snprintf(image_path, sizeof(image_path), "%s%s", FALLBACK_PATH, rel_path);
+        if (out_path)
+            snprintf(out_path, STR_MAX * 2, "%s", image_path);
+        return 0;
+    }
 
     sprintf(image_path, THEME_OVERRIDES "/%s", rel_path);
     bool override_exists = exists(image_path);
@@ -116,6 +133,11 @@ TTF_Font *theme_loadFont(const char *theme_path, const char *font, int size)
 
 char *theme_getPath(char *theme_path)
 {
+    if (theme_usesFixedBloomResources()) {
+        strcpy(theme_path, FALLBACK_THEME_PATH);
+        return theme_path;
+    }
+
     cJSON *j = json_load(SYSTEM_CONFIG);
     json_getString(j, "theme", theme_path);
     cJSON_Delete(j);
