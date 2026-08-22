@@ -21,6 +21,7 @@ info_zip = "3.0"
 "third-party/Terminal" = "b8d6f98ed0d4f95542dd0acb7ec683482d0a4029"
 "third-party/RetroArch-patch" = "f9e959f7445d2ba0a4dd6279da41a095163767f2"
 "third-party/dropbear" = "887241694277b3816da5d174932c10546ea9d2c5"
+"third-party/openssh-portable" = "d76b2675116617394cd355a3437b4963a562b64d"
 "third-party/openbor" = "b00efbc7752cb55709dfc9fdfdfc7cfe78ddfb90"
 "third-party/SDL2" = "b424665e0899769b200231ba943353a5fee1b6b6"
 "third-party/ogg" = "e1774cd77f471443541596e09078e78fdc342e4f"
@@ -143,10 +144,10 @@ legacy_channels = ["development"]
 [legacy_inventory]
 manifest = "build/legacy-manifest.json"
 schema = 1
-component_count = 320
-file_count = 2118
-byte_count = 314460675
-source_build_components = 216
+component_count = 322
+file_count = 2120
+byte_count = 314464874
+source_build_components = 218
 unresolved_components = 104
 inherited_baseline = "07505ea58c7bba698d6b9220ff43946a43cac76b"
 

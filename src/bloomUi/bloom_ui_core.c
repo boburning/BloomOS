@@ -80,11 +80,31 @@ BloomUiAction bloom_ui_normalize_input(BloomUiInput input)
         BLOOM_UI_ACTION_SEARCH,
         BLOOM_UI_ACTION_QUICK_SETTINGS,
         BLOOM_UI_ACTION_GAME_SWITCHER,
+        BLOOM_UI_ACTION_PAGE_UP,
+        BLOOM_UI_ACTION_PAGE_DOWN,
     };
-    if (input < BLOOM_UI_INPUT_NONE || input > BLOOM_UI_INPUT_GAME_SWITCHER) {
+    if (input < BLOOM_UI_INPUT_NONE || input > BLOOM_UI_INPUT_PAGE_DOWN) {
         return BLOOM_UI_ACTION_NONE;
     }
     return actions[input];
+}
+
+int bloom_ui_focus_page(BloomUiFocus *focus, int direction, size_t visible_rows)
+{
+    if (focus == NULL || focus->item_count == 0 || (direction != -1 && direction != 1))
+        return 0;
+    size_t previous = focus->selected;
+    size_t distance = normalized_visible_rows(visible_rows);
+    if (distance > 1)
+        distance--;
+    if (direction < 0)
+        focus->selected = focus->selected > distance ? focus->selected - distance : 0;
+    else {
+        size_t remaining = focus->item_count - 1 - focus->selected;
+        focus->selected += remaining < distance ? remaining : distance;
+    }
+    reveal_selection(focus, visible_rows);
+    return previous != focus->selected;
 }
 
 void bloom_ui_focus_init(BloomUiFocus *focus, size_t item_count)

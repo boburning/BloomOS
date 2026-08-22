@@ -6,7 +6,7 @@
         --manifest /workspace/build/legacy-manifest.json
 
     [ "$status" -eq 0 ]
-    [[ "$output" == "legacy manifest validate: 320 components" ]]
+    [[ "$output" == "legacy manifest validate: 322 components" ]]
     [ ! -e "/workspace/static/packages/RApp/SNK - Neo Geo (GnGeo)" ]
     [ ! -e "/workspace/static/packages/RApp/PICO-8 (PICO-8 standalone)" ]
     [ ! -e "/workspace/static/packages/RApp/SCUMM (ScummVM standalone)" ]
@@ -27,7 +27,10 @@
     grep -F 'cp $(BIN_DIR)/libgamename.so $(BUILD_DIR)/miyoo/lib/' /workspace/Makefile
     [ ! -e /workspace/static/build/.tmp_update/bin/bloom-dropbearmulti ]
     [ ! -e /workspace/static/build/.tmp_update/bin/LICENSE.dropbear ]
+    [ ! -e /workspace/static/build/.tmp_update/bin/bloom-sftp-server ]
+    [ ! -e /workspace/static/build/.tmp_update/bin/LICENSE.openssh ]
     grep -F 'tools/build-dropbear.sh $(BIN_DIR)/bloom-dropbearmulti' /workspace/Makefile
+    grep -F 'tools/build-sftp-server.sh $(BIN_DIR)/bloom-sftp-server' /workspace/Makefile
     grep -F 'cp "$SOURCE_REPO/LICENSE" "$(dirname -- "$OUTPUT")/LICENSE.dropbear"' /workspace/tools/build-dropbear.sh
     python3 - /workspace/build/legacy-manifest.json <<'PY'
 import json
@@ -95,7 +98,7 @@ import sys
 components = json.load(open(sys.argv[1], encoding="utf-8"))["components"]
 runtime = [item for item in components if item["id"].startswith("runtime-")]
 bloom = [item for item in runtime if item["source"] == "https://github.com/boburning/BloomOS"]
-assert len(bloom) == 43
+assert len(bloom) == 45
 assert all(item["resolution"] == "source-build" for item in bloom)
 assert all(item["source_revision"] == "release-commit" for item in bloom)
 PY

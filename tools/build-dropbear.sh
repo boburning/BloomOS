@@ -37,7 +37,8 @@ cat >"$SOURCE_DIR/localoptions.h" <<'EOF'
 #define DROPBEAR_SVR_PASSWORD_AUTH 0
 #define DROPBEAR_SVR_PUBKEY_AUTH 1
 #define DROPBEAR_SVR_PUBKEY_OPTIONS 1
-#define DROPBEAR_SFTPSERVER 0
+#define DROPBEAR_SFTPSERVER 1
+#define SFTPSERVER_PATH "/mnt/SDCARD/.tmp_update/bin/bloom-sftp-gate"
 EOF
 
 TOOL_PREFIX="${CROSS_COMPILE:-arm-linux-gnueabihf-}"
@@ -66,4 +67,5 @@ mkdir -p "$(dirname -- "$OUTPUT")"
 cp dropbearmulti "$OUTPUT"
 cp "$SOURCE_REPO/LICENSE" "$(dirname -- "$OUTPUT")/LICENSE.dropbear"
 grep -aFq 'authorized_keys' "$OUTPUT"
+grep -aFq '/mnt/SDCARD/.tmp_update/bin/bloom-sftp-gate' "$OUTPUT"
 printf 'Built key-authenticated Dropbear: %s\n' "$OUTPUT"

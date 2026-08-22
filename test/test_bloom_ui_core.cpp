@@ -54,7 +54,28 @@ TEST(BloomUiInput, NormalizesTheStableControlGrammar)
     EXPECT_EQ(BLOOM_UI_ACTION_SEARCH, bloom_ui_normalize_input(BLOOM_UI_INPUT_SEARCH));
     EXPECT_EQ(BLOOM_UI_ACTION_QUICK_SETTINGS, bloom_ui_normalize_input(BLOOM_UI_INPUT_QUICK_SETTINGS));
     EXPECT_EQ(BLOOM_UI_ACTION_GAME_SWITCHER, bloom_ui_normalize_input(BLOOM_UI_INPUT_GAME_SWITCHER));
+    EXPECT_EQ(BLOOM_UI_ACTION_PAGE_UP, bloom_ui_normalize_input(BLOOM_UI_INPUT_PAGE_UP));
+    EXPECT_EQ(BLOOM_UI_ACTION_PAGE_DOWN, bloom_ui_normalize_input(BLOOM_UI_INPUT_PAGE_DOWN));
     EXPECT_EQ(BLOOM_UI_ACTION_NONE, bloom_ui_normalize_input((BloomUiInput)999));
+}
+
+TEST(BloomUiFocus, PagesByAVisibleWindowWithOneRowOfContext)
+{
+    BloomUiFocus focus = {};
+    bloom_ui_focus_init(&focus, 30);
+    EXPECT_EQ(1, bloom_ui_focus_page(&focus, 1, 6));
+    EXPECT_EQ(5UL, focus.selected);
+    EXPECT_EQ(0UL, focus.window_start);
+    EXPECT_EQ(1, bloom_ui_focus_page(&focus, 1, 6));
+    EXPECT_EQ(10UL, focus.selected);
+    EXPECT_EQ(5UL, focus.window_start);
+    EXPECT_EQ(1, bloom_ui_focus_page(&focus, -1, 6));
+    EXPECT_EQ(5UL, focus.selected);
+    for (int index = 0; index < 10; ++index)
+        bloom_ui_focus_page(&focus, 1, 6);
+    EXPECT_EQ(29UL, focus.selected);
+    EXPECT_EQ(24UL, focus.window_start);
+    EXPECT_EQ(0, bloom_ui_focus_page(&focus, 1, 6));
 }
 
 TEST(BloomUiFocus, ClampsAndScrollsAListWithoutWrapping)

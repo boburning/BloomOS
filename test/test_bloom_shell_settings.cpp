@@ -58,9 +58,12 @@ TEST(BloomShellSettings, PlusShowsWifiWithoutFlipOrDeveloperControls)
                                         "Open Settings"}),
               quick(capabilities));
     auto rows = settings(capabilities);
-    ASSERT_EQ(22U, rows.size());
+    ASSERT_EQ(25U, rows.size());
     EXPECT_EQ(BLOOM_SHELL_SETTINGS_NETWORK_SECTION, rows[9].id);
     EXPECT_EQ(BLOOM_SHELL_SETTINGS_WIFI, rows[10].id);
+    EXPECT_EQ(BLOOM_SHELL_SETTINGS_SSH, rows[11].id);
+    EXPECT_EQ(BLOOM_SHELL_SETTINGS_SFTP, rows[12].id);
+    EXPECT_EQ(BLOOM_SHELL_SETTINGS_SAMBA, rows[13].id);
 }
 
 TEST(BloomShellSettings, FlipAndDeveloperModeExposeOnlyTheirCapabilities)
@@ -71,9 +74,66 @@ TEST(BloomShellSettings, FlipAndDeveloperModeExposeOnlyTheirCapabilities)
     EXPECT_TRUE(capabilities.flip);
     EXPECT_TRUE(capabilities.developer_mode);
     auto rows = settings(capabilities);
-    ASSERT_EQ(25U, rows.size());
-    EXPECT_EQ(BLOOM_SHELL_SETTINGS_DEVELOPER_SECTION, rows[22].id);
+    ASSERT_EQ(28U, rows.size());
+    EXPECT_EQ(BLOOM_SHELL_SETTINGS_DEVELOPER_SECTION, rows[25].id);
     EXPECT_EQ(BLOOM_SHELL_SETTINGS_DIAGNOSTICS, rows.back().id);
+}
+
+TEST(BloomShellSettings, ParsesFormatsAndMutatesBoundedNetworkServices)
+{
+    BloomShellCapabilities capabilities{};
+    BloomShellQuickValues values{};
+    ASSERT_EQ(0, bloom_shell_capabilities_from_model(354, 0, &capabilities));
+    ASSERT_EQ(0, bloom_shell_network_services_parse(
+                     R"({"schema":1,"service":"bloom-network-services","wifi_capable":true,"ssh":{"available":true,"enabled":true},"sftp":{"available":true,"enabled":false},"samba":{"available":true,"enabled":false}})",
+                     &values));
+    EXPECT_TRUE(values.network_services_ready);
+    EXPECT_TRUE(values.ssh_enabled);
+    char label[64];
+    ASSERT_EQ(0, bloom_shell_settings_row_format(&capabilities, &values, 11, label,
+                                                 sizeof(label)));
+    EXPECT_STREQ("SSH                       On", label);
+    ASSERT_EQ(0, bloom_shell_settings_row_format(&capabilities, &values, 12, label,
+                                                 sizeof(label)));
+    EXPECT_STREQ("SFTP                      Off", label);
+
+    const auto directory = std::filesystem::temp_directory_path() /
+                           ("bloom-network-services-" + std::to_string(getpid()));
+    std::filesystem::create_directory(directory);
+    const auto script = directory / "adapter";
+    const auto arguments = directory / "arguments";
+    {
+        std::ofstream output(script);
+        output << "#!/bin/sh\nprintf '%s' \"$*\" >'" << arguments.string() << "'\n";
+    }
+    ASSERT_EQ(0, chmod(script.c_str(), 0700));
+    ASSERT_EQ(0, bloom_shell_network_service_change(
+                     &values, BLOOM_SHELL_SETTINGS_SFTP, 1, script.c_str()));
+    EXPECT_TRUE(values.sftp_enabled);
+    std::ifstream input(arguments);
+    std::string recorded;
+    std::getline(input, recorded);
+    EXPECT_EQ("request sftp enable", recorded);
+    std::filesystem::remove_all(directory);
+}
+
+TEST(BloomShellSettings, NetworkServicesFailClosedOnMalformedOrUnavailableState)
+{
+    BloomShellQuickValues values{};
+    BloomShellCapabilities capabilities{};
+    ASSERT_EQ(0, bloom_shell_capabilities_from_model(354, 0, &capabilities));
+    EXPECT_NE(0, bloom_shell_network_services_parse("{}", &values));
+    ASSERT_EQ(0, bloom_shell_network_services_parse(
+                     R"({"schema":1,"service":"bloom-network-services","ssh":{"available":false,"enabled":false},"sftp":{"available":true,"enabled":false},"samba":{"available":true,"enabled":false}})",
+                     &values));
+    char label[64];
+    ASSERT_EQ(0, bloom_shell_settings_row_format(&capabilities, &values, 12, label,
+                                                 sizeof(label)));
+    EXPECT_STREQ("SFTP              requires SSH", label);
+    EXPECT_NE(0, bloom_shell_network_service_change(
+                     &values, BLOOM_SHELL_SETTINGS_SSH, 1, "/does/not/exist"));
+    EXPECT_NE(0, bloom_shell_network_service_change(
+                     &values, BLOOM_SHELL_SETTINGS_SFTP, 1, "/does/not/exist"));
 }
 
 TEST(BloomShellSettings, UnknownModelsAndOutOfRangeRowsFailClosed)

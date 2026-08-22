@@ -33,6 +33,7 @@
 #define BLOOM_SETTINGS_BINARY "/mnt/SDCARD/.tmp_update/bin/bloom-settings"
 #define BLOOM_CONTROLS_BINARY "/mnt/SDCARD/.tmp_update/bin/bloom-controls"
 #define BLOOM_NETWORK_BINARY "/mnt/SDCARD/.tmp_update/bin/bloom-network"
+#define BLOOM_NETWORK_SERVICES_BINARY "/mnt/SDCARD/.tmp_update/bin/bloom-network-services"
 #define BLOOM_PLATFORM_BINARY "/mnt/SDCARD/.tmp_update/bin/bloom-platform"
 #define BLOOM_RA_BINARY "/mnt/SDCARD/.tmp_update/bin/bloom-ra"
 #define GAME_SWITCHER_BINARY "/mnt/SDCARD/.tmp_update/bin/gameSwitcher"
@@ -191,6 +192,22 @@ static void settings_focus_step(BloomUiFocus *focus,
         focus->window_start = focus->selected;
     else if (visible_rows > 0 && focus->selected >= focus->window_start + visible_rows)
         focus->window_start = focus->selected - visible_rows + 1;
+}
+
+static void settings_focus_page(BloomUiFocus *focus,
+                                const BloomShellCapabilities *capabilities, int direction,
+                                size_t visible_rows)
+{
+    if (!bloom_ui_focus_page(focus, direction, visible_rows))
+        return;
+    if (!bloom_shell_settings_row_selectable(capabilities, focus->selected)) {
+        size_t header = focus->selected;
+        focus->selected = bloom_shell_settings_next_selectable(capabilities, header, direction);
+        if (focus->selected == header)
+            focus->selected =
+                bloom_shell_settings_next_selectable(capabilities, header, -direction);
+    }
+    bloom_ui_focus_set_count(focus, bloom_shell_settings_count(capabilities), visible_rows);
 }
 
 static int load_catalog(BloomLibraryGame **games, size_t *game_count, BloomLibraryGame *recents,
@@ -954,10 +971,10 @@ static void draw(SDL_Surface *screen, SDL_Surface *video, const BloomUiLayout *l
                          : destination == BLOOM_UI_DESTINATION_ROOT
                              ? "Left/Right Choose   A Open   MENU Switcher   START Quick"
                          : destination == BLOOM_UI_DESTINATION_SETTINGS
-                             ? "Left/Right Change   A Open/Toggle   B Home   START Quick"
+                             ? "D-pad Change   L/R Page   A Toggle   B Home   START Quick"
                          : destination == BLOOM_UI_DESTINATION_APPS
                              ? "A Open   B Home   START Quick"
-                             : "A Play   X Actions   Y Favorite   SELECT Search   B Home";
+                             : "A Play   X Actions   Y Fav   SELECT Search   L/R Page   B Home";
     render_label(screen, compact_font, footer, layout->footer.x + 56,
                  layout->footer.y + layout->footer.height / 3, layout->footer.width - 76, sand);
     if (ra_form_open)
@@ -1010,6 +1027,7 @@ int main(int argc, char **argv)
     BloomShellQuickValues quick_values = {0};
     bloom_shell_quick_values_load(BLOOM_SETTINGS_BINARY, &quick_values);
     bloom_shell_quick_battery_load(BLOOM_PLATFORM_BINARY, &quick_values);
+    bloom_shell_network_services_load(BLOOM_NETWORK_SERVICES_BINARY, &quick_values);
     BloomShellRaValues ra_values = {0};
     bloom_shell_ra_values_load(BLOOM_RA_BINARY, &ra_values);
     BloomLibraryGame *games = NULL;
@@ -1116,6 +1134,7 @@ int main(int argc, char **argv)
         return 1;
     }
     int quick_settings = 0;
+    Uint32 last_page_tick = 0;
     int settings_held_repeats = 0;
     int support_export_result = 0;
     int update_confirm_result = 0;
@@ -1174,6 +1193,12 @@ int main(int argc, char **argv)
         if (event.type != SDL_KEYDOWN)
             continue;
         BloomUiAction action = bloom_ui_normalize_input(bloom_ui_input_from_sdl_key(event.key.keysym.sym));
+        if (action == BLOOM_UI_ACTION_PAGE_UP || action == BLOOM_UI_ACTION_PAGE_DOWN) {
+            Uint32 now = SDL_GetTicks();
+            if (last_page_tick != 0 && now - last_page_tick < 180)
+                continue;
+            last_page_tick = now;
+        }
         BloomShellSettingsRow selected_settings = {0};
         int selected_settings_valid =
             destination == BLOOM_UI_DESTINATION_SETTINGS &&
@@ -1418,8 +1443,11 @@ int main(int argc, char **argv)
                                                      &quick_values) == 0
                     ? 1
                     : -1;
-            if (first_run_result > 0)
+            if (first_run_result > 0) {
+                bloom_shell_network_services_load(BLOOM_NETWORK_SERVICES_BINARY,
+                                                  &quick_values);
                 first_run_open = 0;
+            }
         }
         else if (first_run_open)
             continue;
@@ -1468,6 +1496,41 @@ int main(int argc, char **argv)
             else
                 destination = bloom_shell_root_open(&root);
         }
+        else if ((action == BLOOM_UI_ACTION_PAGE_UP || action == BLOOM_UI_ACTION_PAGE_DOWN) &&
+                 search.active)
+            bloom_ui_focus_page(&search.focus,
+                                action == BLOOM_UI_ACTION_PAGE_UP ? -1 : 1,
+                                layout.visible_rows);
+        else if ((action == BLOOM_UI_ACTION_PAGE_UP || action == BLOOM_UI_ACTION_PAGE_DOWN) &&
+                 destination == BLOOM_UI_DESTINATION_GAMES) {
+            BloomShellGamesSystem *system = bloom_shell_games_current_mutable(&games_browser);
+            if (system != NULL) {
+                bloom_ui_focus_page(&system->focus,
+                                    action == BLOOM_UI_ACTION_PAGE_UP ? -1 : 1,
+                                    layout.visible_rows);
+                bloom_shell_games_release(&games_browser);
+            }
+        }
+        else if ((action == BLOOM_UI_ACTION_PAGE_UP || action == BLOOM_UI_ACTION_PAGE_DOWN) &&
+                 destination == BLOOM_UI_DESTINATION_FAVORITES)
+            bloom_ui_focus_page(&favorites_focus,
+                                action == BLOOM_UI_ACTION_PAGE_UP ? -1 : 1,
+                                layout.visible_rows);
+        else if ((action == BLOOM_UI_ACTION_PAGE_UP || action == BLOOM_UI_ACTION_PAGE_DOWN) &&
+                 destination == BLOOM_UI_DESTINATION_RECENT)
+            bloom_ui_focus_page(&recent_focus,
+                                action == BLOOM_UI_ACTION_PAGE_UP ? -1 : 1,
+                                layout.visible_rows);
+        else if ((action == BLOOM_UI_ACTION_PAGE_UP || action == BLOOM_UI_ACTION_PAGE_DOWN) &&
+                 destination == BLOOM_UI_DESTINATION_SETTINGS)
+            settings_focus_page(&settings_focus, &capabilities,
+                                action == BLOOM_UI_ACTION_PAGE_UP ? -1 : 1,
+                                layout.visible_rows);
+        else if ((action == BLOOM_UI_ACTION_PAGE_UP || action == BLOOM_UI_ACTION_PAGE_DOWN) &&
+                 destination == BLOOM_UI_DESTINATION_APPS)
+            bloom_ui_focus_page(&apps_focus,
+                                action == BLOOM_UI_ACTION_PAGE_UP ? -1 : 1,
+                                layout.visible_rows);
         else if (action == BLOOM_UI_ACTION_FOCUS_LEFT &&
                  destination == BLOOM_UI_DESTINATION_GAMES) {
             bloom_shell_search_clear(&search);
@@ -1569,6 +1632,20 @@ int main(int argc, char **argv)
                     &capabilities, &quick_values, quick_row,
                     action == BLOOM_UI_ACTION_FOCUS_RIGHT ? 1 : -1, BLOOM_CONTROLS_BINARY,
                     BLOOM_NETWORK_BINARY);
+            else if (selected_settings.id == BLOOM_SHELL_SETTINGS_SSH ||
+                     selected_settings.id == BLOOM_SHELL_SETTINGS_SFTP ||
+                     selected_settings.id == BLOOM_SHELL_SETTINGS_SAMBA) {
+                int enabled = selected_settings.id == BLOOM_SHELL_SETTINGS_SSH
+                                  ? quick_values.ssh_enabled
+                              : selected_settings.id == BLOOM_SHELL_SETTINGS_SFTP
+                                  ? quick_values.sftp_enabled
+                                  : quick_values.samba_enabled;
+                int desired = action == BLOOM_UI_ACTION_FOCUS_RIGHT;
+                if (desired != enabled)
+                    bloom_shell_network_service_change(
+                        &quick_values, selected_settings.id, desired,
+                        BLOOM_NETWORK_SERVICES_BINARY);
+            }
             else if (selected_settings.id == BLOOM_SHELL_SETTINGS_RA_ENABLED ||
                      selected_settings.id == BLOOM_SHELL_SETTINGS_RA_MODE ||
                      selected_settings.id == BLOOM_SHELL_SETTINGS_RA_OFFLINE) {
@@ -1589,6 +1666,19 @@ int main(int argc, char **argv)
             bloom_shell_quick_settings_adjust(&capabilities, &quick_values, 2,
                                               quick_values.wifi_enabled ? -1 : 1,
                                               BLOOM_CONTROLS_BINARY, BLOOM_NETWORK_BINARY);
+        }
+        else if (action == BLOOM_UI_ACTION_CONFIRM &&
+                 destination == BLOOM_UI_DESTINATION_SETTINGS && selected_settings_valid &&
+                 (selected_settings.id == BLOOM_SHELL_SETTINGS_SSH ||
+                  selected_settings.id == BLOOM_SHELL_SETTINGS_SFTP ||
+                  selected_settings.id == BLOOM_SHELL_SETTINGS_SAMBA)) {
+            int enabled = selected_settings.id == BLOOM_SHELL_SETTINGS_SSH
+                              ? quick_values.ssh_enabled
+                          : selected_settings.id == BLOOM_SHELL_SETTINGS_SFTP
+                              ? quick_values.sftp_enabled
+                              : quick_values.samba_enabled;
+            bloom_shell_network_service_change(&quick_values, selected_settings.id, !enabled,
+                                               BLOOM_NETWORK_SERVICES_BINARY);
         }
         else if (action == BLOOM_UI_ACTION_CONFIRM &&
                  destination == BLOOM_UI_DESTINATION_SETTINGS && selected_settings_valid &&

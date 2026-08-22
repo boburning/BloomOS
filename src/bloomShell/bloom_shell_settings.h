@@ -16,6 +16,13 @@ typedef struct {
     int volume;
     int mute;
     int wifi_enabled;
+    int network_services_ready;
+    int ssh_available;
+    int ssh_enabled;
+    int sftp_available;
+    int sftp_enabled;
+    int samba_available;
+    int samba_enabled;
     int battery_available;
     int battery_capacity_available;
     int battery_capacity;
@@ -58,6 +65,9 @@ typedef enum {
     BLOOM_SHELL_SETTINGS_LAUNCH_BEHAVIOR,
     BLOOM_SHELL_SETTINGS_NETWORK_SECTION,
     BLOOM_SHELL_SETTINGS_WIFI,
+    BLOOM_SHELL_SETTINGS_SSH,
+    BLOOM_SHELL_SETTINGS_SFTP,
+    BLOOM_SHELL_SETTINGS_SAMBA,
     BLOOM_SHELL_SETTINGS_RA_SECTION,
     BLOOM_SHELL_SETTINGS_RA_ENABLED,
     BLOOM_SHELL_SETTINGS_RA_ACCOUNT,
@@ -96,6 +106,11 @@ size_t bloom_shell_quick_settings_count(const BloomShellCapabilities *capabiliti
 const char *bloom_shell_quick_settings_label(const BloomShellCapabilities *capabilities, size_t row);
 int bloom_shell_quick_values_parse(const char *json, BloomShellQuickValues *values);
 int bloom_shell_quick_values_load(const char *settings_path, BloomShellQuickValues *values);
+int bloom_shell_network_services_parse(const char *json, BloomShellQuickValues *values);
+int bloom_shell_network_services_load(const char *services_path, BloomShellQuickValues *values);
+int bloom_shell_network_service_change(BloomShellQuickValues *values,
+                                       BloomShellSettingsRowId id, int enabled,
+                                       const char *services_path);
 int bloom_shell_quick_battery_parse(const char *json, BloomShellQuickValues *values);
 int bloom_shell_quick_battery_load(const char *platform_path, BloomShellQuickValues *values);
 int bloom_shell_quick_settings_format(const BloomShellCapabilities *capabilities,

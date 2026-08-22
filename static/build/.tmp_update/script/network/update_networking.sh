@@ -262,18 +262,13 @@ ftp_authed() {
 
 # Starts only Bloom's explicit developer-mode, key-only SSH service.
 check_sshstate() {
-    if [ -f /mnt/SDCARD/.bloom-dev ]; then
-        if $sysdir/bin/bloom-dev-ssh start; then
-            log "SSH: Bloom developer key-only service checked"
-        else
-            log "SSH: Bloom developer service refused its configuration"
-        fi
-        return
+    if $sysdir/bin/bloom-dev-ssh start; then
+        log "SSH: Bloom key-only service checked"
+    else
+        log "SSH: Bloom key-only service refused its configuration"
     fi
-
     disable_flag sshState
     disable_flag authsshState
-    $sysdir/bin/bloom-dev-ssh stop
 }
 
 # Starts telnet if the toggle is set to on

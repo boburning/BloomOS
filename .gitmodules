@@ -34,3 +34,6 @@
 [submodule "third-party/rcheevos"]
 	path = third-party/rcheevos
 	url = https://github.com/RetroAchievements/rcheevos.git
+[submodule "third-party/openssh-portable"]
+	path = third-party/openssh-portable
+	url = https://github.com/openssh/openssh-portable.git

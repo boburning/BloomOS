@@ -106,8 +106,19 @@ install_valid_key() {
 }
 
 @test "network initialization delegates developer mode to the secure helper" {
-    grep -F 'if [ -f /mnt/SDCARD/.bloom-dev ]' /workspace/static/build/.tmp_update/script/network/update_networking.sh
     grep -F '$sysdir/bin/bloom-dev-ssh start' /workspace/static/build/.tmp_update/script/network/update_networking.sh
+    grep -F 'ssh_requested' /workspace/static/build/.tmp_update/bin/bloom-dev-ssh
+}
+
+@test "explicit Network settings disable overrides legacy developer auto-start" {
+    touch "$SDCARD/.bloom-dev"
+    mkdir -p "$SDCARD/.bloom/network-services"
+    touch "$SDCARD/.bloom/network-services/ssh.disabled"
+    install_valid_key
+    run "$SSH_HELPER" start
+    [ "$status" -eq 0 ]
+    [ "$(cat "$BLOOM_TEST_ROOT/tmp/bloom-dev-ssh.state")" = disabled ]
+    ! grep -Fq "$MOCK_BIN/dropbear " "$MOCK_LOG"
 }
 
 @test "read-only firmware home has a checked bind-mount fallback" {

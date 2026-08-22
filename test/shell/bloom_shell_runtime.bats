@@ -160,7 +160,8 @@
     grep -F 'compact_font' "$shell"
     grep -F '"A Open   B Home   START Quick"' "$shell"
     ! grep -F 'Deterministic text placeholders' "$renderer"
-    ! grep -E 'L1|L2|R1|R2' "$shell"
+    grep -F 'L/R Page' "$shell"
+    ! grep -E 'L2|R2' "$shell"
 }
 
 @test "reviewed PICO-8 and ScummVM systems use shipped structured RetroArch cores" {

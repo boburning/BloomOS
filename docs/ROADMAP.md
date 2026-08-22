@@ -216,7 +216,8 @@ merged; it does not imply unrecorded hardware certification.
   text configuration, and isolate inherited artwork for reproducible
   replacement ([#131](https://github.com/boburning/BloomOS/pull/131)).
 - [x] Retire the inherited parallel Dropbear/SFTP binaries and the legacy SSH
-  password/no-password toggles; retain only Bloom's source-built, key-only SSH
+  password/no-password toggles; retain Bloom's source-built, key-only SSH and
+  independently gated source-built OpenSSH SFTP subsystem
   service behind explicit developer mode and a provisioned public key.
 
 The hardware-sensitive BloomOS 1.0/1.1 implementation queue is at its

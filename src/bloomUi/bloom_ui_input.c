@@ -27,6 +27,10 @@ BloomUiInput bloom_ui_input_from_sdl_key(SDLKey key)
         return BLOOM_UI_INPUT_QUICK_SETTINGS;
     case SW_BTN_MENU:
         return BLOOM_UI_INPUT_GAME_SWITCHER;
+    case SW_BTN_L1:
+        return BLOOM_UI_INPUT_PAGE_UP;
+    case SW_BTN_R1:
+        return BLOOM_UI_INPUT_PAGE_DOWN;
     default:
         return BLOOM_UI_INPUT_NONE;
     }

@@ -126,6 +126,7 @@ shared-libs:
 core: $(CACHE)/.setup shared-libs
 	@$(ECHO) $(PRINT_RECIPE)
 # Build the developer SSH server with public-key authentication enabled.
+	@$(ROOT_DIR)/tools/build-sftp-server.sh $(BIN_DIR)/bloom-sftp-server
 	@$(ROOT_DIR)/tools/build-dropbear.sh $(BIN_DIR)/bloom-dropbearmulti
 # Build Onion binaries
 	@cd $(SRC_DIR)/bootScreen && BUILD_DIR=$(BIN_DIR) make

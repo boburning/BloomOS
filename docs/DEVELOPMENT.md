@@ -65,8 +65,10 @@ cp ~/.ssh/bloom_flip.pub /path/to/sd/.bloom/authorized_keys
 Bloom's pinned, reproducible Dropbear build stores generated host keys under
 `.tmp_update/etc/dropbear`, so the first connection must verify and accept the
 unique device/SD-card fingerprint. Password authentication and forwarding are
-disabled at compile time while root public-key login remains available. Remove
-`.bloom-dev` and reboot to disable automatic developer SSH.
+disabled at compile time while root public-key login remains available. Existing
+developer installations retain automatic SSH until it is disabled in Network
+settings. Removing `.bloom-dev` also disables that compatibility behavior unless
+SSH has already been explicitly enabled in Network settings.
 
 ## Wi-Fi device harness
 
